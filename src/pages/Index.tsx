@@ -30,6 +30,16 @@ const Index = () => {
       console.log('Edge function response:', { data, error });
 
       if (error) {
+        // Handle rate limit error specifically
+        if (error.status === 429) {
+          toast({
+            title: "Rate Limit Reached",
+            description: "Our service is experiencing high demand. Please wait a moment and try again.",
+            variant: "destructive"
+          });
+          return;
+        }
+        
         console.error('Supabase function error:', error);
         throw error;
       }

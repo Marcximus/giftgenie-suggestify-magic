@@ -52,6 +52,7 @@ serve(async (req) => {
       }),
     });
 
+    // Handle rate limits specifically
     if (response.status === 429) {
       console.error('OpenAI rate limit reached');
       return new Response(
