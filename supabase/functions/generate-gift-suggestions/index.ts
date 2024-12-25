@@ -52,6 +52,20 @@ serve(async (req) => {
       }),
     });
 
+    if (response.status === 429) {
+      console.error('OpenAI rate limit reached');
+      return new Response(
+        JSON.stringify({
+          error: 'Rate limit reached',
+          details: 'The service is experiencing high demand. Please wait a moment and try again.'
+        }),
+        {
+          status: 429,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
+    }
+
     if (!response.ok) {
       const errorText = await response.text();
       console.error('OpenAI API error:', {
