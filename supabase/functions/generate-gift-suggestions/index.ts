@@ -28,7 +28,6 @@ serve(async (req) => {
     // Implement retry logic with exponential backoff
     const maxRetries = 3;
     let retryCount = 0;
-    let lastError = null;
 
     while (retryCount < maxRetries) {
       try {
@@ -39,7 +38,7 @@ serve(async (req) => {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            model: 'gpt-4o-mini',
+            model: 'gpt-4',
             messages: [
               {
                 role: 'system',
@@ -58,16 +57,17 @@ serve(async (req) => {
 
         if (!response.ok) {
           const errorText = await response.text();
-          console.error('OpenAI API error response:', errorText);
+          console.error(`OpenAI API error response (attempt ${retryCount + 1}/${maxRetries}):`, errorText);
           
-          if (response.status === 429 && retryCount < maxRetries - 1) {
-            const waitTime = Math.pow(2, retryCount) * 1000;
-            console.log(`Rate limited (attempt ${retryCount + 1}/${maxRetries}), waiting ${waitTime}ms...`);
-            await delay(waitTime);
-            retryCount++;
-            continue;
+          if (response.status === 429) {
+            if (retryCount < maxRetries - 1) {
+              const waitTime = Math.pow(2, retryCount + 1) * 1000; // 2s, 4s, 8s
+              console.log(`Rate limited, waiting ${waitTime}ms before retry...`);
+              await delay(waitTime);
+              retryCount++;
+              continue;
+            }
           }
-          
           throw new Error(`OpenAI API error: ${response.status}`);
         }
 
@@ -102,20 +102,17 @@ serve(async (req) => {
         });
 
       } catch (error) {
-        lastError = error;
-        if (error.message.includes('429') && retryCount < maxRetries - 1) {
-          retryCount++;
-          const waitTime = Math.pow(2, retryCount) * 1000;
-          await delay(waitTime);
-          continue;
+        if (retryCount === maxRetries - 1) {
+          throw error;
         }
-        break;
+        retryCount++;
+        const waitTime = Math.pow(2, retryCount) * 1000;
+        console.log(`Error occurred, retrying in ${waitTime}ms...`);
+        await delay(waitTime);
       }
     }
 
-    // If we get here, all retries failed
-    console.error('All retries failed:', lastError);
-    throw lastError;
+    throw new Error('Max retries reached');
 
   } catch (error) {
     console.error('Error in generate-gift-suggestions function:', error);
