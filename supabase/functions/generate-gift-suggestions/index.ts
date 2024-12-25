@@ -8,7 +8,13 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+// Improved delay function with jitter for better rate limit handling
+const delay = (retryCount: number) => {
+  const baseDelay = 1000; // Start with 1 second
+  const maxDelay = 10000; // Cap at 10 seconds
+  const jitter = Math.random() * 1000; // Add random jitter up to 1 second
+  return Math.min(Math.pow(2, retryCount) * baseDelay + jitter, maxDelay);
+};
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -26,9 +32,9 @@ serve(async (req) => {
 
     console.log('Processing request with prompt:', prompt);
 
-    // Implement retry logic with exponential backoff
-    const maxRetries = 3;
+    const maxRetries = 5; // Increased max retries
     let retryCount = 0;
+    let lastError = null;
 
     while (retryCount < maxRetries) {
       try {
@@ -68,14 +74,14 @@ serve(async (req) => {
           console.error(`OpenAI API error response (attempt ${retryCount + 1}/${maxRetries}):`, errorText);
           
           if (response.status === 429) {
-            if (retryCount < maxRetries - 1) {
-              const waitTime = Math.pow(2, retryCount + 1) * 1000; // 2s, 4s, 8s
-              console.log(`Rate limited, waiting ${waitTime}ms before retry...`);
-              await delay(waitTime);
-              retryCount++;
-              continue;
-            }
+            const waitTime = delay(retryCount);
+            console.log(`Rate limited, waiting ${waitTime}ms before retry...`);
+            await new Promise(resolve => setTimeout(resolve, waitTime));
+            retryCount++;
+            continue;
           }
+
+          // For non-429 errors, throw immediately
           throw new Error(`OpenAI API error: ${response.status}`);
         }
 
@@ -110,21 +116,29 @@ serve(async (req) => {
         });
 
       } catch (error) {
-        if (retryCount === maxRetries - 1) {
-          throw error;
+        lastError = error;
+        if (error.message.includes('429') && retryCount < maxRetries - 1) {
+          const waitTime = delay(retryCount);
+          console.log(`Error occurred, retrying in ${waitTime}ms...`);
+          await new Promise(resolve => setTimeout(resolve, waitTime));
+          retryCount++;
+          continue;
         }
-        retryCount++;
-        const waitTime = Math.pow(2, retryCount) * 1000;
-        console.log(`Error occurred, retrying in ${waitTime}ms...`);
-        await delay(waitTime);
+        if (retryCount === maxRetries - 1) {
+          break;
+        }
       }
     }
 
-    throw new Error('Max retries reached');
+    // If we've exhausted all retries, throw the last error
+    throw lastError || new Error('Max retries reached');
 
   } catch (error) {
     console.error('Error in generate-gift-suggestions function:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    return new Response(JSON.stringify({ 
+      error: error.message,
+      details: 'The service is temporarily unavailable due to high demand. Please try again in a few moments.'
+    }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
