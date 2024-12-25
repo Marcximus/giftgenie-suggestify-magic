@@ -22,7 +22,6 @@ serve(async (req) => {
 
     console.log('Calling OpenAI API with prompt:', prompt);
 
-    // Call OpenAI API
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -57,8 +56,19 @@ serve(async (req) => {
       }),
     });
 
+    if (!response.ok) {
+      const errorData = await response.text();
+      console.error('OpenAI API error:', errorData);
+      throw new Error(`OpenAI API error: ${response.status}`);
+    }
+
     const data = await response.json();
     console.log('OpenAI API response:', data);
+
+    if (!data.choices || !data.choices[0] || !data.choices[0].message || !data.choices[0].message.content) {
+      console.error('Unexpected OpenAI API response structure:', data);
+      throw new Error('Invalid response from OpenAI API');
+    }
 
     let suggestions;
     try {
