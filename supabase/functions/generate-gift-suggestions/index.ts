@@ -8,12 +8,13 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Improved delay function with better jitter for rate limiting
+// Enhanced delay calculation with more aggressive backoff and randomization
 const calculateDelay = (retryCount: number) => {
-  const baseDelay = 1000; // 1 second base
-  const maxDelay = 15000; // 15 seconds max
-  const jitter = Math.random() * 2000; // Up to 2 seconds of jitter
-  return Math.min(Math.pow(2, retryCount) * baseDelay + jitter, maxDelay);
+  const baseDelay = 2000; // 2 seconds base delay
+  const maxDelay = 30000; // 30 seconds max
+  const exponentialDelay = Math.pow(2, retryCount) * baseDelay;
+  const jitter = Math.random() * exponentialDelay * 0.5; // Up to 50% jitter
+  return Math.min(exponentialDelay + jitter, maxDelay);
 };
 
 serve(async (req) => {
@@ -32,7 +33,7 @@ serve(async (req) => {
     const { prompt } = await req.json();
     console.log('Processing request with prompt:', prompt);
 
-    const maxRetries = 5;
+    const maxRetries = 3; // Reduced max retries but with longer delays
     let retryCount = 0;
     let lastError = null;
 
@@ -47,7 +48,7 @@ serve(async (req) => {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            model: "gpt-3.5-turbo",
+            model: "gpt-4o-mini", // Using more reliable model
             messages: [
               {
                 role: "system",
@@ -79,6 +80,7 @@ serve(async (req) => {
             error: errorText
           });
 
+          // Handle rate limits with longer delays
           if (response.status === 429) {
             const waitTime = calculateDelay(retryCount);
             console.log(`Rate limited, waiting ${waitTime}ms before retry...`);
@@ -91,7 +93,7 @@ serve(async (req) => {
         }
 
         const data = await response.json();
-        console.log('OpenAI API response received:', data);
+        console.log('OpenAI API response received');
 
         if (!data.choices?.[0]?.message?.content) {
           throw new Error('Invalid response format from OpenAI API');
@@ -122,9 +124,10 @@ serve(async (req) => {
 
       } catch (error) {
         lastError = error;
+        const waitTime = calculateDelay(retryCount);
+        console.log(`Error occurred (${error.message}), retrying in ${waitTime}ms...`);
+        
         if (retryCount < maxRetries - 1) {
-          const waitTime = calculateDelay(retryCount);
-          console.log(`Error occurred (${error.message}), retrying in ${waitTime}ms...`);
           await new Promise(resolve => setTimeout(resolve, waitTime));
           retryCount++;
           continue;
@@ -133,17 +136,16 @@ serve(async (req) => {
       }
     }
 
-    // If we've exhausted all retries, throw the last error
     console.error('Max retries reached. Last error:', lastError);
-    throw new Error('Max retries reached');
+    throw new Error('Service temporarily unavailable. Please try again in a few moments.');
 
   } catch (error) {
     console.error('Error in generate-gift-suggestions function:', error);
     return new Response(JSON.stringify({ 
       error: error.message,
-      details: 'The service is temporarily unavailable due to high demand. Please try again in a few moments.'
+      details: 'The service is temporarily unavailable. Please try again in a few moments.'
     }), {
-      status: 500,
+      status: 503, // Changed to 503 Service Unavailable
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }
