@@ -8,11 +8,11 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Improved delay function with jitter for better rate limit handling
-const delay = (retryCount: number) => {
-  const baseDelay = 1000; // Start with 1 second
-  const maxDelay = 10000; // Cap at 10 seconds
-  const jitter = Math.random() * 1000; // Add random jitter up to 1 second
+// Improved delay function with better jitter for rate limiting
+const calculateDelay = (retryCount: number) => {
+  const baseDelay = 1000; // 1 second base
+  const maxDelay = 15000; // 15 seconds max
+  const jitter = Math.random() * 2000; // Up to 2 seconds of jitter
   return Math.min(Math.pow(2, retryCount) * baseDelay + jitter, maxDelay);
 };
 
@@ -23,21 +23,23 @@ serve(async (req) => {
   }
 
   try {
-    const { prompt } = await req.json();
-
+    // Verify OpenAI API key is present
     if (!openAIApiKey) {
       console.error('OpenAI API key not configured');
       throw new Error('OpenAI API key not configured');
     }
 
+    const { prompt } = await req.json();
     console.log('Processing request with prompt:', prompt);
 
-    const maxRetries = 5; // Increased max retries
+    const maxRetries = 5;
     let retryCount = 0;
     let lastError = null;
 
     while (retryCount < maxRetries) {
       try {
+        console.log(`Attempt ${retryCount + 1}/${maxRetries} to call OpenAI API`);
+        
         const response = await fetch('https://api.openai.com/v1/chat/completions', {
           method: 'POST',
           headers: {
@@ -71,22 +73,25 @@ serve(async (req) => {
 
         if (!response.ok) {
           const errorText = await response.text();
-          console.error(`OpenAI API error response (attempt ${retryCount + 1}/${maxRetries}):`, errorText);
-          
+          console.error(`OpenAI API error response (attempt ${retryCount + 1}/${maxRetries}):`, {
+            status: response.status,
+            statusText: response.statusText,
+            error: errorText
+          });
+
           if (response.status === 429) {
-            const waitTime = delay(retryCount);
+            const waitTime = calculateDelay(retryCount);
             console.log(`Rate limited, waiting ${waitTime}ms before retry...`);
             await new Promise(resolve => setTimeout(resolve, waitTime));
             retryCount++;
             continue;
           }
 
-          // For non-429 errors, throw immediately
           throw new Error(`OpenAI API error: ${response.status}`);
         }
 
         const data = await response.json();
-        console.log('OpenAI API response:', data);
+        console.log('OpenAI API response received:', data);
 
         if (!data.choices?.[0]?.message?.content) {
           throw new Error('Invalid response format from OpenAI API');
@@ -117,21 +122,20 @@ serve(async (req) => {
 
       } catch (error) {
         lastError = error;
-        if (error.message.includes('429') && retryCount < maxRetries - 1) {
-          const waitTime = delay(retryCount);
-          console.log(`Error occurred, retrying in ${waitTime}ms...`);
+        if (retryCount < maxRetries - 1) {
+          const waitTime = calculateDelay(retryCount);
+          console.log(`Error occurred (${error.message}), retrying in ${waitTime}ms...`);
           await new Promise(resolve => setTimeout(resolve, waitTime));
           retryCount++;
           continue;
         }
-        if (retryCount === maxRetries - 1) {
-          break;
-        }
+        break;
       }
     }
 
     // If we've exhausted all retries, throw the last error
-    throw lastError || new Error('Max retries reached');
+    console.error('Max retries reached. Last error:', lastError);
+    throw new Error('Max retries reached');
 
   } catch (error) {
     console.error('Error in generate-gift-suggestions function:', error);
