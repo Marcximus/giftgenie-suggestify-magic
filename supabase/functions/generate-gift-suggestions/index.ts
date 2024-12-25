@@ -19,12 +19,13 @@ serve(async (req) => {
     const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
 
     if (!openAIApiKey) {
+      console.error('OpenAI API key not configured');
       throw new Error('OpenAI API key not configured');
     }
 
-    console.log('Calling OpenAI API with prompt:', prompt);
+    console.log('Processing request with prompt:', prompt);
 
-    // Add retry logic with exponential backoff
+    // Implement retry logic with exponential backoff
     const maxRetries = 3;
     let retryCount = 0;
     let lastError = null;
@@ -47,17 +48,7 @@ serve(async (req) => {
                 - title: A short, clear name for the gift
                 - description: A brief description of the gift
                 - priceRange: An estimated price range (e.g., "$20-$30")
-                - reason: Why this gift would be a good fit
-                
-                Example format:
-                [
-                  {
-                    "title": "Wireless Earbuds",
-                    "description": "High-quality wireless earbuds with noise cancellation",
-                    "priceRange": "$80-$120",
-                    "reason": "Perfect for music lovers who value convenience"
-                  }
-                ]`
+                - reason: Why this gift would be a good fit`
               },
               { role: 'user', content: prompt }
             ],
@@ -65,17 +56,18 @@ serve(async (req) => {
           }),
         });
 
-        if (response.status === 429) {
-          console.log(`Rate limited (attempt ${retryCount + 1}/${maxRetries}), waiting before retry...`);
-          const waitTime = Math.pow(2, retryCount) * 1000; // Exponential backoff: 1s, 2s, 4s
-          await delay(waitTime);
-          retryCount++;
-          continue;
-        }
-
         if (!response.ok) {
-          const errorData = await response.text();
-          console.error('OpenAI API error:', errorData);
+          const errorText = await response.text();
+          console.error('OpenAI API error response:', errorText);
+          
+          if (response.status === 429 && retryCount < maxRetries - 1) {
+            const waitTime = Math.pow(2, retryCount) * 1000;
+            console.log(`Rate limited (attempt ${retryCount + 1}/${maxRetries}), waiting ${waitTime}ms...`);
+            await delay(waitTime);
+            retryCount++;
+            continue;
+          }
+          
           throw new Error(`OpenAI API error: ${response.status}`);
         }
 
