@@ -6,6 +6,8 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -22,39 +24,55 @@ serve(async (req) => {
 
     console.log('Calling OpenAI API with prompt:', prompt);
 
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: [
-          {
-            role: 'system',
-            content: `You are a gift suggestion assistant. Generate exactly 3 gift suggestions based on the description provided. 
-            Format your response as a JSON array of objects, where each object has these exact fields:
-            - title: A short, clear name for the gift
-            - description: A brief description of the gift
-            - priceRange: An estimated price range (e.g., "$20-$30")
-            - reason: Why this gift would be a good fit
-            
-            Example format:
-            [
-              {
-                "title": "Wireless Earbuds",
-                "description": "High-quality wireless earbuds with noise cancellation",
-                "priceRange": "$80-$120",
-                "reason": "Perfect for music lovers who value convenience"
-              }
-            ]`
-          },
-          { role: 'user', content: prompt }
-        ],
-        temperature: 0.7,
-      }),
-    });
+    // Add retry logic for rate limits
+    let retries = 3;
+    let response;
+    
+    while (retries > 0) {
+      response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${openAIApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o-mini',
+          messages: [
+            {
+              role: 'system',
+              content: `You are a gift suggestion assistant. Generate exactly 3 gift suggestions based on the description provided. 
+              Format your response as a JSON array of objects, where each object has these exact fields:
+              - title: A short, clear name for the gift
+              - description: A brief description of the gift
+              - priceRange: An estimated price range (e.g., "$20-$30")
+              - reason: Why this gift would be a good fit
+              
+              Example format:
+              [
+                {
+                  "title": "Wireless Earbuds",
+                  "description": "High-quality wireless earbuds with noise cancellation",
+                  "priceRange": "$80-$120",
+                  "reason": "Perfect for music lovers who value convenience"
+                }
+              ]`
+            },
+            { role: 'user', content: prompt }
+          ],
+          temperature: 0.7,
+        }),
+      });
+
+      if (response.status === 429) {
+        console.log('Rate limited, retrying after delay...');
+        retries--;
+        if (retries > 0) {
+          await delay(2000); // Wait 2 seconds before retrying
+          continue;
+        }
+      }
+      break;
+    }
 
     if (!response.ok) {
       const errorData = await response.text();
