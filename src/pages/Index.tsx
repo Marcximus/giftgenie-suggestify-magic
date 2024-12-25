@@ -1,34 +1,33 @@
 import { useState } from 'react';
 import { SearchBox } from '@/components/SearchBox';
 import { ProductCard } from '@/components/ProductCard';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from "@/integrations/supabase/client";
+
+interface GiftSuggestion {
+  title: string;
+  description: string;
+  priceRange: string;
+  reason: string;
+}
 
 const Index = () => {
   const [isLoading, setIsLoading] = useState(false);
-  const [products, setProducts] = useState<any[]>([]);
+  const [suggestions, setSuggestions] = useState<GiftSuggestion[]>([]);
   const { toast } = useToast();
 
   const handleSearch = async (query: string) => {
     setIsLoading(true);
     try {
-      // This is where we'll integrate with OpenAI and Amazon APIs
-      // For now, showing a toast to indicate we need API keys
-      toast({
-        title: "API Configuration Required",
-        description: "Please configure the OpenAI API key to enable gift suggestions.",
+      const { data, error } = await supabase.functions.invoke('generate-gift-suggestions', {
+        body: { prompt: query }
       });
-      
-      // Placeholder data for demonstration
-      setProducts([
-        {
-          title: "Example Product",
-          description: "This is a placeholder product. Configure APIs to see real suggestions.",
-          price: "$XX.XX",
-          amazonUrl: "#",
-          imageUrl: "/placeholder.svg"
-        }
-      ]);
+
+      if (error) throw error;
+
+      setSuggestions(data.suggestions);
     } catch (error) {
+      console.error('Error getting suggestions:', error);
       toast({
         title: "Error",
         description: "Failed to get gift suggestions. Please try again.",
@@ -44,10 +43,17 @@ const Index = () => {
       <div className="search-container">
         <SearchBox onSearch={handleSearch} isLoading={isLoading} />
         
-        {products.length > 0 && (
+        {suggestions.length > 0 && (
           <div className="results-grid">
-            {products.map((product, index) => (
-              <ProductCard key={index} {...product} />
+            {suggestions.map((suggestion, index) => (
+              <ProductCard
+                key={index}
+                title={suggestion.title}
+                description={`${suggestion.description}\n\nWhy this gift? ${suggestion.reason}`}
+                price={suggestion.priceRange}
+                amazonUrl="#"
+                imageUrl="/placeholder.svg"
+              />
             ))}
           </div>
         )}
