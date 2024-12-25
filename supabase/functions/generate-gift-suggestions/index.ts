@@ -40,7 +40,9 @@ serve(async (req) => {
             - title: A short, clear name for the gift
             - description: A brief description of the gift
             - priceRange: An estimated price range (e.g., "$20-$30")
-            - reason: Why this gift would be a good fit`
+            - reason: Why this gift would be a good fit
+            
+            IMPORTANT: Your response must be valid JSON that can be parsed. Do not include any additional text or formatting.`
           },
           {
             role: "user",
@@ -78,22 +80,28 @@ serve(async (req) => {
     }
 
     const data = await response.json();
-    console.log('OpenAI API response received');
+    console.log('OpenAI API response:', data);
 
     if (!data.choices?.[0]?.message?.content) {
+      console.error('Invalid response format from OpenAI API:', data);
       throw new Error('Invalid response format from OpenAI API');
     }
 
     let suggestions;
     try {
-      suggestions = JSON.parse(data.choices[0].message.content);
+      const content = data.choices[0].message.content;
+      console.log('Attempting to parse content:', content);
+      suggestions = JSON.parse(content);
       
+      // Validate the structure of the suggestions
       if (!Array.isArray(suggestions) || suggestions.length !== 3) {
-        throw new Error('Invalid suggestions format');
+        console.error('Invalid suggestions array:', suggestions);
+        throw new Error('Invalid suggestions format - expected array of 3 items');
       }
 
-      suggestions.forEach(suggestion => {
+      suggestions.forEach((suggestion, index) => {
         if (!suggestion.title || !suggestion.description || !suggestion.priceRange || !suggestion.reason) {
+          console.error(`Invalid suggestion at index ${index}:`, suggestion);
           throw new Error('Missing required fields in suggestion');
         }
       });
