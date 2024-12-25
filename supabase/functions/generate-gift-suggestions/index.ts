@@ -39,10 +39,10 @@ serve(async (req) => {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            model: 'gpt-4o-mini',
+            model: "gpt-3.5-turbo",
             messages: [
               {
-                role: 'system',
+                role: "system",
                 content: `You are a gift suggestion assistant. Generate exactly 3 gift suggestions based on the description provided. 
                 Format your response as a JSON array of objects, where each object has these exact fields:
                 - title: A short, clear name for the gift
@@ -50,9 +50,16 @@ serve(async (req) => {
                 - priceRange: An estimated price range (e.g., "$20-$30")
                 - reason: Why this gift would be a good fit`
               },
-              { role: 'user', content: prompt }
+              {
+                role: "user",
+                content: prompt
+              }
             ],
             temperature: 0.7,
+            max_tokens: 1000,
+            top_p: 1,
+            frequency_penalty: 0,
+            presence_penalty: 0
           }),
         });
 
