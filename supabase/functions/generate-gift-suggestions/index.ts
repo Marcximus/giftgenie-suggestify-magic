@@ -36,13 +36,12 @@ serve(async (req) => {
           {
             role: "system",
             content: `You are a gift suggestion assistant. Generate exactly 3 gift suggestions based on the description provided. 
-            Format your response as a JSON array of objects, where each object has these exact fields:
+            Return ONLY a raw JSON array of objects, with NO markdown formatting, explanation, or additional text.
+            Each object must have these exact fields:
             - title: A short, clear name for the gift
             - description: A brief description of the gift
             - priceRange: An estimated price range (e.g., "$20-$30")
-            - reason: Why this gift would be a good fit
-            
-            IMPORTANT: Your response must be valid JSON that can be parsed. Do not include any additional text or formatting.`
+            - reason: Why this gift would be a good fit`
           },
           {
             role: "user",
@@ -90,8 +89,13 @@ serve(async (req) => {
     let suggestions;
     try {
       const content = data.choices[0].message.content;
-      console.log('Attempting to parse content:', content);
-      suggestions = JSON.parse(content);
+      console.log('Raw content from OpenAI:', content);
+      
+      // Clean the content by removing any markdown formatting
+      const cleanedContent = content.replace(/```json\n?|\n?```/g, '').trim();
+      console.log('Cleaned content:', cleanedContent);
+      
+      suggestions = JSON.parse(cleanedContent);
       
       // Validate the structure of the suggestions
       if (!Array.isArray(suggestions) || suggestions.length !== 3) {
