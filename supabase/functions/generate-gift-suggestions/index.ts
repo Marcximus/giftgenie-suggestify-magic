@@ -34,10 +34,26 @@ serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: 'You are a helpful gift suggestion assistant. Provide 3 specific gift suggestions based on the description provided. For each suggestion, include: title, description, estimated price range, and why it would be a good fit. Format the response as a JSON array with objects containing these fields.'
+            content: `You are a gift suggestion assistant. Generate exactly 3 gift suggestions based on the description provided. 
+            Format your response as a JSON array of objects, where each object has these exact fields:
+            - title: A short, clear name for the gift
+            - description: A brief description of the gift
+            - priceRange: An estimated price range (e.g., "$20-$30")
+            - reason: Why this gift would be a good fit
+            
+            Example format:
+            [
+              {
+                "title": "Wireless Earbuds",
+                "description": "High-quality wireless earbuds with noise cancellation",
+                "priceRange": "$80-$120",
+                "reason": "Perfect for music lovers who value convenience"
+              }
+            ]`
           },
           { role: 'user', content: prompt }
         ],
+        temperature: 0.7,
       }),
     });
 
@@ -47,14 +63,23 @@ serve(async (req) => {
     let suggestions;
     try {
       suggestions = JSON.parse(data.choices[0].message.content);
+      
+      // Validate the response format
+      if (!Array.isArray(suggestions) || suggestions.length === 0) {
+        throw new Error('Invalid response format');
+      }
+      
+      // Validate each suggestion has required fields
+      suggestions.forEach(suggestion => {
+        if (!suggestion.title || !suggestion.description || !suggestion.priceRange || !suggestion.reason) {
+          throw new Error('Missing required fields in suggestion');
+        }
+      });
+      
     } catch (e) {
-      console.error('Failed to parse OpenAI response as JSON:', e);
-      suggestions = [{
-        title: "Error parsing suggestions",
-        description: "Failed to process the AI response. Please try again.",
-        priceRange: "N/A",
-        reason: "Error occurred"
-      }];
+      console.error('Failed to parse OpenAI response:', e);
+      console.error('Raw response content:', data.choices[0].message.content);
+      throw new Error('Failed to parse AI response');
     }
 
     return new Response(JSON.stringify({ suggestions }), {
