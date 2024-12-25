@@ -1,1 +1,4 @@
 project_id = "ckcqttsdpxfbpkzljctl"
+
+[functions.generate-gift-suggestions]
+verify_jwt = false
