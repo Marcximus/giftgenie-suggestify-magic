@@ -11,6 +11,11 @@ import {
   ShoppingBag, Dumbbell, Palette, Cat, Coffee 
 } from 'lucide-react';
 
+const romanticInterests: Interest[] = [
+  { label: 'Anniversary', icon: <Heart /> },
+  { label: "Valentine's Day", icon: <Heart /> },
+];
+
 export const getInterests = (person: string, ageRange: string): Interest[] => {
   const youngAdult = ['20-30', '30-40'].includes(ageRange);
   const middleAged = ['40-50', '50-60'].includes(ageRange);
@@ -19,6 +24,60 @@ export const getInterests = (person: string, ageRange: string): Interest[] => {
   const teen = ['15-19'].includes(ageRange);
 
   switch (person.toLowerCase()) {
+    case 'wife':
+      return [
+        ...romanticInterests,
+        { label: 'Fashion', icon: <ShoppingBag /> },
+        { label: 'Jewelry', icon: <Heart /> },
+        ...lifestyleInterests,
+        ...homeInterests,
+        ...commonInterests,
+      ];
+    
+    case 'husband':
+      return [
+        ...romanticInterests,
+        ...techInterests,
+        { label: 'Sports', icon: <Trophy /> },
+        { label: 'DIY', icon: <Home /> },
+        ...commonInterests,
+      ];
+
+    case 'boyfriend':
+      return youngAdult ? [
+        ...romanticInterests,
+        ...techInterests,
+        { label: 'Sports', icon: <Trophy /> },
+        ...commonInterests,
+        { label: 'Fitness', icon: <Dumbbell /> },
+        { label: 'Fashion', icon: <ShoppingBag /> },
+        { label: 'Coffee', icon: <Coffee /> },
+        ...creativeInterests,
+      ] : [
+        ...romanticInterests,
+        { label: 'Sports', icon: <Trophy /> },
+        ...techInterests,
+        ...commonInterests,
+      ];
+
+    case 'girlfriend':
+      return youngAdult ? [
+        ...romanticInterests,
+        { label: 'Fashion', icon: <ShoppingBag /> },
+        { label: 'Beauty', icon: <Heart /> },
+        ...creativeInterests,
+        ...commonInterests,
+        { label: 'Fitness', icon: <Dumbbell /> },
+        { label: 'Shopping', icon: <ShoppingBag /> },
+        ...homeInterests,
+      ] : [
+        ...romanticInterests,
+        { label: 'Fashion', icon: <ShoppingBag /> },
+        { label: 'Beauty', icon: <Heart /> },
+        ...commonInterests,
+        ...creativeInterests,
+      ];
+    
     case 'father':
       return youngAdult ? [
         ...techInterests,
@@ -109,37 +168,6 @@ export const getInterests = (person: string, ageRange: string): Interest[] => {
         { label: 'Sports', icon: <Trophy /> },
         { label: 'Beauty', icon: <Heart /> },
       ] : commonInterests;
-    
-    case 'boyfriend':
-      return youngAdult ? [
-        ...techInterests,
-        { label: 'Sports', icon: <Trophy /> },
-        ...commonInterests,
-        { label: 'Fitness', icon: <Dumbbell /> },
-        { label: 'Fashion', icon: <ShoppingBag /> },
-        { label: 'Coffee', icon: <Coffee /> },
-        ...creativeInterests,
-      ] : [
-        { label: 'Sports', icon: <Trophy /> },
-        ...techInterests,
-        ...commonInterests,
-      ];
-
-    case 'girlfriend':
-      return youngAdult ? [
-        { label: 'Fashion', icon: <ShoppingBag /> },
-        { label: 'Beauty', icon: <Heart /> },
-        ...creativeInterests,
-        ...commonInterests,
-        { label: 'Fitness', icon: <Dumbbell /> },
-        { label: 'Shopping', icon: <ShoppingBag /> },
-        ...homeInterests,
-      ] : [
-        { label: 'Fashion', icon: <ShoppingBag /> },
-        { label: 'Beauty', icon: <Heart /> },
-        ...commonInterests,
-        ...creativeInterests,
-      ];
     
     case 'colleague':
       return [

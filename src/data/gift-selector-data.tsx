@@ -2,6 +2,8 @@ import { Person, AgeRange, PriceRange } from '@/types/gift-selector';
 import { User, Users, Baby, Heart } from 'lucide-react';
 
 export const people: Person[] = [
+  { label: 'Wife', icon: <Heart /> },
+  { label: 'Husband', icon: <Heart /> },
   { label: 'Father', icon: <User /> },
   { label: 'Mother', icon: <User /> },
   { label: 'Brother', icon: <User /> },
