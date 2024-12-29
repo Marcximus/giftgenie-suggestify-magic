@@ -33,22 +33,25 @@ export const DynamicGiftSelector = ({
     }
   }, [visible]);
 
-  const updateCurrentQuery = () => {
+  const updateSearchText = (phase: string, value: string) => {
     let query = '';
-    if (selectedPerson) {
-      query = `Gift for ${selectedPerson.toLowerCase()}`;
-      if (selectedAge) {
-        query += ` (${selectedAge} years old)`;
-      }
-      if (selectedPrice) {
-        query += ` - Budget: ${selectedPrice}`;
-      }
+    
+    if (phase === 'person') {
+      query = `Gift for ${value.toLowerCase()}`;
+    } else if (phase === 'age' && selectedPerson) {
+      query = `Gift for ${selectedPerson.toLowerCase()} (${value} years old)`;
+    } else if (phase === 'price' && selectedPerson && selectedAge) {
+      query = `Gift for ${selectedPerson.toLowerCase()} (${selectedAge} years old) - Budget: ${value}`;
+    } else if (phase === 'interest' && selectedPerson && selectedAge && selectedPrice) {
+      query = `Gift ideas for a ${selectedAge} year old ${selectedPerson.toLowerCase()} who likes ${value.toLowerCase()} with a budget of ${selectedPrice}`;
     }
+    
     return query;
   };
 
   const handleSelection = (phase: string, value: string) => {
-    let query = '';
+    const query = updateSearchText(phase, value);
+    
     switch (phase) {
       case 'person':
         setSelectedPerson(value);
@@ -63,16 +66,13 @@ export const DynamicGiftSelector = ({
         setCurrentPhase('interest');
         break;
       case 'interest':
-        query = `Gift ideas for a ${selectedAge} year old ${selectedPerson.toLowerCase()} who likes ${value.toLowerCase()} with a budget of ${selectedPrice}`;
+        // Only trigger the API call on the final interest selection
         onSelectionComplete(query);
-        break;
+        return;
     }
     
-    // Update search box after state changes
-    setTimeout(() => {
-      const updatedQuery = phase === 'interest' ? query : updateCurrentQuery();
-      onSelectionComplete(updatedQuery);
-    }, 0);
+    // Update the search text without triggering the API call
+    setCurrentQuery(query);
   };
 
   if (!visible) return null;

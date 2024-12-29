@@ -68,7 +68,7 @@ export const SearchBox = ({ onSearch, isLoading }: SearchBoxProps) => {
       </div>
       
       <DynamicGiftSelector 
-        onSelectionComplete={handleSelectorComplete} 
+        onSelectionComplete={handleSelectorComplete}
         onReset={handleReset}
         visible={showSelector}
       />
