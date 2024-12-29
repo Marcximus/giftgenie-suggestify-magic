@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search } from 'lucide-react';
+import { DynamicGiftSelector } from './DynamicGiftSelector';
 
 interface SearchBoxProps {
   onSearch: (query: string) => void;
@@ -10,6 +11,7 @@ interface SearchBoxProps {
 
 export const SearchBox = ({ onSearch, isLoading }: SearchBoxProps) => {
   const [query, setQuery] = useState('');
+  const [showSelector, setShowSelector] = useState(true);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -18,12 +20,18 @@ export const SearchBox = ({ onSearch, isLoading }: SearchBoxProps) => {
     }
   };
 
+  const handleSelectorComplete = (generatedQuery: string) => {
+    setQuery(generatedQuery);
+    onSearch(generatedQuery);
+    setShowSelector(false);
+  };
+
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="flex flex-col space-y-2">
         <h1 className="text-3xl font-bold text-center">Find the Perfect Gift</h1>
         <p className="text-muted-foreground text-center">
-          Describe the person or occasion, and we'll suggest the perfect gifts
+          Describe the person or occasion, or use our gift finder below
         </p>
       </div>
       <div className="flex space-x-2">
@@ -41,6 +49,10 @@ export const SearchBox = ({ onSearch, isLoading }: SearchBoxProps) => {
           )}
         </Button>
       </div>
+      
+      {showSelector && (
+        <DynamicGiftSelector onSelectionComplete={handleSelectorComplete} />
+      )}
     </form>
   );
 };
