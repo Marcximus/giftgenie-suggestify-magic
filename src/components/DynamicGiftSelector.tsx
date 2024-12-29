@@ -7,12 +7,14 @@ import { getInterests } from '@/utils/interest-utils';
 
 interface SelectorProps {
   onSelectionComplete: (query: string) => void;
+  onUpdate: (query: string) => void;
   onReset: () => void;
   visible: boolean;
 }
 
 export const DynamicGiftSelector = ({ 
   onSelectionComplete, 
+  onUpdate,
   onReset,
   visible 
 }: SelectorProps) => {
@@ -20,16 +22,13 @@ export const DynamicGiftSelector = ({
   const [selectedPerson, setSelectedPerson] = useState<string>('');
   const [selectedAge, setSelectedAge] = useState<string>('');
   const [selectedPrice, setSelectedPrice] = useState<string>('');
-  const [currentQuery, setCurrentQuery] = useState<string>('');
 
-  // Reset internal state when visibility changes
   useEffect(() => {
     if (visible) {
       setCurrentPhase('person');
       setSelectedPerson('');
       setSelectedAge('');
       setSelectedPrice('');
-      setCurrentQuery('');
     }
   }, [visible]);
 
@@ -72,7 +71,7 @@ export const DynamicGiftSelector = ({
     }
     
     // Update the search text without triggering the API call
-    setCurrentQuery(query);
+    onUpdate(query);
   };
 
   if (!visible) return null;

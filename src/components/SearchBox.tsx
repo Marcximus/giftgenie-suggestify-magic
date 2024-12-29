@@ -27,6 +27,10 @@ export const SearchBox = ({ onSearch, isLoading }: SearchBoxProps) => {
     setShowSelector(false);
   };
 
+  const handleSelectorUpdate = (currentQuery: string) => {
+    setQuery(currentQuery);
+  };
+
   const handleReset = () => {
     setQuery('');
     setShowSelector(true);
@@ -69,6 +73,7 @@ export const SearchBox = ({ onSearch, isLoading }: SearchBoxProps) => {
       
       <DynamicGiftSelector 
         onSelectionComplete={handleSelectorComplete}
+        onUpdate={handleSelectorUpdate}
         onReset={handleReset}
         visible={showSelector}
       />
