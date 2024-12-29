@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
-import { Calendar, DollarSign, RefreshCw } from 'lucide-react';
+import { Calendar, DollarSign } from 'lucide-react';
 import { cn } from "@/lib/utils";
 import { people, ageRanges, priceRanges } from '@/data/gift-selector-data';
 import { getInterests } from '@/utils/interest-utils';
@@ -21,13 +21,15 @@ export const DynamicGiftSelector = ({
   const [selectedAge, setSelectedAge] = useState<string>('');
   const [selectedPrice, setSelectedPrice] = useState<string>('');
 
-  const resetSelector = () => {
-    setCurrentPhase('person');
-    setSelectedPerson('');
-    setSelectedAge('');
-    setSelectedPrice('');
-    onReset();
-  };
+  // Reset internal state when visibility changes
+  useEffect(() => {
+    if (visible) {
+      setCurrentPhase('person');
+      setSelectedPerson('');
+      setSelectedAge('');
+      setSelectedPrice('');
+    }
+  }, [visible]);
 
   const handleSelection = (phase: string, value: string) => {
     switch (phase) {
@@ -46,7 +48,6 @@ export const DynamicGiftSelector = ({
       case 'interest':
         const query = `Gift ideas for a ${selectedAge} year old ${selectedPerson.toLowerCase()} who likes ${value.toLowerCase()} with a budget of ${selectedPrice}`;
         onSelectionComplete(query);
-        setCurrentPhase('complete');
         break;
     }
   };
