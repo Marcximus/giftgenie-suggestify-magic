@@ -1,31 +1,13 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Button } from "@/components/ui/button";
-import { User, Users, Baby, Heart, Music, Computer, CookingPot, Home, Camera, Bike, Plane, DollarSign, Calendar } from 'lucide-react';
+import { Calendar, DollarSign } from 'lucide-react';
 import { cn } from "@/lib/utils";
+import { people, ageRanges, priceRanges } from '@/data/gift-selector-data';
+import { getInterests } from '@/utils/interest-utils';
 
 interface SelectorProps {
   onSelectionComplete: (query: string) => void;
 }
-
-type Person = {
-  label: string;
-  icon: JSX.Element;
-};
-
-type AgeRange = {
-  label: string;
-  range: string;
-};
-
-type PriceRange = {
-  label: string;
-  range: string;
-};
-
-type Interest = {
-  label: string;
-  icon: JSX.Element;
-};
 
 export const DynamicGiftSelector = ({ onSelectionComplete }: SelectorProps) => {
   const [currentPhase, setCurrentPhase] = useState<'person' | 'age' | 'price' | 'interest' | 'complete'>('person');
@@ -33,85 +15,6 @@ export const DynamicGiftSelector = ({ onSelectionComplete }: SelectorProps) => {
   const [selectedAge, setSelectedAge] = useState<string>('');
   const [selectedPrice, setSelectedPrice] = useState<string>('');
   const [visible, setVisible] = useState(true);
-
-  const people: Person[] = [
-    { label: 'Father', icon: <User /> },
-    { label: 'Mother', icon: <User /> },
-    { label: 'Brother', icon: <User /> },
-    { label: 'Sister', icon: <User /> },
-    { label: 'Grandma', icon: <Heart /> },
-    { label: 'Grandpa', icon: <Heart /> },
-    { label: 'Son', icon: <Baby /> },
-    { label: 'Daughter', icon: <Baby /> },
-    { label: 'Colleague', icon: <Users /> },
-  ];
-
-  const ageRanges: AgeRange[] = [
-    { label: '0+', range: '0-4' },
-    { label: '5+', range: '5-9' },
-    { label: '10+', range: '10-14' },
-    { label: '15+', range: '15-19' },
-    { label: '20-30', range: '20-30' },
-    { label: '30-40', range: '30-40' },
-    { label: '40-50', range: '40-50' },
-    { label: '50-60', range: '50-60' },
-    { label: '60-80', range: '60-80' },
-    { label: '80+', range: '80+' },
-  ];
-
-  const priceRanges: PriceRange[] = [
-    { label: '$5-20', range: '5-20' },
-    { label: '$20-40', range: '20-40' },
-    { label: '$40-60', range: '40-60' },
-    { label: '$60-100', range: '60-100' },
-    { label: '$100-200', range: '100-200' },
-    { label: '$200-400', range: '200-400' },
-    { label: '$400-800', range: '400-800' },
-    { label: '$800+', range: '800+' },
-  ];
-
-  const getInterests = (person: string, ageRange: string): Interest[] => {
-    const youngAdult = ['20-30', '30-40'].includes(ageRange);
-    const middleAged = ['40-50', '50-60'].includes(ageRange);
-    const senior = ['60-80', '80+'].includes(ageRange);
-    const child = ['0-4', '5-9', '10-14'].includes(ageRange);
-    const teen = ['15-19'].includes(ageRange);
-
-    const commonInterests = [
-      { label: 'Music', icon: <Music /> },
-      { label: 'Travel', icon: <Plane /> },
-    ];
-
-    switch (person.toLowerCase()) {
-      case 'father':
-      case 'brother':
-        return [
-          { label: 'Tech', icon: <Computer /> },
-          { label: 'Sports', icon: <Bike /> },
-          ...commonInterests,
-        ];
-      case 'mother':
-      case 'sister':
-        return middleAged ? [
-          { label: 'Cooking', icon: <CookingPot /> },
-          { label: 'Home Decor', icon: <Home /> },
-          { label: 'Photography', icon: <Camera /> },
-          ...commonInterests,
-        ] : [
-          { label: 'Tech', icon: <Computer /> },
-          ...commonInterests,
-        ];
-      case 'grandma':
-      case 'grandpa':
-        return [
-          { label: 'Home Decor', icon: <Home /> },
-          { label: 'Cooking', icon: <CookingPot /> },
-          ...commonInterests,
-        ];
-      default:
-        return commonInterests;
-    }
-  };
 
   const handleSelection = (phase: string, value: string) => {
     switch (phase) {
