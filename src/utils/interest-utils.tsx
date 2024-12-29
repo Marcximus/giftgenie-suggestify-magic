@@ -1,7 +1,8 @@
+import { Interest } from '@/types/gift-selector';
 import { 
   Music, Computer, Bike, CookingPot, Home, Camera, Plane, Book, 
   Gamepad, Dumbbell, Palette, Leaf, Coffee, Wine, ShoppingBag, Cat,
-  Puzzle, Bot, Rocket, Heart, Shirt, Microscope, Football, 
+  Puzzle, Bot, Rocket, Heart, Shirt, Microscope, Trophy, 
   Brush, Dice1, Video, Smartphone
 } from 'lucide-react';
 
@@ -44,13 +45,13 @@ export const getInterests = (person: string, ageRange: string): Interest[] => {
     case 'father':
       return youngAdult ? [
         ...techInterests,
-        { label: 'Sports', icon: <Bike /> },
+        { label: 'Sports', icon: <Trophy /> },
         { label: 'BBQ', icon: <CookingPot /> },
         { label: 'DIY', icon: <Home /> },
         ...commonInterests,
       ] : [
         { label: 'DIY', icon: <Home /> },
-        { label: 'Sports', icon: <Bike /> },
+        { label: 'Sports', icon: <Trophy /> },
         { label: 'BBQ', icon: <CookingPot /> },
         ...commonInterests,
       ];
@@ -85,12 +86,12 @@ export const getInterests = (person: string, ageRange: string): Interest[] => {
     case 'brother':
       return youngAdult ? [
         ...techInterests,
-        { label: 'Sports', icon: <Bike /> },
+        { label: 'Sports', icon: <Trophy /> },
         { label: 'Fitness', icon: <Dumbbell /> },
         ...commonInterests,
       ] : [
         { label: 'Gaming', icon: <Gamepad /> },
-        { label: 'Sports', icon: <Bike /> },
+        { label: 'Sports', icon: <Trophy /> },
         { label: 'Music', icon: <Music /> },
         ...commonInterests,
       ];
@@ -119,7 +120,7 @@ export const getInterests = (person: string, ageRange: string): Interest[] => {
           { label: 'Toys', icon: <Puzzle /> },
           { label: 'Robots', icon: <Bot /> },
           { label: 'Space', icon: <Rocket /> },
-          { label: 'Sports', icon: <Football /> },
+          { label: 'Sports', icon: <Trophy /> },
           { label: 'Drawing', icon: <Brush /> },
           { label: 'Board Games', icon: <Dice1 /> },
           { label: 'Science', icon: <Microscope /> },
@@ -130,7 +131,7 @@ export const getInterests = (person: string, ageRange: string): Interest[] => {
       }
       return teen ? [
         { label: 'Gaming', icon: <Gamepad /> },
-        { label: 'Sports', icon: <Football /> },
+        { label: 'Sports', icon: <Trophy /> },
         { label: 'Tech', icon: <Computer /> },
         { label: 'Music', icon: <Music /> },
         { label: 'Fashion', icon: <Shirt /> },
@@ -148,7 +149,7 @@ export const getInterests = (person: string, ageRange: string): Interest[] => {
           { label: 'Animals', icon: <Cat /> },
           { label: 'Science', icon: <Microscope /> },
           { label: 'Books', icon: <Book /> },
-          { label: 'Sports', icon: <Football /> },
+          { label: 'Sports', icon: <Trophy /> },
           { label: 'Music', icon: <Music /> },
           { label: 'Building', icon: <Home /> },
           { label: 'Board Games', icon: <Dice1 /> },
@@ -160,7 +161,7 @@ export const getInterests = (person: string, ageRange: string): Interest[] => {
         { label: 'Music', icon: <Music /> },
         { label: 'Dance', icon: <Music /> },
         { label: 'Tech', icon: <Computer /> },
-        { label: 'Sports', icon: <Football /> },
+        { label: 'Sports', icon: <Trophy /> },
         { label: 'Beauty', icon: <Heart /> },
         { label: 'Videos', icon: <Video /> },
         { label: 'Phones', icon: <Smartphone /> },
