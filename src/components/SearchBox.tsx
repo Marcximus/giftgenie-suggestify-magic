@@ -45,15 +45,16 @@ export const SearchBox = ({ onSearch, isLoading }: SearchBoxProps) => {
         </p>
       </div>
       <div className="flex flex-col sm:flex-row gap-2 w-full">
-        <div className="flex-1 min-w-0"> {/* Add min-w-0 to prevent flex item from overflowing */}
-          <Input
+        <div className="flex-1 min-w-0">
+          <textarea
             placeholder="E.g., 'Tech-savvy dad who loves cooking'"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            className="w-full text-sm sm:text-base overflow-ellipsis"
+            className="w-full min-h-[40px] max-h-[120px] text-sm sm:text-base p-2 rounded-md border border-input bg-background resize-y overflow-auto focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            style={{ lineHeight: '1.5' }}
           />
         </div>
-        <div className="flex gap-2 shrink-0"> {/* Add shrink-0 to prevent buttons from shrinking */}
+        <div className="flex gap-2 shrink-0">
           <Button type="submit" disabled={isLoading} className="w-full sm:w-auto">
             {isLoading ? (
               <div className="loading-spinner">⌛</div>

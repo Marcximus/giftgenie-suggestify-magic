@@ -54,10 +54,11 @@
 }
 
 /* Handle text overflow */
-input[type="text"],
-input[type="search"],
-.input {
-  @apply text-ellipsis;
-  max-width: 100%;
-  overflow: hidden;
+textarea {
+  @apply transition-all duration-200;
+  min-height: 40px;
+}
+
+textarea:focus {
+  height: auto;
 }
