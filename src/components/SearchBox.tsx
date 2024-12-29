@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search } from 'lucide-react';
+import { Search, RefreshCw } from 'lucide-react';
 import { DynamicGiftSelector } from './DynamicGiftSelector';
 
 interface SearchBoxProps {
@@ -26,6 +26,11 @@ export const SearchBox = ({ onSearch, isLoading }: SearchBoxProps) => {
     setShowSelector(false);
   };
 
+  const handleReset = () => {
+    setQuery('');
+    setShowSelector(true);
+  };
+
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="flex flex-col space-y-2">
@@ -48,11 +53,24 @@ export const SearchBox = ({ onSearch, isLoading }: SearchBoxProps) => {
             <Search className="h-4 w-4" />
           )}
         </Button>
+        {!showSelector && (
+          <Button 
+            type="button" 
+            variant="outline" 
+            onClick={handleReset}
+            className="flex items-center gap-2"
+          >
+            <RefreshCw className="h-4 w-4" />
+            Look for another gift
+          </Button>
+        )}
       </div>
       
-      {showSelector && (
-        <DynamicGiftSelector onSelectionComplete={handleSelectorComplete} />
-      )}
+      <DynamicGiftSelector 
+        onSelectionComplete={handleSelectorComplete} 
+        onReset={handleReset}
+        visible={showSelector}
+      />
     </form>
   );
 };

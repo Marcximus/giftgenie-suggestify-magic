@@ -1,20 +1,25 @@
 import { useState } from 'react';
 import { Button } from "@/components/ui/button";
-import { Calendar, DollarSign } from 'lucide-react';
+import { Calendar, DollarSign, RefreshCw } from 'lucide-react';
 import { cn } from "@/lib/utils";
 import { people, ageRanges, priceRanges } from '@/data/gift-selector-data';
 import { getInterests } from '@/utils/interest-utils';
 
 interface SelectorProps {
   onSelectionComplete: (query: string) => void;
+  onReset: () => void;
+  visible: boolean;
 }
 
-export const DynamicGiftSelector = ({ onSelectionComplete }: SelectorProps) => {
+export const DynamicGiftSelector = ({ 
+  onSelectionComplete, 
+  onReset, 
+  visible 
+}: SelectorProps) => {
   const [currentPhase, setCurrentPhase] = useState<'person' | 'age' | 'price' | 'interest' | 'complete'>('person');
   const [selectedPerson, setSelectedPerson] = useState<string>('');
   const [selectedAge, setSelectedAge] = useState<string>('');
   const [selectedPrice, setSelectedPrice] = useState<string>('');
-  const [visible, setVisible] = useState(true);
 
   const handleSelection = (phase: string, value: string) => {
     switch (phase) {
@@ -31,18 +36,21 @@ export const DynamicGiftSelector = ({ onSelectionComplete }: SelectorProps) => {
         setCurrentPhase('interest');
         break;
       case 'interest':
-        const query = `Gift ideas for a ${selectedAge} year old ${selectedPerson.toLowerCase()} who likes ${value.toLowerCase()} with a budget of $${selectedPrice}`;
+        const query = `Gift ideas for a ${selectedAge} year old ${selectedPerson.toLowerCase()} who likes ${value.toLowerCase()} with a budget of ${selectedPrice}`;
         onSelectionComplete(query);
         setCurrentPhase('complete');
-        setVisible(false);
         break;
     }
+  };
+
+  const handleReset = () => {
+    onReset();
   };
 
   if (!visible) return null;
 
   return (
-    <div className="w-full space-y-4 animate-in fade-in slide-in-from-top-4 duration-500">
+    <div className="w-full space-y-4 animate-in fade-in slide-in-from-top-4 duration-500 relative">
       {currentPhase === 'person' && (
         <div className="flex flex-wrap gap-2 justify-center">
           {people.map((person) => (
