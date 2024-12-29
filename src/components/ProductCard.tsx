@@ -1,14 +1,15 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
+import { useState, useEffect } from "react";
 
-// Array of placeholder images from Unsplash with proper formatting
+// Array of placeholder images from Unsplash with smaller sizes
 const PLACEHOLDER_IMAGES = [
-  "https://images.unsplash.com/photo-1649972904349-6e44c42644a7?auto=format&fit=crop&w=500&q=80",
-  "https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?auto=format&fit=crop&w=500&q=80",
-  "https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=500&q=80",
-  "https://images.unsplash.com/photo-1461749280684-dccba630e2f6?auto=format&fit=crop&w=500&q=80",
-  "https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?auto=format&fit=crop&w=500&q=80"
+  "https://images.unsplash.com/photo-1649972904349-6e44c42644a7?auto=format&fit=crop&w=300&q=70",
+  "https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?auto=format&fit=crop&w=300&q=70",
+  "https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=300&q=70",
+  "https://images.unsplash.com/photo-1461749280684-dccba630e2f6?auto=format&fit=crop&w=300&q=70",
+  "https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?auto=format&fit=crop&w=300&q=70"
 ];
 
 interface Product {
@@ -19,23 +20,32 @@ interface Product {
   imageUrl: string;
 }
 
+// Cache for Amazon Associate ID
+let cachedAssociateId: string | null = null;
+
 export const ProductCard = ({ title, description, price, amazonUrl, imageUrl }: Product) => {
-  // Get Amazon Associate ID from environment
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Get Amazon Associate ID from cache or fetch it
   const getAmazonUrl = async (searchTerm: string) => {
     try {
-      const { data: { AMAZON_ASSOCIATE_ID } } = await supabase.functions.invoke('get-amazon-associate-id');
-      // Create a search-friendly URL by replacing spaces with plus signs
+      if (!cachedAssociateId) {
+        setIsLoading(true);
+        const { data: { AMAZON_ASSOCIATE_ID } } = await supabase.functions.invoke('get-amazon-associate-id');
+        cachedAssociateId = AMAZON_ASSOCIATE_ID;
+        setIsLoading(false);
+      }
+      
       const searchQuery = searchTerm.replace(/\s+/g, '+');
-      return `https://www.amazon.com/s?k=${searchQuery}&tag=${AMAZON_ASSOCIATE_ID}`;
+      return `https://www.amazon.com/s?k=${searchQuery}&tag=${cachedAssociateId}`;
     } catch (error) {
       console.error('Error getting Amazon Associate ID:', error);
-      // Fallback to basic search URL if there's an error
+      setIsLoading(false);
       const searchQuery = title.replace(/\s+/g, '+');
       return `https://www.amazon.com/s?k=${searchQuery}`;
     }
   };
 
-  // Get a random placeholder image
   const getRandomImage = () => {
     const randomIndex = Math.floor(Math.random() * PLACEHOLDER_IMAGES.length);
     return PLACEHOLDER_IMAGES[randomIndex];
@@ -54,6 +64,7 @@ export const ProductCard = ({ title, description, price, amazonUrl, imageUrl }: 
             src={imageUrl || getRandomImage()}
             alt={title}
             className="object-cover w-full h-full hover:scale-105 transition-transform duration-200"
+            loading="lazy"
           />
         </div>
         <CardTitle className="text-lg mt-4">{title}</CardTitle>
@@ -66,8 +77,9 @@ export const ProductCard = ({ title, description, price, amazonUrl, imageUrl }: 
         <Button 
           className="w-full bg-primary hover:bg-primary/90" 
           onClick={handleClick}
+          disabled={isLoading}
         >
-          View on Amazon
+          {isLoading ? "Loading..." : "View on Amazon"}
         </Button>
       </CardFooter>
     </Card>
