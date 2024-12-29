@@ -1,15 +1,15 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 
-// Array of placeholder images from Unsplash with smaller sizes
+// Array of high-quality placeholder images from Unsplash
 const PLACEHOLDER_IMAGES = [
-  "https://images.unsplash.com/photo-1649972904349-6e44c42644a7?auto=format&fit=crop&w=300&q=70",
-  "https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?auto=format&fit=crop&w=300&q=70",
-  "https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=300&q=70",
-  "https://images.unsplash.com/photo-1461749280684-dccba630e2f6?auto=format&fit=crop&w=300&q=70",
-  "https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?auto=format&fit=crop&w=300&q=70"
+  "https://images.unsplash.com/photo-1513542789411-b6a5d4f31634?auto=format&fit=crop&w=300&q=80",
+  "https://images.unsplash.com/photo-1577003833619-76bbd7f82948?auto=format&fit=crop&w=300&q=80",
+  "https://images.unsplash.com/photo-1549465220-1a8b9238cd48?auto=format&fit=crop&w=300&q=80",
+  "https://images.unsplash.com/photo-1512909006721-3d6018887383?auto=format&fit=crop&w=300&q=80",
+  "https://images.unsplash.com/photo-1493612276216-ee3925520721?auto=format&fit=crop&w=300&q=80"
 ];
 
 interface Product {
@@ -17,7 +17,7 @@ interface Product {
   description: string;
   price: string;
   amazonUrl: string;
-  imageUrl: string;
+  imageUrl?: string;
 }
 
 // Cache for Amazon Associate ID
@@ -25,6 +25,7 @@ let cachedAssociateId: string | null = null;
 
 export const ProductCard = ({ title, description, price, amazonUrl, imageUrl }: Product) => {
   const [isLoading, setIsLoading] = useState(false);
+  const [imgError, setImgError] = useState(false);
 
   // Get Amazon Associate ID from cache or fetch it
   const getAmazonUrl = async (searchTerm: string) => {
@@ -56,15 +57,19 @@ export const ProductCard = ({ title, description, price, amazonUrl, imageUrl }: 
     window.open(url, '_blank');
   };
 
+  // Use either the provided imageUrl or a random placeholder
+  const displayImage = imgError || !imageUrl ? getRandomImage() : imageUrl;
+
   return (
     <Card className="product-card">
       <CardHeader>
         <div className="aspect-square relative overflow-hidden rounded-lg">
           <img
-            src={imageUrl || getRandomImage()}
+            src={displayImage}
             alt={title}
             className="object-cover w-full h-full hover:scale-105 transition-transform duration-200"
             loading="lazy"
+            onError={() => setImgError(true)}
           />
         </div>
         <CardTitle className="text-lg mt-4">{title}</CardTitle>
