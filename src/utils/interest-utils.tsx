@@ -1,5 +1,5 @@
 import { Interest } from '@/types/gift-selector';
-import { Music, Computer, Bike, CookingPot, Home, Camera, Plane, Book, Gamepad, Dumbbell, Palette, Leaf, Coffee, Wine, ShoppingBag } from 'lucide-react';
+import { Music, Computer, Bike, CookingPot, Home, Camera, Plane, Book, Gamepad, Dumbbell, Palette, Leaf, Coffee, Wine, ShoppingBag, Cat } from 'lucide-react';
 
 export const getInterests = (person: string, ageRange: string): Interest[] => {
   const youngAdult = ['20-30', '30-40'].includes(ageRange);
@@ -33,61 +33,119 @@ export const getInterests = (person: string, ageRange: string): Interest[] => {
   const homeInterests = [
     { label: 'Cooking', icon: <CookingPot /> },
     { label: 'Home Decor', icon: <Home /> },
-    { label: 'Plants', icon: <Leaf /> },
+    { label: 'Gardening', icon: <Leaf /> },
   ];
 
   switch (person.toLowerCase()) {
     case 'father':
-    case 'brother':
       return youngAdult ? [
         ...techInterests,
         { label: 'Sports', icon: <Bike /> },
+        { label: 'BBQ', icon: <CookingPot /> },
+        { label: 'DIY', icon: <Home /> },
         ...commonInterests,
       ] : [
-        ...homeInterests.slice(0, 1),
+        { label: 'DIY', icon: <Home /> },
         { label: 'Sports', icon: <Bike /> },
+        { label: 'BBQ', icon: <CookingPot /> },
         ...commonInterests,
       ];
     
     case 'mother':
-    case 'sister':
       return middleAged ? [
         ...homeInterests,
-        ...creativeInterests,
+        { label: 'Shopping', icon: <ShoppingBag /> },
+        { label: 'Spa', icon: <Leaf /> },
         ...commonInterests,
       ] : [
         ...lifestyleInterests,
-        ...creativeInterests,
+        { label: 'Fashion', icon: <ShoppingBag /> },
+        { label: 'Yoga', icon: <Dumbbell /> },
+        ...commonInterests,
+      ];
+    
+    case 'sister':
+      return youngAdult ? [
+        { label: 'Fashion', icon: <ShoppingBag /> },
+        { label: 'Beauty', icon: <Palette /> },
+        { label: 'Fitness', icon: <Dumbbell /> },
+        { label: 'Social Media', icon: <Camera /> },
+        ...commonInterests,
+      ] : [
+        { label: 'Fashion', icon: <ShoppingBag /> },
+        { label: 'Makeup', icon: <Palette /> },
+        { label: 'Dancing', icon: <Music /> },
+        ...commonInterests,
+      ];
+    
+    case 'brother':
+      return youngAdult ? [
+        ...techInterests,
+        { label: 'Sports', icon: <Bike /> },
+        { label: 'Fitness', icon: <Dumbbell /> },
+        ...commonInterests,
+      ] : [
+        { label: 'Gaming', icon: <Gamepad /> },
+        { label: 'Sports', icon: <Bike /> },
+        { label: 'Music', icon: <Music /> },
         ...commonInterests,
       ];
     
     case 'grandma':
+      return [
+        { label: 'Cats', icon: <Cat /> },
+        { label: 'Cooking', icon: <CookingPot /> },
+        { label: 'Knitting', icon: <Home /> },
+        { label: 'Reading', icon: <Book /> },
+        { label: 'Gardening', icon: <Leaf /> },
+      ];
+    
     case 'grandpa':
       return [
-        ...homeInterests,
+        { label: 'Gardening', icon: <Leaf /> },
         { label: 'Reading', icon: <Book /> },
-        ...commonInterests,
+        { label: 'History', icon: <Book /> },
+        { label: 'Chess', icon: <Gamepad /> },
+        { label: 'DIY', icon: <Home /> },
       ];
     
     case 'son':
-    case 'daughter':
       if (child) {
         return [
           { label: 'Games', icon: <Gamepad /> },
-          { label: 'Art', icon: <Palette /> },
-          ...commonInterests,
+          { label: 'Sports', icon: <Bike /> },
+          { label: 'Drawing', icon: <Palette /> },
+          { label: 'Toys', icon: <Gamepad /> },
         ];
       }
       return teen ? [
         ...techInterests,
-        ...lifestyleInterests.slice(0, 2),
-        ...commonInterests,
+        { label: 'Sports', icon: <Bike /> },
+        { label: 'Music', icon: <Music /> },
+        { label: 'Gaming', icon: <Gamepad /> },
+      ] : commonInterests;
+    
+    case 'daughter':
+      if (child) {
+        return [
+          { label: 'Art', icon: <Palette /> },
+          { label: 'Dance', icon: <Music /> },
+          { label: 'Dolls', icon: <Home /> },
+          { label: 'Crafts', icon: <Palette /> },
+        ];
+      }
+      return teen ? [
+        { label: 'Fashion', icon: <ShoppingBag /> },
+        { label: 'Beauty', icon: <Palette /> },
+        { label: 'Social Media', icon: <Camera /> },
+        { label: 'Music', icon: <Music /> },
       ] : commonInterests;
     
     case 'colleague':
       return [
         { label: 'Coffee', icon: <Coffee /> },
         { label: 'Books', icon: <Book /> },
+        { label: 'Office Decor', icon: <Home /> },
         ...commonInterests,
       ];
     
