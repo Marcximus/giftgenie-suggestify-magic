@@ -3,7 +3,8 @@ import {
   Music, Computer, Bike, CookingPot, Home, Camera, Plane, Book, 
   Gamepad, Dumbbell, Palette, Leaf, Coffee, Wine, ShoppingBag, Cat,
   Puzzle, Bot, Rocket, Heart, Shirt, Microscope, Trophy, 
-  Brush, Dice1, Video, Smartphone
+  Brush, Dice1, Video, Smartphone, Headphones, Basketball,
+  Controller, Monitor, Tv
 } from 'lucide-react';
 
 export const getInterests = (person: string, ageRange: string): Interest[] => {
@@ -127,6 +128,11 @@ export const getInterests = (person: string, ageRange: string): Interest[] => {
           { label: 'Gaming', icon: <Gamepad /> },
           { label: 'Building', icon: <Home /> },
           { label: 'Animals', icon: <Cat /> },
+          { label: 'Music', icon: <Music /> },
+          { label: 'Basketball', icon: <Basketball /> },
+          { label: 'Movies', icon: <Tv /> },
+          { label: 'Comics', icon: <Book /> },
+          { label: 'Remote Control', icon: <Controller /> },
         ];
       }
       return teen ? [
@@ -138,8 +144,56 @@ export const getInterests = (person: string, ageRange: string): Interest[] => {
         { label: 'Videos', icon: <Video /> },
         { label: 'Phones', icon: <Smartphone /> },
         { label: 'Fitness', icon: <Dumbbell /> },
+        { label: 'Headphones', icon: <Headphones /> },
+        { label: 'Movies', icon: <Tv /> },
+        { label: 'PC Gaming', icon: <Monitor /> },
+        { label: 'Basketball', icon: <Basketball /> },
+        { label: 'Science', icon: <Microscope /> },
+        { label: 'Books', icon: <Book /> },
       ] : commonInterests;
-    
+
+    case 'boyfriend':
+      return youngAdult ? [
+        ...techInterests,
+        { label: 'Sports', icon: <Trophy /> },
+        { label: 'Gaming', icon: <Gamepad /> },
+        { label: 'Music', icon: <Headphones /> },
+        { label: 'Movies', icon: <Tv /> },
+        { label: 'Fitness', icon: <Dumbbell /> },
+        { label: 'Fashion', icon: <Shirt /> },
+        { label: 'Travel', icon: <Plane /> },
+        { label: 'Photography', icon: <Camera /> },
+        { label: 'Cooking', icon: <CookingPot /> },
+      ] : [
+        { label: 'Sports', icon: <Trophy /> },
+        { label: 'Tech', icon: <Computer /> },
+        { label: 'Music', icon: <Music /> },
+        { label: 'Gaming', icon: <Gamepad /> },
+        { label: 'Movies', icon: <Tv /> },
+        ...commonInterests,
+      ];
+
+    case 'girlfriend':
+      return youngAdult ? [
+        { label: 'Fashion', icon: <Shirt /> },
+        { label: 'Beauty', icon: <Heart /> },
+        { label: 'Photography', icon: <Camera /> },
+        { label: 'Travel', icon: <Plane /> },
+        { label: 'Art', icon: <Palette /> },
+        { label: 'Music', icon: <Headphones /> },
+        { label: 'Fitness', icon: <Dumbbell /> },
+        { label: 'Shopping', icon: <ShoppingBag /> },
+        { label: 'Cooking', icon: <CookingPot /> },
+        { label: 'Home Decor', icon: <Home /> },
+      ] : [
+        { label: 'Fashion', icon: <Shirt /> },
+        { label: 'Beauty', icon: <Heart /> },
+        { label: 'Music', icon: <Music /> },
+        { label: 'Movies', icon: <Tv /> },
+        { label: 'Art', icon: <Palette /> },
+        ...commonInterests,
+      ];
+
     case 'daughter':
       if (child) {
         return [

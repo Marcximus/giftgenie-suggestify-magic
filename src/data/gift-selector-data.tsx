@@ -10,6 +10,8 @@ export const people: Person[] = [
   { label: 'Grandpa', icon: <Heart /> },
   { label: 'Son', icon: <Baby /> },
   { label: 'Daughter', icon: <Baby /> },
+  { label: 'Boyfriend', icon: <Heart /> },
+  { label: 'Girlfriend', icon: <Heart /> },
   { label: 'Colleague', icon: <Users /> },
 ];
 
