@@ -20,6 +20,7 @@ export const DynamicGiftSelector = ({
   const [selectedPerson, setSelectedPerson] = useState<string>('');
   const [selectedAge, setSelectedAge] = useState<string>('');
   const [selectedPrice, setSelectedPrice] = useState<string>('');
+  const [currentQuery, setCurrentQuery] = useState<string>('');
 
   // Reset internal state when visibility changes
   useEffect(() => {
@@ -28,8 +29,24 @@ export const DynamicGiftSelector = ({
       setSelectedPerson('');
       setSelectedAge('');
       setSelectedPrice('');
+      setCurrentQuery('');
     }
   }, [visible]);
+
+  const updateCurrentQuery = () => {
+    let query = '';
+    if (selectedPerson) {
+      query = `Gift for ${selectedPerson.toLowerCase()}`;
+      if (selectedAge) {
+        query += ` (${selectedAge} years old)`;
+      }
+      if (selectedPrice) {
+        query += ` - Budget: ${selectedPrice}`;
+      }
+    }
+    setCurrentQuery(query);
+    return query;
+  };
 
   const handleSelection = (phase: string, value: string) => {
     switch (phase) {
@@ -50,6 +67,8 @@ export const DynamicGiftSelector = ({
         onSelectionComplete(query);
         break;
     }
+    // Update search box after each selection
+    setTimeout(updateCurrentQuery, 0);
   };
 
   if (!visible) return null;

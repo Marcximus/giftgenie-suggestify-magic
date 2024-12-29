@@ -1,5 +1,10 @@
 import { Interest } from '@/types/gift-selector';
-import { Music, Computer, Bike, CookingPot, Home, Camera, Plane, Book, Gamepad, Dumbbell, Palette, Leaf, Coffee, Wine, ShoppingBag, Cat } from 'lucide-react';
+import { 
+  Music, Computer, Bike, CookingPot, Home, Camera, Plane, Book, 
+  Gamepad, Dumbbell, Palette, Leaf, Coffee, Wine, ShoppingBag, Cat,
+  Puzzle, Robot, Rocket, Heart, Trophy, Shirt, Microscope, Football,
+  Brush, Dice, Video, Smartphone
+} from 'lucide-react';
 
 export const getInterests = (person: string, ageRange: string): Interest[] => {
   const youngAdult = ['20-30', '30-40'].includes(ageRange);
@@ -112,17 +117,27 @@ export const getInterests = (person: string, ageRange: string): Interest[] => {
     case 'son':
       if (child) {
         return [
-          { label: 'Games', icon: <Gamepad /> },
-          { label: 'Sports', icon: <Bike /> },
-          { label: 'Drawing', icon: <Palette /> },
-          { label: 'Toys', icon: <Gamepad /> },
+          { label: 'Toys', icon: <Puzzle /> },
+          { label: 'Robots', icon: <Robot /> },
+          { label: 'Space', icon: <Rocket /> },
+          { label: 'Sports', icon: <Football /> },
+          { label: 'Drawing', icon: <Brush /> },
+          { label: 'Board Games', icon: <Dice /> },
+          { label: 'Science', icon: <Microscope /> },
+          { label: 'Gaming', icon: <Gamepad /> },
+          { label: 'Building', icon: <Home /> },
+          { label: 'Animals', icon: <Cat /> },
         ];
       }
       return teen ? [
-        ...techInterests,
-        { label: 'Sports', icon: <Bike /> },
-        { label: 'Music', icon: <Music /> },
         { label: 'Gaming', icon: <Gamepad /> },
+        { label: 'Sports', icon: <Football /> },
+        { label: 'Tech', icon: <Computer /> },
+        { label: 'Music', icon: <Music /> },
+        { label: 'Fashion', icon: <Shirt /> },
+        { label: 'Videos', icon: <Video /> },
+        { label: 'Phones', icon: <Smartphone /> },
+        { label: 'Fitness', icon: <Dumbbell /> },
       ] : commonInterests;
     
     case 'daughter':
@@ -130,15 +145,26 @@ export const getInterests = (person: string, ageRange: string): Interest[] => {
         return [
           { label: 'Art', icon: <Palette /> },
           { label: 'Dance', icon: <Music /> },
-          { label: 'Dolls', icon: <Home /> },
-          { label: 'Crafts', icon: <Palette /> },
+          { label: 'Crafts', icon: <Brush /> },
+          { label: 'Animals', icon: <Cat /> },
+          { label: 'Science', icon: <Microscope /> },
+          { label: 'Books', icon: <Book /> },
+          { label: 'Sports', icon: <Football /> },
+          { label: 'Music', icon: <Music /> },
+          { label: 'Building', icon: <Home /> },
+          { label: 'Board Games', icon: <Dice /> },
         ];
       }
       return teen ? [
-        { label: 'Fashion', icon: <ShoppingBag /> },
-        { label: 'Beauty', icon: <Palette /> },
-        { label: 'Social Media', icon: <Camera /> },
+        { label: 'Fashion', icon: <Shirt /> },
+        { label: 'Art', icon: <Palette /> },
         { label: 'Music', icon: <Music /> },
+        { label: 'Dance', icon: <Music /> },
+        { label: 'Tech', icon: <Computer /> },
+        { label: 'Sports', icon: <Football /> },
+        { label: 'Beauty', icon: <Heart /> },
+        { label: 'Videos', icon: <Video /> },
+        { label: 'Phones', icon: <Smartphone /> },
       ] : commonInterests;
     
     case 'colleague':
