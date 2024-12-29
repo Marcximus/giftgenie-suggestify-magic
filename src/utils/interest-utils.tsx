@@ -3,8 +3,7 @@ import {
   Music, Computer, Bike, CookingPot, Home, Camera, Plane, Book, 
   Gamepad, Dumbbell, Palette, Leaf, Coffee, Wine, ShoppingBag, Cat,
   Puzzle, Bot, Rocket, Heart, Shirt, Microscope, Trophy, 
-  Brush, Dice1, Video, Smartphone, Headphones, Basketball,
-  Controller, Monitor, Tv
+  Brush, Dice1, Video, Smartphone, Headphones, Monitor, Tv
 } from 'lucide-react';
 
 export const getInterests = (person: string, ageRange: string): Interest[] => {
@@ -114,7 +113,7 @@ export const getInterests = (person: string, ageRange: string): Interest[] => {
         { label: 'Chess', icon: <Gamepad /> },
         { label: 'DIY', icon: <Home /> },
       ];
-    
+
     case 'son':
       if (child) {
         return [
@@ -129,10 +128,10 @@ export const getInterests = (person: string, ageRange: string): Interest[] => {
           { label: 'Building', icon: <Home /> },
           { label: 'Animals', icon: <Cat /> },
           { label: 'Music', icon: <Music /> },
-          { label: 'Basketball', icon: <Basketball /> },
+          { label: 'Sports', icon: <Trophy /> },
           { label: 'Movies', icon: <Tv /> },
           { label: 'Comics', icon: <Book /> },
-          { label: 'Remote Control', icon: <Controller /> },
+          { label: 'Gaming', icon: <Gamepad /> },
         ];
       }
       return teen ? [
@@ -147,7 +146,7 @@ export const getInterests = (person: string, ageRange: string): Interest[] => {
         { label: 'Headphones', icon: <Headphones /> },
         { label: 'Movies', icon: <Tv /> },
         { label: 'PC Gaming', icon: <Monitor /> },
-        { label: 'Basketball', icon: <Basketball /> },
+        { label: 'Sports', icon: <Trophy /> },
         { label: 'Science', icon: <Microscope /> },
         { label: 'Books', icon: <Book /> },
       ] : commonInterests;
