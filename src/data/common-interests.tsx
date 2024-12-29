@@ -1,7 +1,11 @@
 import { Interest } from '@/types/gift-selector';
-import { Music, Plane } from 'lucide-react';
+import { Folder } from 'lucide-react';
 
 export const commonInterests: Interest[] = [
-  { label: 'Music', icon: <Music /> },
-  { label: 'Travel', icon: <Plane /> },
+  { label: 'Reading', icon: <Folder /> },
+  { label: 'Music', icon: <Folder /> },
+  { label: 'Movies', icon: <Folder /> },
+  { label: 'Travel', icon: <Folder /> },
+  { label: 'Sports', icon: <Folder /> },
+  { label: 'Art', icon: <Folder /> },
 ];

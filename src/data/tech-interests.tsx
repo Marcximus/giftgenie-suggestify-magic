@@ -1,7 +1,8 @@
 import { Interest } from '@/types/gift-selector';
-import { Computer, Gamepad } from 'lucide-react';
+import { Folder } from 'lucide-react';
 
 export const techInterests: Interest[] = [
-  { label: 'Tech', icon: <Computer /> },
-  { label: 'Gaming', icon: <Gamepad /> },
+  { label: 'Gaming', icon: <Folder /> },
+  { label: 'Technology', icon: <Folder /> },
+  { label: 'Gadgets', icon: <Folder /> },
 ];
