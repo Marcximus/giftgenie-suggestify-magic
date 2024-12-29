@@ -2,8 +2,8 @@ import { Interest } from '@/types/gift-selector';
 import { 
   Music, Computer, Bike, CookingPot, Home, Camera, Plane, Book, 
   Gamepad, Dumbbell, Palette, Leaf, Coffee, Wine, ShoppingBag, Cat,
-  Puzzle, Robot, Rocket, Heart, Trophy, Shirt, Microscope, Football,
-  Brush, Dice, Video, Smartphone
+  Puzzle, Bot, Rocket, Heart, Shirt, Microscope, Soccer, 
+  Brush, Dice1, Video, Smartphone
 } from 'lucide-react';
 
 export const getInterests = (person: string, ageRange: string): Interest[] => {
@@ -118,11 +118,11 @@ export const getInterests = (person: string, ageRange: string): Interest[] => {
       if (child) {
         return [
           { label: 'Toys', icon: <Puzzle /> },
-          { label: 'Robots', icon: <Robot /> },
+          { label: 'Robots', icon: <Bot /> },
           { label: 'Space', icon: <Rocket /> },
-          { label: 'Sports', icon: <Football /> },
+          { label: 'Sports', icon: <Soccer /> },
           { label: 'Drawing', icon: <Brush /> },
-          { label: 'Board Games', icon: <Dice /> },
+          { label: 'Board Games', icon: <Dice1 /> },
           { label: 'Science', icon: <Microscope /> },
           { label: 'Gaming', icon: <Gamepad /> },
           { label: 'Building', icon: <Home /> },
@@ -131,7 +131,7 @@ export const getInterests = (person: string, ageRange: string): Interest[] => {
       }
       return teen ? [
         { label: 'Gaming', icon: <Gamepad /> },
-        { label: 'Sports', icon: <Football /> },
+        { label: 'Sports', icon: <Soccer /> },
         { label: 'Tech', icon: <Computer /> },
         { label: 'Music', icon: <Music /> },
         { label: 'Fashion', icon: <Shirt /> },
@@ -149,10 +149,10 @@ export const getInterests = (person: string, ageRange: string): Interest[] => {
           { label: 'Animals', icon: <Cat /> },
           { label: 'Science', icon: <Microscope /> },
           { label: 'Books', icon: <Book /> },
-          { label: 'Sports', icon: <Football /> },
+          { label: 'Sports', icon: <Soccer /> },
           { label: 'Music', icon: <Music /> },
           { label: 'Building', icon: <Home /> },
-          { label: 'Board Games', icon: <Dice /> },
+          { label: 'Board Games', icon: <Dice1 /> },
         ];
       }
       return teen ? [
@@ -161,7 +161,7 @@ export const getInterests = (person: string, ageRange: string): Interest[] => {
         { label: 'Music', icon: <Music /> },
         { label: 'Dance', icon: <Music /> },
         { label: 'Tech', icon: <Computer /> },
-        { label: 'Sports', icon: <Football /> },
+        { label: 'Sports', icon: <Soccer /> },
         { label: 'Beauty', icon: <Heart /> },
         { label: 'Videos', icon: <Video /> },
         { label: 'Phones', icon: <Smartphone /> },
