@@ -69,11 +69,11 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-secondary/30">
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 py-4 sm:py-8 max-w-7xl">
         <SearchBox onSearch={handleSearch} isLoading={isLoading} />
         
         {suggestions.length > 0 && (
-          <div className="mt-8 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-4 sm:mt-8 grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
             {suggestions.map((suggestion, index) => (
               <ProductCard
                 key={index}
