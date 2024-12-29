@@ -52,3 +52,12 @@
 .loading-spinner {
   @apply animate-spin h-8 w-8 text-primary;
 }
+
+/* Handle text overflow */
+input[type="text"],
+input[type="search"],
+.input {
+  @apply text-ellipsis;
+  max-width: 100%;
+  overflow: hidden;
+}
