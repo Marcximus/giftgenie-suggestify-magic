@@ -13,13 +13,21 @@ interface SelectorProps {
 
 export const DynamicGiftSelector = ({ 
   onSelectionComplete, 
-  onReset, 
+  onReset,
   visible 
 }: SelectorProps) => {
   const [currentPhase, setCurrentPhase] = useState<'person' | 'age' | 'price' | 'interest' | 'complete'>('person');
   const [selectedPerson, setSelectedPerson] = useState<string>('');
   const [selectedAge, setSelectedAge] = useState<string>('');
   const [selectedPrice, setSelectedPrice] = useState<string>('');
+
+  const resetSelector = () => {
+    setCurrentPhase('person');
+    setSelectedPerson('');
+    setSelectedAge('');
+    setSelectedPrice('');
+    onReset();
+  };
 
   const handleSelection = (phase: string, value: string) => {
     switch (phase) {
@@ -41,10 +49,6 @@ export const DynamicGiftSelector = ({
         setCurrentPhase('complete');
         break;
     }
-  };
-
-  const handleReset = () => {
-    onReset();
   };
 
   if (!visible) return null;

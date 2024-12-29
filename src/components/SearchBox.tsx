@@ -17,6 +17,7 @@ export const SearchBox = ({ onSearch, isLoading }: SearchBoxProps) => {
     e.preventDefault();
     if (query.trim()) {
       onSearch(query);
+      setShowSelector(false);
     }
   };
 
