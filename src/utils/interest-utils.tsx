@@ -1,5 +1,5 @@
 import { Interest } from '@/types/gift-selector';
-import { Music, Computer, Bike, CookingPot, Home, Camera, Plane, Book, Gamepad, Dumbbell, Palette, Plant, Coffee, Wine, ShoppingBag } from 'lucide-react';
+import { Music, Computer, Bike, CookingPot, Home, Camera, Plane, Book, Gamepad, Dumbbell, Palette, Leaf, Coffee, Wine, ShoppingBag } from 'lucide-react';
 
 export const getInterests = (person: string, ageRange: string): Interest[] => {
   const youngAdult = ['20-30', '30-40'].includes(ageRange);
@@ -33,7 +33,7 @@ export const getInterests = (person: string, ageRange: string): Interest[] => {
   const homeInterests = [
     { label: 'Cooking', icon: <CookingPot /> },
     { label: 'Home Decor', icon: <Home /> },
-    { label: 'Plants', icon: <Plant /> },
+    { label: 'Plants', icon: <Leaf /> },
   ];
 
   switch (person.toLowerCase()) {
