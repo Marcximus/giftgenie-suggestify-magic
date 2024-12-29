@@ -44,11 +44,11 @@ export const DynamicGiftSelector = ({
         query += ` - Budget: ${selectedPrice}`;
       }
     }
-    setCurrentQuery(query);
     return query;
   };
 
   const handleSelection = (phase: string, value: string) => {
+    let query = '';
     switch (phase) {
       case 'person':
         setSelectedPerson(value);
@@ -63,12 +63,16 @@ export const DynamicGiftSelector = ({
         setCurrentPhase('interest');
         break;
       case 'interest':
-        const query = `Gift ideas for a ${selectedAge} year old ${selectedPerson.toLowerCase()} who likes ${value.toLowerCase()} with a budget of ${selectedPrice}`;
+        query = `Gift ideas for a ${selectedAge} year old ${selectedPerson.toLowerCase()} who likes ${value.toLowerCase()} with a budget of ${selectedPrice}`;
         onSelectionComplete(query);
         break;
     }
-    // Update search box after each selection
-    setTimeout(updateCurrentQuery, 0);
+    
+    // Update search box after state changes
+    setTimeout(() => {
+      const updatedQuery = phase === 'interest' ? query : updateCurrentQuery();
+      onSelectionComplete(updatedQuery);
+    }, 0);
   };
 
   if (!visible) return null;
