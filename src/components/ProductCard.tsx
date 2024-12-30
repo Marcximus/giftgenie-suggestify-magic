@@ -3,13 +3,29 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { supabase } from "@/integrations/supabase/client";
 import { useState } from "react";
 
-const PLACEHOLDER_IMAGES = [
-  "https://images.unsplash.com/photo-1513542789411-b6a5d4f31634?auto=format&fit=crop&w=300&q=80",
-  "https://images.unsplash.com/photo-1577003833619-76bbd7f82948?auto=format&fit=crop&w=300&q=80",
-  "https://images.unsplash.com/photo-1549465220-1a8b9238cd48?auto=format&fit=crop&w=300&q=80",
-  "https://images.unsplash.com/photo-1512909006721-3d6018887383?auto=format&fit=crop&w=300&q=80",
-  "https://images.unsplash.com/photo-1493612276216-ee3925520721?auto=format&fit=crop&w=300&q=80"
-];
+const PLACEHOLDER_IMAGES = {
+  tech: [
+    "https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?auto=format&fit=crop&w=300&q=80", // laptop
+    "https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=300&q=80", // tech desk
+  ],
+  lifestyle: [
+    "https://images.unsplash.com/photo-1513542789411-b6a5d4f31634?auto=format&fit=crop&w=300&q=80", // cozy lifestyle
+    "https://images.unsplash.com/photo-1577003833619-76bbd7f82948?auto=format&fit=crop&w=300&q=80", // lifestyle items
+  ],
+  hobby: [
+    "https://images.unsplash.com/photo-1549465220-1a8b9238cd48?auto=format&fit=crop&w=300&q=80", // hobby related
+    "https://images.unsplash.com/photo-1512909006721-3d6018887383?auto=format&fit=crop&w=300&q=80", // creative space
+  ],
+  generic: [
+    "https://images.unsplash.com/photo-1493612276216-ee3925520721?auto=format&fit=crop&w=300&q=80", // general gift
+  ]
+};
+
+const CATEGORY_KEYWORDS = {
+  tech: ['gadget', 'electronic', 'digital', 'smart', 'device', 'tech', 'computer', 'phone', 'tablet', 'watch'],
+  lifestyle: ['fashion', 'clothing', 'accessory', 'jewelry', 'beauty', 'style', 'wear', 'dress', 'outfit'],
+  hobby: ['craft', 'art', 'sport', 'game', 'book', 'read', 'music', 'instrument', 'hobby', 'collect'],
+};
 
 interface Product {
   title: string;
@@ -43,9 +59,23 @@ export const ProductCard = ({ title, description, price, amazonUrl }: Product) =
     }
   };
 
-  const getRandomImage = () => {
-    const randomIndex = Math.floor(Math.random() * PLACEHOLDER_IMAGES.length);
-    return PLACEHOLDER_IMAGES[randomIndex];
+  const getCategoryFromText = (text: string): 'tech' | 'lifestyle' | 'hobby' | 'generic' => {
+    const lowerText = text.toLowerCase();
+    
+    for (const [category, keywords] of Object.entries(CATEGORY_KEYWORDS)) {
+      if (keywords.some(keyword => lowerText.includes(keyword))) {
+        return category as 'tech' | 'lifestyle' | 'hobby';
+      }
+    }
+    
+    return 'generic';
+  };
+
+  const getRelevantImage = () => {
+    const category = getCategoryFromText(title + ' ' + description);
+    const images = PLACEHOLDER_IMAGES[category];
+    const randomIndex = Math.floor(Math.random() * images.length);
+    return images[randomIndex];
   };
 
   const handleClick = async () => {
@@ -58,7 +88,7 @@ export const ProductCard = ({ title, description, price, amazonUrl }: Product) =
       <CardHeader className="p-0">
         <div className="aspect-square relative overflow-hidden">
           <img
-            src={getRandomImage()}
+            src={getRelevantImage()}
             alt={title}
             className="object-cover w-full h-full group-hover:scale-110 transition-transform duration-500"
             loading="lazy"
