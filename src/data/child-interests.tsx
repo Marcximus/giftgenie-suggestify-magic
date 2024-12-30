@@ -1,11 +1,11 @@
 import { Interest } from '@/types/gift-selector';
-import { Folder } from 'lucide-react';
+import { Smile, ThumbsUp, Heart } from 'lucide-react';
 
 export const getChildInterests = (): Interest[] => [
-  { label: 'Toys', icon: <Folder /> },
-  { label: 'Educational', icon: <Folder /> },
-  { label: 'Arts & Crafts', icon: <Folder /> },
-  { label: 'Books', icon: <Folder /> },
-  { label: 'Games', icon: <Folder /> },
-  { label: 'Sports', icon: <Folder /> },
+  { label: 'Toys', icon: <Smile /> },
+  { label: 'Educational', icon: <ThumbsUp /> },
+  { label: 'Arts & Crafts', icon: <Heart /> },
+  { label: 'Books', icon: <Smile /> },
+  { label: 'Games', icon: <ThumbsUp /> },
+  { label: 'Sports', icon: <Heart /> },
 ];

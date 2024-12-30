@@ -1,20 +1,20 @@
 import { Person, AgeRange, PriceRange } from '@/types/gift-selector';
-import { User, Users, Baby, Heart } from 'lucide-react';
+import { Smile, Heart, Frown, ThumbsUp, ThumbsDown } from 'lucide-react';
 
 export const people: Person[] = [
   { label: 'Wife', icon: <Heart /> },
   { label: 'Husband', icon: <Heart /> },
-  { label: 'Father', icon: <User /> },
-  { label: 'Mother', icon: <User /> },
-  { label: 'Brother', icon: <User /> },
-  { label: 'Sister', icon: <User /> },
+  { label: 'Father', icon: <Smile /> },
+  { label: 'Mother', icon: <Smile /> },
+  { label: 'Brother', icon: <ThumbsUp /> },
+  { label: 'Sister', icon: <ThumbsUp /> },
   { label: 'Grandma', icon: <Heart /> },
   { label: 'Grandpa', icon: <Heart /> },
-  { label: 'Son', icon: <Baby /> },
-  { label: 'Daughter', icon: <Baby /> },
+  { label: 'Son', icon: <Smile /> },
+  { label: 'Daughter', icon: <Smile /> },
   { label: 'Boyfriend', icon: <Heart /> },
   { label: 'Girlfriend', icon: <Heart /> },
-  { label: 'Colleague', icon: <Users /> },
+  { label: 'Colleague', icon: <ThumbsUp /> },
 ];
 
 export const ageRanges: AgeRange[] = [

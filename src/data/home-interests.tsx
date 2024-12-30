@@ -1,9 +1,9 @@
 import { Interest } from '@/types/gift-selector';
-import { Folder } from 'lucide-react';
+import { Heart, Smile, ThumbsUp } from 'lucide-react';
 
 export const homeInterests: Interest[] = [
-  { label: 'Cooking', icon: <Folder /> },
-  { label: 'Home Decor', icon: <Folder /> },
-  { label: 'DIY', icon: <Folder /> },
-  { label: 'Gardening', icon: <Folder /> },
+  { label: 'Cooking', icon: <Heart /> },
+  { label: 'Home Decor', icon: <Smile /> },
+  { label: 'DIY', icon: <ThumbsUp /> },
+  { label: 'Gardening', icon: <Smile /> },
 ];

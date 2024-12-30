@@ -1,7 +1,7 @@
 import { Interest } from '@/types/gift-selector';
-import { Palette, Camera } from 'lucide-react';
+import { Heart, Smile } from 'lucide-react';
 
 export const creativeInterests: Interest[] = [
-  { label: 'Art', icon: <Palette /> },
-  { label: 'Photography', icon: <Camera /> },
+  { label: 'Art', icon: <Heart /> },
+  { label: 'Photography', icon: <Smile /> },
 ];
