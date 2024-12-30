@@ -9,7 +9,6 @@ interface GiftSuggestion {
   description: string;
   priceRange: string;
   reason: string;
-  imageUrl?: string;
 }
 
 const Index = () => {
@@ -49,31 +48,7 @@ const Index = () => {
         throw new Error('Invalid response format from server');
       }
 
-      // Generate image URLs for each suggestion
-      const suggestionsWithImages = await Promise.all(
-        data.suggestions.map(async (suggestion) => {
-          try {
-            const { data: imageData, error: imageError } = await supabase.functions.invoke('generate-gift-image', {
-              body: { prompt: `${suggestion.title} - ${suggestion.description}` }
-            });
-
-            if (imageError) {
-              console.error('Error generating image:', imageError);
-              return suggestion;
-            }
-
-            return {
-              ...suggestion,
-              imageUrl: imageData?.imageUrl
-            };
-          } catch (error) {
-            console.error('Error generating image:', error);
-            return suggestion;
-          }
-        })
-      );
-
-      setSuggestions(suggestionsWithImages);
+      setSuggestions(data.suggestions);
       toast({
         title: "Success",
         description: "Gift suggestions generated successfully!",
@@ -107,7 +82,6 @@ const Index = () => {
                 description={`${suggestion.description}\n\nWhy this gift? ${suggestion.reason}`}
                 price={suggestion.priceRange}
                 amazonUrl="#"
-                imageUrl={suggestion.imageUrl}
               />
             ))}
           </div>

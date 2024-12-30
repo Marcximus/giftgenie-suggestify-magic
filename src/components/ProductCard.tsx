@@ -21,9 +21,8 @@ interface Product {
 
 let cachedAssociateId: string | null = null;
 
-export const ProductCard = ({ title, description, price, amazonUrl, imageUrl }: Product) => {
+export const ProductCard = ({ title, description, price, amazonUrl }: Product) => {
   const [isLoading, setIsLoading] = useState(false);
-  const [imgError, setImgError] = useState(false);
 
   const getAmazonUrl = async (searchTerm: string) => {
     try {
@@ -54,18 +53,15 @@ export const ProductCard = ({ title, description, price, amazonUrl, imageUrl }: 
     window.open(url, '_blank');
   };
 
-  const displayImage = imgError || !imageUrl ? getRandomImage() : imageUrl;
-
   return (
     <Card className="group overflow-hidden hover:shadow-lg transition-all duration-300 border-accent/20">
       <CardHeader className="p-0">
         <div className="aspect-square relative overflow-hidden">
           <img
-            src={displayImage}
+            src={getRandomImage()}
             alt={title}
             className="object-cover w-full h-full group-hover:scale-110 transition-transform duration-500"
             loading="lazy"
-            onError={() => setImgError(true)}
           />
         </div>
         <CardTitle className="text-lg mt-6 px-6">{title}</CardTitle>
