@@ -137,11 +137,11 @@ export const ProductCard = ({ title, description, price, amazonUrl }: Product) =
             loading="lazy"
           />
         </div>
-        <CardTitle className="text-sm mt-3 px-3 line-clamp-2 min-h-[2.5rem]">{title}</CardTitle>
+        <CardTitle className="text-sm mt-2 px-3 line-clamp-2 min-h-[2.5rem]">{title}</CardTitle>
       </CardHeader>
-      <CardContent className="mt-1 p-3">
+      <CardContent className="p-3 pt-1">
         <p className="text-muted-foreground text-xs leading-relaxed line-clamp-3">{description}</p>
-        <p className="text-sm font-bold mt-2 text-primary">{price}</p>
+        <p className="text-sm font-bold mt-1 text-primary">{price}</p>
       </CardContent>
       <CardFooter className="p-3 pt-0">
         <Button 
