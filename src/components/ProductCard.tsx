@@ -88,11 +88,27 @@ export const ProductCard = ({ title, description, price, amazonUrl }: Product) =
 
   const findExactMatch = (text: string): string | null => {
     const lowerText = text.toLowerCase();
+    
+    // First try exact phrase matches
     for (const [key, url] of Object.entries(EXACT_MATCHES)) {
       if (lowerText.includes(key)) {
         return url;
       }
     }
+
+    // If no exact phrase match, try matching individual words
+    const words = lowerText.split(/\s+/);
+    for (const word of words) {
+      if (word.length < 3) continue; // Skip very short words
+      
+      for (const [key, url] of Object.entries(EXACT_MATCHES)) {
+        if (key.includes(word) || word.includes(key)) {
+          console.log(`Found image match for word: ${word} with key: ${key}`);
+          return url;
+        }
+      }
+    }
+    
     return null;
   };
 
@@ -109,13 +125,22 @@ export const ProductCard = ({ title, description, price, amazonUrl }: Product) =
   };
 
   const getImage = () => {
-    // First try to find an exact match
-    const exactMatch = findExactMatch(title) || findExactMatch(description);
-    if (exactMatch) {
-      return exactMatch;
+    // Try to find an exact match in title
+    const titleMatch = findExactMatch(title);
+    if (titleMatch) {
+      console.log('Found match in title:', title);
+      return titleMatch;
+    }
+
+    // Try to find an exact match in description
+    const descriptionMatch = findExactMatch(description);
+    if (descriptionMatch) {
+      console.log('Found match in description:', description);
+      return descriptionMatch;
     }
 
     // Fall back to category-based image if no exact match
+    console.log('No exact matches found, falling back to category');
     const category = getCategoryFromText(title + ' ' + description);
     const images = CATEGORY_IMAGES[category];
     const randomIndex = Math.floor(Math.random() * images.length);
