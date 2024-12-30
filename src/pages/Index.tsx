@@ -30,7 +30,6 @@ const Index = () => {
       console.log('Edge function response:', { data, error });
 
       if (error) {
-        // Handle rate limit error specifically
         if (error.status === 429) {
           toast({
             title: "Rate Limit Reached",
@@ -68,12 +67,14 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-secondary/30">
-      <div className="container mx-auto px-4 py-4 sm:py-8 max-w-7xl">
-        <SearchBox onSearch={handleSearch} isLoading={isLoading} />
+    <div className="min-h-screen bg-gradient-to-b from-secondary/30 to-background">
+      <div className="container mx-auto px-4 py-8 sm:py-12 max-w-7xl">
+        <div className="max-w-3xl mx-auto mb-12">
+          <SearchBox onSearch={handleSearch} isLoading={isLoading} />
+        </div>
         
         {suggestions.length > 0 && (
-          <div className="mt-4 sm:mt-8 grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-8 sm:mt-12 grid gap-6 sm:gap-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 animate-in fade-in slide-in-from-bottom-4 duration-500">
             {suggestions.map((suggestion, index) => (
               <ProductCard
                 key={index}

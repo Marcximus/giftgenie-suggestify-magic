@@ -3,7 +3,6 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { supabase } from "@/integrations/supabase/client";
 import { useState } from "react";
 
-// Array of high-quality placeholder images from Unsplash
 const PLACEHOLDER_IMAGES = [
   "https://images.unsplash.com/photo-1513542789411-b6a5d4f31634?auto=format&fit=crop&w=300&q=80",
   "https://images.unsplash.com/photo-1577003833619-76bbd7f82948?auto=format&fit=crop&w=300&q=80",
@@ -20,14 +19,12 @@ interface Product {
   imageUrl?: string;
 }
 
-// Cache for Amazon Associate ID
 let cachedAssociateId: string | null = null;
 
 export const ProductCard = ({ title, description, price, amazonUrl, imageUrl }: Product) => {
   const [isLoading, setIsLoading] = useState(false);
   const [imgError, setImgError] = useState(false);
 
-  // Get Amazon Associate ID from cache or fetch it
   const getAmazonUrl = async (searchTerm: string) => {
     try {
       if (!cachedAssociateId) {
@@ -57,30 +54,29 @@ export const ProductCard = ({ title, description, price, amazonUrl, imageUrl }: 
     window.open(url, '_blank');
   };
 
-  // Use either the provided imageUrl or a random placeholder
   const displayImage = imgError || !imageUrl ? getRandomImage() : imageUrl;
 
   return (
-    <Card className="product-card">
-      <CardHeader>
-        <div className="aspect-square relative overflow-hidden rounded-lg">
+    <Card className="group overflow-hidden hover:shadow-lg transition-all duration-300 border-accent/20">
+      <CardHeader className="p-0">
+        <div className="aspect-square relative overflow-hidden">
           <img
             src={displayImage}
             alt={title}
-            className="object-cover w-full h-full hover:scale-105 transition-transform duration-200"
+            className="object-cover w-full h-full group-hover:scale-110 transition-transform duration-500"
             loading="lazy"
             onError={() => setImgError(true)}
           />
         </div>
-        <CardTitle className="text-lg mt-4">{title}</CardTitle>
+        <CardTitle className="text-lg mt-6 px-6">{title}</CardTitle>
       </CardHeader>
-      <CardContent>
-        <p className="text-muted-foreground text-sm">{description}</p>
-        <p className="text-lg font-bold mt-2">{price}</p>
+      <CardContent className="mt-2">
+        <p className="text-muted-foreground text-sm leading-relaxed">{description}</p>
+        <p className="text-lg font-bold mt-4 text-primary">{price}</p>
       </CardContent>
-      <CardFooter>
+      <CardFooter className="pb-6">
         <Button 
-          className="w-full bg-primary hover:bg-primary/90" 
+          className="w-full bg-primary hover:bg-primary/90 shadow-sm" 
           onClick={handleClick}
           disabled={isLoading}
         >
