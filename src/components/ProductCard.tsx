@@ -137,7 +137,7 @@ export const ProductCard = ({ title, description, price, amazonUrl }: Product) =
             loading="lazy"
           />
         </div>
-        <CardTitle className="text-base mt-3 px-3 line-clamp-1">{title}</CardTitle>
+        <CardTitle className="text-sm mt-3 px-3 line-clamp-2 min-h-[2.5rem]">{title}</CardTitle>
       </CardHeader>
       <CardContent className="mt-1 p-3">
         <p className="text-muted-foreground text-xs leading-relaxed line-clamp-3">{description}</p>
