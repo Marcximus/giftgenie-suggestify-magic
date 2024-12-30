@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 const EXACT_MATCHES = {
   // Jewelry
@@ -65,6 +65,7 @@ let cachedAssociateId: string | null = null;
 
 export const ProductCard = ({ title, description, price, amazonUrl }: Product) => {
   const [isLoading, setIsLoading] = useState(false);
+  const [imageUrl, setImageUrl] = useState<string>('');
 
   const getAmazonUrl = async (searchTerm: string) => {
     try {
@@ -121,6 +122,11 @@ export const ProductCard = ({ title, description, price, amazonUrl }: Product) =
     return images[randomIndex];
   };
 
+  useEffect(() => {
+    // Set the image URL only once when the component mounts
+    setImageUrl(getImage());
+  }, [title, description]); // Only re-run if title or description changes
+
   const handleClick = async () => {
     const url = await getAmazonUrl(title);
     window.open(url, '_blank');
@@ -131,7 +137,7 @@ export const ProductCard = ({ title, description, price, amazonUrl }: Product) =
       <CardHeader className="p-0">
         <div className="aspect-[4/3] relative overflow-hidden">
           <img
-            src={getImage()}
+            src={imageUrl}
             alt={title}
             className="object-cover w-full h-full group-hover:scale-110 transition-transform duration-500"
             loading="lazy"
