@@ -129,7 +129,7 @@ export const ProductCard = ({ title, description, price, amazonUrl }: Product) =
   return (
     <Card className="group overflow-hidden hover:shadow-lg transition-all duration-300 border-accent/20">
       <CardHeader className="p-0">
-        <div className="aspect-square relative overflow-hidden">
+        <div className="aspect-[4/3] relative overflow-hidden">
           <img
             src={getImage()}
             alt={title}
@@ -137,15 +137,15 @@ export const ProductCard = ({ title, description, price, amazonUrl }: Product) =
             loading="lazy"
           />
         </div>
-        <CardTitle className="text-lg mt-6 px-6">{title}</CardTitle>
+        <CardTitle className="text-base mt-3 px-3 line-clamp-1">{title}</CardTitle>
       </CardHeader>
-      <CardContent className="mt-2">
-        <p className="text-muted-foreground text-sm leading-relaxed">{description}</p>
-        <p className="text-lg font-bold mt-4 text-primary">{price}</p>
+      <CardContent className="mt-1 p-3">
+        <p className="text-muted-foreground text-xs leading-relaxed line-clamp-3">{description}</p>
+        <p className="text-sm font-bold mt-2 text-primary">{price}</p>
       </CardContent>
-      <CardFooter className="pb-6">
+      <CardFooter className="p-3 pt-0">
         <Button 
-          className="w-full bg-primary hover:bg-primary/90 shadow-sm" 
+          className="w-full bg-primary hover:bg-primary/90 shadow-sm text-sm py-1" 
           onClick={handleClick}
           disabled={isLoading}
         >

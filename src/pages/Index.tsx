@@ -74,7 +74,7 @@ const Index = () => {
         </div>
         
         {suggestions.length > 0 && (
-          <div className="mt-8 sm:mt-12 grid gap-6 sm:gap-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <div className="mt-8 sm:mt-12 grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
             {suggestions.map((suggestion, index) => (
               <ProductCard
                 key={index}
