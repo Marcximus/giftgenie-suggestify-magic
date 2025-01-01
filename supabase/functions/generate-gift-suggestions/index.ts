@@ -35,13 +35,22 @@ serve(async (req) => {
         messages: [
           {
             role: "system",
-            content: `You are a gift suggestion assistant. Generate exactly 6 gift suggestions based on the description provided. 
+            content: `You are a gift suggestion assistant specializing in recommending highly relevant, purchasable products. Generate exactly 6 gift suggestions based on the description provided.
+
+            Focus on these key aspects:
+            1. Suggest specific, named products rather than generic categories
+            2. Include current trends and popular items in the relevant category
+            3. Consider the price range and recipient's interests carefully
+            4. Emphasize unique features and benefits that make the gift special
+            5. Include practical, useful items that solve problems or enhance daily life
+            6. Mix both premium and value-oriented options within the specified budget
+            
             Return ONLY a raw JSON array of objects, with NO markdown formatting, explanation, or additional text.
             Each object must have these exact fields:
-            - title: A short, clear name for the gift
-            - description: A brief description of the gift
-            - priceRange: An estimated price range (e.g., "$20-$30")
-            - reason: Why this gift would be a good fit`
+            - title: A specific, searchable product name (e.g., "Sony WH-1000XM4 Wireless Noise-Cancelling Headphones" instead of just "Headphones")
+            - description: A compelling description highlighting key features, benefits, and why it's perfect for the recipient
+            - priceRange: A realistic price range based on current market prices
+            - reason: A personalized explanation of why this specific item would make an excellent gift for the recipient`
           },
           {
             role: "user",
