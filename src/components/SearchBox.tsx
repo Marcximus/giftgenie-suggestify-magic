@@ -39,10 +39,10 @@ export const SearchBox = ({ onSearch, isLoading }: SearchBoxProps) => {
     <form onSubmit={handleSubmit} className="space-y-6 w-full max-w-3xl mx-auto px-4">
       <div className="flex flex-col space-y-3 text-center">
         <h1 className="text-4xl sm:text-5xl font-bold bg-gradient-to-r from-primary via-primary/80 to-primary/60 bg-clip-text text-transparent animate-in fade-in slide-in-from-top-4 duration-700">
-          Find the Perfect Gift
+          Get The Gift
         </h1>
         <p className="text-sm sm:text-base text-muted-foreground animate-in fade-in slide-in-from-top-4 duration-700 delay-150">
-          Describe the person or occasion, or use our gift finder below
+          Find the perfect gift with the power of AI: describe the person or occasion below
         </p>
       </div>
       <div className="flex flex-col sm:flex-row gap-3 w-full animate-in fade-in slide-in-from-top-4 duration-700 delay-300">
