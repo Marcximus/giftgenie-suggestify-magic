@@ -65,12 +65,10 @@ export const DynamicGiftSelector = ({
         setCurrentPhase('interest');
         break;
       case 'interest':
-        // Only trigger the API call on the final interest selection
         onSelectionComplete(query);
         return;
     }
     
-    // Update the search text without triggering the API call
     onUpdate(query);
   };
 
@@ -79,19 +77,19 @@ export const DynamicGiftSelector = ({
   return (
     <div className="w-full space-y-4 animate-in fade-in slide-in-from-top-4 duration-500 relative">
       {currentPhase === 'person' && (
-        <div className="flex flex-wrap gap-2 justify-center">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 justify-items-center mx-auto max-w-4xl">
           {people.map((person) => (
             <Button
               key={person.label}
               variant="outline"
               onClick={() => handleSelection('person', person.label)}
               className={cn(
-                "transition-all duration-200 hover:scale-105",
+                "w-full max-w-[150px] transition-all duration-200 hover:scale-105 flex items-center justify-center gap-2",
                 selectedPerson === person.label && "bg-primary text-primary-foreground"
               )}
             >
-              {person.icon}
-              {person.label}
+              <span className="text-lg">{person.icon}</span>
+              <span>{person.label}</span>
             </Button>
           ))}
         </div>
