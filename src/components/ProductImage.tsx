@@ -1,5 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useQuery } from "@tanstack/react-query";
 
 interface ProductImageProps {
   title: string;
@@ -7,19 +8,17 @@ interface ProductImageProps {
 }
 
 export const ProductImage = ({ title, description }: ProductImageProps) => {
-  const [imageUrl, setImageUrl] = useState<string>('');
   const [imageError, setImageError] = useState(false);
 
-  const cleanSearchTerm = (title: string) => {
-    // Remove common words and specifications while keeping the main product name intact
+  const cleanSearchTerm = useCallback((title: string) => {
     return title
       .toLowerCase()
       .replace(/\b(the|with|for|and|or|in|on|at|to|of|from|by)\b/gi, '')
       .replace(/\d+(\.\d+)?(\s*)(inch|"|inches|ft|feet|mm|cm|m|gb|tb|mb|hz|watts)/gi, '')
-      .replace(/\([^)]*\)/g, '') // Remove parentheses and their contents
-      .replace(/[^\w\s]/g, ' ')  // Replace special characters with spaces
+      .replace(/\([^)]*\)/g, '')
+      .replace(/[^\w\s]/g, ' ')
       .trim();
-  };
+  }, []);
 
   const fetchGoogleImage = async (searchTerm: string) => {
     try {
@@ -35,36 +34,40 @@ export const ProductImage = ({ title, description }: ProductImageProps) => {
       return data.imageUrl;
     } catch (error) {
       console.error('Error fetching Google image:', error);
-      setImageError(true);
-      return 'https://images.unsplash.com/photo-1493612276216-ee3925520721?auto=format&fit=crop&w=300&q=80';
+      throw error;
     }
   };
 
-  useEffect(() => {
-    const getImage = async () => {
+  const { data: imageUrl, isError } = useQuery({
+    queryKey: ['productImage', title],
+    queryFn: async () => {
       const cleanedTitle = cleanSearchTerm(title);
-      console.log('Searching with full cleaned title:', cleanedTitle);
-      
-      let url = await fetchGoogleImage(cleanedTitle);
-      
-      // If the first search fails, try with the first three words
-      if (!url || imageError) {
+      try {
+        return await fetchGoogleImage(cleanedTitle);
+      } catch (error) {
+        // Fallback to first three words if full title fails
         const words = cleanedTitle.split(' ');
-        const shortTitle = words.slice(0, 3).join(' '); // Use first three words as fallback
-        console.log('Fallback search term:', shortTitle);
-        url = await fetchGoogleImage(shortTitle);
+        const shortTitle = words.slice(0, 3).join(' ');
+        return await fetchGoogleImage(shortTitle);
       }
-      
-      setImageUrl(url);
-    };
+    },
+    retry: 1,
+    staleTime: 1000 * 60 * 5, // Cache for 5 minutes
+    cacheTime: 1000 * 60 * 30, // Keep in cache for 30 minutes
+  });
 
-    getImage();
-  }, [title, description]);
+  useEffect(() => {
+    if (isError) {
+      setImageError(true);
+    }
+  }, [isError]);
+
+  const fallbackImage = 'https://images.unsplash.com/photo-1493612276216-ee3925520721?auto=format&fit=crop&w=300&q=80';
 
   return (
-    <div className="aspect-[4/3] relative overflow-hidden">
+    <div className="aspect-[4/3] relative overflow-hidden bg-muted/10">
       <img
-        src={imageUrl}
+        src={imageError ? fallbackImage : imageUrl}
         alt={title}
         className="object-cover w-full h-full group-hover:scale-110 transition-transform duration-500"
         loading="lazy"
