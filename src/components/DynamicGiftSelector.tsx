@@ -112,15 +112,15 @@ export const DynamicGiftSelector = ({
       )}
 
       {currentPhase === 'price' && (
-        <div className="flex flex-wrap gap-2 justify-center">
+        <div className="grid grid-cols-2 gap-2 max-w-2xl mx-auto px-4">
           {priceRanges.map((price) => (
             <Button
               key={price.label}
               variant="outline"
               onClick={() => handleSelection('price', price.range)}
-              className="transition-all duration-200 hover:scale-105"
+              className="transition-all duration-200 hover:scale-105 text-sm h-10"
             >
-              <DollarSign className="mr-2" />
+              <DollarSign className="mr-1 h-4 w-4" />
               {price.label}
             </Button>
           ))}
@@ -128,15 +128,15 @@ export const DynamicGiftSelector = ({
       )}
 
       {currentPhase === 'interest' && (
-        <div className="flex flex-wrap gap-2 justify-center">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-w-3xl mx-auto px-4">
           {getInterests(selectedPerson, selectedAge).map((interest) => (
             <Button
               key={interest.label}
               variant="outline"
               onClick={() => handleSelection('interest', interest.label)}
-              className="transition-all duration-200 hover:scale-105"
+              className="transition-all duration-200 hover:scale-105 text-sm h-10"
             >
-              {interest.icon}
+              <span className="mr-1">{interest.icon}</span>
               {interest.label}
             </Button>
           ))}
