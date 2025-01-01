@@ -55,21 +55,23 @@ export const DynamicGiftSelector = ({
       case 'person':
         setSelectedPerson(value);
         setCurrentPhase('age');
+        onUpdate(query);
         break;
       case 'age':
         setSelectedAge(value);
         setCurrentPhase('price');
+        onUpdate(query);
         break;
       case 'price':
         setSelectedPrice(value);
         setCurrentPhase('interest');
+        onUpdate(query);
         break;
       case 'interest':
-        onSelectionComplete(query);
-        return;
+        setCurrentPhase('complete');
+        onSelectionComplete(query); // This will trigger the search
+        break;
     }
-    
-    onUpdate(query);
   };
 
   if (!visible) return null;
