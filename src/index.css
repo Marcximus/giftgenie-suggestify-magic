@@ -62,3 +62,12 @@ textarea {
 textarea:focus {
   height: auto;
 }
+
+@keyframes glow {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+
+.animate-pulse {
+  animation: glow 2s ease-in-out infinite;
+}
