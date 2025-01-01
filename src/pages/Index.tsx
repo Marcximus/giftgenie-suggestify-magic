@@ -68,13 +68,13 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-secondary/30 to-primary/5">
-      <div className="container mx-auto px-4 py-8 sm:py-12 max-w-7xl">
-        <div className="max-w-3xl mx-auto mb-12 animate-in slide-in-from-top duration-500">
+      <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-8 md:py-12 max-w-7xl">
+        <div className="max-w-3xl mx-auto mb-8 sm:mb-12 animate-in slide-in-from-top duration-500">
           <SearchBox onSearch={handleSearch} isLoading={isLoading} />
         </div>
         
         {suggestions.length > 0 && (
-          <div className="mt-8 sm:mt-12 grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <div className="mt-6 sm:mt-8 md:mt-12 grid gap-3 sm:gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
             {suggestions.map((suggestion, index) => (
               <div 
                 key={index}

@@ -36,22 +36,22 @@ export const SearchBox = ({ onSearch, isLoading }: SearchBoxProps) => {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6 w-full max-w-3xl mx-auto px-4">
-      <div className="flex flex-col space-y-3 text-center">
-        <h1 className="text-4xl sm:text-5xl font-bold bg-gradient-to-r from-primary via-primary/80 to-primary/60 bg-clip-text text-transparent animate-in fade-in slide-in-from-top-4 duration-700">
+    <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6 w-full max-w-3xl mx-auto px-2 sm:px-4">
+      <div className="flex flex-col space-y-2 sm:space-y-3 text-center">
+        <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold bg-gradient-to-r from-primary via-primary/80 to-primary/60 bg-clip-text text-transparent animate-in fade-in slide-in-from-top-4 duration-700">
           Get The Gift
         </h1>
-        <p className="text-sm sm:text-base text-muted-foreground animate-in fade-in slide-in-from-top-4 duration-700 delay-150">
+        <p className="text-xs sm:text-sm md:text-base text-muted-foreground animate-in fade-in slide-in-from-top-4 duration-700 delay-150 px-2">
           Find the perfect gift with the power of AI: describe the person or occasion below
         </p>
       </div>
-      <div className="flex flex-col sm:flex-row gap-3 w-full animate-in fade-in slide-in-from-top-4 duration-700 delay-300">
+      <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full animate-in fade-in slide-in-from-top-4 duration-700 delay-300">
         <div className="flex-1 min-w-0 group">
           <textarea
             placeholder="E.g., 'Tech-savvy dad who loves cooking'"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            className="w-full min-h-[40px] max-h-[120px] text-sm sm:text-base p-3 rounded-md border border-input bg-background/50 backdrop-blur-sm resize-y overflow-auto focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 transition-all duration-200 group-hover:border-primary/50"
+            className="w-full min-h-[40px] max-h-[120px] text-sm sm:text-base p-2 sm:p-3 rounded-md border border-input bg-background/50 backdrop-blur-sm resize-y overflow-auto focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 transition-all duration-200 group-hover:border-primary/50"
             style={{ lineHeight: '1.5' }}
           />
         </div>
@@ -75,8 +75,7 @@ export const SearchBox = ({ onSearch, isLoading }: SearchBoxProps) => {
               className="flex items-center gap-2 w-full sm:w-auto whitespace-nowrap shadow-sm hover:shadow-md transition-all duration-200 hover:bg-secondary/80"
             >
               <RefreshCw className="h-4 w-4" />
-              <span className="sm:hidden">New Search</span>
-              <span className="hidden sm:inline">Look for another gift</span>
+              <span className="text-xs sm:text-sm">New Search</span>
             </Button>
           )}
         </div>
