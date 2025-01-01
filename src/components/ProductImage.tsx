@@ -84,15 +84,16 @@ export const ProductImage = ({ title, description }: ProductImageProps) => {
 
   useEffect(() => {
     const getImage = async () => {
+      // First attempt: Try with full cleaned title
       const cleanedTitle = cleanSearchTerm(title);
-      console.log('Searching with full cleaned title:', cleanedTitle);
-      
+      console.log('Attempting search with full cleaned title:', cleanedTitle);
       let url = await fetchGoogleImage(cleanedTitle);
       
+      // Second attempt: If first attempt failed, try with first 3 words
       if (!url || imageError) {
         const words = cleanedTitle.split(' ');
         const shortTitle = words.slice(0, 3).join(' ');
-        console.log('Fallback search term:', shortTitle);
+        console.log('First attempt failed. Trying with first 3 words:', shortTitle);
         url = await fetchGoogleImage(shortTitle);
       }
       
