@@ -20,17 +20,17 @@ export const ProductImage = ({ title, description }: ProductImageProps) => {
       .replace(/[^\w\s]/g, ' ')  // Replace special characters with spaces
       .trim();
 
-    // Get the main product type (usually the last 1-2 words)
+    // Get the main product type (usually the last 2-3 words)
     const words = cleanTitle.split(' ');
-    return words.slice(-2).join(' ');
+    return words.slice(-3).join(' ');
   };
 
-  const fetchPexelsImage = async (searchTerm: string) => {
+  const fetchGoogleImage = async (searchTerm: string) => {
     try {
-      console.log('Searching Pexels for:', searchTerm);
+      console.log('Searching Google Images for:', searchTerm);
       
-      const { data, error } = await supabase.functions.invoke('get-pexels-image', {
-        body: { searchTerm: searchTerm + ' product photography' }
+      const { data, error } = await supabase.functions.invoke('get-google-image', {
+        body: { searchTerm }
       });
 
       if (error) throw error;
@@ -38,7 +38,7 @@ export const ProductImage = ({ title, description }: ProductImageProps) => {
 
       return data.imageUrl;
     } catch (error) {
-      console.error('Error fetching Pexels image:', error);
+      console.error('Error fetching Google image:', error);
       setImageError(true);
       return 'https://images.unsplash.com/photo-1493612276216-ee3925520721?auto=format&fit=crop&w=300&q=80';
     }
@@ -49,13 +49,13 @@ export const ProductImage = ({ title, description }: ProductImageProps) => {
       const mainTerm = cleanSearchTerm(title);
       console.log('Main search term:', mainTerm);
       
-      let url = await fetchPexelsImage(mainTerm);
+      let url = await fetchGoogleImage(mainTerm);
       
-      // If the first search fails, try a more generic term
+      // If the first search fails, try with just the last word
       if (!url || imageError) {
         const fallbackTerm = title.split(' ').pop() || 'gift';
         console.log('Fallback search term:', fallbackTerm);
-        url = await fetchPexelsImage(fallbackTerm);
+        url = await fetchGoogleImage(fallbackTerm);
       }
       
       setImageUrl(url);
