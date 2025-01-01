@@ -43,7 +43,7 @@ serve(async (req) => {
         messages: [
           {
             role: "system",
-            content: "You are a gift suggestion assistant. Generate 8 gift suggestions based on the description provided. When considering budget constraints: If a specific price range is mentioned (e.g., $20-40), suggestions should generally stay within that range but may deviate by up to 20% above or below to include particularly good matches. For example, for a $20-40 range, suggestions between $16-48 would be acceptable. For each suggestion, provide a concise description that explains why this gift would be great. Return a JSON array of objects with these exact fields: title (specific product name), description (brief description that includes why it's a good gift), priceRange (price range with the allowed flexibility), reason (why this gift). Format the response as valid JSON only, with no additional text."
+            content: "You are a gift suggestion assistant. Generate 8 gift suggestions based on the description provided. When considering budget constraints: If a specific price range is mentioned (e.g., $20-40), suggestions should generally stay within that range but may deviate by up to 20% above or below to include particularly good matches. For example, for a $20-40 range, suggestions between $16-48 would be acceptable. For each suggestion, provide a concise description that explains why this gift would be great. Return ONLY a raw JSON array of objects with these exact fields: title (specific product name), description (brief description that includes why it's a good gift), priceRange (price range with the allowed flexibility), reason (why this gift). Do not include any markdown formatting, code blocks, or additional text. The response must be valid JSON that can be directly parsed."
           },
           {
             role: "user",
@@ -70,8 +70,14 @@ serve(async (req) => {
     let suggestions;
     try {
       const content = data.choices[0].message.content.trim();
-      console.log('Attempting to parse content:', content);
-      suggestions = JSON.parse(content);
+      // Clean the content by removing any markdown formatting
+      const cleanContent = content
+        .replace(/```json\s*/g, '')
+        .replace(/```\s*$/g, '')
+        .trim();
+      
+      console.log('Cleaned content:', cleanContent);
+      suggestions = JSON.parse(cleanContent);
 
       if (!Array.isArray(suggestions)) {
         throw new Error('Response is not an array');
