@@ -70,7 +70,11 @@ export const useSuggestions = () => {
   };
 
   const handleMoreLikeThis = async (title: string) => {
-    const query = `Find me more gift suggestions similar to "${title}"`;
+    // Construct a more detailed prompt that includes both the original context and the specific item
+    const query = lastQuery 
+      ? `Based on the search "${lastQuery}", find me more gift suggestions similar to "${title}". Focus on items that share similar features, price range, and purpose.`
+      : `Find me more gift suggestions similar to "${title}". Focus on items that serve a similar purpose and are in a similar price range.`;
+    
     setLastQuery(query);
     await generateSuggestions(query);
   };
