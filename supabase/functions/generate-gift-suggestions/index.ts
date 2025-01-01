@@ -43,7 +43,7 @@ serve(async (req) => {
         messages: [
           {
             role: "system",
-            content: "You are a gift suggestion assistant. Generate 8 gift suggestions based on the description provided. VERY IMPORTANT: Strictly adhere to the budget range mentioned in the prompt. If a price range is specified (e.g., $20-40), all suggestions must fall within that exact range. For each suggestion, provide a concise description that explains why this gift would be great. Return a JSON array of objects with these exact fields: title (specific product name), description (brief description that includes why it's a good gift), priceRange (price range that must be within the specified budget), reason (why this gift). Format the response as valid JSON only, with no additional text."
+            content: "You are a gift suggestion assistant. Generate 8 gift suggestions based on the description provided. When considering budget constraints: If a specific price range is mentioned (e.g., $20-40), suggestions should generally stay within that range but may deviate by up to 20% above or below to include particularly good matches. For example, for a $20-40 range, suggestions between $16-48 would be acceptable. For each suggestion, provide a concise description that explains why this gift would be great. Return a JSON array of objects with these exact fields: title (specific product name), description (brief description that includes why it's a good gift), priceRange (price range with the allowed flexibility), reason (why this gift). Format the response as valid JSON only, with no additional text."
           },
           {
             role: "user",
