@@ -1,6 +1,7 @@
 import { ProductCard } from './ProductCard';
 import { Button } from './ui/button';
 import { Sparkles, RotateCcw } from 'lucide-react';
+import { SuggestionSkeleton } from './SuggestionSkeleton';
 
 interface GiftSuggestion {
   title: string;
@@ -27,24 +28,32 @@ export const SuggestionsGrid = ({
   return (
     <>
       <div className="mt-6 sm:mt-8 md:mt-12 grid gap-3 sm:gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
-        {suggestions.map((suggestion, index) => (
-          <div 
-            key={index}
-            className="animate-in fade-in slide-in-from-bottom-4"
-            style={{ 
-              animationDelay: `${index * 100}ms`,
-              animationFillMode: 'forwards' 
-            }}
-          >
-            <ProductCard
-              title={suggestion.title}
-              description={`${suggestion.description}\n\nWhy this gift? ${suggestion.reason}`}
-              price={suggestion.priceRange}
-              amazonUrl="#"
-              onMoreLikeThis={onMoreLikeThis}
-            />
-          </div>
-        ))}
+        {isLoading ? (
+          Array.from({ length: 8 }).map((_, index) => (
+            <div key={`skeleton-${index}`} className="animate-in fade-in slide-in-from-bottom-4" style={{ animationDelay: `${index * 100}ms` }}>
+              <SuggestionSkeleton />
+            </div>
+          ))
+        ) : (
+          suggestions.map((suggestion, index) => (
+            <div 
+              key={index}
+              className="animate-in fade-in slide-in-from-bottom-4"
+              style={{ 
+                animationDelay: `${index * 100}ms`,
+                animationFillMode: 'forwards' 
+              }}
+            >
+              <ProductCard
+                title={suggestion.title}
+                description={`${suggestion.description}\n\nWhy this gift? ${suggestion.reason}`}
+                price={suggestion.priceRange}
+                amazonUrl="#"
+                onMoreLikeThis={onMoreLikeThis}
+              />
+            </div>
+          ))
+        )}
       </div>
       
       {suggestions.length > 0 && (
