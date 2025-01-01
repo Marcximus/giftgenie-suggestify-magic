@@ -38,5 +38,7 @@ export const priceRanges: PriceRange[] = [
   { label: '100-200', range: '100-200' },
   { label: '200-400', range: '200-400' },
   { label: '400-800', range: '400-800' },
-  { label: '800+', range: '800+' },
+  { label: '800-1000', range: '800-1000' },
+  { label: '1000-2000', range: '1000-2000' },
+  { label: '2000-5000', range: '2000-5000' },
 ];
