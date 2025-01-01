@@ -68,8 +68,9 @@ export const DynamicGiftSelector = ({
         onUpdate(query);
         break;
       case 'interest':
+        // Immediately trigger the search with the final query
+        onSelectionComplete(query);
         setCurrentPhase('complete');
-        onSelectionComplete(query); // This will trigger the search
         break;
     }
   };
