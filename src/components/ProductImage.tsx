@@ -1,6 +1,5 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useQuery } from "@tanstack/react-query";
 
 interface ProductImageProps {
   title: string;
@@ -8,71 +7,64 @@ interface ProductImageProps {
 }
 
 export const ProductImage = ({ title, description }: ProductImageProps) => {
+  const [imageUrl, setImageUrl] = useState<string>('');
   const [imageError, setImageError] = useState(false);
 
-  const cleanSearchTerm = useCallback((title: string) => {
+  const cleanSearchTerm = (title: string) => {
+    // Remove common words and specifications while keeping the main product name intact
     return title
       .toLowerCase()
       .replace(/\b(the|with|for|and|or|in|on|at|to|of|from|by)\b/gi, '')
       .replace(/\d+(\.\d+)?(\s*)(inch|"|inches|ft|feet|mm|cm|m|gb|tb|mb|hz|watts)/gi, '')
-      .replace(/\([^)]*\)/g, '')
-      .replace(/[^\w\s]/g, ' ')
+      .replace(/\([^)]*\)/g, '') // Remove parentheses and their contents
+      .replace(/[^\w\s]/g, ' ')  // Replace special characters with spaces
       .trim();
-  }, []);
+  };
 
   const fetchGoogleImage = async (searchTerm: string) => {
     try {
+      console.log('Searching Google Images for:', searchTerm);
+      
       const { data, error } = await supabase.functions.invoke('get-google-image', {
         body: { searchTerm }
       });
 
-      if (error) {
-        console.error('Error fetching image:', error);
-        throw error;
-      }
-
-      if (!data?.imageUrl) {
-        throw new Error('No image URL returned');
-      }
+      if (error) throw error;
+      if (!data?.imageUrl) throw new Error('No image URL returned');
 
       return data.imageUrl;
     } catch (error) {
-      console.error('Error in fetchGoogleImage:', error);
-      throw error;
+      console.error('Error fetching Google image:', error);
+      setImageError(true);
+      return 'https://images.unsplash.com/photo-1493612276216-ee3925520721?auto=format&fit=crop&w=300&q=80';
     }
   };
 
-  const { data: imageUrl, isError } = useQuery({
-    queryKey: ['productImage', title],
-    queryFn: async () => {
-      const cleanedTitle = cleanSearchTerm(title);
-      try {
-        return await fetchGoogleImage(cleanedTitle);
-      } catch (error) {
-        // Fallback to first three words if full title fails
-        const words = cleanedTitle.split(' ');
-        const shortTitle = words.slice(0, 3).join(' ');
-        return await fetchGoogleImage(shortTitle);
-      }
-    },
-    retry: 2,
-    retryDelay: 1000,
-    staleTime: 1000 * 60 * 5, // Cache for 5 minutes
-    gcTime: 1000 * 60 * 30, // Keep in cache for 30 minutes
-  });
-
   useEffect(() => {
-    if (isError) {
-      setImageError(true);
-    }
-  }, [isError]);
+    const getImage = async () => {
+      const cleanedTitle = cleanSearchTerm(title);
+      console.log('Searching with full cleaned title:', cleanedTitle);
+      
+      let url = await fetchGoogleImage(cleanedTitle);
+      
+      // If the first search fails, try with the first three words
+      if (!url || imageError) {
+        const words = cleanedTitle.split(' ');
+        const shortTitle = words.slice(0, 3).join(' '); // Use first three words as fallback
+        console.log('Fallback search term:', shortTitle);
+        url = await fetchGoogleImage(shortTitle);
+      }
+      
+      setImageUrl(url);
+    };
 
-  const fallbackImage = 'https://images.unsplash.com/photo-1493612276216-ee3925520721?auto=format&fit=crop&w=300&q=80';
+    getImage();
+  }, [title, description]);
 
   return (
-    <div className="aspect-[4/3] relative overflow-hidden bg-muted/10">
+    <div className="aspect-[4/3] relative overflow-hidden">
       <img
-        src={imageError ? fallbackImage : imageUrl}
+        src={imageUrl}
         alt={title}
         className="object-cover w-full h-full group-hover:scale-110 transition-transform duration-500"
         loading="lazy"
