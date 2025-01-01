@@ -70,7 +70,6 @@ export const useSuggestions = () => {
   };
 
   const handleMoreLikeThis = async (title: string) => {
-    // Construct a more detailed prompt that includes both the original context and the specific item
     const query = lastQuery 
       ? `Based on the search "${lastQuery}", find me more gift suggestions similar to "${title}". Focus on items that share similar features, price range, and purpose.`
       : `Find me more gift suggestions similar to "${title}". Focus on items that serve a similar purpose and are in a similar price range.`;
@@ -82,6 +81,8 @@ export const useSuggestions = () => {
   const handleStartOver = () => {
     setSuggestions([]);
     setLastQuery('');
+    // Trigger a window reload to ensure all components are reset
+    window.location.reload();
   };
 
   return {
