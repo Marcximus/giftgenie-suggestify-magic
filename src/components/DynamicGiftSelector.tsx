@@ -96,15 +96,15 @@ export const DynamicGiftSelector = ({
       )}
 
       {currentPhase === 'age' && (
-        <div className="flex flex-wrap gap-2 justify-start">
+        <div className="grid grid-cols-2 gap-2 max-w-2xl mx-auto px-4">
           {ageRanges.map((age) => (
             <Button
               key={age.label}
               variant="outline"
               onClick={() => handleSelection('age', age.range)}
-              className="transition-all duration-200 hover:scale-105 flex items-center"
+              className="transition-all duration-200 hover:scale-105 text-sm h-10 flex items-center"
             >
-              <Calendar className="mr-2 shrink-0" />
+              <Calendar className="mr-2 h-4 w-4 shrink-0" />
               <span className="flex-1 text-center">{age.label}</span>
             </Button>
           ))}
