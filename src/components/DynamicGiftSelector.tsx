@@ -68,7 +68,6 @@ export const DynamicGiftSelector = ({
         onUpdate(query);
         break;
       case 'interest':
-        // Immediately trigger the search with the final query
         onSelectionComplete(query);
         setCurrentPhase('complete');
         break;
