@@ -35,7 +35,7 @@ serve(async (req) => {
         messages: [
           {
             role: "system",
-            content: `You are a gift suggestion assistant specializing in recommending highly relevant, purchasable products. Generate exactly 6 gift suggestions based on the description provided.
+            content: `You are a gift suggestion assistant specializing in recommending highly relevant, purchasable products. Generate exactly 8 gift suggestions based on the description provided.
 
             Focus on these key aspects:
             1. Suggest specific, named products rather than generic categories
@@ -58,7 +58,7 @@ serve(async (req) => {
           }
         ],
         temperature: 0.7,
-        max_tokens: 1500,
+        max_tokens: 2000,
       }),
     });
 
@@ -107,9 +107,9 @@ serve(async (req) => {
       suggestions = JSON.parse(cleanedContent);
       
       // Validate the structure of the suggestions
-      if (!Array.isArray(suggestions) || suggestions.length !== 6) {
+      if (!Array.isArray(suggestions) || suggestions.length !== 8) {
         console.error('Invalid suggestions array:', suggestions);
-        throw new Error('Invalid suggestions format - expected array of 6 items');
+        throw new Error('Invalid suggestions format - expected array of 8 items');
       }
 
       suggestions.forEach((suggestion, index) => {

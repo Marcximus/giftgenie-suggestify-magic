@@ -3,6 +3,8 @@ import { SearchBox } from '@/components/SearchBox';
 import { ProductCard } from '@/components/ProductCard';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from "@/integrations/supabase/client";
+import { Button } from '@/components/ui/button';
+import { Sparkles } from 'lucide-react';
 
 interface GiftSuggestion {
   title: string;
@@ -14,11 +16,14 @@ interface GiftSuggestion {
 const Index = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [suggestions, setSuggestions] = useState<GiftSuggestion[]>([]);
+  const [lastQuery, setLastQuery] = useState('');
   const { toast } = useToast();
 
-  const handleSearch = async (query: string) => {
+  const generateSuggestions = async (query: string, append: boolean = false) => {
     setIsLoading(true);
-    setSuggestions([]);
+    if (!append) {
+      setSuggestions([]);
+    }
 
     try {
       console.log('Calling edge function with query:', query);
@@ -48,10 +53,10 @@ const Index = () => {
         throw new Error('Invalid response format from server');
       }
 
-      setSuggestions(data.suggestions);
+      setSuggestions(prev => append ? [...prev, ...data.suggestions] : data.suggestions);
       toast({
-        title: "Success",
-        description: "Gift suggestions generated successfully!",
+        title: append ? "More Ideas Generated" : "Success",
+        description: append ? "Additional gift suggestions added!" : "Gift suggestions generated successfully!",
       });
 
     } catch (error) {
@@ -66,6 +71,17 @@ const Index = () => {
     }
   };
 
+  const handleSearch = async (query: string) => {
+    setLastQuery(query);
+    await generateSuggestions(query);
+  };
+
+  const handleGenerateMore = async () => {
+    if (lastQuery) {
+      await generateSuggestions(lastQuery, true);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-secondary/30 to-primary/5">
       <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-8 md:py-12 max-w-7xl">
@@ -74,25 +90,38 @@ const Index = () => {
         </div>
         
         {suggestions.length > 0 && (
-          <div className="mt-6 sm:mt-8 md:mt-12 grid gap-3 sm:gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            {suggestions.map((suggestion, index) => (
-              <div 
-                key={index}
-                className="animate-in fade-in slide-in-from-bottom-4"
-                style={{ 
-                  animationDelay: `${index * 100}ms`,
-                  animationFillMode: 'forwards' 
-                }}
+          <>
+            <div className="mt-6 sm:mt-8 md:mt-12 grid gap-3 sm:gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
+              {suggestions.map((suggestion, index) => (
+                <div 
+                  key={index}
+                  className="animate-in fade-in slide-in-from-bottom-4"
+                  style={{ 
+                    animationDelay: `${index * 100}ms`,
+                    animationFillMode: 'forwards' 
+                  }}
+                >
+                  <ProductCard
+                    title={suggestion.title}
+                    description={`${suggestion.description}\n\nWhy this gift? ${suggestion.reason}`}
+                    price={suggestion.priceRange}
+                    amazonUrl="#"
+                  />
+                </div>
+              ))}
+            </div>
+            
+            <div className="flex justify-center mt-8 sm:mt-12">
+              <Button
+                onClick={handleGenerateMore}
+                disabled={isLoading}
+                className="group bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-sm hover:shadow-md transition-all duration-200"
               >
-                <ProductCard
-                  title={suggestion.title}
-                  description={`${suggestion.description}\n\nWhy this gift? ${suggestion.reason}`}
-                  price={suggestion.priceRange}
-                  amazonUrl="#"
-                />
-              </div>
-            ))}
-          </div>
+                <Sparkles className="w-4 h-4 mr-2 animate-pulse group-hover:animate-none" />
+                Generate More Ideas
+              </Button>
+            </div>
+          </>
         )}
       </div>
     </div>
