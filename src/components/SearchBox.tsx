@@ -38,8 +38,16 @@ export const SearchBox = ({ onSearch, isLoading }: SearchBoxProps) => {
   return (
     <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6 w-full max-w-3xl mx-auto px-2 sm:px-4">
       <div className="flex flex-col space-y-2 sm:space-y-3 text-center">
-        <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold bg-gradient-to-r from-primary via-primary/80 to-primary/60 bg-clip-text text-transparent animate-in fade-in slide-in-from-top-4 duration-700">
-          Get The Gift
+        <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold">
+          Get The{' '}
+          <span className="relative">
+            <span className="bg-gradient-to-r from-primary via-primary/80 to-primary/60 bg-clip-text text-transparent">
+              Gift
+            </span>
+            <span className="absolute top-0 left-1/4 w-1 h-1 bg-primary/80 rounded-full animate-twinkle"></span>
+            <span className="absolute top-1/4 right-1/4 w-1.5 h-1.5 bg-primary/60 rounded-full animate-twinkle-delayed"></span>
+            <span className="absolute bottom-1/3 right-1/3 w-1 h-1 bg-primary/70 rounded-full animate-twinkle-slow"></span>
+          </span>
         </h1>
         <p className="text-xs sm:text-sm md:text-base text-muted-foreground animate-in fade-in slide-in-from-top-4 duration-700 delay-150 px-2">
           Find the perfect gift with the power of AI: describe the person or occasion below
