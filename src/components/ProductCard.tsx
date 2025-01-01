@@ -36,15 +36,15 @@ export const ProductCard = ({
         </p>
         <p className="text-xs sm:text-sm font-bold mt-1 text-primary">{price}</p>
       </CardContent>
-      <CardFooter className="p-2 sm:p-3 pt-0 flex flex-col gap-2">
+      <CardFooter className="p-2 sm:p-3 pt-0 flex flex-col gap-1.5">
         <AmazonButton title={title} />
         <Button 
           variant="outline" 
           size="sm"
-          className="w-full text-xs"
+          className="w-full text-[0.65rem] h-7 opacity-70 hover:opacity-100"
           onClick={() => onMoreLikeThis?.(title)}
         >
-          <Wand2 className="w-3 h-3 mr-1" />
+          <Wand2 className="w-2.5 h-2.5 mr-1" />
           More like this
         </Button>
       </CardFooter>
