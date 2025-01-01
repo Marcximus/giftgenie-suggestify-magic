@@ -3,56 +3,6 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect } from "react";
 
-const EXACT_MATCHES = {
-  // Jewelry
-  "gold jewelry": "https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?auto=format&fit=crop&w=300&q=80",
-  "silver jewelry": "https://images.unsplash.com/photo-1603561591411-07134e71a2a9?auto=format&fit=crop&w=300&q=80",
-  "jewelry set": "https://images.unsplash.com/photo-1599643477877-530eb83abc8e?auto=format&fit=crop&w=300&q=80",
-  "necklace": "https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&w=300&q=80",
-  "bracelet": "https://images.unsplash.com/photo-1611652022419-a9419f74343d?auto=format&fit=crop&w=300&q=80",
-  
-  // Tech
-  "smartphone": "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=300&q=80",
-  "laptop": "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?auto=format&fit=crop&w=300&q=80",
-  "headphones": "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=300&q=80",
-  "smartwatch": "https://images.unsplash.com/photo-1544117519-31a4b719223d?auto=format&fit=crop&w=300&q=80",
-
-  // Home & Lifestyle
-  "coffee maker": "https://images.unsplash.com/photo-1520970014086-2208d157c9e2?auto=format&fit=crop&w=300&q=80",
-  "yoga mat": "https://images.unsplash.com/photo-1601925260368-ae2f83cf8b7f?auto=format&fit=crop&w=300&q=80",
-  "plant": "https://images.unsplash.com/photo-1485955900006-10f4d324d411?auto=format&fit=crop&w=300&q=80",
-  
-  // Books & Entertainment
-  "book": "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=300&q=80",
-  "kindle": "https://images.unsplash.com/photo-1592496001020-d31bd830651f?auto=format&fit=crop&w=300&q=80",
-  "board game": "https://images.unsplash.com/photo-1610890716171-6b1bb98ffd09?auto=format&fit=crop&w=300&q=80",
-};
-
-// Fallback categories if no exact match is found
-const CATEGORY_IMAGES = {
-  tech: [
-    "https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?auto=format&fit=crop&w=300&q=80",
-    "https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=300&q=80",
-  ],
-  lifestyle: [
-    "https://images.unsplash.com/photo-1513542789411-b6a5d4f31634?auto=format&fit=crop&w=300&q=80",
-    "https://images.unsplash.com/photo-1577003833619-76bbd7f82948?auto=format&fit=crop&w=300&q=80",
-  ],
-  hobby: [
-    "https://images.unsplash.com/photo-1549465220-1a8b9238cd48?auto=format&fit=crop&w=300&q=80",
-    "https://images.unsplash.com/photo-1512909006721-3d6018887383?auto=format&fit=crop&w=300&q=80",
-  ],
-  generic: [
-    "https://images.unsplash.com/photo-1493612276216-ee3925520721?auto=format&fit=crop&w=300&q=80",
-  ]
-};
-
-const CATEGORY_KEYWORDS = {
-  tech: ['gadget', 'electronic', 'digital', 'smart', 'device', 'tech', 'computer', 'phone', 'tablet', 'watch'],
-  lifestyle: ['fashion', 'clothing', 'accessory', 'jewelry', 'beauty', 'style', 'wear', 'dress', 'outfit'],
-  hobby: ['craft', 'art', 'sport', 'game', 'book', 'read', 'music', 'instrument', 'hobby', 'collect'],
-};
-
 interface Product {
   title: string;
   description: string;
@@ -66,6 +16,7 @@ let cachedAssociateId: string | null = null;
 export const ProductCard = ({ title, description, price, amazonUrl }: Product) => {
   const [isLoading, setIsLoading] = useState(false);
   const [imageUrl, setImageUrl] = useState<string>('');
+  const [imageError, setImageError] = useState(false);
 
   const getAmazonUrl = async (searchTerm: string) => {
     try {
@@ -86,71 +37,44 @@ export const ProductCard = ({ title, description, price, amazonUrl }: Product) =
     }
   };
 
-  const findExactMatch = (text: string): string | null => {
-    const lowerText = text.toLowerCase();
-    
-    // First try exact phrase matches
-    for (const [key, url] of Object.entries(EXACT_MATCHES)) {
-      if (lowerText.includes(key)) {
-        return url;
-      }
-    }
+  const fetchPexelsImage = async (searchTerm: string) => {
+    try {
+      const { data, error } = await supabase.functions.invoke('get-pexels-image', {
+        body: { searchTerm }
+      });
 
-    // If no exact phrase match, try matching individual words
-    const words = lowerText.split(/\s+/);
-    for (const word of words) {
-      if (word.length < 3) continue; // Skip very short words
-      
-      for (const [key, url] of Object.entries(EXACT_MATCHES)) {
-        if (key.includes(word) || word.includes(key)) {
-          console.log(`Found image match for word: ${word} with key: ${key}`);
-          return url;
-        }
-      }
-    }
-    
-    return null;
-  };
+      if (error) throw error;
+      if (!data?.imageUrl) throw new Error('No image URL returned');
 
-  const getCategoryFromText = (text: string): 'tech' | 'lifestyle' | 'hobby' | 'generic' => {
-    const lowerText = text.toLowerCase();
-    
-    for (const [category, keywords] of Object.entries(CATEGORY_KEYWORDS)) {
-      if (keywords.some(keyword => lowerText.includes(keyword))) {
-        return category as 'tech' | 'lifestyle' | 'hobby';
-      }
+      return data.imageUrl;
+    } catch (error) {
+      console.error('Error fetching Pexels image:', error);
+      setImageError(true);
+      // Return a default placeholder image
+      return 'https://images.unsplash.com/photo-1493612276216-ee3925520721?auto=format&fit=crop&w=300&q=80';
     }
-    
-    return 'generic';
-  };
-
-  const getImage = () => {
-    // Try to find an exact match in title
-    const titleMatch = findExactMatch(title);
-    if (titleMatch) {
-      console.log('Found match in title:', title);
-      return titleMatch;
-    }
-
-    // Try to find an exact match in description
-    const descriptionMatch = findExactMatch(description);
-    if (descriptionMatch) {
-      console.log('Found match in description:', description);
-      return descriptionMatch;
-    }
-
-    // Fall back to category-based image if no exact match
-    console.log('No exact matches found, falling back to category');
-    const category = getCategoryFromText(title + ' ' + description);
-    const images = CATEGORY_IMAGES[category];
-    const randomIndex = Math.floor(Math.random() * images.length);
-    return images[randomIndex];
   };
 
   useEffect(() => {
-    // Set the image URL only once when the component mounts
-    setImageUrl(getImage());
-  }, [title, description]); // Only re-run if title or description changes
+    const getImage = async () => {
+      // First try to find an image based on the title
+      let url = await fetchPexelsImage(title);
+      
+      // If that fails, try using keywords from the description
+      if (!url || imageError) {
+        const keywords = description
+          .split(' ')
+          .filter(word => word.length > 3)
+          .slice(0, 3)
+          .join(' ');
+        url = await fetchPexelsImage(keywords);
+      }
+      
+      setImageUrl(url);
+    };
+
+    getImage();
+  }, [title, description]);
 
   const handleClick = async () => {
     const url = await getAmazonUrl(title);
@@ -166,6 +90,7 @@ export const ProductCard = ({ title, description, price, amazonUrl }: Product) =
             alt={title}
             className="object-cover w-full h-full group-hover:scale-110 transition-transform duration-500"
             loading="lazy"
+            onError={() => setImageError(true)}
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
         </div>
