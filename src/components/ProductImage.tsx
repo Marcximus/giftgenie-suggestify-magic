@@ -28,12 +28,23 @@ export const ProductImage = ({ title, description }: ProductImageProps) => {
         body: { searchTerm }
       });
 
-      if (error) throw error;
-      if (!data?.imageUrl) throw new Error('No image URL returned');
+      if (error) {
+        console.error('Supabase function error:', error);
+        throw error;
+      }
+      
+      if (!data?.imageUrl) {
+        console.error('No image URL returned');
+        throw new Error('No image URL returned');
+      }
 
       return data.imageUrl;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching Google image:', error);
+      if (error.message?.includes('429') || error?.body?.includes('429')) {
+        await new Promise(resolve => setTimeout(resolve, 5000)); // Wait 5 seconds before retry
+        throw error; // Let React Query handle the retry
+      }
       throw error;
     }
   };
@@ -51,9 +62,10 @@ export const ProductImage = ({ title, description }: ProductImageProps) => {
         return await fetchGoogleImage(shortTitle);
       }
     },
-    retry: 1,
+    retry: 3,
+    retryDelay: (attemptIndex) => Math.min(1000 * Math.pow(2, attemptIndex), 30000), // Exponential backoff
     staleTime: 1000 * 60 * 5, // Cache for 5 minutes
-    gcTime: 1000 * 60 * 30, // Keep in cache for 30 minutes (renamed from cacheTime)
+    gcTime: 1000 * 60 * 30, // Keep in cache for 30 minutes
   });
 
   useEffect(() => {

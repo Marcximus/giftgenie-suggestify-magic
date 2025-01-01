@@ -8,7 +8,7 @@ const corsHeaders = {
 // Simple in-memory cache with TTL
 const cache = new Map<string, { url: string; timestamp: number }>()
 const CACHE_TTL = 1000 * 60 * 60 // 1 hour
-const RATE_LIMIT_WINDOW = 2000 // 2 seconds between requests
+const RATE_LIMIT_WINDOW = 3000 // 3 seconds between requests
 let lastRequestTime = 0
 const requestQueue: (() => Promise<Response>)[] = []
 let isProcessingQueue = false
@@ -47,7 +47,7 @@ async function fetchWithRetry(url: string, options: RequestInit, retries = 3): P
     if (!response.ok) {
       console.error(`Google API error: ${response.status} ${response.statusText}`);
       if (response.status === 429 && retries > 0) {
-        const delay = Math.pow(2, 4 - retries) * 1000;
+        const delay = Math.pow(2, 4 - retries) * 2000; // Increased base delay to 2 seconds
         console.log(`Rate limited, retrying in ${delay}ms. Retries left: ${retries-1}`);
         await new Promise(resolve => setTimeout(resolve, delay));
         return fetchWithRetry(url, options, retries - 1);
@@ -59,7 +59,7 @@ async function fetchWithRetry(url: string, options: RequestInit, retries = 3): P
   } catch (error) {
     console.error('Fetch error:', error);
     if (retries > 0) {
-      const delay = Math.pow(2, 4 - retries) * 1000;
+      const delay = Math.pow(2, 4 - retries) * 2000; // Increased base delay to 2 seconds
       console.log(`Request failed, retrying in ${delay}ms. Retries left: ${retries-1}`);
       await new Promise(resolve => setTimeout(resolve, delay));
       return fetchWithRetry(url, options, retries - 1);
