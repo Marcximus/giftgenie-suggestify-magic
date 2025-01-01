@@ -15,39 +15,47 @@ export const getInterests = (person: string, ageRange: string): Interest[] => {
   const child = ['0-4', '5-9', '10-14'].includes(ageRange);
   const teen = ['15-19'].includes(ageRange);
 
-  // Base interests that are generally appropriate for most people
-  const baseInterests = [
-    { label: 'Reading', icon: '📚' },
-    { label: 'Music', icon: '🎵' },
-    { label: 'Sports', icon: '⚽' },
-    { label: 'Movies', icon: '🎬' },
-    { label: 'Travel', icon: '✈️' }
-  ];
-
   switch (person.toLowerCase()) {
     case 'wife':
     case 'girlfriend':
       return [
         ...romanticInterests,
-        ...lifestyleInterests,
         { label: 'Jewelry', icon: '💎' },
         { label: 'Spa & Wellness', icon: '💆‍♀️' },
         { label: 'Fashion', icon: '👗' },
-        ...homeInterests.slice(0, 3),
-        ...creativeInterests.slice(0, 3)
+        { label: 'Accessories', icon: '👜' },
+        { label: 'Perfume', icon: '🌸' },
+        { label: 'Yoga', icon: '🧘‍♀️' },
+        { label: 'Dancing', icon: '💃' },
+        { label: 'Photography', icon: '📸' },
+        { label: 'Art', icon: '🎨' },
+        { label: 'Reading', icon: '📚' },
+        { label: 'Travel', icon: '✈️' },
+        { label: 'Cooking', icon: '👩‍🍳' },
+        { label: 'Wine', icon: '🍷' },
+        { label: 'Plants', icon: '🪴' },
+        { label: 'Music', icon: '🎵' }
       ];
     
     case 'husband':
     case 'boyfriend':
       return [
         ...romanticInterests,
-        ...techInterests.slice(0, 4),
+        { label: 'Gaming', icon: '🎮' },
+        { label: 'Sports', icon: '⚽' },
+        { label: 'Technology', icon: '📱' },
+        { label: 'Gadgets', icon: '🔧' },
         { label: 'Grilling', icon: '🔥' },
         { label: 'Fitness', icon: '💪' },
-        { label: 'Sports Fan', icon: '🏆' },
         { label: 'Watches', icon: '⌚' },
-        { label: 'Tools', icon: '🔧' },
-        { label: 'Outdoors', icon: '🏕️' }
+        { label: 'Travel', icon: '✈️' },
+        { label: 'Music', icon: '🎵' },
+        { label: 'Coffee', icon: '☕' },
+        { label: 'Beer', icon: '🍺' },
+        { label: 'Outdoors', icon: '🏕️' },
+        { label: 'Photography', icon: '📸' },
+        { label: 'Cars', icon: '🚗' },
+        { label: 'DIY', icon: '🔨' }
       ];
 
     case 'father':
@@ -58,47 +66,97 @@ export const getInterests = (person: string, ageRange: string): Interest[] => {
         { label: 'Sports Fan', icon: '🏆' },
         { label: 'Golf', icon: '⛳' },
         { label: 'Fishing', icon: '🎣' },
-        ...techInterests.slice(0, 3),
-        { label: 'Coffee', icon: '☕' }
+        { label: 'Technology', icon: '📱' },
+        { label: 'Coffee', icon: '☕' },
+        { label: 'Watches', icon: '⌚' },
+        { label: 'Cars', icon: '🚗' },
+        { label: 'Travel', icon: '✈️' },
+        { label: 'Music', icon: '🎵' },
+        { label: 'Photography', icon: '📸' },
+        { label: 'History', icon: '📚' },
+        { label: 'Camping', icon: '🏕️' }
       ] : [
-        ...baseInterests,
-        { label: 'Tools', icon: '🔧' },
+        { label: 'Sports', icon: '⚽' },
+        { label: 'Gaming', icon: '🎮' },
+        { label: 'Technology', icon: '📱' },
+        { label: 'Music', icon: '🎵' },
+        { label: 'Travel', icon: '✈️' },
+        { label: 'Fitness', icon: '💪' },
+        { label: 'Photography', icon: '📸' },
+        { label: 'Coffee', icon: '☕' },
         { label: 'Outdoors', icon: '🏕️' },
-        { label: 'Cooking', icon: '👨‍🍳' }
+        { label: 'Movies', icon: '🎬' },
+        { label: 'Cooking', icon: '👨‍🍳' },
+        { label: 'Reading', icon: '📚' }
       ];
     
     case 'mother':
       return middleAged ? [
-        ...homeInterests.slice(0, 4),
         { label: 'Gardening', icon: '🌱' },
+        { label: 'Cooking', icon: '👩‍🍳' },
+        { label: 'Home Decor', icon: '🏠' },
+        { label: 'Reading', icon: '📚' },
+        { label: 'Crafts', icon: '🎨' },
+        { label: 'Tea', icon: '🫖' },
         { label: 'Spa & Wellness', icon: '💆‍♀️' },
         { label: 'Jewelry', icon: '💎' },
-        ...creativeInterests.slice(0, 3)
+        { label: 'Plants', icon: '🪴' },
+        { label: 'Photography', icon: '📸' },
+        { label: 'Travel', icon: '✈️' },
+        { label: 'Music', icon: '🎵' },
+        { label: 'Wine', icon: '🍷' },
+        { label: 'Yoga', icon: '🧘‍♀️' },
+        { label: 'Fashion', icon: '👗' }
       ] : [
-        ...baseInterests,
-        ...homeInterests.slice(0, 3),
-        { label: 'Self-care', icon: '🛁' }
+        { label: 'Fitness', icon: '🏃‍♀️' },
+        { label: 'Cooking', icon: '👩‍🍳' },
+        { label: 'Travel', icon: '✈️' },
+        { label: 'Photography', icon: '📸' },
+        { label: 'Music', icon: '🎵' },
+        { label: 'Art', icon: '🎨' },
+        { label: 'Fashion', icon: '👗' },
+        { label: 'Coffee', icon: '☕' },
+        { label: 'Yoga', icon: '🧘‍♀️' },
+        { label: 'Reading', icon: '📚' },
+        { label: 'Plants', icon: '🪴' },
+        { label: 'Movies', icon: '🎬' }
       ];
     
     case 'brother':
-      return youngAdult ? [
-        ...techInterests.slice(0, 4),
+      if (child) return getChildInterests();
+      if (teen) return getTeenInterests();
+      return [
         { label: 'Gaming', icon: '🎮' },
-        { label: 'Fitness', icon: '💪' },
         { label: 'Sports', icon: '⚽' },
+        { label: 'Technology', icon: '📱' },
         { label: 'Music', icon: '🎵' },
-        { label: 'Outdoors', icon: '🏕️' }
-      ] : teen ? getTeenInterests() : getChildInterests();
+        { label: 'Fitness', icon: '💪' },
+        { label: 'Movies', icon: '🎬' },
+        { label: 'Travel', icon: '✈️' },
+        { label: 'Photography', icon: '📸' },
+        { label: 'Outdoors', icon: '🏕️' },
+        { label: 'Cars', icon: '🚗' },
+        { label: 'Skateboarding', icon: '🛹' },
+        { label: 'Art', icon: '🎨' }
+      ];
     
     case 'sister':
-      return youngAdult ? [
+      if (child) return getChildInterests();
+      if (teen) return getTeenInterests();
+      return [
         { label: 'Fashion', icon: '👗' },
-        { label: 'Jewelry', icon: '💎' },
-        { label: 'Fitness', icon: '🧘‍♀️' },
+        { label: 'Music', icon: '🎵' },
+        { label: 'Art', icon: '🎨' },
         { label: 'Photography', icon: '📸' },
-        ...creativeInterests.slice(0, 3),
-        ...lifestyleInterests.slice(0, 3)
-      ] : teen ? getTeenInterests() : getChildInterests();
+        { label: 'Travel', icon: '✈️' },
+        { label: 'Yoga', icon: '🧘‍♀️' },
+        { label: 'Dancing', icon: '💃' },
+        { label: 'Reading', icon: '📚' },
+        { label: 'Plants', icon: '🪴' },
+        { label: 'Movies', icon: '🎬' },
+        { label: 'Cooking', icon: '👩‍🍳' },
+        { label: 'Fitness', icon: '🏃‍♀️' }
+      ];
     
     case 'grandma':
       return [
@@ -107,9 +165,16 @@ export const getInterests = (person: string, ageRange: string): Interest[] => {
         { label: 'Knitting', icon: '🧶' },
         { label: 'Reading', icon: '📚' },
         { label: 'Tea', icon: '🫖' },
-        { label: 'Family Photos', icon: '🖼️' },
+        { label: 'Crafts', icon: '🎨' },
         { label: 'Puzzles', icon: '🧩' },
-        { label: 'Birds & Nature', icon: '🦜' }
+        { label: 'Birds', icon: '🦜' },
+        { label: 'Plants', icon: '🪴' },
+        { label: 'Music', icon: '🎵' },
+        { label: 'Photography', icon: '📸' },
+        { label: 'Travel', icon: '✈️' },
+        { label: 'Movies', icon: '🎬' },
+        { label: 'Baking', icon: '🍪' },
+        { label: 'Family', icon: '👨‍👩‍👧‍👦' }
       ];
     
     case 'grandpa':
@@ -119,42 +184,32 @@ export const getInterests = (person: string, ageRange: string): Interest[] => {
         { label: 'History', icon: '📖' },
         { label: 'Chess', icon: '♟️' },
         { label: 'Fishing', icon: '🎣' },
-        { label: 'Birds & Nature', icon: '🦜' },
+        { label: 'Birds', icon: '🦜' },
         { label: 'Coffee', icon: '☕' },
-        { label: 'Tools', icon: '🔧' }
+        { label: 'Tools', icon: '🔧' },
+        { label: 'Golf', icon: '⛳' },
+        { label: 'Music', icon: '🎵' },
+        { label: 'Photography', icon: '📸' },
+        { label: 'Travel', icon: '✈️' },
+        { label: 'Movies', icon: '🎬' },
+        { label: 'Woodworking', icon: '🪚' },
+        { label: 'Family', icon: '👨‍👩‍👧‍👦' }
       ];
 
-    case 'son':
-      if (child) return getChildInterests();
-      if (teen) return getTeenInterests();
+    case 'friend':
       return [
         { label: 'Gaming', icon: '🎮' },
         { label: 'Sports', icon: '⚽' },
         { label: 'Music', icon: '🎵' },
-        ...techInterests.slice(0, 3),
-        { label: 'Fitness', icon: '💪' },
-        { label: 'Outdoors', icon: '🏕️' }
-      ];
-
-    case 'daughter':
-      if (child) return getChildInterests();
-      if (teen) return getTeenInterests();
-      return [
-        { label: 'Fashion', icon: '👗' },
-        { label: 'Art', icon: '🎨' },
-        { label: 'Music', icon: '🎵' },
-        { label: 'Dance', icon: '💃' },
-        { label: 'Photography', icon: '📸' },
-        ...lifestyleInterests.slice(0, 3)
-      ];
-    
-    case 'friend':
-      return [
-        ...baseInterests,
-        { label: 'Gaming', icon: '🎮' },
+        { label: 'Movies', icon: '🎬' },
+        { label: 'Travel', icon: '✈️' },
         { label: 'Coffee', icon: '☕' },
         { label: 'Food', icon: '🍕' },
-        { label: 'Fitness', icon: '🏃' }
+        { label: 'Fitness', icon: '🏃' },
+        { label: 'Photography', icon: '📸' },
+        { label: 'Art', icon: '🎨' },
+        { label: 'Books', icon: '📚' },
+        { label: 'Technology', icon: '📱' }
       ];
     
     case 'colleague':
@@ -162,12 +217,18 @@ export const getInterests = (person: string, ageRange: string): Interest[] => {
         { label: 'Coffee', icon: '☕' },
         { label: 'Tea', icon: '🫖' },
         { label: 'Office', icon: '💼' },
-        { label: 'Tech', icon: '💻' },
+        { label: 'Technology', icon: '💻' },
         { label: 'Books', icon: '📚' },
-        { label: 'Wellness', icon: '🌿' }
+        { label: 'Wellness', icon: '🌿' },
+        { label: 'Food', icon: '🍕' },
+        { label: 'Travel', icon: '✈️' },
+        { label: 'Music', icon: '🎵' },
+        { label: 'Sports', icon: '⚽' },
+        { label: 'Photography', icon: '📸' },
+        { label: 'Movies', icon: '🎬' }
       ];
     
     default:
-      return baseInterests;
+      return commonInterests;
   }
 };
