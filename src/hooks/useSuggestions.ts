@@ -58,7 +58,7 @@ export const useSuggestions = () => {
     queryFn: () => debouncedGenerateSuggestions(lastQuery),
     enabled: !!lastQuery,
     staleTime: 5 * 60 * 1000, // Consider data fresh for 5 minutes
-    cacheTime: 30 * 60 * 1000, // Keep in cache for 30 minutes
+    gcTime: 30 * 60 * 1000, // Keep in cache for 30 minutes (replaced cacheTime)
     retry: 1,
   });
 

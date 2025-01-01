@@ -21,8 +21,14 @@ const validatePriceRange = (suggestion: any, originalRange: string): boolean => 
 };
 
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { 
+      headers: {
+        ...corsHeaders,
+        'Access-Control-Allow-Methods': 'POST, OPTIONS',
+      }
+    });
   }
 
   try {
@@ -37,7 +43,6 @@ serve(async (req) => {
     const originalPriceRange = priceRangeMatch ? priceRangeMatch[1] : null;
     console.log('Extracted price range:', originalPriceRange);
 
-    // Optimize the system prompt to be more concise
     const systemPrompt = `Generate 8 gift suggestions based on: "${prompt}". Format: [{title, description (2 sentences max), priceRange (X-Y format), reason (1 sentence)}]. Return JSON array only.${
       originalPriceRange ? ` Keep prices within 20% of $${originalPriceRange}.` : ''
     }`;
@@ -55,7 +60,7 @@ serve(async (req) => {
           { role: 'user', content: prompt }
         ],
         temperature: 0.7,
-        max_tokens: 800, // Reduced from 1000 to optimize response time
+        max_tokens: 800,
       }),
     });
 
@@ -84,7 +89,6 @@ serve(async (req) => {
         throw new Error('Response is not an array');
       }
 
-      // Filter suggestions in parallel
       const validSuggestions = await Promise.all(
         suggestions.map(async (suggestion) => {
           const requiredFields = ['title', 'description', 'priceRange', 'reason'];
@@ -102,7 +106,13 @@ serve(async (req) => {
 
       return new Response(
         JSON.stringify({ suggestions: filteredSuggestions }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { 
+          headers: { 
+            ...corsHeaders, 
+            'Content-Type': 'application/json',
+            'Cache-Control': 'public, max-age=300' // Cache for 5 minutes
+          } 
+        }
       );
 
     } catch (parseError) {
