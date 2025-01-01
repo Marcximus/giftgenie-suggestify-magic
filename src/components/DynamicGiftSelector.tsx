@@ -77,35 +77,35 @@ export const DynamicGiftSelector = ({
   return (
     <div className="w-full space-y-4 animate-in fade-in slide-in-from-top-4 duration-500 relative">
       {currentPhase === 'person' && (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 justify-items-center mx-auto max-w-4xl">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 justify-items-end mx-auto max-w-4xl">
           {people.map((person) => (
             <Button
               key={person.label}
               variant="outline"
               onClick={() => handleSelection('person', person.label)}
               className={cn(
-                "w-full max-w-[150px] transition-all duration-200 hover:scale-105 flex items-center justify-center gap-2",
+                "w-full max-w-[150px] transition-all duration-200 hover:scale-105 flex items-center justify-end gap-2",
                 selectedPerson === person.label && "bg-primary text-primary-foreground"
               )}
             >
-              <span className="text-lg">{person.icon}</span>
               <span>{person.label}</span>
+              <span className="text-lg">{person.icon}</span>
             </Button>
           ))}
         </div>
       )}
 
       {currentPhase === 'age' && (
-        <div className="flex flex-wrap gap-2 justify-center">
+        <div className="flex flex-wrap gap-2 justify-end">
           {ageRanges.map((age) => (
             <Button
               key={age.label}
               variant="outline"
               onClick={() => handleSelection('age', age.range)}
-              className="transition-all duration-200 hover:scale-105"
+              className="transition-all duration-200 hover:scale-105 flex flex-row-reverse"
             >
-              <Calendar className="mr-2" />
               {age.label}
+              <Calendar className="ml-2" />
             </Button>
           ))}
         </div>
@@ -118,10 +118,10 @@ export const DynamicGiftSelector = ({
               key={price.label}
               variant="outline"
               onClick={() => handleSelection('price', price.range)}
-              className="transition-all duration-200 hover:scale-105 text-sm h-10"
+              className="transition-all duration-200 hover:scale-105 text-sm h-10 flex flex-row-reverse justify-between"
             >
-              <DollarSign className="mr-1 h-4 w-4" />
               {price.label}
+              <DollarSign className="ml-1 h-4 w-4" />
             </Button>
           ))}
         </div>
@@ -134,10 +134,10 @@ export const DynamicGiftSelector = ({
               key={interest.label}
               variant="outline"
               onClick={() => handleSelection('interest', interest.label)}
-              className="transition-all duration-200 hover:scale-105 text-sm h-10"
+              className="transition-all duration-200 hover:scale-105 text-sm h-10 flex flex-row-reverse justify-between"
             >
-              <span className="mr-1">{interest.icon}</span>
               {interest.label}
+              <span className="ml-1">{interest.icon}</span>
             </Button>
           ))}
         </div>
