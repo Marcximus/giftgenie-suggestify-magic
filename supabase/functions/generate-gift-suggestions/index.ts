@@ -8,6 +8,19 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Helper function to validate price range
+const validatePriceRange = (suggestion: any, originalRange: string): boolean => {
+  const [minStr, maxStr] = originalRange.split('-').map(n => parseInt(n));
+  const min = minStr * 0.8;  // 20% below minimum
+  const max = maxStr * 1.2;  // 20% above maximum
+  
+  // Extract numeric values from the suggestion's price range
+  const suggestedPrice = suggestion.priceRange.replace(/[^0-9-]/g, '');
+  const [suggestedMin, suggestedMax] = suggestedPrice.split('-').map(n => parseInt(n));
+  
+  return suggestedMin >= min && suggestedMax <= max;
+};
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -22,15 +35,10 @@ serve(async (req) => {
     const { prompt } = await req.json();
     console.log('Processing request with prompt:', prompt);
 
-    if (!prompt?.trim()) {
-      return new Response(
-        JSON.stringify({ error: 'Prompt is required' }),
-        { 
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
-      );
-    }
+    // Extract price range from prompt if it exists
+    const priceRangeMatch = prompt.match(/Budget:\s*\$?(\d+-\d+)/i);
+    const originalPriceRange = priceRangeMatch ? priceRangeMatch[1] : null;
+    console.log('Extracted price range:', originalPriceRange);
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -43,7 +51,7 @@ serve(async (req) => {
         messages: [
           {
             role: "system",
-            content: "You are a gift suggestion assistant. Generate 8 gift suggestions based on the description provided. When considering budget constraints: If a specific price range is mentioned (e.g., $20-40), suggestions should generally stay within that range but may deviate by up to 20% above or below to include particularly good matches. For example, for a $20-40 range, suggestions between $16-48 would be acceptable. For each suggestion, provide a concise description that explains why this gift would be great. Return ONLY a raw JSON array of objects with these exact fields: title (specific product name), description (brief description that includes why it's a good gift), priceRange (price range with the allowed flexibility), reason (why this gift). Do not include any markdown formatting, code blocks, or additional text. The response must be valid JSON that can be directly parsed."
+            content: `You are a gift suggestion assistant. Generate 8 gift suggestions based on the description provided. STRICT BUDGET RULE: When a price range is mentioned (e.g., $20-40), you MUST ensure ALL suggestions stay within 20% of the range bounds. Example: for $20-40, suggestions MUST be between $16-48, no exceptions. For each suggestion, provide: title (specific product name), description (brief description), priceRange (actual price range, format as 'X-Y'), and reason (why this gift). Return ONLY a raw JSON array. No markdown, no code blocks, just the array. Response must be valid JSON.`
           },
           {
             role: "user",
@@ -61,7 +69,7 @@ serve(async (req) => {
     }
 
     const data = await response.json();
-    console.log('OpenAI response:', data);
+    console.log('OpenAI response received');
 
     if (!data.choices?.[0]?.message?.content) {
       throw new Error('Invalid response format from OpenAI API');
@@ -83,15 +91,29 @@ serve(async (req) => {
         throw new Error('Response is not an array');
       }
 
-      // Validate each suggestion has required fields
-      suggestions.forEach((suggestion, index) => {
+      // Validate each suggestion has required fields and price range
+      suggestions = suggestions.filter((suggestion, index) => {
         const requiredFields = ['title', 'description', 'priceRange', 'reason'];
         const missingFields = requiredFields.filter(field => !suggestion[field]);
         
         if (missingFields.length > 0) {
-          throw new Error(`Suggestion ${index} is missing required fields: ${missingFields.join(', ')}`);
+          console.warn(`Suggestion ${index} missing fields:`, missingFields);
+          return false;
         }
+
+        // If we have an original price range, validate the suggestion's price
+        if (originalPriceRange && !validatePriceRange(suggestion, originalPriceRange)) {
+          console.warn(`Suggestion ${index} outside price range:`, suggestion.priceRange);
+          return false;
+        }
+
+        return true;
       });
+
+      // Ensure we still have enough suggestions
+      if (suggestions.length < 4) {
+        throw new Error('Not enough valid suggestions generated');
+      }
 
     } catch (parseError) {
       console.error('Failed to parse OpenAI response:', parseError);
