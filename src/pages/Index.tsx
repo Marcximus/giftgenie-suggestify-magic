@@ -67,22 +67,30 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-secondary/30 to-background">
+    <div className="min-h-screen bg-gradient-to-br from-background via-secondary/30 to-primary/5">
       <div className="container mx-auto px-4 py-8 sm:py-12 max-w-7xl">
-        <div className="max-w-3xl mx-auto mb-12">
+        <div className="max-w-3xl mx-auto mb-12 animate-in slide-in-from-top duration-500">
           <SearchBox onSearch={handleSearch} isLoading={isLoading} />
         </div>
         
         {suggestions.length > 0 && (
           <div className="mt-8 sm:mt-12 grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
             {suggestions.map((suggestion, index) => (
-              <ProductCard
+              <div 
                 key={index}
-                title={suggestion.title}
-                description={`${suggestion.description}\n\nWhy this gift? ${suggestion.reason}`}
-                price={suggestion.priceRange}
-                amazonUrl="#"
-              />
+                className="animate-in fade-in slide-in-from-bottom-4"
+                style={{ 
+                  animationDelay: `${index * 100}ms`,
+                  animationFillMode: 'forwards' 
+                }}
+              >
+                <ProductCard
+                  title={suggestion.title}
+                  description={`${suggestion.description}\n\nWhy this gift? ${suggestion.reason}`}
+                  price={suggestion.priceRange}
+                  amazonUrl="#"
+                />
+              </div>
             ))}
           </div>
         )}

@@ -158,7 +158,7 @@ export const ProductCard = ({ title, description, price, amazonUrl }: Product) =
   };
 
   return (
-    <Card className="group overflow-hidden hover:shadow-lg transition-all duration-300 border-accent/20">
+    <Card className="group overflow-hidden hover:shadow-lg transition-all duration-300 border-accent/20 backdrop-blur-sm bg-white/80 hover:bg-white/90">
       <CardHeader className="p-0">
         <div className="aspect-[4/3] relative overflow-hidden">
           <img
@@ -167,8 +167,11 @@ export const ProductCard = ({ title, description, price, amazonUrl }: Product) =
             className="object-cover w-full h-full group-hover:scale-110 transition-transform duration-500"
             loading="lazy"
           />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
         </div>
-        <CardTitle className="text-sm mt-2 px-3 line-clamp-2 min-h-[2.5rem] text-center">{title}</CardTitle>
+        <CardTitle className="text-sm mt-2 px-3 line-clamp-2 min-h-[2.5rem] text-center group-hover:text-primary transition-colors duration-200">
+          {title}
+        </CardTitle>
       </CardHeader>
       <CardContent className="p-3 pt-1">
         <p className="text-muted-foreground text-[0.7rem] leading-relaxed line-clamp-3">{description}</p>
@@ -176,7 +179,7 @@ export const ProductCard = ({ title, description, price, amazonUrl }: Product) =
       </CardContent>
       <CardFooter className="p-3 pt-0">
         <Button 
-          className="w-full bg-primary hover:bg-primary/90 shadow-sm text-sm py-1" 
+          className="w-full bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-sm text-sm py-1 transition-all duration-200" 
           onClick={handleClick}
           disabled={isLoading}
         >
