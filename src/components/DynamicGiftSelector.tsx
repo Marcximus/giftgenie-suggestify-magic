@@ -50,32 +50,26 @@ export const DynamicGiftSelector = ({
 
   const handleSelection = (phase: string, value: string) => {
     const query = updateSearchText(phase, value);
-    console.log('Generated query:', query); // Debug log
     
     switch (phase) {
       case 'person':
         setSelectedPerson(value);
         setCurrentPhase('age');
-        onUpdate(query);
         break;
       case 'age':
         setSelectedAge(value);
         setCurrentPhase('price');
-        onUpdate(query);
         break;
       case 'price':
         setSelectedPrice(value);
         setCurrentPhase('interest');
-        onUpdate(query);
         break;
       case 'interest':
-        if (query.trim()) {
-          console.log('Completing selection with query:', query); // Debug log
-          onSelectionComplete(query);
-          setCurrentPhase('complete');
-        }
-        break;
+        onSelectionComplete(query);
+        return;
     }
+    
+    onUpdate(query);
   };
 
   if (!visible) return null;

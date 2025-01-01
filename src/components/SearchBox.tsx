@@ -21,13 +21,9 @@ export const SearchBox = ({ onSearch, isLoading }: SearchBoxProps) => {
   };
 
   const handleSelectorComplete = (generatedQuery: string) => {
-    console.log('Selector complete with query:', generatedQuery); // Debug log
-    if (generatedQuery.trim()) {
-      setQuery(generatedQuery);
-      setShowSelector(false);
-      // Ensure we call onSearch after state updates
-      setTimeout(() => onSearch(generatedQuery), 0);
-    }
+    setQuery(generatedQuery);
+    onSearch(generatedQuery);
+    setShowSelector(false);
   };
 
   const handleSelectorUpdate = (currentQuery: string) => {

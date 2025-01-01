@@ -1,8 +1,6 @@
 import { useState } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import debounce from 'lodash/debounce';
 
 interface GiftSuggestion {
   title: string;
@@ -12,13 +10,17 @@ interface GiftSuggestion {
 }
 
 export const useSuggestions = () => {
+  const [isLoading, setIsLoading] = useState(false);
+  const [suggestions, setSuggestions] = useState<GiftSuggestion[]>([]);
   const [lastQuery, setLastQuery] = useState('');
   const { toast } = useToast();
-  const queryClient = useQueryClient();
 
-  const debouncedGenerateSuggestions = debounce(async (query: string) => {
-    if (!query.trim()) {
-      return [];
+  const generateSuggestions = async (query: string, append: boolean = false) => {
+    if (!query.trim()) return;
+    
+    setIsLoading(true);
+    if (!append) {
+      setSuggestions([]);
     }
 
     try {
@@ -33,17 +35,16 @@ export const useSuggestions = () => {
             description: "Our service is experiencing high demand. Please try again in a moment.",
             variant: "destructive"
           });
-          return [];
+          return;
         }
         throw error;
       }
 
       if (!data?.suggestions || !Array.isArray(data.suggestions)) {
-        console.error('Invalid response format:', data);
-        return [];
+        throw new Error('Invalid response format');
       }
 
-      return data.suggestions;
+      setSuggestions(prev => append ? [...prev, ...data.suggestions] : data.suggestions);
       
     } catch (error) {
       console.error('Error getting suggestions:', error);
@@ -52,40 +53,19 @@ export const useSuggestions = () => {
         description: "Failed to get gift suggestions. Please try again.",
         variant: "destructive"
       });
-      return [];
+    } finally {
+      setIsLoading(false);
     }
-  }, 300);
-
-  const { data: suggestions = [], isLoading, refetch } = useQuery({
-    queryKey: ['suggestions', lastQuery],
-    queryFn: () => debouncedGenerateSuggestions(lastQuery),
-    enabled: !!lastQuery,
-    staleTime: 5 * 60 * 1000,
-    gcTime: 30 * 60 * 1000,
-    retry: 1,
-  });
+  };
 
   const handleSearch = async (query: string) => {
-    if (!query.trim()) return;
-    
     setLastQuery(query);
-    // Prefetch related queries
-    const similarQuery = query.split(' ').slice(0, 3).join(' ');
-    queryClient.prefetchQuery({
-      queryKey: ['suggestions', similarQuery],
-      queryFn: () => debouncedGenerateSuggestions(similarQuery),
-    });
+    await generateSuggestions(query);
   };
 
   const handleGenerateMore = async () => {
     if (lastQuery) {
-      const moreQuery = `${lastQuery} (exclude previous suggestions)`;
-      const newSuggestions = await debouncedGenerateSuggestions(moreQuery);
-      if (newSuggestions) {
-        queryClient.setQueryData(['suggestions', lastQuery], 
-          (oldData: GiftSuggestion[] = []) => [...oldData, ...newSuggestions]
-        );
-      }
+      await generateSuggestions(lastQuery, true);
     }
   };
 
@@ -95,11 +75,13 @@ export const useSuggestions = () => {
       : `Find me more gift suggestions similar to "${title}". Focus on items that serve a similar purpose and are in a similar price range.`;
     
     setLastQuery(query);
+    await generateSuggestions(query);
   };
 
   const handleStartOver = () => {
+    setSuggestions([]);
     setLastQuery('');
-    queryClient.clear();
+    // Trigger a window reload to ensure all components are reset
     window.location.reload();
   };
 

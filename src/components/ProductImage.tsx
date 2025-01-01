@@ -6,24 +6,23 @@ interface ProductImageProps {
   description: string;
 }
 
-// Queue to manage API requests with increased concurrency
-const MAX_CONCURRENT_REQUESTS = 3;
+// Queue to manage API requests
 const requestQueue: (() => Promise<void>)[] = [];
-let activeRequests = 0;
+let isProcessingQueue = false;
 
 const processQueue = async () => {
-  if (activeRequests >= MAX_CONCURRENT_REQUESTS || requestQueue.length === 0) return;
+  if (isProcessingQueue || requestQueue.length === 0) return;
   
-  activeRequests++;
+  isProcessingQueue = true;
   try {
     const request = requestQueue.shift();
     if (request) {
       await request();
-      // Reduced wait time between requests
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Wait 2 seconds before processing next request to respect rate limits
+      await new Promise(resolve => setTimeout(resolve, 2000));
     }
   } finally {
-    activeRequests--;
+    isProcessingQueue = false;
     if (requestQueue.length > 0) {
       processQueue();
     }
@@ -55,6 +54,7 @@ export const ProductImage = ({ title, description }: ProductImageProps) => {
 
       if (error) {
         if (error.status === 429) {
+          // If rate limited and not already queued, add to queue
           if (!isQueued) {
             return new Promise<string>((resolve) => {
               setIsQueued(true);
@@ -66,6 +66,7 @@ export const ProductImage = ({ title, description }: ProductImageProps) => {
               processQueue();
             });
           }
+          // Return fallback image if already queued
           return 'https://images.unsplash.com/photo-1493612276216-ee3925520721?auto=format&fit=crop&w=300&q=80';
         }
         throw error;
