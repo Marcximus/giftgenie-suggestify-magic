@@ -37,7 +37,11 @@ export default {
         "accordion-up": "accordion-up 0.2s ease-out",
         "twinkle": "twinkle 2s ease-in-out infinite",
         "twinkle-delayed": "twinkle 2s ease-in-out infinite 0.5s",
-        "twinkle-slow": "twinkle 3s ease-in-out infinite 1s"
+        "twinkle-slow": "twinkle 3s ease-in-out infinite 1s",
+        "twinkle-super-slow": "twinkle 4s ease-in-out infinite 1.5s",
+        "twinkle-fast": "twinkle 1.5s ease-in-out infinite 0.2s",
+        "twinkle-medium": "twinkle 2.5s ease-in-out infinite 0.7s",
+        "twinkle-delayed-slow": "twinkle 3.5s ease-in-out infinite 1.2s"
       },
 			colors: {
 				border: 'hsl(var(--border))',
