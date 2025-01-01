@@ -1,6 +1,6 @@
 import { ProductCard } from './ProductCard';
 import { Button } from './ui/button';
-import { Sparkles } from 'lucide-react';
+import { Sparkles, RotateCcw } from 'lucide-react';
 
 interface GiftSuggestion {
   title: string;
@@ -13,13 +13,15 @@ interface SuggestionsGridProps {
   suggestions: GiftSuggestion[];
   onMoreLikeThis: (title: string) => void;
   onGenerateMore: () => void;
+  onStartOver: () => void;
   isLoading: boolean;
 }
 
 export const SuggestionsGrid = ({ 
   suggestions, 
   onMoreLikeThis, 
-  onGenerateMore, 
+  onGenerateMore,
+  onStartOver,
   isLoading 
 }: SuggestionsGridProps) => {
   return (
@@ -46,7 +48,7 @@ export const SuggestionsGrid = ({
       </div>
       
       {suggestions.length > 0 && (
-        <div className="flex justify-center mt-8 sm:mt-12">
+        <div className="flex justify-center gap-3 mt-8 sm:mt-12">
           <Button
             onClick={onGenerateMore}
             disabled={isLoading}
@@ -54,6 +56,14 @@ export const SuggestionsGrid = ({
           >
             <Sparkles className="w-4 h-4 mr-2 animate-pulse group-hover:animate-none" />
             Generate More Ideas
+          </Button>
+          <Button
+            onClick={onStartOver}
+            variant="outline"
+            className="flex items-center gap-2 shadow-sm hover:shadow-md transition-all duration-200 hover:bg-secondary/80"
+          >
+            <RotateCcw className="w-4 h-4" />
+            Start Over
           </Button>
         </div>
       )}

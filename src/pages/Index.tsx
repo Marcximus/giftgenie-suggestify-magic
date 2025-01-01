@@ -79,6 +79,11 @@ const Index = () => {
     await generateSuggestions(query);
   };
 
+  const handleStartOver = () => {
+    setSuggestions([]);
+    setLastQuery('');
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-secondary/30 to-primary/5">
       <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-8 md:py-12 max-w-7xl">
@@ -89,6 +94,7 @@ const Index = () => {
             suggestions={suggestions}
             onMoreLikeThis={handleMoreLikeThis}
             onGenerateMore={handleGenerateMore}
+            onStartOver={handleStartOver}
             isLoading={isLoading}
           />
         )}
