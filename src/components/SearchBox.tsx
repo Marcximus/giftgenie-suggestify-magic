@@ -21,9 +21,11 @@ export const SearchBox = ({ onSearch, isLoading }: SearchBoxProps) => {
   };
 
   const handleSelectorComplete = (generatedQuery: string) => {
-    setQuery(generatedQuery);
-    onSearch(generatedQuery);
-    setShowSelector(false);
+    if (generatedQuery.trim()) {
+      setQuery(generatedQuery);
+      onSearch(generatedQuery);
+      setShowSelector(false);
+    }
   };
 
   const handleSelectorUpdate = (currentQuery: string) => {

@@ -68,8 +68,10 @@ export const DynamicGiftSelector = ({
         onUpdate(query);
         break;
       case 'interest':
-        onSelectionComplete(query);
         setCurrentPhase('complete');
+        if (query.trim()) {
+          onSelectionComplete(query);
+        }
         break;
     }
   };
