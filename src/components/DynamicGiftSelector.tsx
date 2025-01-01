@@ -84,12 +84,12 @@ export const DynamicGiftSelector = ({
               variant="outline"
               onClick={() => handleSelection('person', person.label)}
               className={cn(
-                "w-full max-w-[150px] transition-all duration-200 hover:scale-105 flex items-center justify-start gap-2",
+                "w-full max-w-[150px] transition-all duration-200 hover:scale-105 flex items-center gap-2",
                 selectedPerson === person.label && "bg-primary text-primary-foreground"
               )}
             >
               <span className="text-lg">{person.icon}</span>
-              <span>{person.label}</span>
+              <span className="flex-1 text-center">{person.label}</span>
             </Button>
           ))}
         </div>
@@ -102,10 +102,10 @@ export const DynamicGiftSelector = ({
               key={age.label}
               variant="outline"
               onClick={() => handleSelection('age', age.range)}
-              className="transition-all duration-200 hover:scale-105"
+              className="transition-all duration-200 hover:scale-105 flex items-center"
             >
-              <Calendar className="mr-2" />
-              {age.label}
+              <Calendar className="mr-2 shrink-0" />
+              <span className="flex-1 text-center">{age.label}</span>
             </Button>
           ))}
         </div>
@@ -118,10 +118,10 @@ export const DynamicGiftSelector = ({
               key={price.label}
               variant="outline"
               onClick={() => handleSelection('price', price.range)}
-              className="transition-all duration-200 hover:scale-105 text-sm h-10 flex justify-between"
+              className="transition-all duration-200 hover:scale-105 text-sm h-10 flex items-center"
             >
-              <DollarSign className="mr-1 h-4 w-4" />
-              {price.label}
+              <DollarSign className="mr-2 h-4 w-4 shrink-0" />
+              <span className="flex-1 text-center">{price.label}</span>
             </Button>
           ))}
         </div>
@@ -134,10 +134,10 @@ export const DynamicGiftSelector = ({
               key={interest.label}
               variant="outline"
               onClick={() => handleSelection('interest', interest.label)}
-              className="transition-all duration-200 hover:scale-105 text-sm h-10 flex justify-between"
+              className="transition-all duration-200 hover:scale-105 text-sm h-10 flex items-center"
             >
-              <span className="mr-1">{interest.icon}</span>
-              {interest.label}
+              <span className="mr-2 shrink-0">{interest.icon}</span>
+              <span className="flex-1 text-center">{interest.label}</span>
             </Button>
           ))}
         </div>
