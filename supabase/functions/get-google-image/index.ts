@@ -5,6 +5,48 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+// Simple in-memory request tracking
+const requestTimestamps: number[] = [];
+const RATE_LIMIT_WINDOW = 60000; // 1 minute
+const MAX_REQUESTS_PER_WINDOW = 90; // Google's free tier limit is 100 per minute, we'll stay under
+
+function isRateLimited(): boolean {
+  const now = Date.now();
+  // Remove timestamps older than our window
+  while (requestTimestamps.length > 0 && requestTimestamps[0] < now - RATE_LIMIT_WINDOW) {
+    requestTimestamps.shift();
+  }
+  return requestTimestamps.length >= MAX_REQUESTS_PER_WINDOW;
+}
+
+function trackRequest() {
+  requestTimestamps.push(Date.now());
+}
+
+async function fetchWithRetry(url: string, options: RequestInit, maxRetries = 3): Promise<Response> {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      const response = await fetch(url, options);
+      
+      // If we get a rate limit response from Google, wait and retry
+      if (response.status === 429) {
+        console.log(`Rate limited by Google API (attempt ${attempt}/${maxRetries})`);
+        // Exponential backoff: 2s, 4s, 8s
+        await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
+        continue;
+      }
+      
+      return response;
+    } catch (error) {
+      if (attempt === maxRetries) throw error;
+      console.error(`Attempt ${attempt} failed:`, error);
+      // Wait before retrying
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    }
+  }
+  throw new Error('Max retries exceeded');
+}
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -12,6 +54,25 @@ serve(async (req) => {
   }
 
   try {
+    // Check our own rate limiting first
+    if (isRateLimited()) {
+      console.log('Rate limit exceeded for this window');
+      return new Response(
+        JSON.stringify({ 
+          error: 'Rate limit exceeded',
+          retryAfter: RATE_LIMIT_WINDOW - (Date.now() - requestTimestamps[0])
+        }),
+        { 
+          status: 429,
+          headers: { 
+            ...corsHeaders,
+            'Content-Type': 'application/json',
+            'Retry-After': '60'
+          }
+        }
+      );
+    }
+
     const { searchTerm } = await req.json()
     console.log('Searching Google Images for:', searchTerm)
     
@@ -35,11 +96,14 @@ serve(async (req) => {
     
     const url = `https://www.googleapis.com/customsearch/v1?key=${API_KEY}&cx=${SEARCH_ENGINE_ID}&searchType=image&q=${encodedQuery}&num=1&imgSize=LARGE&imgType=photo&safe=active`
     
-    const response = await fetch(url, {
+    // Track this request
+    trackRequest();
+
+    const response = await fetchWithRetry(url, {
       headers: {
         'Accept': 'application/json',
       }
-    })
+    });
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}))
@@ -49,9 +113,6 @@ serve(async (req) => {
         error: errorData
       })
       
-      if (response.status === 429) {
-        throw new Error('Rate limit exceeded')
-      }
       throw new Error(`Google API returned ${response.status}: ${response.statusText}`)
     }
 
