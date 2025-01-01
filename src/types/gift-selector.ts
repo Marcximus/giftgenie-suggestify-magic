@@ -1,8 +1,6 @@
-import { ReactElement } from 'react';
-
 export type Person = {
   label: string;
-  icon: ReactElement;
+  icon: string;
 };
 
 export type AgeRange = {
@@ -17,5 +15,5 @@ export type PriceRange = {
 
 export type Interest = {
   label: string;
-  icon: ReactElement;
+  icon: string;
 };

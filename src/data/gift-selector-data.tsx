@@ -1,8 +1,8 @@
 import { Person, AgeRange, PriceRange } from '@/types/gift-selector';
 
 export const people: Person[] = [
-  { label: 'Wife', icon: '👩' },
-  { label: 'Husband', icon: '👨' },
+  { label: 'Wife', icon: '❤️' },
+  { label: 'Husband', icon: '💙' },
   { label: 'Father', icon: '👨' },
   { label: 'Mother', icon: '👩' },
   { label: 'Brother', icon: '👦' },
@@ -11,8 +11,8 @@ export const people: Person[] = [
   { label: 'Grandpa', icon: '👴' },
   { label: 'Son', icon: '👦' },
   { label: 'Daughter', icon: '👧' },
-  { label: 'Boyfriend', icon: '👨' },
-  { label: 'Girlfriend', icon: '👩' },
+  { label: 'Boyfriend', icon: '💚' },
+  { label: 'Girlfriend', icon: '💗' },
   { label: 'Colleague', icon: '👥' },
 ];
 
