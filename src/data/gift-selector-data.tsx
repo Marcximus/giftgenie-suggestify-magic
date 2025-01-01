@@ -18,16 +18,16 @@ export const people: Person[] = [
 ];
 
 export const ageRanges: AgeRange[] = [
-  { label: '0+', range: '0-4' },
-  { label: '5+', range: '5-9' },
-  { label: '10+', range: '10-14' },
-  { label: '15+', range: '15-19' },
-  { label: '20-30', range: '20-30' },
-  { label: '30-40', range: '30-40' },
-  { label: '40-50', range: '40-50' },
-  { label: '50-60', range: '50-60' },
-  { label: '60-80', range: '60-80' },
-  { label: '80+', range: '80+' },
+  { label: '0-4 Years', range: '0-4' },
+  { label: '5-9 Years', range: '5-9' },
+  { label: '10-14 Years', range: '10-14' },
+  { label: '15-19 Years', range: '15-19' },
+  { label: '20-30 Years', range: '20-30' },
+  { label: '30-40 Years', range: '30-40' },
+  { label: '40-50 Years', range: '40-50' },
+  { label: '50-60 Years', range: '50-60' },
+  { label: '60-80 Years', range: '60-80' },
+  { label: '80+ Years', range: '80+' },
 ];
 
 export const priceRanges: PriceRange[] = [
