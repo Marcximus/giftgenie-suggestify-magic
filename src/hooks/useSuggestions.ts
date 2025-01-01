@@ -70,9 +70,19 @@ export const useSuggestions = () => {
   };
 
   const handleMoreLikeThis = async (title: string) => {
-    const query = lastQuery 
-      ? `Based on the search "${lastQuery}", find me more gift suggestions similar to "${title}". Focus on items that share similar features, price range, and purpose.`
-      : `Find me more gift suggestions similar to "${title}". Focus on items that serve a similar purpose and are in a similar price range.`;
+    // Extract key features from the title
+    const cleanTitle = title
+      .toLowerCase()
+      .replace(/[^\w\s]/g, ' ')
+      .trim();
+    
+    // Create a more focused query based on the product title
+    const query = `Find me 8 gift suggestions similar to "${cleanTitle}". Focus on products that:
+    1. Serve a similar purpose or function
+    2. Are in a similar category
+    3. Have similar features or characteristics
+    4. Are in a comparable price range
+    Please ensure each suggestion is distinct but closely related to the original item.`;
     
     setLastQuery(query);
     await generateSuggestions(query);
