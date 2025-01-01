@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.generate-gift-image]
 verify_jwt = false
+
+[functions.get-pexels-image]
+verify_jwt = false

@@ -6,12 +6,14 @@ const corsHeaders = {
 }
 
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
   }
 
   try {
     const { searchTerm } = await req.json()
+    console.log('Searching Pexels for:', searchTerm)
     
     if (!searchTerm) {
       throw new Error('Search term is required')
