@@ -7,4 +7,8 @@ export const getTeenInterests = (): Interest[] => [
   { label: 'Sports', icon: '⚽' },
   { label: 'Technology', icon: '📱' },
   { label: 'Social Media', icon: '📱' },
+  { label: 'Art', icon: '🎨' },
+  { label: 'Books', icon: '📚' },
+  { label: 'Movies', icon: '🎬' },
+  { label: 'Makeup', icon: '💄' },
 ];

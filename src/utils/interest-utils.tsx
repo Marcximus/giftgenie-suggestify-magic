@@ -6,6 +6,7 @@ import { homeInterests } from '@/data/home-interests';
 import { getChildInterests } from '@/data/child-interests';
 import { getTeenInterests } from '@/data/teen-interests';
 import { romanticInterests } from '@/data/romantic-interests';
+import { creativeInterests } from '@/data/creative-interests';
 
 export const getInterests = (person: string, ageRange: string): Interest[] => {
   const youngAdult = ['20-30', '30-40'].includes(ageRange);
@@ -21,6 +22,7 @@ export const getInterests = (person: string, ageRange: string): Interest[] => {
         ...romanticInterests,
         ...lifestyleInterests,
         ...homeInterests,
+        ...creativeInterests,
         ...commonInterests,
       ];
     
@@ -30,6 +32,7 @@ export const getInterests = (person: string, ageRange: string): Interest[] => {
         ...romanticInterests,
         ...techInterests,
         ...commonInterests,
+        ...homeInterests,
         ...(youngAdult ? lifestyleInterests : []),
       ];
 
@@ -38,9 +41,11 @@ export const getInterests = (person: string, ageRange: string): Interest[] => {
         ...techInterests,
         ...homeInterests,
         ...commonInterests,
+        ...creativeInterests,
       ] : [
         ...homeInterests,
         ...commonInterests,
+        ...techInterests,
       ];
     
     case 'mother':
@@ -48,9 +53,11 @@ export const getInterests = (person: string, ageRange: string): Interest[] => {
         ...homeInterests,
         ...lifestyleInterests,
         ...commonInterests,
+        ...creativeInterests,
       ] : [
         ...lifestyleInterests,
         ...commonInterests,
+        ...homeInterests,
       ];
     
     case 'sister':
@@ -58,9 +65,11 @@ export const getInterests = (person: string, ageRange: string): Interest[] => {
         ...lifestyleInterests,
         ...techInterests,
         ...commonInterests,
+        ...creativeInterests,
       ] : [
         ...lifestyleInterests,
         ...commonInterests,
+        ...creativeInterests,
       ];
     
     case 'brother':
@@ -68,16 +77,19 @@ export const getInterests = (person: string, ageRange: string): Interest[] => {
         ...techInterests,
         ...lifestyleInterests,
         ...commonInterests,
+        ...creativeInterests,
       ] : [
         ...techInterests,
         ...commonInterests,
+        ...creativeInterests,
       ];
     
     case 'grandma':
       return [
         ...homeInterests,
+        ...creativeInterests,
         ...commonInterests.filter(interest => 
-          ['Reading', 'Art'].includes(interest.label)
+          ['Reading', 'Art', 'Music'].includes(interest.label)
         ),
       ];
     
@@ -85,13 +97,20 @@ export const getInterests = (person: string, ageRange: string): Interest[] => {
       return [
         ...homeInterests,
         ...commonInterests.filter(interest => 
-          ['Reading', 'Sports'].includes(interest.label)
+          ['Reading', 'Sports', 'Music'].includes(interest.label)
+        ),
+        ...techInterests.filter(interest =>
+          ['Technology', 'Gadgets'].includes(interest.label)
         ),
       ];
 
     case 'son':
       if (child) return getChildInterests();
-      return teen ? getTeenInterests() : commonInterests;
+      return teen ? getTeenInterests() : [
+        ...techInterests,
+        ...commonInterests,
+        ...creativeInterests,
+      ];
 
     case 'daughter':
       if (child) return getChildInterests();
@@ -99,15 +118,31 @@ export const getInterests = (person: string, ageRange: string): Interest[] => {
         ...lifestyleInterests,
         ...techInterests,
         ...commonInterests,
+        ...creativeInterests,
       ] : commonInterests;
+    
+    case 'friend':
+      return youngAdult ? [
+        ...commonInterests,
+        ...techInterests,
+        ...lifestyleInterests,
+        ...creativeInterests,
+      ] : [
+        ...commonInterests,
+        ...homeInterests,
+        ...creativeInterests,
+      ];
     
     case 'colleague':
       return [
         ...commonInterests.filter(interest => 
-          ['Reading', 'Art'].includes(interest.label)
+          ['Reading', 'Art', 'Coffee', 'Wine'].includes(interest.label)
         ),
         ...homeInterests.filter(interest => 
-          ['Home Decor'].includes(interest.label)
+          ['Home Decor', 'Kitchen Gadgets'].includes(interest.label)
+        ),
+        ...techInterests.filter(interest =>
+          ['Technology', 'Gadgets'].includes(interest.label)
         ),
       ];
     

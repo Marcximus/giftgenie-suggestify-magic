@@ -7,4 +7,8 @@ export const getChildInterests = (): Interest[] => [
   { label: 'Books', icon: '📖' },
   { label: 'Games', icon: '🎮' },
   { label: 'Sports', icon: '⚽' },
+  { label: 'Building Blocks', icon: '🧱' },
+  { label: 'Music', icon: '🎵' },
+  { label: 'Science', icon: '🔬' },
+  { label: 'Outdoor Play', icon: '🎪' },
 ];
