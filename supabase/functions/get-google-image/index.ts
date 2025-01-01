@@ -5,6 +5,44 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+// Simple in-memory cache with TTL
+const cache = new Map<string, { url: string; timestamp: number }>()
+const CACHE_TTL = 1000 * 60 * 60 // 1 hour
+const RATE_LIMIT_WINDOW = 1000 // 1 second
+let lastRequestTime = 0
+
+async function fetchWithRetry(url: string, options: RequestInit, retries = 3): Promise<Response> {
+  try {
+    // Implement rate limiting
+    const now = Date.now()
+    const timeSinceLastRequest = now - lastRequestTime
+    if (timeSinceLastRequest < RATE_LIMIT_WINDOW) {
+      await new Promise(resolve => setTimeout(resolve, RATE_LIMIT_WINDOW - timeSinceLastRequest))
+    }
+    lastRequestTime = Date.now()
+
+    const response = await fetch(url, options)
+    
+    if (response.status === 429 && retries > 0) {
+      // Exponential backoff
+      const delay = Math.pow(2, 4 - retries) * 1000
+      console.log(`Rate limited, retrying in ${delay}ms. Retries left: ${retries-1}`)
+      await new Promise(resolve => setTimeout(resolve, delay))
+      return fetchWithRetry(url, options, retries - 1)
+    }
+    
+    return response
+  } catch (error) {
+    if (retries > 0) {
+      const delay = Math.pow(2, 4 - retries) * 1000
+      console.log(`Request failed, retrying in ${delay}ms. Retries left: ${retries-1}`)
+      await new Promise(resolve => setTimeout(resolve, delay))
+      return fetchWithRetry(url, options, retries - 1)
+    }
+    throw error
+  }
+}
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -17,6 +55,17 @@ serve(async (req) => {
     
     if (!searchTerm) {
       throw new Error('Search term is required')
+    }
+
+    // Check cache first
+    const cacheKey = searchTerm.toLowerCase()
+    const cached = cache.get(cacheKey)
+    if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+      console.log('Returning cached result for:', searchTerm)
+      return new Response(
+        JSON.stringify({ imageUrl: cached.url }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
     }
 
     const API_KEY = Deno.env.get('GOOGLE_SEARCH_API_KEY')
@@ -32,7 +81,7 @@ serve(async (req) => {
     
     console.log('Making request to Google API with query:', query)
     
-    const response = await fetch(
+    const response = await fetchWithRetry(
       `https://www.googleapis.com/customsearch/v1?key=${API_KEY}&cx=${SEARCH_ENGINE_ID}&searchType=image&q=${encodeURIComponent(query)}&num=1&imgSize=LARGE&imgType=photo`,
       {
         headers: {
@@ -55,6 +104,9 @@ serve(async (req) => {
       console.error('No image found in Google API response')
       throw new Error('No image found')
     }
+
+    // Cache the result
+    cache.set(cacheKey, { url: imageUrl, timestamp: Date.now() })
 
     return new Response(
       JSON.stringify({ imageUrl }),
