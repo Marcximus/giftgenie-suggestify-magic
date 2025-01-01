@@ -1,6 +1,8 @@
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { ProductImage } from "./ProductImage";
 import { AmazonButton } from "./AmazonButton";
+import { Button } from "./ui/button";
+import { Wand2 } from "lucide-react";
 
 interface Product {
   title: string;
@@ -10,7 +12,16 @@ interface Product {
   imageUrl?: string;
 }
 
-export const ProductCard = ({ title, description, price }: Product) => {
+interface ProductCardProps extends Product {
+  onMoreLikeThis?: (title: string) => void;
+}
+
+export const ProductCard = ({ 
+  title, 
+  description, 
+  price, 
+  onMoreLikeThis 
+}: ProductCardProps) => {
   return (
     <Card className="group overflow-hidden hover:shadow-lg transition-all duration-300 border-accent/20 backdrop-blur-sm bg-white/80 hover:bg-white/90">
       <CardHeader className="p-0">
@@ -25,8 +36,17 @@ export const ProductCard = ({ title, description, price }: Product) => {
         </p>
         <p className="text-xs sm:text-sm font-bold mt-1 text-primary">{price}</p>
       </CardContent>
-      <CardFooter className="p-2 sm:p-3 pt-0">
+      <CardFooter className="p-2 sm:p-3 pt-0 flex flex-col gap-2">
         <AmazonButton title={title} />
+        <Button 
+          variant="outline" 
+          size="sm"
+          className="w-full text-xs"
+          onClick={() => onMoreLikeThis?.(title)}
+        >
+          <Wand2 className="w-3 h-3 mr-1" />
+          More like this
+        </Button>
       </CardFooter>
     </Card>
   );

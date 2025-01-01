@@ -82,6 +82,12 @@ const Index = () => {
     }
   };
 
+  const handleMoreLikeThis = async (title: string) => {
+    const query = `Find me more gift suggestions similar to "${title}" with similar features and price range`;
+    setLastQuery(query);
+    await generateSuggestions(query);
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-secondary/30 to-primary/5">
       <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-8 md:py-12 max-w-7xl">
@@ -106,6 +112,7 @@ const Index = () => {
                     description={`${suggestion.description}\n\nWhy this gift? ${suggestion.reason}`}
                     price={suggestion.priceRange}
                     amazonUrl="#"
+                    onMoreLikeThis={handleMoreLikeThis}
                   />
                 </div>
               ))}
