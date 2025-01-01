@@ -38,13 +38,12 @@ export const SearchBox = ({ onSearch, isLoading }: SearchBoxProps) => {
   return (
     <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6 w-full max-w-3xl mx-auto px-2 sm:px-4">
       <div className="flex flex-col space-y-2 sm:space-y-3 text-center">
-        <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold bg-gradient-to-r from-primary via-primary/80 to-primary/60 bg-clip-text text-transparent animate-in fade-in slide-in-from-top-4 duration-700">
-          Get The <span className="relative inline-block">
+        <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold animate-in fade-in slide-in-from-top-4 duration-700">
+          Get The <span className="gift-text relative inline-block">
             Gift
-            <span className="absolute -top-2 left-1/2 -translate-x-1/2 w-full h-1 bg-gradient-to-r from-transparent via-primary to-transparent animate-pulse"></span>
-            <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-full h-1 bg-gradient-to-r from-transparent via-primary to-transparent animate-pulse"></span>
-            <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-full bg-gradient-to-b from-transparent via-primary to-transparent animate-pulse"></span>
-            <span className="absolute right-0 top-1/2 -translate-y-1/2 w-1 h-full bg-gradient-to-b from-transparent via-primary to-transparent animate-pulse"></span>
+            <span className="ribbon ribbon-left"></span>
+            <span className="ribbon ribbon-right"></span>
+            <span className="bow-knot"></span>
           </span>
         </h1>
         <p className="text-xs sm:text-sm md:text-base text-muted-foreground animate-in fade-in slide-in-from-top-4 duration-700 delay-150 px-2">
