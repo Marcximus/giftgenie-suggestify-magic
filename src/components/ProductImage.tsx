@@ -50,7 +50,7 @@ export const ProductImage = ({ title, description }: ProductImageProps) => {
       // If the first search fails, try with a shorter version of the title
       if (!url || imageError) {
         const words = title.split(' ');
-        const shortTitle = words.slice(-2).join(' '); // Use last two words as fallback
+        const shortTitle = words.slice(0, 2).join(' '); // Use first two words as fallback
         console.log('Fallback search term:', shortTitle);
         url = await fetchGoogleImage(shortTitle);
       }
