@@ -47,10 +47,10 @@ export const ProductImage = ({ title, description }: ProductImageProps) => {
       
       let url = await fetchGoogleImage(cleanedTitle);
       
-      // If the first search fails, try with a shorter version of the title
+      // If the first search fails, try with the first three words
       if (!url || imageError) {
-        const words = title.split(' ');
-        const shortTitle = words.slice(0, 2).join(' '); // Use first two words as fallback
+        const words = cleanedTitle.split(' ');
+        const shortTitle = words.slice(0, 3).join(' '); // Use first three words as fallback
         console.log('Fallback search term:', shortTitle);
         url = await fetchGoogleImage(shortTitle);
       }
