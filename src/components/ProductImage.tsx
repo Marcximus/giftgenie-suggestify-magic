@@ -11,18 +11,14 @@ export const ProductImage = ({ title, description }: ProductImageProps) => {
   const [imageError, setImageError] = useState(false);
 
   const cleanSearchTerm = (title: string) => {
-    // Remove common words and specifications
-    const cleanTitle = title
+    // Remove common words and specifications while keeping the main product name intact
+    return title
       .toLowerCase()
       .replace(/\b(the|with|for|and|or|in|on|at|to|of|from|by)\b/gi, '')
       .replace(/\d+(\.\d+)?(\s*)(inch|"|inches|ft|feet|mm|cm|m|gb|tb|mb|hz|watts)/gi, '')
       .replace(/\([^)]*\)/g, '') // Remove parentheses and their contents
       .replace(/[^\w\s]/g, ' ')  // Replace special characters with spaces
       .trim();
-
-    // Get the main product type (usually the last 2-3 words)
-    const words = cleanTitle.split(' ');
-    return words.slice(-3).join(' ');
   };
 
   const fetchGoogleImage = async (searchTerm: string) => {
@@ -46,16 +42,17 @@ export const ProductImage = ({ title, description }: ProductImageProps) => {
 
   useEffect(() => {
     const getImage = async () => {
-      const mainTerm = cleanSearchTerm(title);
-      console.log('Main search term:', mainTerm);
+      const cleanedTitle = cleanSearchTerm(title);
+      console.log('Searching with full cleaned title:', cleanedTitle);
       
-      let url = await fetchGoogleImage(mainTerm);
+      let url = await fetchGoogleImage(cleanedTitle);
       
-      // If the first search fails, try with just the last word
+      // If the first search fails, try with a shorter version of the title
       if (!url || imageError) {
-        const fallbackTerm = title.split(' ').pop() || 'gift';
-        console.log('Fallback search term:', fallbackTerm);
-        url = await fetchGoogleImage(fallbackTerm);
+        const words = title.split(' ');
+        const shortTitle = words.slice(-2).join(' '); // Use last two words as fallback
+        console.log('Fallback search term:', shortTitle);
+        url = await fetchGoogleImage(shortTitle);
       }
       
       setImageUrl(url);
