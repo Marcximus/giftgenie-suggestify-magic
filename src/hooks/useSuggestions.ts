@@ -16,6 +16,8 @@ export const useSuggestions = () => {
   const { toast } = useToast();
 
   const generateSuggestions = async (query: string, append: boolean = false) => {
+    if (!query.trim()) return;
+    
     setIsLoading(true);
     if (!append) {
       setSuggestions([]);
@@ -29,8 +31,8 @@ export const useSuggestions = () => {
       if (error) {
         if (error.status === 429) {
           toast({
-            title: "Rate Limit Reached",
-            description: "Our service is experiencing high demand. Please wait a moment and try again.",
+            title: "Please wait",
+            description: "Our service is experiencing high demand. Please try again in a moment.",
             variant: "destructive"
           });
           return;
@@ -39,20 +41,16 @@ export const useSuggestions = () => {
       }
 
       if (!data?.suggestions || !Array.isArray(data.suggestions)) {
-        throw new Error('Invalid response format from server');
+        throw new Error('Invalid response format');
       }
 
       setSuggestions(prev => append ? [...prev, ...data.suggestions] : data.suggestions);
-      toast({
-        title: append ? "More Ideas Generated" : "Success",
-        description: append ? "Additional gift suggestions added!" : "Gift suggestions generated successfully!",
-      });
-
+      
     } catch (error) {
       console.error('Error getting suggestions:', error);
       toast({
         title: "Error",
-        description: error.message || "Failed to get gift suggestions. Please try again.",
+        description: "Failed to get gift suggestions. Please try again.",
         variant: "destructive"
       });
     } finally {
@@ -72,7 +70,7 @@ export const useSuggestions = () => {
   };
 
   const handleMoreLikeThis = async (title: string) => {
-    const query = `Find me more gift suggestions similar to "${title}" with similar features and price range`;
+    const query = `Find me more gift suggestions similar to "${title}"`;
     setLastQuery(query);
     await generateSuggestions(query);
   };

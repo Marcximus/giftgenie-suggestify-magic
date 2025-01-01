@@ -9,15 +9,12 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    // Verify OpenAI API key is present
     if (!openAIApiKey) {
-      console.error('OpenAI API key not configured');
       throw new Error('OpenAI API key not configured');
     }
 
@@ -31,26 +28,15 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: "gpt-4o-mini", // Changed to the faster model
+        model: "gpt-3.5-turbo",
         messages: [
           {
             role: "system",
-            content: `You are a gift suggestion assistant specializing in recommending highly relevant, purchasable products. Generate exactly 8 gift suggestions based on the description provided.
-
-            Focus on these key aspects:
-            1. Suggest specific, named products rather than generic categories
-            2. Include current trends and popular items in the relevant category
-            3. Consider the price range and recipient's interests carefully
-            4. Emphasize unique features and benefits that make the gift special
-            5. Include practical, useful items that solve problems or enhance daily life
-            6. Mix both premium and value-oriented options within the specified budget
-            
-            Return ONLY a raw JSON array of objects, with NO markdown formatting, explanation, or additional text.
-            Each object must have these exact fields:
-            - title: A specific, searchable product name (e.g., "Sony WH-1000XM4 Wireless Noise-Cancelling Headphones" instead of just "Headphones")
-            - description: A compelling description highlighting key features, benefits, and why it's perfect for the recipient
-            - priceRange: A realistic price range based on current market prices
-            - reason: A personalized explanation of why this specific item would make an excellent gift for the recipient`
+            content: `You are a gift suggestion assistant. Generate exactly 8 gift suggestions based on the description provided. Return ONLY a raw JSON array of objects with these fields:
+            - title: specific product name
+            - description: brief description
+            - priceRange: price range
+            - reason: why this gift`
           },
           {
             role: "user",
@@ -58,17 +44,17 @@ serve(async (req) => {
           }
         ],
         temperature: 0.7,
-        max_tokens: 2000,
+        max_tokens: 1000,
+        presence_penalty: 0,
+        frequency_penalty: 0,
       }),
     });
 
-    // Handle rate limits specifically
     if (response.status === 429) {
-      console.error('OpenAI rate limit reached');
       return new Response(
         JSON.stringify({
           error: 'Rate limit reached',
-          details: 'The service is experiencing high demand. Please wait a moment and try again.'
+          details: 'Please try again in a moment.'
         }),
         {
           status: 429,
@@ -78,43 +64,26 @@ serve(async (req) => {
     }
 
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error('OpenAI API error:', {
-        status: response.status,
-        statusText: response.statusText,
-        error: errorText
-      });
       throw new Error(`OpenAI API error: ${response.status}`);
     }
 
     const data = await response.json();
-    console.log('OpenAI API response:', data);
-
+    
     if (!data.choices?.[0]?.message?.content) {
-      console.error('Invalid response format from OpenAI API:', data);
       throw new Error('Invalid response format from OpenAI API');
     }
 
     let suggestions;
     try {
-      const content = data.choices[0].message.content;
-      console.log('Raw content from OpenAI:', content);
+      const content = data.choices[0].message.content.trim();
+      suggestions = JSON.parse(content);
       
-      // Clean the content by removing any markdown formatting
-      const cleanedContent = content.replace(/```json\n?|\n?```/g, '').trim();
-      console.log('Cleaned content:', cleanedContent);
-      
-      suggestions = JSON.parse(cleanedContent);
-      
-      // Validate the structure of the suggestions
       if (!Array.isArray(suggestions) || suggestions.length !== 8) {
-        console.error('Invalid suggestions array:', suggestions);
-        throw new Error('Invalid suggestions format - expected array of 8 items');
+        throw new Error('Invalid suggestions format');
       }
 
       suggestions.forEach((suggestion, index) => {
         if (!suggestion.title || !suggestion.description || !suggestion.priceRange || !suggestion.reason) {
-          console.error(`Invalid suggestion at index ${index}:`, suggestion);
           throw new Error('Missing required fields in suggestion');
         }
       });
@@ -132,7 +101,7 @@ serve(async (req) => {
     console.error('Error in generate-gift-suggestions function:', error);
     return new Response(JSON.stringify({ 
       error: error.message,
-      details: 'An error occurred while processing your request. Please try again.'
+      details: 'An error occurred while processing your request.'
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
