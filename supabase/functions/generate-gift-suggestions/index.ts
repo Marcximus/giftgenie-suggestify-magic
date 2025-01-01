@@ -43,7 +43,7 @@ serve(async (req) => {
         messages: [
           {
             role: "system",
-            content: "You are a gift suggestion assistant. Generate 8 gift suggestions based on the description provided. Return a JSON array of objects with these exact fields: title (specific product name), description (brief description), priceRange (price range), reason (why this gift). Format the response as valid JSON only, with no additional text."
+            content: "You are a gift suggestion assistant. Generate 8 gift suggestions based on the description provided. For each suggestion, provide a concise description that explains why this gift would be great. Return a JSON array of objects with these exact fields: title (specific product name), description (brief description that includes why it's a good gift), priceRange (price range), reason (why this gift). Format the response as valid JSON only, with no additional text."
           },
           {
             role: "user",
