@@ -15,21 +15,26 @@ const Index = () => {
 
   return (
     <ErrorBoundary>
-      <div className="min-h-screen bg-gradient-to-br from-background via-secondary/30 to-primary/5">
+      <main className="min-h-screen bg-gradient-to-br from-background via-secondary/30 to-primary/5">
         <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-8 md:py-12 max-w-7xl">
-          <SearchHeader onSearch={handleSearch} isLoading={isLoading} />
+          <header>
+            <h1 className="sr-only">GiftGenie - AI-Powered Gift Suggestions</h1>
+            <SearchHeader onSearch={handleSearch} isLoading={isLoading} />
+          </header>
           
-          {suggestions.length > 0 && (
-            <SuggestionsGrid
-              suggestions={suggestions}
-              onMoreLikeThis={handleMoreLikeThis}
-              onGenerateMore={handleGenerateMore}
-              onStartOver={handleStartOver}
-              isLoading={isLoading}
-            />
-          )}
+          <section aria-label="Gift Suggestions" className="mt-8">
+            {suggestions.length > 0 && (
+              <SuggestionsGrid
+                suggestions={suggestions}
+                onMoreLikeThis={handleMoreLikeThis}
+                onGenerateMore={handleGenerateMore}
+                onStartOver={handleStartOver}
+                isLoading={isLoading}
+              />
+            )}
+          </section>
         </div>
-      </div>
+      </main>
     </ErrorBoundary>
   );
 };
