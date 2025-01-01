@@ -22,29 +22,22 @@ export const ProductImage = ({ title, description }: ProductImageProps) => {
 
   const fetchGoogleImage = async (searchTerm: string) => {
     try {
-      console.log('Searching Google Images for:', searchTerm);
-      
       const { data, error } = await supabase.functions.invoke('get-google-image', {
         body: { searchTerm }
       });
 
       if (error) {
-        console.error('Supabase function error:', error);
+        console.error('Error fetching image:', error);
         throw error;
       }
-      
+
       if (!data?.imageUrl) {
-        console.error('No image URL returned');
         throw new Error('No image URL returned');
       }
 
       return data.imageUrl;
-    } catch (error: any) {
-      console.error('Error fetching Google image:', error);
-      if (error.message?.includes('429') || error?.body?.includes('429')) {
-        await new Promise(resolve => setTimeout(resolve, 5000)); // Wait 5 seconds before retry
-        throw error; // Let React Query handle the retry
-      }
+    } catch (error) {
+      console.error('Error in fetchGoogleImage:', error);
       throw error;
     }
   };
@@ -62,8 +55,8 @@ export const ProductImage = ({ title, description }: ProductImageProps) => {
         return await fetchGoogleImage(shortTitle);
       }
     },
-    retry: 3,
-    retryDelay: (attemptIndex) => Math.min(1000 * Math.pow(2, attemptIndex), 30000), // Exponential backoff
+    retry: 2,
+    retryDelay: 1000,
     staleTime: 1000 * 60 * 5, // Cache for 5 minutes
     gcTime: 1000 * 60 * 30, // Keep in cache for 30 minutes
   });
