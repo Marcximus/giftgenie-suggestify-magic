@@ -16,8 +16,11 @@ export const useSuggestions = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Create a debounced version of the suggestion generator
   const debouncedGenerateSuggestions = debounce(async (query: string) => {
+    if (!query.trim()) {
+      return [];
+    }
+
     try {
       const { data, error } = await supabase.functions.invoke('generate-gift-suggestions', {
         body: { prompt: query }
@@ -30,13 +33,14 @@ export const useSuggestions = () => {
             description: "Our service is experiencing high demand. Please try again in a moment.",
             variant: "destructive"
           });
-          return null;
+          return [];
         }
         throw error;
       }
 
       if (!data?.suggestions || !Array.isArray(data.suggestions)) {
-        throw new Error('Invalid response format');
+        console.error('Invalid response format:', data);
+        return [];
       }
 
       return data.suggestions;
@@ -48,21 +52,22 @@ export const useSuggestions = () => {
         description: "Failed to get gift suggestions. Please try again.",
         variant: "destructive"
       });
-      return null;
+      return [];
     }
   }, 300);
 
-  // Use React Query for caching and state management
   const { data: suggestions = [], isLoading, refetch } = useQuery({
     queryKey: ['suggestions', lastQuery],
     queryFn: () => debouncedGenerateSuggestions(lastQuery),
     enabled: !!lastQuery,
-    staleTime: 5 * 60 * 1000, // Consider data fresh for 5 minutes
-    gcTime: 30 * 60 * 1000, // Keep in cache for 30 minutes (replaced cacheTime)
+    staleTime: 5 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
     retry: 1,
   });
 
   const handleSearch = async (query: string) => {
+    if (!query.trim()) return;
+    
     setLastQuery(query);
     // Prefetch related queries
     const similarQuery = query.split(' ').slice(0, 3).join(' ');
@@ -95,13 +100,12 @@ export const useSuggestions = () => {
   const handleStartOver = () => {
     setLastQuery('');
     queryClient.clear();
-    // Trigger a window reload to ensure all components are reset
     window.location.reload();
   };
 
   return {
     isLoading,
-    suggestions: suggestions || [],
+    suggestions,
     handleSearch,
     handleGenerateMore,
     handleMoreLikeThis,
