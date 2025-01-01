@@ -50,6 +50,7 @@ export const DynamicGiftSelector = ({
 
   const handleSelection = (phase: string, value: string) => {
     const query = updateSearchText(phase, value);
+    console.log('Generated query:', query); // Debug log
     
     switch (phase) {
       case 'person':
@@ -68,9 +69,10 @@ export const DynamicGiftSelector = ({
         onUpdate(query);
         break;
       case 'interest':
-        setCurrentPhase('complete');
         if (query.trim()) {
+          console.log('Completing selection with query:', query); // Debug log
           onSelectionComplete(query);
+          setCurrentPhase('complete');
         }
         break;
     }
