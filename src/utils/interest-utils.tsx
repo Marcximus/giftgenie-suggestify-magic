@@ -15,138 +15,159 @@ export const getInterests = (person: string, ageRange: string): Interest[] => {
   const child = ['0-4', '5-9', '10-14'].includes(ageRange);
   const teen = ['15-19'].includes(ageRange);
 
+  // Base interests that are generally appropriate for most people
+  const baseInterests = [
+    { label: 'Reading', icon: '📚' },
+    { label: 'Music', icon: '🎵' },
+    { label: 'Sports', icon: '⚽' },
+    { label: 'Movies', icon: '🎬' },
+    { label: 'Travel', icon: '✈️' }
+  ];
+
   switch (person.toLowerCase()) {
     case 'wife':
     case 'girlfriend':
       return [
         ...romanticInterests,
         ...lifestyleInterests,
-        ...homeInterests,
-        ...creativeInterests,
-        ...commonInterests,
+        { label: 'Jewelry', icon: '💎' },
+        { label: 'Spa & Wellness', icon: '💆‍♀️' },
+        { label: 'Fashion', icon: '👗' },
+        ...homeInterests.slice(0, 3),
+        ...creativeInterests.slice(0, 3)
       ];
     
     case 'husband':
     case 'boyfriend':
       return [
         ...romanticInterests,
-        ...techInterests,
-        ...commonInterests,
-        ...homeInterests,
-        ...(youngAdult ? lifestyleInterests : []),
+        ...techInterests.slice(0, 4),
+        { label: 'Grilling', icon: '🔥' },
+        { label: 'Fitness', icon: '💪' },
+        { label: 'Sports Fan', icon: '🏆' },
+        { label: 'Watches', icon: '⌚' },
+        { label: 'Tools', icon: '🔧' },
+        { label: 'Outdoors', icon: '🏕️' }
       ];
 
     case 'father':
-      return youngAdult ? [
-        ...techInterests,
-        ...homeInterests,
-        ...commonInterests,
-        ...creativeInterests,
+      return middleAged ? [
+        { label: 'BBQ & Grilling', icon: '🔥' },
+        { label: 'Tools & DIY', icon: '🔧' },
+        { label: 'Gardening', icon: '🌱' },
+        { label: 'Sports Fan', icon: '🏆' },
+        { label: 'Golf', icon: '⛳' },
+        { label: 'Fishing', icon: '🎣' },
+        ...techInterests.slice(0, 3),
+        { label: 'Coffee', icon: '☕' }
       ] : [
-        ...homeInterests,
-        ...commonInterests,
-        ...techInterests,
+        ...baseInterests,
+        { label: 'Tools', icon: '🔧' },
+        { label: 'Outdoors', icon: '🏕️' },
+        { label: 'Cooking', icon: '👨‍🍳' }
       ];
     
     case 'mother':
       return middleAged ? [
-        ...homeInterests,
-        ...lifestyleInterests,
-        ...commonInterests,
-        ...creativeInterests,
+        ...homeInterests.slice(0, 4),
+        { label: 'Gardening', icon: '🌱' },
+        { label: 'Spa & Wellness', icon: '💆‍♀️' },
+        { label: 'Jewelry', icon: '💎' },
+        ...creativeInterests.slice(0, 3)
       ] : [
-        ...lifestyleInterests,
-        ...commonInterests,
-        ...homeInterests,
-      ];
-    
-    case 'sister':
-      return youngAdult ? [
-        ...lifestyleInterests,
-        ...techInterests,
-        ...commonInterests,
-        ...creativeInterests,
-      ] : [
-        ...lifestyleInterests,
-        ...commonInterests,
-        ...creativeInterests,
+        ...baseInterests,
+        ...homeInterests.slice(0, 3),
+        { label: 'Self-care', icon: '🛁' }
       ];
     
     case 'brother':
       return youngAdult ? [
-        ...techInterests,
-        ...lifestyleInterests,
-        ...commonInterests,
-        ...creativeInterests,
-      ] : [
-        ...techInterests,
-        ...commonInterests,
-        ...creativeInterests,
-      ];
+        ...techInterests.slice(0, 4),
+        { label: 'Gaming', icon: '🎮' },
+        { label: 'Fitness', icon: '💪' },
+        { label: 'Sports', icon: '⚽' },
+        { label: 'Music', icon: '🎵' },
+        { label: 'Outdoors', icon: '🏕️' }
+      ] : teen ? getTeenInterests() : getChildInterests();
+    
+    case 'sister':
+      return youngAdult ? [
+        { label: 'Fashion', icon: '👗' },
+        { label: 'Jewelry', icon: '💎' },
+        { label: 'Fitness', icon: '🧘‍♀️' },
+        { label: 'Photography', icon: '📸' },
+        ...creativeInterests.slice(0, 3),
+        ...lifestyleInterests.slice(0, 3)
+      ] : teen ? getTeenInterests() : getChildInterests();
     
     case 'grandma':
       return [
-        ...homeInterests,
-        ...creativeInterests,
-        ...commonInterests.filter(interest => 
-          ['Reading', 'Art', 'Music'].includes(interest.label)
-        ),
+        { label: 'Gardening', icon: '🌱' },
+        { label: 'Cooking', icon: '👩‍🍳' },
+        { label: 'Knitting', icon: '🧶' },
+        { label: 'Reading', icon: '📚' },
+        { label: 'Tea', icon: '🫖' },
+        { label: 'Family Photos', icon: '🖼️' },
+        { label: 'Puzzles', icon: '🧩' },
+        { label: 'Birds & Nature', icon: '🦜' }
       ];
     
     case 'grandpa':
       return [
-        ...homeInterests,
-        ...commonInterests.filter(interest => 
-          ['Reading', 'Sports', 'Music'].includes(interest.label)
-        ),
-        ...techInterests.filter(interest =>
-          ['Technology', 'Gadgets'].includes(interest.label)
-        ),
+        { label: 'Gardening', icon: '🌱' },
+        { label: 'Reading', icon: '📚' },
+        { label: 'History', icon: '📖' },
+        { label: 'Chess', icon: '♟️' },
+        { label: 'Fishing', icon: '🎣' },
+        { label: 'Birds & Nature', icon: '🦜' },
+        { label: 'Coffee', icon: '☕' },
+        { label: 'Tools', icon: '🔧' }
       ];
 
     case 'son':
       if (child) return getChildInterests();
-      return teen ? getTeenInterests() : [
-        ...techInterests,
-        ...commonInterests,
-        ...creativeInterests,
+      if (teen) return getTeenInterests();
+      return [
+        { label: 'Gaming', icon: '🎮' },
+        { label: 'Sports', icon: '⚽' },
+        { label: 'Music', icon: '🎵' },
+        ...techInterests.slice(0, 3),
+        { label: 'Fitness', icon: '💪' },
+        { label: 'Outdoors', icon: '🏕️' }
       ];
 
     case 'daughter':
       if (child) return getChildInterests();
-      return teen ? [
-        ...lifestyleInterests,
-        ...techInterests,
-        ...commonInterests,
-        ...creativeInterests,
-      ] : commonInterests;
+      if (teen) return getTeenInterests();
+      return [
+        { label: 'Fashion', icon: '👗' },
+        { label: 'Art', icon: '🎨' },
+        { label: 'Music', icon: '🎵' },
+        { label: 'Dance', icon: '💃' },
+        { label: 'Photography', icon: '📸' },
+        ...lifestyleInterests.slice(0, 3)
+      ];
     
     case 'friend':
-      return youngAdult ? [
-        ...commonInterests,
-        ...techInterests,
-        ...lifestyleInterests,
-        ...creativeInterests,
-      ] : [
-        ...commonInterests,
-        ...homeInterests,
-        ...creativeInterests,
+      return [
+        ...baseInterests,
+        { label: 'Gaming', icon: '🎮' },
+        { label: 'Coffee', icon: '☕' },
+        { label: 'Food', icon: '🍕' },
+        { label: 'Fitness', icon: '🏃' }
       ];
     
     case 'colleague':
       return [
-        ...commonInterests.filter(interest => 
-          ['Reading', 'Art', 'Coffee', 'Wine'].includes(interest.label)
-        ),
-        ...homeInterests.filter(interest => 
-          ['Home Decor', 'Kitchen Gadgets'].includes(interest.label)
-        ),
-        ...techInterests.filter(interest =>
-          ['Technology', 'Gadgets'].includes(interest.label)
-        ),
+        { label: 'Coffee', icon: '☕' },
+        { label: 'Tea', icon: '🫖' },
+        { label: 'Office', icon: '💼' },
+        { label: 'Tech', icon: '💻' },
+        { label: 'Books', icon: '📚' },
+        { label: 'Wellness', icon: '🌿' }
       ];
     
     default:
-      return commonInterests;
+      return baseInterests;
   }
 };
