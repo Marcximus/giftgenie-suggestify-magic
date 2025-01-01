@@ -10,8 +10,41 @@ export const ProductImage = ({ title, description }: ProductImageProps) => {
   const [imageUrl, setImageUrl] = useState<string>('');
   const [imageError, setImageError] = useState(false);
 
+  const cleanSearchTerm = (term: string) => {
+    // Remove common words and specifications that might confuse image search
+    return term
+      .replace(/\b(the|with|for|and|or|in|on|at|to|of|from|by)\b/gi, '')
+      .replace(/\d+(\.\d+)?(\s*)(inch|"|inches|ft|feet|mm|cm|m|gb|tb|mb|hz|watts)/gi, '')
+      .replace(/\([^)]*\)/g, '') // Remove parentheses and their contents
+      .replace(/[^\w\s]/g, ' ')  // Replace special characters with spaces
+      .trim();
+  };
+
+  const extractSearchTerms = (title: string, description: string) => {
+    // Get the main product type from the title
+    const cleanTitle = cleanSearchTerm(title);
+    const mainProduct = cleanTitle.split(' ').slice(-2).join(' '); // Last two words often contain the product type
+
+    // Extract key features from description
+    const cleanDesc = cleanSearchTerm(description);
+    const keywords = cleanDesc
+      .split(' ')
+      .filter(word => 
+        word.length > 3 && 
+        !word.includes('would') && 
+        !word.includes('could') && 
+        !word.includes('should')
+      )
+      .slice(0, 2)
+      .join(' ');
+
+    return `${mainProduct} product ${keywords}`.trim();
+  };
+
   const fetchPexelsImage = async (searchTerm: string) => {
     try {
+      console.log('Searching Pexels for:', searchTerm);
+      
       const { data, error } = await supabase.functions.invoke('get-pexels-image', {
         body: { searchTerm }
       });
@@ -29,15 +62,14 @@ export const ProductImage = ({ title, description }: ProductImageProps) => {
 
   useEffect(() => {
     const getImage = async () => {
-      let url = await fetchPexelsImage(title);
+      // First try with the main product term
+      const searchTerm = extractSearchTerms(title, description);
+      let url = await fetchPexelsImage(searchTerm);
       
+      // If that fails, try with just the product category
       if (!url || imageError) {
-        const keywords = description
-          .split(' ')
-          .filter(word => word.length > 3)
-          .slice(0, 3)
-          .join(' ');
-        url = await fetchPexelsImage(keywords);
+        const fallbackTerm = title.split(' ').pop() || 'gift'; // Use last word of title or 'gift'
+        url = await fetchPexelsImage(fallbackTerm + ' product');
       }
       
       setImageUrl(url);
