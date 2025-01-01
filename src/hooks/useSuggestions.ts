@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import debounce from 'lodash/debounce';
 
 interface GiftSuggestion {
   title: string;
@@ -10,19 +12,12 @@ interface GiftSuggestion {
 }
 
 export const useSuggestions = () => {
-  const [isLoading, setIsLoading] = useState(false);
-  const [suggestions, setSuggestions] = useState<GiftSuggestion[]>([]);
   const [lastQuery, setLastQuery] = useState('');
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
-  const generateSuggestions = async (query: string, append: boolean = false) => {
-    if (!query.trim()) return;
-    
-    setIsLoading(true);
-    if (!append) {
-      setSuggestions([]);
-    }
-
+  // Create a debounced version of the suggestion generator
+  const debouncedGenerateSuggestions = debounce(async (query: string) => {
     try {
       const { data, error } = await supabase.functions.invoke('generate-gift-suggestions', {
         body: { prompt: query }
@@ -35,7 +30,7 @@ export const useSuggestions = () => {
             description: "Our service is experiencing high demand. Please try again in a moment.",
             variant: "destructive"
           });
-          return;
+          return null;
         }
         throw error;
       }
@@ -44,7 +39,7 @@ export const useSuggestions = () => {
         throw new Error('Invalid response format');
       }
 
-      setSuggestions(prev => append ? [...prev, ...data.suggestions] : data.suggestions);
+      return data.suggestions;
       
     } catch (error) {
       console.error('Error getting suggestions:', error);
@@ -53,19 +48,39 @@ export const useSuggestions = () => {
         description: "Failed to get gift suggestions. Please try again.",
         variant: "destructive"
       });
-    } finally {
-      setIsLoading(false);
+      return null;
     }
-  };
+  }, 300);
+
+  // Use React Query for caching and state management
+  const { data: suggestions = [], isLoading, refetch } = useQuery({
+    queryKey: ['suggestions', lastQuery],
+    queryFn: () => debouncedGenerateSuggestions(lastQuery),
+    enabled: !!lastQuery,
+    staleTime: 5 * 60 * 1000, // Consider data fresh for 5 minutes
+    cacheTime: 30 * 60 * 1000, // Keep in cache for 30 minutes
+    retry: 1,
+  });
 
   const handleSearch = async (query: string) => {
     setLastQuery(query);
-    await generateSuggestions(query);
+    // Prefetch related queries
+    const similarQuery = query.split(' ').slice(0, 3).join(' ');
+    queryClient.prefetchQuery({
+      queryKey: ['suggestions', similarQuery],
+      queryFn: () => debouncedGenerateSuggestions(similarQuery),
+    });
   };
 
   const handleGenerateMore = async () => {
     if (lastQuery) {
-      await generateSuggestions(lastQuery, true);
+      const moreQuery = `${lastQuery} (exclude previous suggestions)`;
+      const newSuggestions = await debouncedGenerateSuggestions(moreQuery);
+      if (newSuggestions) {
+        queryClient.setQueryData(['suggestions', lastQuery], 
+          (oldData: GiftSuggestion[] = []) => [...oldData, ...newSuggestions]
+        );
+      }
     }
   };
 
@@ -75,19 +90,18 @@ export const useSuggestions = () => {
       : `Find me more gift suggestions similar to "${title}". Focus on items that serve a similar purpose and are in a similar price range.`;
     
     setLastQuery(query);
-    await generateSuggestions(query);
   };
 
   const handleStartOver = () => {
-    setSuggestions([]);
     setLastQuery('');
+    queryClient.clear();
     // Trigger a window reload to ensure all components are reset
     window.location.reload();
   };
 
   return {
     isLoading,
-    suggestions,
+    suggestions: suggestions || [],
     handleSearch,
     handleGenerateMore,
     handleMoreLikeThis,
