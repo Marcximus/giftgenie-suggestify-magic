@@ -5,6 +5,7 @@ import { Button } from "./ui/button";
 import { Wand2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 interface Product {
   title: string;
@@ -34,26 +35,45 @@ export const ProductCard = ({
 }: ProductCardProps) => {
   const [amazonData, setAmazonData] = useState<AmazonProduct | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
+  const { toast } = useToast();
 
   useEffect(() => {
     const fetchAmazonData = async () => {
+      if (retryCount >= 3) {
+        console.log('Max retries reached for:', title);
+        return;
+      }
+
       try {
         setIsLoading(true);
         const { data, error } = await supabase.functions.invoke('get-amazon-product', {
           body: { searchQuery: title }
         });
 
-        if (error) throw error;
+        if (error) {
+          console.error('Error fetching Amazon data:', error);
+          if (error.status === 500) {
+            setRetryCount(prev => prev + 1);
+          }
+          return;
+        }
+
+        if (!data || !data.title) {
+          console.error('Invalid Amazon data received:', data);
+          return;
+        }
+
         setAmazonData(data);
       } catch (error) {
-        console.error('Error fetching Amazon data:', error);
+        console.error('Error in fetchAmazonData:', error);
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchAmazonData();
-  }, [title]);
+  }, [title, retryCount]);
 
   return (
     <Card className="group overflow-hidden hover:shadow-lg transition-all duration-300 border-accent/20 backdrop-blur-sm bg-white/80 hover:bg-white/90">
