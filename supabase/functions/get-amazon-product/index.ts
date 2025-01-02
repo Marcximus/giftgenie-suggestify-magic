@@ -25,13 +25,18 @@ serve(async (req) => {
       throw new Error('ScrapingDog API key not configured');
     }
 
-    // Step 1: First search for the product to get its ASIN
-    const searchUrl = `https://api.scrapingdog.com/amazon/search?api_key=${SCRAPINGDOG_API_KEY}&q=${encodeURIComponent(searchQuery)}&domain=com&type=product`;
-    console.log('Making search API request to find ASIN...');
+    // Step 1: Search for the product to get its ASIN
+    const encodedQuery = encodeURIComponent(searchQuery);
+    const searchUrl = `https://api.scrapingdog.com/amazon/search?api_key=${SCRAPINGDOG_API_KEY}&q=${encodedQuery}&domain=com&type=product`;
+    console.log('Making search API request:', searchUrl);
     
     const searchResponse = await fetch(searchUrl);
     if (!searchResponse.ok) {
-      console.error('Search API error:', searchResponse.status, await searchResponse.text());
+      console.error('Search API error:', {
+        status: searchResponse.status,
+        statusText: searchResponse.statusText,
+        body: await searchResponse.text()
+      });
       throw new Error(`Search API returned ${searchResponse.status}`);
     }
 
@@ -54,11 +59,15 @@ serve(async (req) => {
 
     // Step 2: Use the ASIN to get detailed product information
     const productUrl = `https://api.scrapingdog.com/amazon/product?api_key=${SCRAPINGDOG_API_KEY}&asin=${asin}&domain=com`;
-    console.log('Making product API request for specific ASIN...');
+    console.log('Making product API request:', productUrl);
     
     const productResponse = await fetch(productUrl);
     if (!productResponse.ok) {
-      console.error('Product API error:', productResponse.status, await productResponse.text());
+      console.error('Product API error:', {
+        status: productResponse.status,
+        statusText: productResponse.statusText,
+        body: await productResponse.text()
+      });
       throw new Error(`Product API returned ${productResponse.status}`);
     }
 
