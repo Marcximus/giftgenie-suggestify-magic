@@ -8,3 +8,12 @@ verify_jwt = false
 
 [functions.get-pexels-image]
 verify_jwt = false
+
+[functions.get-amazon-product]
+verify_jwt = false
+
+[functions.get-amazon-associate-id]
+verify_jwt = false
+
+[functions.get-google-image]
+verify_jwt = false
