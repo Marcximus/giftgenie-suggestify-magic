@@ -54,24 +54,32 @@ serve(async (req) => {
     const selectedAsin = asins[Math.floor(Math.random() * asins.length)];
     console.log(`Selected ASIN ${selectedAsin} from category ${category}`);
 
-    // Test the API key first
+    // Log API key for debugging (first 5 chars only)
     console.log('Using ScrapingDog API Key:', API_KEY.substring(0, 5) + '...');
 
-    // Fetch product data using the ASIN
-    const url = `https://api.scrapingdog.com/amazon/product?api_key=${API_KEY}&domain=com&asin=${selectedAsin}`;
-    console.log('Fetching from ScrapingDog:', url);
-    
+    // Construct URL with query parameters as shown in ScrapingDog docs
+    const baseUrl = 'https://api.scrapingdog.com/amazon/product';
+    const params = new URLSearchParams({
+      api_key: API_KEY,
+      asin: selectedAsin,
+      domain: 'com'
+    });
+
+    const url = `${baseUrl}?${params.toString()}`;
+    console.log('Making request to:', url);
+
     const response = await fetch(url);
     console.log('ScrapingDog API Response Status:', response.status);
     
     if (!response.ok) {
       const errorText = await response.text();
       console.error('ScrapingDog API Error:', errorText);
-      throw new Error(`ScrapingDog API returned ${response.status}: ${response.statusText || 'No status text'}`);
+      throw new Error(`ScrapingDog API returned ${response.status}: ${errorText || 'No error text'}`);
     }
 
     const data = await response.json();
-    
+    console.log('Raw API Response:', JSON.stringify(data).substring(0, 200) + '...');
+
     // Validate the response data
     if (!data) {
       console.error('No data received from ScrapingDog');
