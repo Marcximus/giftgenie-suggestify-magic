@@ -2,7 +2,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { ProductImage } from "./ProductImage";
 import { AmazonButton } from "./AmazonButton";
 import { Button } from "./ui/button";
-import { Wand2, Star, Package } from "lucide-react";
+import { Wand2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -23,12 +23,6 @@ interface AmazonProduct {
   description: string;
   price: string;
   images: string[];
-  rating: number;
-  reviews: number;
-  availability: string;
-  features: string[];
-  category: string;
-  brand: string;
   asin: string;
 }
 
@@ -82,28 +76,9 @@ export const ProductCard = ({
         </CardTitle>
       </CardHeader>
       <CardContent className="p-2 sm:p-3 pt-1">
-        {amazonData ? (
-          <>
-            <div className="flex items-center gap-1 text-[0.65rem] text-muted-foreground mb-1">
-              <Star className="w-3 h-3 fill-yellow-400 stroke-yellow-400" />
-              <span>{amazonData.rating} ({amazonData.reviews} reviews)</span>
-              {amazonData.availability && (
-                <>
-                  <span className="mx-1">•</span>
-                  <Package className="w-3 h-3" />
-                  <span>{amazonData.availability}</span>
-                </>
-              )}
-            </div>
-            <p className="text-[0.65rem] sm:text-[0.7rem] leading-relaxed line-clamp-3 text-muted-foreground">
-              {amazonData.description}
-            </p>
-          </>
-        ) : (
-          <p className="text-[0.65rem] sm:text-[0.7rem] leading-relaxed line-clamp-3 text-muted-foreground">
-            {description}
-          </p>
-        )}
+        <p className="text-[0.65rem] sm:text-[0.7rem] leading-relaxed line-clamp-3 text-muted-foreground">
+          {amazonData?.description || description}
+        </p>
         <p className="text-xs sm:text-sm font-bold mt-1 text-primary">
           {amazonData?.price || price}
         </p>
