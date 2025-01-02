@@ -25,9 +25,9 @@ serve(async (req) => {
       throw new Error('ScrapingDog API key not configured');
     }
 
-    // First, search for products to get ASIN
+    // Step 1: First search for the product to get its ASIN
     const searchUrl = `https://api.scrapingdog.com/amazon/search?api_key=${SCRAPINGDOG_API_KEY}&q=${encodeURIComponent(searchQuery)}&domain=com&type=product`;
-    console.log('Making search API request:', searchUrl.replace(SCRAPINGDOG_API_KEY, '[REDACTED]'));
+    console.log('Making search API request to find ASIN...');
     
     const searchResponse = await fetch(searchUrl);
     if (!searchResponse.ok) {
@@ -36,7 +36,7 @@ serve(async (req) => {
     }
 
     const searchResults = await searchResponse.json();
-    console.log('Search results:', searchResults);
+    console.log('Search results received:', searchResults);
 
     if (!Array.isArray(searchResults) || searchResults.length === 0) {
       throw new Error('No products found in search results');
@@ -50,9 +50,11 @@ serve(async (req) => {
       throw new Error('No ASIN found in search results');
     }
 
-    // Now fetch detailed product information using the ASIN
+    console.log('Found ASIN:', asin);
+
+    // Step 2: Use the ASIN to get detailed product information
     const productUrl = `https://api.scrapingdog.com/amazon/product?api_key=${SCRAPINGDOG_API_KEY}&asin=${asin}&domain=com`;
-    console.log('Making product API request:', productUrl.replace(SCRAPINGDOG_API_KEY, '[REDACTED]'));
+    console.log('Making product API request for specific ASIN...');
     
     const productResponse = await fetch(productUrl);
     if (!productResponse.ok) {
@@ -68,13 +70,14 @@ serve(async (req) => {
       asin: productData.asin
     });
 
-    // Format the response data with fallbacks
+    // Format the response data
     const formattedData = {
       title: productData.title || searchQuery,
       description: productData.description || productData.feature_bullets?.join('\n') || 'No description available',
       price: productData.price || 'Price not available',
       images: productData.images || [productData.image].filter(Boolean) || [],
-      asin: productData.asin || asin
+      asin: productData.asin || asin,
+      url: `https://www.amazon.com/dp/${asin}`
     };
 
     return new Response(

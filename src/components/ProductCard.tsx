@@ -25,6 +25,7 @@ interface AmazonProduct {
   price: string;
   images: string[];
   asin: string;
+  url: string;
 }
 
 export const ProductCard = ({ 
@@ -47,6 +48,8 @@ export const ProductCard = ({
 
       try {
         setIsLoading(true);
+        console.log('Fetching Amazon data for:', title);
+        
         const { data, error } = await supabase.functions.invoke('get-amazon-product', {
           body: { searchQuery: title }
         });
@@ -64,6 +67,7 @@ export const ProductCard = ({
           return;
         }
 
+        console.log('Amazon data received:', data);
         setAmazonData(data);
       } catch (error) {
         console.error('Error in fetchAmazonData:', error);
@@ -107,6 +111,7 @@ export const ProductCard = ({
         <AmazonButton 
           title={amazonData?.title || title} 
           asin={amazonData?.asin}
+          url={amazonData?.url}
         />
         <Button 
           variant="outline" 
