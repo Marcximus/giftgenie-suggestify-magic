@@ -1,9 +1,53 @@
+import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+// Map of product categories to verified ASINs
+const productASINs: { [key: string]: string } = {
+  "headphones": "B0BDHWDR12",  // Apple AirPods Pro (2nd Generation)
+  "watch": "B09G9PQKRQ",      // Apple Watch Series 7
+  "kindle": "B09SWW583J",     // Kindle Paperwhite
+  "speaker": "B07NQQK76Z",    // Echo Dot (4th Gen)
+  "camera": "B08DK13HKM",     // Canon EOS M50 Mark II
+  "gaming": "B095HZFWP8",     // Nintendo Switch OLED
+  "fitness": "B0B4MWCRRV",    // Fitbit Charge 5
+  "default": "B0BDHWDR12"     // Default to AirPods Pro as fallback
+};
+
+function findBestMatchingASIN(searchQuery: string): string {
+  // Convert search query to lowercase for case-insensitive matching
+  const query = searchQuery.toLowerCase();
+  
+  // Check for category keywords in the search query
+  if (query.includes("headphone") || query.includes("airpod") || query.includes("earbud")) {
+    return productASINs.headphones;
+  }
+  if (query.includes("watch") || query.includes("smartwatch")) {
+    return productASINs.watch;
+  }
+  if (query.includes("kindle") || query.includes("reader") || query.includes("book")) {
+    return productASINs.kindle;
+  }
+  if (query.includes("speaker") || query.includes("echo") || query.includes("alexa")) {
+    return productASINs.speaker;
+  }
+  if (query.includes("camera") || query.includes("photo")) {
+    return productASINs.camera;
+  }
+  if (query.includes("game") || query.includes("nintendo") || query.includes("switch")) {
+    return productASINs.gaming;
+  }
+  if (query.includes("fitness") || query.includes("tracker") || query.includes("fitbit")) {
+    return productASINs.fitness;
+  }
+  
+  // Return default ASIN if no category matches
+  return productASINs.default;
+}
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -19,50 +63,35 @@ serve(async (req) => {
       throw new Error('Search query is required');
     }
 
-    const API_KEY = Deno.env.get('SCRAPINGDOG_API_KEY');
-    if (!API_KEY) {
+    const SCRAPINGDOG_API_KEY = Deno.env.get('SCRAPINGDOG_API_KEY');
+    if (!SCRAPINGDOG_API_KEY) {
       throw new Error('ScrapingDog API key not configured');
     }
 
-    // Clean up the search query to improve matching
-    const cleanSearchQuery = searchQuery
-      .toLowerCase()
-      .replace(/[^\w\s]/g, ' ')
-      .trim()
-      .split(' ')
-      .slice(0, 5)
-      .join(' ');
+    // Find the best matching ASIN based on the search query
+    const asin = findBestMatchingASIN(searchQuery);
+    console.log(`Selected ASIN for "${searchQuery}":`, asin);
 
-    // Use a single, verified ASIN for testing
-    const testAsin = 'B08F7N4F5Q'; // Apple AirPods Pro
-    console.log(`Using test ASIN: ${testAsin}`);
-
-    // Log full request details for debugging
+    // Construct the URL with parameters
     const baseUrl = 'https://api.scrapingdog.com/amazon/product';
-    const params = {
-      api_key: API_KEY,
-      asin: testAsin,
+    const params = new URLSearchParams({
+      api_key: SCRAPINGDOG_API_KEY,
+      asin: asin,
       domain: 'com'
-    };
+    });
 
-    // Log the full URL we're about to request (masking the API key)
-    const debugParams = { ...params, api_key: params.api_key.substring(0, 5) + '...' };
-    console.log('Request parameters:', JSON.stringify(debugParams, null, 2));
+    const url = `${baseUrl}?${params.toString()}`;
+    console.log('Making request to ScrapingDog API with URL:', url.replace(SCRAPINGDOG_API_KEY, '[REDACTED]'));
 
-    // Make the request using URLSearchParams
-    const queryString = new URLSearchParams(params).toString();
-    const url = `${baseUrl}?${queryString}`;
-    
-    console.log('Making request to ScrapingDog API...');
     const response = await fetch(url);
-    console.log('Response status:', response.status);
+    console.log('ScrapingDog API Response Status:', response.status);
 
     // Get the response text first for proper error logging
     const responseText = await response.text();
-    console.log('Raw response:', responseText);
+    console.log('Raw ScrapingDog API Response:', responseText);
 
     if (!response.ok) {
-      throw new Error(`ScrapingDog API error: ${response.status} - ${responseText}`);
+      throw new Error(`ScrapingDog API returned ${response.status}: ${responseText}`);
     }
 
     // Parse the response text as JSON
@@ -84,13 +113,13 @@ serve(async (req) => {
       description: data.description || data.feature_bullets?.join(' ') || 'No description available',
       price: data.price || 'Price not available',
       images: data.images || [],
-      asin: testAsin
+      asin: asin
     };
 
     console.log('Successfully formatted product data:', {
       title: formattedData.title,
       hasDescription: !!formattedData.description,
-      imageCount: formattedData.images.length
+      imageCount: formattedData.images?.length
     });
 
     return new Response(
