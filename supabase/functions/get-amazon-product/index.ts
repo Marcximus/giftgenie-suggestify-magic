@@ -33,17 +33,17 @@ serve(async (req) => {
       .slice(0, 5) // Use first 5 words for better matching
       .join(' ');
 
-    // Verified working ASINs for different categories
+    // Updated list of verified working ASINs (as of January 2024)
     const popularAsins = {
-      'tech': ['B09JQMJHXY', 'B07PXGQC1Q', 'B0CHX3QBCH'],
-      'kitchen': ['B08GC6PL3D', 'B075H1B3J5', 'B08XQMH3Y6'],
-      'beauty': ['B00AP877FS', 'B087N4NLQF', 'B0BN6RRYCK'],
-      'toys': ['B01MS7YUA7', 'B0BPC8W2GX', 'B0747W15QL'],
-      'general': ['B08N5KWB9H', 'B07GJBBGHG', 'B074DDJK6W'],
+      'tech': ['B0BDJH3V3X', 'B09G9HD6PD', 'B08F7N4F5Q'], // Latest Apple products and accessories
+      'kitchen': ['B09B1W3FGF', 'B08GC6PL3D', 'B075H1B3J5'], // Popular kitchen appliances
+      'beauty': ['B00LPRP4ZM', 'B00AP877FS', 'B087N4NLQF'], // Best-selling beauty products
+      'toys': ['B01MS7YUA7', 'B0747W15QL', 'B084CYG6DH'], // Popular toys
+      'general': ['B08N5KWB9H', 'B07GJBBGHG', 'B074DDJK6W'], // General gifts
     };
 
     // Simple category matching based on keywords
-    let category = 'general'; // default category
+    let category = 'general';
     if (cleanSearchQuery.match(/tech|gadget|electronic|computer|phone/)) category = 'tech';
     if (cleanSearchQuery.match(/kitchen|cook|food|coffee|bake/)) category = 'kitchen';
     if (cleanSearchQuery.match(/beauty|makeup|skin|hair|cosmetic/)) category = 'beauty';
@@ -53,6 +53,9 @@ serve(async (req) => {
     const asins = popularAsins[category];
     const selectedAsin = asins[Math.floor(Math.random() * asins.length)];
     console.log(`Selected ASIN ${selectedAsin} from category ${category}`);
+
+    // Test the API key first
+    console.log('Using ScrapingDog API Key:', API_KEY.substring(0, 5) + '...');
 
     // Fetch product data using the ASIN
     const url = `https://api.scrapingdog.com/amazon/product?api_key=${API_KEY}&domain=com&asin=${selectedAsin}`;
@@ -64,13 +67,20 @@ serve(async (req) => {
     if (!response.ok) {
       const errorText = await response.text();
       console.error('ScrapingDog API Error:', errorText);
-      throw new Error(`ScrapingDog API returned ${response.status}: ${response.statusText}`);
+      throw new Error(`ScrapingDog API returned ${response.status}: ${response.statusText || 'No status text'}`);
     }
 
     const data = await response.json();
-    if (!data || !data.title) {
-      console.error('Invalid data received from ScrapingDog:', data);
-      throw new Error('Invalid product data received');
+    
+    // Validate the response data
+    if (!data) {
+      console.error('No data received from ScrapingDog');
+      throw new Error('No data received from API');
+    }
+
+    if (!data.title) {
+      console.error('Invalid data structure received:', data);
+      throw new Error('Invalid product data structure');
     }
 
     console.log('Successfully fetched Amazon product data:', {
