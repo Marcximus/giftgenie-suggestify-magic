@@ -6,6 +6,33 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Common ASINs for popular product categories
+const categoryASINs = {
+  headphones: 'B09G9BVKZ5', // Example: Sony WF-1000XM4
+  smartwatch: 'B09G9PV6MS', // Example: Apple Watch Series 7
+  camera: 'B08DK13HKM',    // Example: Canon EOS R6
+  gaming: 'B08FC5L3RG',    // Example: PlayStation 5
+  laptop: 'B09G9BL5BB',    // Example: MacBook Pro
+  tablet: 'B09G9BVKZ4',    // Example: iPad Pro
+  speaker: 'B09G9BL5BC',   // Example: Sonos One
+  fitness: 'B09G9BL5BD',   // Example: Fitbit Charge 5
+};
+
+function findBestMatchingASIN(searchQuery: string): string | null {
+  const query = searchQuery.toLowerCase();
+  
+  // Check for category matches
+  for (const [category, asin] of Object.entries(categoryASINs)) {
+    if (query.includes(category)) {
+      console.log(`Found matching category ${category} for query: ${query}`);
+      return asin;
+    }
+  }
+  
+  // Default to a popular product in the category if no specific match
+  return null;
+}
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -25,11 +52,18 @@ serve(async (req) => {
       throw new Error('ScrapingDog API key not configured');
     }
 
-    // Using the ScrapingDog Amazon Search API directly
-    const searchUrl = `https://api.scrapingdog.com/amazon/search?api_key=${SCRAPINGDOG_API_KEY}&q=${encodeURIComponent(searchQuery)}&domain=com&type=product`;
-    console.log('Making API request:', searchUrl.replace(SCRAPINGDOG_API_KEY, '[REDACTED]'));
+    // Find a matching ASIN for the search query
+    const asin = findBestMatchingASIN(searchQuery);
+    if (!asin) {
+      console.log('No matching ASIN found for query:', searchQuery);
+      throw new Error('No matching product found');
+    }
 
-    const response = await fetch(searchUrl);
+    // Using the ScrapingDog Product Details API
+    const productUrl = `https://api.scrapingdog.com/amazon/product?api_key=${SCRAPINGDOG_API_KEY}&asin=${asin}&domain=com`;
+    console.log('Making API request:', productUrl.replace(SCRAPINGDOG_API_KEY, '[REDACTED]'));
+
+    const response = await fetch(productUrl);
     console.log('API Response Status:', response.status);
 
     if (!response.ok) {
@@ -38,49 +72,22 @@ serve(async (req) => {
       throw new Error(`API returned ${response.status}: ${errorText}`);
     }
 
-    const responseText = await response.text();
-    console.log('Raw API Response:', responseText);
+    const data = await response.json();
+    console.log('Raw API Response:', JSON.stringify(data));
 
-    let data;
-    try {
-      data = JSON.parse(responseText);
-    } catch (e) {
-      console.error('Failed to parse API response:', e);
-      throw new Error('Invalid JSON response from API');
+    if (!data || !data.title) {
+      console.warn('Invalid product data received');
+      throw new Error('Invalid product data received from API');
     }
-
-    if (!Array.isArray(data) || data.length === 0) {
-      console.warn('No products found');
-      return new Response(
-        JSON.stringify({ 
-          error: 'No products found',
-          searchQuery 
-        }),
-        { 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 404
-        }
-      );
-    }
-
-    // Get the first product from the results
-    const product = data[0];
-    console.log('Selected product:', product);
 
     // Format the response data
     const formattedData = {
-      title: product.title || searchQuery,
-      description: product.description || 'No description available',
-      price: product.price || 'Price not available',
-      images: [product.image].filter(Boolean) || [],
-      asin: product.asin || null
+      title: data.title || searchQuery,
+      description: data.description || data.feature_bullets?.join('\n') || 'No description available',
+      price: data.price || 'Price not available',
+      images: data.images || [],
+      asin: data.asin || asin
     };
-
-    // Validate the formatted data
-    if (!formattedData.title) {
-      console.error('Invalid formatted data:', formattedData);
-      throw new Error('Failed to format product data');
-    }
 
     console.log('Successfully formatted product data:', {
       title: formattedData.title,
