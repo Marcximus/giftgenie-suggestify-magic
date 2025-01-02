@@ -9,20 +9,21 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { prompt } = await req.json();
-
-    // Input validation
-    if (!prompt || typeof prompt !== 'string' || prompt.length > 500) {
-      throw new Error('Invalid prompt: Must be a string under 500 characters');
+    if (!openAIApiKey) {
+      throw new Error('OpenAI API key not configured');
     }
 
+    const { prompt } = await req.json();
     console.log('Processing request with prompt:', prompt);
+
+    const priceRangeMatch = prompt.match(/Budget:\s*\$?(\d+-\d+)/i);
+    const originalPriceRange = priceRangeMatch ? priceRangeMatch[1] : null;
+    console.log('Extracted price range:', originalPriceRange);
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -31,35 +32,29 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: "gpt-4o-mini",
+        model: "gpt-4o",
         messages: [
           {
             role: "system",
-            content: `You are a gift suggestion expert specializing in trending, popular products from well-known brands. 
+            content: `You are a gift suggestion assistant specializing in trending, popular products from well-known brands. 
             Generate 8 specific gift suggestions based on the description provided. 
             
             Guidelines for suggestions:
-            1. Focus on actual products from real, popular brands
+            1. Focus on actual products from real, popular brands (e.g., "Apple AirPods Pro (2nd Generation)" instead of just "wireless earbuds")
             2. Include current trending products and bestsellers
-            3. Mention specific models, versions, or editions
-            4. Include product features that make it appealing
+            3. Mention specific models, versions, or editions when applicable
+            4. Include product features that make it appealing (e.g., "with active noise cancellation and transparency mode")
+            5. Reference current year models when possible
+            
+            STRICT BUDGET RULE: When a price range is mentioned (e.g., $20-40), ensure ALL suggestions stay within 20% of the range bounds.
             
             For each suggestion, provide:
             - title (specific product name with brand)
             - description (detailed features and benefits)
-            - priceRange (format as "X-Y", numbers only, e.g. "20-30")
+            - priceRange (actual price range, format as 'X-Y')
             - reason (why this specific product is trending/popular)
             
-            Return ONLY a raw JSON array of objects with double quotes for all strings. No markdown, no code blocks.
-            Example format:
-            [
-              {
-                "title": "Apple AirPods Pro (2nd Generation)",
-                "description": "Wireless earbuds with active noise cancellation",
-                "priceRange": "200-250",
-                "reason": "Latest model with improved features"
-              }
-            ]`
+            Return ONLY a raw JSON array. No markdown, no code blocks, just the array. Response must be valid JSON.`
           },
           {
             role: "user",
@@ -67,8 +62,6 @@ serve(async (req) => {
           }
         ],
         temperature: 0.7,
-        presence_penalty: 0.6,
-        frequency_penalty: 0.6,
         max_tokens: 1500,
       }),
     });
@@ -87,13 +80,9 @@ serve(async (req) => {
 
     let suggestions;
     try {
-      // Clean the response content and ensure proper JSON formatting
-      const content = data.choices[0].message.content
-        .trim()
+      const content = data.choices[0].message.content.trim()
         .replace(/```json\s*/g, '')
         .replace(/```\s*$/g, '')
-        .replace(/(\r\n|\n|\r)/gm, '')  // Remove line breaks
-        .replace(/\s+/g, ' ')           // Normalize spaces
         .trim();
       
       console.log('Cleaned content:', content);
@@ -103,13 +92,7 @@ serve(async (req) => {
         throw new Error('Response is not an array');
       }
 
-      // Validate each suggestion
       suggestions = suggestions.filter((suggestion, index) => {
-        if (!suggestion || typeof suggestion !== 'object') {
-          console.warn(`Suggestion ${index} is not an object`);
-          return false;
-        }
-
         const requiredFields = ['title', 'description', 'priceRange', 'reason'];
         const missingFields = requiredFields.filter(field => !suggestion[field]);
         
@@ -118,21 +101,19 @@ serve(async (req) => {
           return false;
         }
 
-        // Validate priceRange format
-        const priceRange = suggestion.priceRange.toString().replace(/[^0-9-]/g, '');
-        const [min, max] = priceRange.split('-').map(n => parseInt(n));
-        
-        if (!min || !max || min >= max) {
-          console.warn(`Suggestion ${index} has invalid price range:`, suggestion.priceRange);
-          return false;
-        }
-
-        // Ensure all string fields use double quotes
-        requiredFields.forEach(field => {
-          if (typeof suggestion[field] === 'string') {
-            suggestion[field] = suggestion[field].replace(/'/g, '"');
+        if (originalPriceRange) {
+          const [minStr, maxStr] = originalPriceRange.split('-').map(n => parseInt(n));
+          const min = minStr * 0.8;
+          const max = maxStr * 1.2;
+          
+          const suggestedPrice = suggestion.priceRange.replace(/[^0-9-]/g, '');
+          const [suggestedMin, suggestedMax] = suggestedPrice.split('-').map(n => parseInt(n));
+          
+          if (suggestedMin < min || suggestedMax > max) {
+            console.warn(`Suggestion ${index} outside price range:`, suggestion.priceRange);
+            return false;
           }
-        });
+        }
 
         return true;
       });
@@ -144,7 +125,16 @@ serve(async (req) => {
     } catch (parseError) {
       console.error('Failed to parse OpenAI response:', parseError);
       console.error('Raw content:', data.choices[0].message.content);
-      throw new Error('Failed to parse suggestions: ' + parseError.message);
+      return new Response(
+        JSON.stringify({
+          error: 'Failed to parse AI response',
+          details: parseError.message
+        }),
+        {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
     }
 
     return new Response(
