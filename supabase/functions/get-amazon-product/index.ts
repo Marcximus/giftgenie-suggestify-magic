@@ -6,78 +6,6 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Expanded list of common ASINs for popular gift categories
-const categoryASINs = {
-  headphones: 'B09G9BVKZ5',    // Sony WF-1000XM4
-  smartwatch: 'B09G9PV6MS',    // Apple Watch Series 7
-  camera: 'B08DK13HKM',        // Canon EOS R6
-  gaming: 'B08FC5L3RG',        // PlayStation 5
-  laptop: 'B09G9BL5BB',        // MacBook Pro
-  tablet: 'B09G9BVKZ4',        // iPad Pro
-  speaker: 'B09G9BL5BC',       // Sonos One
-  fitness: 'B09G9BL5BD',       // Fitbit Charge 5
-  book: 'B09B8LFKQL',         // Popular book
-  kitchen: 'B08GC6PL3D',      // Air fryer
-  beauty: 'B08H2JM7FS',       // Skincare set
-  toy: 'B08WWRJ3FB',         // Popular toy
-  jewelry: 'B08N5T9GFD',      // Jewelry piece
-  sports: 'B093BVYPXN',      // Sports equipment
-  home: 'B09B8W3R9K',        // Home decor
-  outdoor: 'B093BVYPXN',     // Outdoor gear
-};
-
-function findBestMatchingASIN(searchQuery: string): string | null {
-  const query = searchQuery.toLowerCase();
-  
-  // Check for exact category matches
-  for (const [category, asin] of Object.entries(categoryASINs)) {
-    if (query.includes(category)) {
-      console.log(`Found matching category ${category} for query: ${query}`);
-      return asin;
-    }
-  }
-  
-  // Check for partial matches
-  for (const [category, asin] of Object.entries(categoryASINs)) {
-    const words = category.split(' ');
-    if (words.some(word => query.includes(word))) {
-      console.log(`Found partial match with category ${category} for query: ${query}`);
-      return asin;
-    }
-  }
-  
-  return null;
-}
-
-async function searchProduct(query: string, apiKey: string): Promise<any> {
-  const searchUrl = `https://api.scrapingdog.com/amazon/search?api_key=${apiKey}&q=${encodeURIComponent(query)}&domain=com&type=product`;
-  console.log('Making search API request:', searchUrl.replace(apiKey, '[REDACTED]'));
-  
-  const response = await fetch(searchUrl);
-  if (!response.ok) {
-    throw new Error(`Search API returned ${response.status}`);
-  }
-  
-  const data = await response.json();
-  if (!Array.isArray(data) || data.length === 0) {
-    throw new Error('No products found in search results');
-  }
-  
-  return data[0];
-}
-
-async function getProductDetails(asin: string, apiKey: string): Promise<any> {
-  const productUrl = `https://api.scrapingdog.com/amazon/product?api_key=${apiKey}&asin=${asin}&domain=com`;
-  console.log('Making product API request:', productUrl.replace(apiKey, '[REDACTED]'));
-  
-  const response = await fetch(productUrl);
-  if (!response.ok) {
-    throw new Error(`Product API returned ${response.status}`);
-  }
-  
-  return await response.json();
-}
-
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -97,34 +25,48 @@ serve(async (req) => {
       throw new Error('ScrapingDog API key not configured');
     }
 
-    let productData;
+    // First, search for products to get ASIN
+    const searchUrl = `https://api.scrapingdog.com/amazon/search?api_key=${SCRAPINGDOG_API_KEY}&q=${encodeURIComponent(searchQuery)}&domain=com&type=product`;
+    console.log('Making search API request:', searchUrl.replace(SCRAPINGDOG_API_KEY, '[REDACTED]'));
     
-    // First try: Use predefined ASIN if available
-    const asin = findBestMatchingASIN(searchQuery);
-    if (asin) {
-      try {
-        console.log('Attempting to fetch product details with ASIN:', asin);
-        productData = await getProductDetails(asin, SCRAPINGDOG_API_KEY);
-      } catch (error) {
-        console.warn('Failed to fetch product with ASIN, falling back to search:', error);
-      }
+    const searchResponse = await fetch(searchUrl);
+    if (!searchResponse.ok) {
+      console.error('Search API error:', searchResponse.status, await searchResponse.text());
+      throw new Error(`Search API returned ${searchResponse.status}`);
     }
 
-    // Second try: Fall back to search if no ASIN match or ASIN fetch failed
-    if (!productData) {
-      try {
-        console.log('Falling back to product search');
-        const searchResult = await searchProduct(searchQuery, SCRAPINGDOG_API_KEY);
-        if (searchResult.asin) {
-          productData = await getProductDetails(searchResult.asin, SCRAPINGDOG_API_KEY);
-        } else {
-          productData = searchResult;
-        }
-      } catch (error) {
-        console.error('Search fallback failed:', error);
-        throw new Error('Failed to find matching product');
-      }
+    const searchResults = await searchResponse.json();
+    console.log('Search results:', searchResults);
+
+    if (!Array.isArray(searchResults) || searchResults.length === 0) {
+      throw new Error('No products found in search results');
     }
+
+    // Get ASIN from first result
+    const firstProduct = searchResults[0];
+    const asin = firstProduct.asin;
+
+    if (!asin) {
+      throw new Error('No ASIN found in search results');
+    }
+
+    // Now fetch detailed product information using the ASIN
+    const productUrl = `https://api.scrapingdog.com/amazon/product?api_key=${SCRAPINGDOG_API_KEY}&asin=${asin}&domain=com`;
+    console.log('Making product API request:', productUrl.replace(SCRAPINGDOG_API_KEY, '[REDACTED]'));
+    
+    const productResponse = await fetch(productUrl);
+    if (!productResponse.ok) {
+      console.error('Product API error:', productResponse.status, await productResponse.text());
+      throw new Error(`Product API returned ${productResponse.status}`);
+    }
+
+    const productData = await productResponse.json();
+    console.log('Product data received:', {
+      title: productData.title,
+      hasDescription: !!productData.description,
+      hasImages: !!productData.images?.length,
+      asin: productData.asin
+    });
 
     // Format the response data with fallbacks
     const formattedData = {
@@ -134,13 +76,6 @@ serve(async (req) => {
       images: productData.images || [productData.image].filter(Boolean) || [],
       asin: productData.asin || asin
     };
-
-    console.log('Successfully formatted product data:', {
-      title: formattedData.title,
-      hasDescription: !!formattedData.description,
-      imageCount: formattedData.images?.length,
-      asin: formattedData.asin
-    });
 
     return new Response(
       JSON.stringify(formattedData),
