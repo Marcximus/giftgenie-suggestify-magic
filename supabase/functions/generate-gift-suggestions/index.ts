@@ -47,18 +47,17 @@ serve(async (req) => {
             For each suggestion, provide:
             - title (specific product name with brand)
             - description (detailed features and benefits)
-            - priceRange (format as "X-Y", numbers only)
+            - priceRange (format as "X-Y", numbers only, e.g. "20-30")
             - reason (why this specific product is trending/popular)
             
-            Return ONLY a raw JSON array of objects. No markdown, no code blocks.
-            Each object must have all required fields with proper formatting.
+            Return ONLY a raw JSON array of objects with double quotes for all strings. No markdown, no code blocks.
             Example format:
             [
               {
                 "title": "Apple AirPods Pro (2nd Generation)",
-                "description": "Wireless earbuds with active noise cancellation...",
+                "description": "Wireless earbuds with active noise cancellation",
                 "priceRange": "200-250",
-                "reason": "Latest model with improved features..."
+                "reason": "Latest model with improved features"
               }
             ]`
           },
@@ -67,7 +66,7 @@ serve(async (req) => {
             content: prompt
           }
         ],
-        temperature: 0.8,
+        temperature: 0.7,
         presence_penalty: 0.6,
         frequency_penalty: 0.6,
         max_tokens: 1500,
@@ -88,10 +87,13 @@ serve(async (req) => {
 
     let suggestions;
     try {
-      // Clean the response content
-      const content = data.choices[0].message.content.trim()
+      // Clean the response content and ensure proper JSON formatting
+      const content = data.choices[0].message.content
+        .trim()
         .replace(/```json\s*/g, '')
         .replace(/```\s*$/g, '')
+        .replace(/(\r\n|\n|\r)/gm, '')  // Remove line breaks
+        .replace(/\s+/g, ' ')           // Normalize spaces
         .trim();
       
       console.log('Cleaned content:', content);
@@ -103,6 +105,11 @@ serve(async (req) => {
 
       // Validate each suggestion
       suggestions = suggestions.filter((suggestion, index) => {
+        if (!suggestion || typeof suggestion !== 'object') {
+          console.warn(`Suggestion ${index} is not an object`);
+          return false;
+        }
+
         const requiredFields = ['title', 'description', 'priceRange', 'reason'];
         const missingFields = requiredFields.filter(field => !suggestion[field]);
         
@@ -119,6 +126,13 @@ serve(async (req) => {
           console.warn(`Suggestion ${index} has invalid price range:`, suggestion.priceRange);
           return false;
         }
+
+        // Ensure all string fields use double quotes
+        requiredFields.forEach(field => {
+          if (typeof suggestion[field] === 'string') {
+            suggestion[field] = suggestion[field].replace(/'/g, '"');
+          }
+        });
 
         return true;
       });
