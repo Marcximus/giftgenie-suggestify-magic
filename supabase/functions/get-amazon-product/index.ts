@@ -24,13 +24,39 @@ serve(async (req) => {
       throw new Error('ScrapingDog API key not configured');
     }
 
-    // First, search for the ASIN using a search query
-    // For now, we'll use a mock ASIN for testing
-    // TODO: Implement actual ASIN search
-    const mockAsin = 'B00AP877FS';
+    // Clean up the search query to improve matching
+    const cleanSearchQuery = searchQuery
+      .toLowerCase()
+      .replace(/[^\w\s]/g, ' ')
+      .trim()
+      .split(' ')
+      .slice(0, 5) // Use first 5 words for better matching
+      .join(' ');
+
+    // For now, we'll use a selection of popular ASINs based on categories
+    // In a production environment, this should be replaced with a proper Amazon Product API search
+    const popularAsins = {
+      'tech': ['B09G9HD6PD', 'B08F7N4F5Q', 'B0CHX3QBCH'],
+      'kitchen': ['B08GC6PL3D', 'B075H1B3J5', 'B08XQMH3Y6'],
+      'beauty': ['B00AP877FS', 'B087N4NLQF', 'B0BN6RRYCK'],
+      'toys': ['B01MS7YUA7', 'B0BPC8W2GX', 'B0747W15QL'],
+      'sports': ['B0BN6M5RB1', 'B07PXGQC1Q', 'B000UVRU6G'],
+    };
+
+    // Simple category matching based on keywords
+    let category = 'tech'; // default category
+    if (cleanSearchQuery.match(/kitchen|cook|food|coffee|bake/)) category = 'kitchen';
+    if (cleanSearchQuery.match(/beauty|makeup|skin|hair|cosmetic/)) category = 'beauty';
+    if (cleanSearchQuery.match(/toy|game|play|kid|child/)) category = 'toys';
+    if (cleanSearchQuery.match(/sport|fitness|exercise|workout/)) category = 'sports';
+
+    // Select a random ASIN from the matching category
+    const asins = popularAsins[category];
+    const selectedAsin = asins[Math.floor(Math.random() * asins.length)];
+    console.log(`Selected ASIN ${selectedAsin} from category ${category}`);
 
     // Fetch product data using the ASIN
-    const url = `https://api.scrapingdog.com/amazon/product?api_key=${API_KEY}&domain=com&asin=${mockAsin}`;
+    const url = `https://api.scrapingdog.com/amazon/product?api_key=${API_KEY}&domain=com&asin=${selectedAsin}`;
     
     const response = await fetch(url);
     if (!response.ok) {
@@ -55,7 +81,8 @@ serve(async (req) => {
       availability: data.availability_status,
       features: data.feature_bullets,
       category: data.product_category,
-      brand: data.brand
+      brand: data.brand,
+      asin: selectedAsin
     };
 
     return new Response(

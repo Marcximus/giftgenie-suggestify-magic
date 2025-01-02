@@ -1,47 +1,43 @@
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { ShoppingCart } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useState, useEffect } from "react";
 
 interface AmazonButtonProps {
   title: string;
+  asin?: string;
 }
 
-let cachedAssociateId: string | null = null;
+export const AmazonButton = ({ title, asin }: AmazonButtonProps) => {
+  const [associateId, setAssociateId] = useState<string>('');
 
-export const AmazonButton = ({ title }: AmazonButtonProps) => {
-  const [isLoading, setIsLoading] = useState(false);
-
-  const getAmazonUrl = async (searchTerm: string) => {
-    try {
-      if (!cachedAssociateId) {
-        setIsLoading(true);
-        const { data: { AMAZON_ASSOCIATE_ID } } = await supabase.functions.invoke('get-amazon-associate-id');
-        cachedAssociateId = AMAZON_ASSOCIATE_ID;
-        setIsLoading(false);
+  useEffect(() => {
+    const getAssociateId = async () => {
+      const { data } = await supabase.functions.invoke('get-amazon-associate-id');
+      if (data?.associateId) {
+        setAssociateId(data.associateId);
       }
-      
-      const searchQuery = searchTerm.replace(/\s+/g, '+');
-      return `https://www.amazon.com/s?k=${searchQuery}&tag=${cachedAssociateId}`;
-    } catch (error) {
-      console.error('Error getting Amazon Associate ID:', error);
-      setIsLoading(false);
-      const searchQuery = title.replace(/\s+/g, '+');
-      return `https://www.amazon.com/s?k=${searchQuery}`;
-    }
-  };
+    };
+    getAssociateId();
+  }, []);
 
-  const handleClick = async () => {
-    const url = await getAmazonUrl(title);
-    window.open(url, '_blank');
+  const getAmazonUrl = () => {
+    if (asin) {
+      return `https://www.amazon.com/dp/${asin}${associateId ? `?tag=${associateId}` : ''}`;
+    }
+    const searchQuery = encodeURIComponent(title);
+    return `https://www.amazon.com/s?k=${searchQuery}${associateId ? `&tag=${associateId}` : ''}`;
   };
 
   return (
-    <Button 
-      className="w-full bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-sm text-sm py-1 transition-all duration-200" 
-      onClick={handleClick}
-      disabled={isLoading}
+    <Button
+      variant="default"
+      size="sm"
+      className="w-full text-[0.65rem] h-7 bg-[#FF9900] hover:bg-[#FF9900]/90"
+      onClick={() => window.open(getAmazonUrl(), '_blank')}
     >
-      {isLoading ? "Loading..." : "View on Amazon"}
+      <ShoppingCart className="w-2.5 h-2.5 mr-1" />
+      View on Amazon
     </Button>
   );
 };
