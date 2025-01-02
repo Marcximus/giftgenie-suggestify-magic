@@ -31,17 +31,6 @@ export const useSuggestions = () => {
     }
 
     try {
-      // Check cache first
-      const cacheKey = getCacheKey(query);
-      const cachedData = queryClient.getQueryData(cacheKey);
-      
-      if (cachedData) {
-        console.log('Using cached suggestions');
-        setSuggestions(prev => append ? [...prev, ...(cachedData as GiftSuggestion[])] : (cachedData as GiftSuggestion[]));
-        setIsLoading(false);
-        return;
-      }
-
       const { data, error } = await supabase.functions.invoke('generate-gift-suggestions', {
         body: { prompt: query }
       });
@@ -61,9 +50,6 @@ export const useSuggestions = () => {
       if (!data?.suggestions || !Array.isArray(data.suggestions)) {
         throw new Error('Invalid response format');
       }
-
-      // Cache the results
-      queryClient.setQueryData(cacheKey, data.suggestions);
 
       setSuggestions(prev => append ? [...prev, ...data.suggestions] : data.suggestions);
       
@@ -112,8 +98,6 @@ export const useSuggestions = () => {
   const handleStartOver = () => {
     setSuggestions([]);
     setLastQuery('');
-    // Clear all suggestion caches when starting over
-    queryClient.removeQueries({ queryKey: ['suggestions'] });
     // Trigger a window reload to ensure all components are reset
     window.location.reload();
   };

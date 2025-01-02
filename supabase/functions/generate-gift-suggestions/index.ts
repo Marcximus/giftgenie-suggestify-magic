@@ -8,11 +8,17 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Cache for storing responses
-const responseCache = new Map();
+// Cache for storing responses with multiple sets
+const responseCache = new Map<string, Array<{
+  data: any;
+  timestamp: number;
+}>>();
 
 // Cache expiration time (30 minutes)
 const CACHE_EXPIRATION = 30 * 60 * 1000;
+
+// Maximum sets of suggestions to keep per query
+const MAX_CACHE_SETS = 3;
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -31,12 +37,21 @@ serve(async (req) => {
     const cacheKey = prompt.toLowerCase().trim();
 
     // Check cache first
-    const cachedResponse = responseCache.get(cacheKey);
-    if (cachedResponse && Date.now() - cachedResponse.timestamp < CACHE_EXPIRATION) {
-      console.log('Returning cached response');
-      return new Response(JSON.stringify(cachedResponse.data), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
+    const cachedSets = responseCache.get(cacheKey);
+    if (cachedSets && cachedSets.length > 0) {
+      // Remove expired cache entries
+      const validSets = cachedSets.filter(set => 
+        Date.now() - set.timestamp < CACHE_EXPIRATION
+      );
+      
+      if (validSets.length > 0) {
+        console.log('Returning random cached response from', validSets.length, 'available sets');
+        // Return a random set of valid cached suggestions
+        const randomSet = validSets[Math.floor(Math.random() * validSets.length)];
+        return new Response(JSON.stringify(randomSet.data), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
     }
 
     const priceRangeMatch = prompt.match(/Budget:\s*\$?(\d+-\d+)/i);
@@ -63,6 +78,8 @@ serve(async (req) => {
             3. Mention specific models, versions, or editions when applicable
             4. Include product features that make it appealing (e.g., "with active noise cancellation and transparency mode")
             5. Reference current year models when possible
+            6. Ensure variety in suggestions, avoiding repetitive or similar items
+            7. Include a mix of mainstream and unique trending products
             
             STRICT BUDGET RULE: When a price range is mentioned (e.g., $20-40), ensure ALL suggestions stay within 20% of the range bounds.
             
@@ -76,7 +93,7 @@ serve(async (req) => {
           },
           { role: 'user', content: prompt }
         ],
-        temperature: 0.7,
+        temperature: 0.9,
         max_tokens: 1500,
       }),
     });
@@ -138,10 +155,22 @@ serve(async (req) => {
       }
 
       // Cache the successful response
-      responseCache.set(cacheKey, {
+      const existingSets = responseCache.get(cacheKey) || [];
+      const newCacheEntry = {
         data: { suggestions },
         timestamp: Date.now()
-      });
+      };
+
+      // Add new set and maintain maximum cache size
+      const updatedSets = [newCacheEntry, ...existingSets].slice(0, MAX_CACHE_SETS);
+      responseCache.set(cacheKey, updatedSets);
+
+      return new Response(
+        JSON.stringify({ suggestions }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
 
     } catch (parseError) {
       console.error('Failed to parse OpenAI response:', parseError);
@@ -157,13 +186,6 @@ serve(async (req) => {
         }
       );
     }
-
-    return new Response(
-      JSON.stringify({ suggestions }),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      }
-    );
 
   } catch (error) {
     console.error('Error in generate-gift-suggestions function:', error);
