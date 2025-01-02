@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 interface GiftSuggestion {
   title: string;
@@ -15,12 +14,6 @@ export const useSuggestions = () => {
   const [suggestions, setSuggestions] = useState<GiftSuggestion[]>([]);
   const [lastQuery, setLastQuery] = useState('');
   const { toast } = useToast();
-  const queryClient = useQueryClient();
-
-  // Function to generate a cache key based on the query
-  const getCacheKey = (query: string) => {
-    return ['suggestions', query.toLowerCase().trim()];
-  };
 
   const generateSuggestions = async (query: string, append: boolean = false) => {
     if (!query.trim()) return;
