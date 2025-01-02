@@ -1,10 +1,27 @@
 project_id = "ckcqttsdpxfbpkzljctl"
 
-[functions.generate-gift-suggestions]
+[api]
+enabled = true
+port = 54321
+hostname = "127.0.0.1"
+
+[db]
+port = 54322
+shadow_port = 54320
+
+[studio]
+enabled = true
+port = 54323
+hostname = "127.0.0.1"
+
+[[functions]]
+name = "get-google-image"
 verify_jwt = false
 
-[functions.generate-gift-image]
+[[functions]]
+name = "generate-gift-suggestions"
 verify_jwt = false
 
-[functions.get-pexels-image]
+[[functions]]
+name = "get-amazon-product"
 verify_jwt = false
