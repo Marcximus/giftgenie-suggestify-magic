@@ -25,25 +25,40 @@ serve(async (req) => {
       throw new Error('ScrapingDog API key not configured');
     }
 
-    // Step 1: Search for the product to get its ASIN
-    const encodedQuery = encodeURIComponent(searchQuery);
-    const searchUrl = `https://api.scrapingdog.com/amazon/search?api_key=${SCRAPINGDOG_API_KEY}&q=${encodedQuery}&domain=com&type=product`;
-    console.log('Making search API request:', searchUrl);
+    // Clean and prepare the search query
+    const cleanQuery = searchQuery
+      .replace(/[^\w\s-]/g, '') // Remove special characters except spaces and hyphens
+      .trim();
     
-    const searchResponse = await fetch(searchUrl);
-    if (!searchResponse.ok) {
-      console.error('Search API error:', {
-        status: searchResponse.status,
-        statusText: searchResponse.statusText,
-        body: await searchResponse.text()
-      });
-      throw new Error(`Search API returned ${searchResponse.status}`);
+    if (!cleanQuery) {
+      throw new Error('Invalid search query after cleaning');
     }
 
-    const searchResults = await searchResponse.json();
-    console.log('Search results received:', searchResults);
+    // Step 1: Search for the product to get its ASIN
+    const encodedQuery = encodeURIComponent(cleanQuery);
+    const searchUrl = `https://api.scrapingdog.com/amazon/search?api_key=${SCRAPINGDOG_API_KEY}&q=${encodedQuery}&domain=com&type=product`;
+    
+    console.log('Making search API request with cleaned query:', cleanQuery);
+    
+    const searchResponse = await fetch(searchUrl);
+    const searchText = await searchResponse.text(); // Get raw response text
+    
+    console.log('Search API raw response:', searchText);
+    
+    if (!searchResponse.ok) {
+      throw new Error(`Search API failed: ${searchResponse.status} - ${searchText}`);
+    }
+
+    let searchResults;
+    try {
+      searchResults = JSON.parse(searchText);
+    } catch (e) {
+      console.error('Failed to parse search results:', e);
+      throw new Error('Invalid JSON response from search API');
+    }
 
     if (!Array.isArray(searchResults) || searchResults.length === 0) {
+      console.log('No products found for query:', cleanQuery);
       throw new Error('No products found in search results');
     }
 
@@ -52,6 +67,7 @@ serve(async (req) => {
     const asin = firstProduct.asin;
 
     if (!asin) {
+      console.error('Search result missing ASIN:', firstProduct);
       throw new Error('No ASIN found in search results');
     }
 
@@ -59,27 +75,32 @@ serve(async (req) => {
 
     // Step 2: Use the ASIN to get detailed product information
     const productUrl = `https://api.scrapingdog.com/amazon/product?api_key=${SCRAPINGDOG_API_KEY}&asin=${asin}&domain=com`;
-    console.log('Making product API request:', productUrl);
+    
+    console.log('Making product API request for ASIN:', asin);
     
     const productResponse = await fetch(productUrl);
+    const productText = await productResponse.text(); // Get raw response text
+    
+    console.log('Product API raw response:', productText);
+    
     if (!productResponse.ok) {
-      console.error('Product API error:', {
-        status: productResponse.status,
-        statusText: productResponse.statusText,
-        body: await productResponse.text()
-      });
-      throw new Error(`Product API returned ${productResponse.status}`);
+      throw new Error(`Product API failed: ${productResponse.status} - ${productText}`);
     }
 
-    const productData = await productResponse.json();
-    console.log('Product data received:', {
-      title: productData.title,
-      hasDescription: !!productData.description,
-      hasImages: !!productData.images?.length,
-      asin: productData.asin
-    });
+    let productData;
+    try {
+      productData = JSON.parse(productText);
+    } catch (e) {
+      console.error('Failed to parse product data:', e);
+      throw new Error('Invalid JSON response from product API');
+    }
 
-    // Format the response data
+    // Validate the product data
+    if (!productData || typeof productData !== 'object') {
+      throw new Error('Invalid product data format');
+    }
+
+    // Format the response data with fallbacks
     const formattedData = {
       title: productData.title || searchQuery,
       description: productData.description || productData.feature_bullets?.join('\n') || 'No description available',
