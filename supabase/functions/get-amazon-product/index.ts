@@ -19,10 +19,8 @@ const productASINs: { [key: string]: string } = {
 };
 
 function findBestMatchingASIN(searchQuery: string): string {
-  // Convert search query to lowercase for case-insensitive matching
   const query = searchQuery.toLowerCase();
   
-  // Check for category keywords in the search query
   if (query.includes("headphone") || query.includes("airpod") || query.includes("earbud")) {
     return productASINs.headphones;
   }
@@ -45,7 +43,6 @@ function findBestMatchingASIN(searchQuery: string): string {
     return productASINs.fitness;
   }
   
-  // Return default ASIN if no category matches
   return productASINs.default;
 }
 
@@ -73,17 +70,14 @@ serve(async (req) => {
     console.log(`Selected ASIN for "${searchQuery}":`, asin);
 
     // Construct the URL with parameters
-    const baseUrl = 'https://api.scrapingdog.com/amazon/product';
-    const params = new URLSearchParams({
-      api_key: SCRAPINGDOG_API_KEY,
-      asin: asin,
-      domain: 'com'
-    });
+    const url = new URL('https://api.scrapingdog.com/amazon');
+    url.searchParams.append('api_key', SCRAPINGDOG_API_KEY);
+    url.searchParams.append('asin', asin);
+    url.searchParams.append('domain', 'com');
 
-    const url = `${baseUrl}?${params.toString()}`;
-    console.log('Making request to ScrapingDog API with URL:', url.replace(SCRAPINGDOG_API_KEY, '[REDACTED]'));
+    console.log('Making request to ScrapingDog API with URL:', url.toString().replace(SCRAPINGDOG_API_KEY, '[REDACTED]'));
 
-    const response = await fetch(url);
+    const response = await fetch(url.toString());
     console.log('ScrapingDog API Response Status:', response.status);
 
     // Get the response text first for proper error logging
