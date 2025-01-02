@@ -24,6 +24,10 @@ serve(async (req) => {
     const { prompt } = await req.json();
     console.log('Processing request with prompt:', prompt);
 
+    if (!prompt || typeof prompt !== 'string') {
+      throw new Error('Invalid prompt provided');
+    }
+
     // Generate cache key from normalized prompt
     const cacheKey = prompt.toLowerCase().trim();
 
@@ -31,7 +35,7 @@ serve(async (req) => {
     const cachedResponse = CacheManager.getCachedResponse(cacheKey);
     if (cachedResponse) {
       console.log('Returning cached response');
-      return new Response(JSON.stringify(cachedResponse), {
+      return new Response(JSON.stringify({ suggestions: cachedResponse }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
@@ -39,25 +43,21 @@ serve(async (req) => {
     const priceRangeMatch = prompt.match(/Budget:\s*\$?(\d+-\d+)/i);
     const originalPriceRange = priceRangeMatch ? priceRangeMatch[1] : null;
 
-    const data = await generateSuggestions(prompt, openAIApiKey);
+    const suggestions = await generateSuggestions(prompt, openAIApiKey);
     
-    if (!data.choices?.[0]?.message?.content) {
-      throw new Error('Invalid response format from OpenAI API');
-    }
-
-    const suggestions = validateAndCleanSuggestions(
-      data.choices[0].message.content,
+    const validatedSuggestions = validateAndCleanSuggestions(
+      JSON.stringify(suggestions),
       originalPriceRange
     );
 
-    if (suggestions.length < 4) {
+    if (validatedSuggestions.length < 4) {
       throw new Error('Not enough valid suggestions generated');
     }
 
-    const response = { suggestions };
+    const response = { suggestions: validatedSuggestions };
     
     // Cache the successful response
-    CacheManager.setCachedResponse(cacheKey, response);
+    CacheManager.setCachedResponse(cacheKey, validatedSuggestions);
 
     return new Response(
       JSON.stringify(response),
@@ -68,10 +68,13 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Error in generate-gift-suggestions function:', error);
+    
+    // Send a more detailed error response
     return new Response(
       JSON.stringify({ 
         error: error.message,
-        details: 'An error occurred while processing your request.'
+        details: 'An error occurred while processing your request.',
+        timestamp: new Date().toISOString()
       }),
       {
         status: 500,
