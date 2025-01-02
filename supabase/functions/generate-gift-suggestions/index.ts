@@ -8,21 +8,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Helper function to validate price range
-const validatePriceRange = (suggestion: any, originalRange: string): boolean => {
-  const [minStr, maxStr] = originalRange.split('-').map(n => parseInt(n));
-  const min = minStr * 0.8;  // 20% below minimum
-  const max = maxStr * 1.2;  // 20% above maximum
-  
-  // Extract numeric values from the suggestion's price range
-  const suggestedPrice = suggestion.priceRange.replace(/[^0-9-]/g, '');
-  const [suggestedMin, suggestedMax] = suggestedPrice.split('-').map(n => parseInt(n));
-  
-  return suggestedMin >= min && suggestedMax <= max;
-};
-
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -35,7 +21,6 @@ serve(async (req) => {
     const { prompt } = await req.json();
     console.log('Processing request with prompt:', prompt);
 
-    // Extract price range from prompt if it exists
     const priceRangeMatch = prompt.match(/Budget:\s*\$?(\d+-\d+)/i);
     const originalPriceRange = priceRangeMatch ? priceRangeMatch[1] : null;
     console.log('Extracted price range:', originalPriceRange);
@@ -47,11 +32,29 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: "gpt-4o-mini",
+        model: "gpt-4o",
         messages: [
           {
             role: "system",
-            content: `You are a gift suggestion assistant. Generate 8 gift suggestions based on the description provided. STRICT BUDGET RULE: When a price range is mentioned (e.g., $20-40), you MUST ensure ALL suggestions stay within 20% of the range bounds. Example: for $20-40, suggestions MUST be between $16-48, no exceptions. For each suggestion, provide: title (specific product name), description (brief description), priceRange (actual price range, format as 'X-Y'), and reason (why this gift). Return ONLY a raw JSON array. No markdown, no code blocks, just the array. Response must be valid JSON.`
+            content: `You are a gift suggestion assistant specializing in trending, popular products from well-known brands. 
+            Generate 8 specific gift suggestions based on the description provided. 
+            
+            Guidelines for suggestions:
+            1. Focus on actual products from real, popular brands (e.g., "Apple AirPods Pro (2nd Generation)" instead of just "wireless earbuds")
+            2. Include current trending products and bestsellers
+            3. Mention specific models, versions, or editions when applicable
+            4. Include product features that make it appealing (e.g., "with active noise cancellation and transparency mode")
+            5. Reference current year models when possible
+            
+            STRICT BUDGET RULE: When a price range is mentioned (e.g., $20-40), ensure ALL suggestions stay within 20% of the range bounds.
+            
+            For each suggestion, provide:
+            - title (specific product name with brand)
+            - description (detailed features and benefits)
+            - priceRange (actual price range, format as 'X-Y')
+            - reason (why this specific product is trending/popular)
+            
+            Return ONLY a raw JSON array. No markdown, no code blocks, just the array. Response must be valid JSON.`
           },
           {
             role: "user",
@@ -59,7 +62,7 @@ serve(async (req) => {
           }
         ],
         temperature: 0.7,
-        max_tokens: 1000,
+        max_tokens: 1500,
       }),
     });
 
@@ -77,21 +80,18 @@ serve(async (req) => {
 
     let suggestions;
     try {
-      const content = data.choices[0].message.content.trim();
-      // Clean the content by removing any markdown formatting
-      const cleanContent = content
+      const content = data.choices[0].message.content.trim()
         .replace(/```json\s*/g, '')
         .replace(/```\s*$/g, '')
         .trim();
       
-      console.log('Cleaned content:', cleanContent);
-      suggestions = JSON.parse(cleanContent);
+      console.log('Cleaned content:', content);
+      suggestions = JSON.parse(content);
 
       if (!Array.isArray(suggestions)) {
         throw new Error('Response is not an array');
       }
 
-      // Validate each suggestion has required fields and price range
       suggestions = suggestions.filter((suggestion, index) => {
         const requiredFields = ['title', 'description', 'priceRange', 'reason'];
         const missingFields = requiredFields.filter(field => !suggestion[field]);
@@ -101,16 +101,23 @@ serve(async (req) => {
           return false;
         }
 
-        // If we have an original price range, validate the suggestion's price
-        if (originalPriceRange && !validatePriceRange(suggestion, originalPriceRange)) {
-          console.warn(`Suggestion ${index} outside price range:`, suggestion.priceRange);
-          return false;
+        if (originalPriceRange) {
+          const [minStr, maxStr] = originalPriceRange.split('-').map(n => parseInt(n));
+          const min = minStr * 0.8;
+          const max = maxStr * 1.2;
+          
+          const suggestedPrice = suggestion.priceRange.replace(/[^0-9-]/g, '');
+          const [suggestedMin, suggestedMax] = suggestedPrice.split('-').map(n => parseInt(n));
+          
+          if (suggestedMin < min || suggestedMax > max) {
+            console.warn(`Suggestion ${index} outside price range:`, suggestion.priceRange);
+            return false;
+          }
         }
 
         return true;
       });
 
-      // Ensure we still have enough suggestions
       if (suggestions.length < 4) {
         throw new Error('Not enough valid suggestions generated');
       }
