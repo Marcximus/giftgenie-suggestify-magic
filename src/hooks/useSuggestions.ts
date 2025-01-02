@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 interface GiftSuggestion {
   title: string;
@@ -14,6 +15,12 @@ export const useSuggestions = () => {
   const [suggestions, setSuggestions] = useState<GiftSuggestion[]>([]);
   const [lastQuery, setLastQuery] = useState('');
   const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  // Function to generate a cache key based on the query
+  const getCacheKey = (query: string) => {
+    return ['suggestions', query.toLowerCase().trim()];
+  };
 
   const generateSuggestions = async (query: string, append: boolean = false) => {
     if (!query.trim()) return;
@@ -24,6 +31,17 @@ export const useSuggestions = () => {
     }
 
     try {
+      // Check cache first
+      const cacheKey = getCacheKey(query);
+      const cachedData = queryClient.getQueryData(cacheKey);
+      
+      if (cachedData) {
+        console.log('Using cached suggestions');
+        setSuggestions(prev => append ? [...prev, ...(cachedData as GiftSuggestion[])] : (cachedData as GiftSuggestion[]));
+        setIsLoading(false);
+        return;
+      }
+
       const { data, error } = await supabase.functions.invoke('generate-gift-suggestions', {
         body: { prompt: query }
       });
@@ -43,6 +61,9 @@ export const useSuggestions = () => {
       if (!data?.suggestions || !Array.isArray(data.suggestions)) {
         throw new Error('Invalid response format');
       }
+
+      // Cache the results
+      queryClient.setQueryData(cacheKey, data.suggestions);
 
       setSuggestions(prev => append ? [...prev, ...data.suggestions] : data.suggestions);
       
@@ -91,6 +112,8 @@ export const useSuggestions = () => {
   const handleStartOver = () => {
     setSuggestions([]);
     setLastQuery('');
+    // Clear all suggestion caches when starting over
+    queryClient.removeQueries({ queryKey: ['suggestions'] });
     // Trigger a window reload to ensure all components are reset
     window.location.reload();
   };

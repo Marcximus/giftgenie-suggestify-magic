@@ -8,6 +8,12 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Cache for storing responses
+const responseCache = new Map();
+
+// Cache expiration time (30 minutes)
+const CACHE_EXPIRATION = 30 * 60 * 1000;
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -20,6 +26,18 @@ serve(async (req) => {
 
     const { prompt } = await req.json();
     console.log('Processing request with prompt:', prompt);
+
+    // Generate cache key from normalized prompt
+    const cacheKey = prompt.toLowerCase().trim();
+
+    // Check cache first
+    const cachedResponse = responseCache.get(cacheKey);
+    if (cachedResponse && Date.now() - cachedResponse.timestamp < CACHE_EXPIRATION) {
+      console.log('Returning cached response');
+      return new Response(JSON.stringify(cachedResponse.data), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
 
     const priceRangeMatch = prompt.match(/Budget:\s*\$?(\d+-\d+)/i);
     const originalPriceRange = priceRangeMatch ? priceRangeMatch[1] : null;
@@ -56,10 +74,7 @@ serve(async (req) => {
             
             Return ONLY a raw JSON array. No markdown, no code blocks, just the array. Response must be valid JSON.`
           },
-          {
-            role: "user",
-            content: prompt
-          }
+          { role: 'user', content: prompt }
         ],
         temperature: 0.7,
         max_tokens: 1500,
@@ -121,6 +136,12 @@ serve(async (req) => {
       if (suggestions.length < 4) {
         throw new Error('Not enough valid suggestions generated');
       }
+
+      // Cache the successful response
+      responseCache.set(cacheKey, {
+        data: { suggestions },
+        timestamp: Date.now()
+      });
 
     } catch (parseError) {
       console.error('Failed to parse OpenAI response:', parseError);
