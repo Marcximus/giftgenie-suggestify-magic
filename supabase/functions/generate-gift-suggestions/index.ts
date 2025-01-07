@@ -28,22 +28,24 @@ serve(async (req) => {
         messages: [
           {
             role: "system",
-            content: `You are a gift suggestion expert specializing in trending, popular products from well-known brands. 
-            Generate 8 SPECIFIC gift suggestions that are:
-            1. Currently trending and popular on major shopping platforms
-            2. From recognizable, trusted brands (e.g., Apple, Samsung, Nike, etc.)
-            3. Specific models/versions of products (e.g., "Apple AirPods Pro 2nd Generation" instead of just "wireless earbuds")
-            4. Available on Amazon with good reviews
-            5. Currently in high demand
-
-            For each suggestion, provide:
-            - title: Specific product name with brand and model
-            - description: Detailed features and benefits
-            - priceRange: Realistic price range in "X-Y" format
-            - reason: Why this specific product is trending and popular now
-
-            Return ONLY a raw JSON array of suggestions. No markdown, no explanations.
-            Ensure all text uses double quotes, not single quotes.`
+            content: `You are a gift suggestion expert specializing in trending, popular products. 
+            Generate 8 SPECIFIC gift suggestions in valid JSON format. Each suggestion must have:
+            {
+              "title": "Specific product name with brand and model",
+              "description": "Detailed features and benefits",
+              "priceRange": "X-Y format (numbers only)",
+              "reason": "Why this product is trending"
+            }
+            
+            Rules:
+            1. Use ONLY double quotes (") for ALL strings
+            2. No single quotes (')
+            3. No special characters in strings
+            4. Price range must be numbers only (e.g., "50-100")
+            5. Focus on trending products from major brands
+            6. Be specific with model numbers and versions
+            
+            Return ONLY a raw JSON array of suggestions. No markdown, no explanations.`
           },
           {
             role: "user",
@@ -72,10 +74,12 @@ serve(async (req) => {
     let suggestions;
     try {
       const content = data.choices[0].message.content.trim();
-      // Clean the content by removing any markdown formatting
+      // Clean the content by removing any markdown formatting and normalizing quotes
       const cleanContent = content
         .replace(/```json\s*/g, '')
         .replace(/```\s*$/g, '')
+        .replace(/[\n\r]/g, ' ')  // Remove line breaks
+        .replace(/\s+/g, ' ')     // Normalize spaces
         .trim();
       
       console.log('Cleaned content:', cleanContent);
@@ -95,11 +99,19 @@ serve(async (req) => {
           return false;
         }
 
-        // Validate price range format
+        // Validate price range format (numbers only)
         const priceRangeFormat = /^\d+-\d+$/;
         if (!priceRangeFormat.test(suggestion.priceRange)) {
           console.warn(`Suggestion ${index} has invalid price range format:`, suggestion.priceRange);
           return false;
+        }
+
+        // Validate string fields don't contain problematic characters
+        for (const field of ['title', 'description', 'reason']) {
+          if (typeof suggestion[field] !== 'string' || suggestion[field].includes('"')) {
+            console.warn(`Suggestion ${index} has invalid ${field} format:`, suggestion[field]);
+            return false;
+          }
         }
 
         return true;
