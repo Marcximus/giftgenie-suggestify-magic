@@ -28,30 +28,27 @@ serve(async (req) => {
         messages: [
           {
             role: "system",
-            content: `You are a gift suggestion expert specializing in trending, popular products. 
-            Your task is to generate 8 SPECIFIC gift suggestions in strict JSON format.
-            
-            IMPORTANT: Use ONLY double quotes (") for ALL strings, NEVER use single quotes (').
-            
-            Format each suggestion exactly like this, with NO deviations:
-            {
-              "title": "Specific product name with brand and model",
-              "description": "Detailed features and benefits",
-              "priceRange": "50-100",
-              "reason": "Why this product is trending"
-            }
-            
-            STRICT RULES:
-            1. ALL strings MUST use double quotes (")
-            2. NEVER use single quotes (')
-            3. NO special characters in strings (no ", ', \, or other escape characters)
-            4. Price range MUST be numbers only (e.g., "50-100")
-            5. Focus on specific, trending products from major brands
-            6. Include exact model numbers and versions
-            7. NO line breaks within strings
-            8. NO markdown formatting
-            
-            Return ONLY a raw JSON array of suggestions with NO additional text or formatting.`
+            content: `You are a gift suggestion expert. Return EXACTLY 8 gift suggestions in a STRICT JSON array format.
+
+Each suggestion must follow this EXACT format with NO DEVIATIONS:
+{
+  "title": "Specific product name with brand",
+  "description": "Clear description of features and benefits",
+  "priceRange": "50-100",
+  "reason": "Why this gift is trending"
+}
+
+CRITICAL RULES:
+1. Return ONLY a raw JSON array containing exactly 8 items
+2. Use ONLY double quotes (") for strings, NEVER single quotes
+3. NO special characters or escape sequences in strings
+4. Price range must be numbers only (e.g., "50-100")
+5. NO line breaks or extra spaces in the JSON
+6. NO comments or additional text
+7. NO markdown formatting
+
+Example of valid response:
+[{"title":"Sony WH-1000XM4","description":"Premium noise cancelling headphones","priceRange":"250-300","reason":"Top rated for audio quality"},{"title":"Nintendo Switch OLED","description":"Latest gaming console with enhanced display","priceRange":"300-350","reason":"Most popular gaming system"}]`
           },
           {
             role: "user",
@@ -80,15 +77,11 @@ serve(async (req) => {
     let suggestions;
     try {
       const content = data.choices[0].message.content.trim();
+      console.log('Raw content:', content);
       
-      // Clean and normalize the content
+      // Clean the content
       const cleanContent = content
-        .replace(/```json\s*/g, '') // Remove JSON code block markers
-        .replace(/```\s*$/g, '')    // Remove trailing code block markers
-        .replace(/[\n\r]/g, ' ')    // Remove all line breaks
-        .replace(/\s+/g, ' ')       // Normalize spaces
-        .replace(/'/g, '"')         // Replace any single quotes with double quotes
-        .replace(/\\/g, '')         // Remove backslashes
+        .replace(/\s+/g, ' ')  // Normalize spaces
         .trim();
       
       console.log('Cleaned content:', cleanContent);
@@ -105,58 +98,42 @@ serve(async (req) => {
         throw new Error('Response is not an array');
       }
 
-      // Validate each suggestion
-      suggestions = suggestions.filter((suggestion, index) => {
-        try {
-          // Check required fields
-          const requiredFields = ['title', 'description', 'priceRange', 'reason'];
-          const missingFields = requiredFields.filter(field => !suggestion[field]);
-          
-          if (missingFields.length > 0) {
-            console.warn(`Suggestion ${index} missing fields:`, missingFields);
-            return false;
-          }
-
-          // Validate price range format (numbers only)
-          const priceRangeFormat = /^\d+-\d+$/;
-          if (!priceRangeFormat.test(suggestion.priceRange)) {
-            console.warn(`Suggestion ${index} has invalid price range format:`, suggestion.priceRange);
-            return false;
-          }
-
-          // Validate string fields
-          for (const field of ['title', 'description', 'reason']) {
-            if (typeof suggestion[field] !== 'string') {
-              console.warn(`Suggestion ${index} field ${field} is not a string:`, suggestion[field]);
-              return false;
-            }
-            
-            // Check for problematic characters
-            if (suggestion[field].includes('"') || suggestion[field].includes("'") || suggestion[field].includes('\\')) {
-              console.warn(`Suggestion ${index} field ${field} contains invalid characters`);
-              return false;
-            }
-          }
-
-          return true;
-        } catch (validationError) {
-          console.warn(`Validation error for suggestion ${index}:`, validationError);
-          return false;
-        }
-      });
-
-      // Ensure we have enough valid suggestions
-      if (suggestions.length < 4) {
-        throw new Error('Not enough valid suggestions generated');
+      if (suggestions.length !== 8) {
+        throw new Error(`Expected 8 suggestions, got ${suggestions.length}`);
       }
 
-    } catch (parseError) {
-      console.error('Failed to parse OpenAI response:', parseError);
-      console.error('Raw content:', data.choices[0].message.content);
+      // Validate each suggestion
+      suggestions = suggestions.map((suggestion, index) => {
+        // Check required fields
+        const requiredFields = ['title', 'description', 'priceRange', 'reason'];
+        const missingFields = requiredFields.filter(field => !suggestion[field]);
+        
+        if (missingFields.length > 0) {
+          throw new Error(`Suggestion ${index} missing fields: ${missingFields.join(', ')}`);
+        }
+
+        // Validate price range format
+        const priceRangeFormat = /^\d+-\d+$/;
+        if (!priceRangeFormat.test(suggestion.priceRange)) {
+          throw new Error(`Invalid price range format in suggestion ${index}: ${suggestion.priceRange}`);
+        }
+
+        // Validate string fields
+        for (const field of ['title', 'description', 'reason']) {
+          if (typeof suggestion[field] !== 'string') {
+            throw new Error(`Field ${field} in suggestion ${index} is not a string`);
+          }
+        }
+
+        return suggestion;
+      });
+
+    } catch (error) {
+      console.error('Failed to process suggestions:', error);
       return new Response(
         JSON.stringify({
           error: 'Failed to parse suggestions',
-          details: parseError.message
+          details: error.message
         }),
         {
           status: 500,
