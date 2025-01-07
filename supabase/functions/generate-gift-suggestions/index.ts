@@ -28,31 +28,29 @@ serve(async (req) => {
         messages: [
           {
             role: "system",
-            content: `You are a gift suggestion expert. Return EXACTLY 8 gift suggestions in a STRICT JSON array format.
+            content: `You are a gift suggestion expert. You MUST return EXACTLY 8 gift suggestions in a STRICT JSON array format.
 
-Each suggestion must follow this EXACT format with NO DEVIATIONS:
-{
-  "title": "Specific product name with brand",
-  "description": "Clear description of features and benefits",
-  "priceRange": "50-100",
-  "reason": "Why this gift is trending"
-}
-
-CRITICAL RULES:
-1. Return ONLY a raw JSON array containing exactly 8 items
-2. Use ONLY double quotes (") for strings, NEVER single quotes
-3. NO special characters or escape sequences in strings
+CRITICAL REQUIREMENTS:
+1. Return EXACTLY 8 items, no more, no less
+2. Use ONLY double quotes (") for strings
+3. NO special characters in strings
 4. Price range must be numbers only (e.g., "50-100")
-5. NO line breaks or extra spaces in the JSON
-6. NO comments or additional text
-7. NO markdown formatting
+5. NO line breaks in JSON
+6. NO comments or extra text
+7. Each suggestion must have these exact fields:
+   - "title": specific product name with brand
+   - "description": clear description
+   - "priceRange": price range (e.g., "50-100")
+   - "reason": why this gift is trending
 
-Example of valid response:
-[{"title":"Sony WH-1000XM4","description":"Premium noise cancelling headphones","priceRange":"250-300","reason":"Top rated for audio quality"},{"title":"Nintendo Switch OLED","description":"Latest gaming console with enhanced display","priceRange":"300-350","reason":"Most popular gaming system"}]`
+Example of valid response format:
+[{"title":"Sony WH-1000XM4 Headphones","description":"Premium noise cancelling headphones with industry-leading technology","priceRange":"250-300","reason":"Top rated for audio quality"},{"title":"Nintendo Switch OLED","description":"Latest gaming console with enhanced display","priceRange":"300-350","reason":"Most popular gaming system"}]
+
+If you cannot generate exactly 8 suggestions, respond with an error message instead.`
           },
           {
             role: "user",
-            content: prompt
+            content: `Generate EXACTLY 8 gift suggestions for: ${prompt}`
           }
         ],
         temperature: 0.7,
@@ -79,20 +77,8 @@ Example of valid response:
       const content = data.choices[0].message.content.trim();
       console.log('Raw content:', content);
       
-      // Clean the content
-      const cleanContent = content
-        .replace(/\s+/g, ' ')  // Normalize spaces
-        .trim();
-      
-      console.log('Cleaned content:', cleanContent);
-      
-      try {
-        suggestions = JSON.parse(cleanContent);
-      } catch (parseError) {
-        console.error('JSON Parse Error:', parseError);
-        console.error('Content that failed to parse:', cleanContent);
-        throw new Error(`JSON parsing failed: ${parseError.message}`);
-      }
+      suggestions = JSON.parse(content);
+      console.log('Parsed suggestions:', suggestions);
 
       if (!Array.isArray(suggestions)) {
         throw new Error('Response is not an array');
@@ -104,7 +90,6 @@ Example of valid response:
 
       // Validate each suggestion
       suggestions = suggestions.map((suggestion, index) => {
-        // Check required fields
         const requiredFields = ['title', 'description', 'priceRange', 'reason'];
         const missingFields = requiredFields.filter(field => !suggestion[field]);
         
