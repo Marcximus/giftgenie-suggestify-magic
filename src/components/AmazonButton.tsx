@@ -37,7 +37,7 @@ export const AmazonButton = ({ title }: AmazonButtonProps) => {
 
   return (
     <Button 
-      className="w-full bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-sm text-sm py-1 transition-all duration-200" 
+      className="w-full bg-[#F97316] hover:bg-[#F97316]/90 shadow-sm text-sm py-1 transition-all duration-200" 
       onClick={handleClick}
       disabled={isLoading}
     >
