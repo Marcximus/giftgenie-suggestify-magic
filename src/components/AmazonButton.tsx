@@ -21,18 +21,21 @@ export const AmazonButton = ({ title }: AmazonButtonProps) => {
       }
       
       const searchQuery = searchTerm.replace(/\s+/g, '+');
+      // Explicitly using amazon.com domain and ensuring HTTPS
       return `https://www.amazon.com/s?k=${searchQuery}&tag=${cachedAssociateId}`;
     } catch (error) {
       console.error('Error getting Amazon Associate ID:', error);
       setIsLoading(false);
       const searchQuery = title.replace(/\s+/g, '+');
+      // Fallback also uses amazon.com domain
       return `https://www.amazon.com/s?k=${searchQuery}`;
     }
   };
 
   const handleClick = async () => {
     const url = await getAmazonUrl(title);
-    window.open(url, '_blank');
+    // Open in new tab with noopener and noreferrer for security
+    window.open(url, '_blank', 'noopener,noreferrer');
   };
 
   return (
