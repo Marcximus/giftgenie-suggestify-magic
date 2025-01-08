@@ -39,22 +39,26 @@ CRITICAL REQUIREMENTS:
 6. NO comments or extra text
 7. EVERY suggestion MUST have ALL of these fields:
    - "title": specific product name with brand (e.g., "Sony WH-1000XM4 Headphones")
-   - "description": clear description (at least 20 words)
+   - "description": DETAILED description with at least 20 words. Include key features, benefits, and use cases. Make it compelling and informative.
    - "priceRange": price range with only numbers (e.g., "50-100")
    - "reason": why this gift is trending (at least 10 words)
 
 Example of EXACT format required (shortened to 2 items for brevity):
-[{"title":"Sony WH-1000XM4 Headphones","description":"Premium noise cancelling headphones with industry-leading technology and 30-hour battery life, perfect for music lovers and travelers","priceRange":"250-300","reason":"Top rated for audio quality and consistently ranked as the best noise cancelling headphones"},{"title":"Nintendo Switch OLED","description":"Latest gaming console featuring a vibrant 7-inch OLED screen, enhanced audio, and 64GB storage for ultimate gaming experience","priceRange":"300-350","reason":"Most popular gaming system with strong sales and extensive game library"}]
+[{"title":"Sony WH-1000XM4 Headphones","description":"Premium noise cancelling headphones featuring industry-leading technology, 30-hour battery life, touch controls, and multipoint pairing. Perfect for music lovers, travelers, and remote workers who need crystal-clear audio and peace from ambient noise.","priceRange":"250-300","reason":"Top rated for audio quality and consistently ranked as the best noise cancelling headphones in 2024"},{"title":"Nintendo Switch OLED","description":"Latest gaming console featuring a vibrant 7-inch OLED screen, enhanced audio, 64GB storage, improved kickstand, and LAN port in the dock. Perfect for both handheld and TV gaming with access to an extensive game library.","priceRange":"300-350","reason":"Most popular gaming system with strong sales, extensive game library, and versatile gaming options"}]
 
-IMPORTANT: If you cannot generate EXACTLY 8 complete suggestions with ALL required fields, respond with an error message instead.`
+IMPORTANT: If you cannot generate EXACTLY 8 complete suggestions with ALL required fields and minimum word counts, respond with an error message instead.`
           },
           {
             role: "user",
-            content: `Generate EXACTLY 8 complete gift suggestions with ALL required fields for: ${prompt}. Remember, each suggestion MUST include title, description, priceRange, and reason.`
+            content: `Generate EXACTLY 8 complete gift suggestions with ALL required fields for: ${prompt}. Remember:
+1. Each description MUST be at least 20 words and include key features, benefits, and use cases
+2. Each reason MUST be at least 10 words
+3. Each suggestion MUST include title, description, priceRange, and reason
+4. Make descriptions detailed and compelling to drive interest`
           }
         ],
         temperature: 0.7,
-        max_tokens: 1500,
+        max_tokens: 2000,
         presence_penalty: 0.3,
         frequency_penalty: 0.5
       }),
