@@ -34,7 +34,7 @@ export const ProductCard = ({
         <p className="text-[0.65rem] sm:text-[0.7rem] leading-relaxed line-clamp-3 text-muted-foreground">
           {description}
         </p>
-        <p className="text-xs sm:text-sm font-bold mt-1 text-primary">{price}</p>
+        <p className="text-xs sm:text-sm font-bold mt-1 text-primary">USD {price}</p>
       </CardContent>
       <CardFooter className="p-2 sm:p-3 pt-0 flex flex-col gap-1.5">
         <AmazonButton title={title} />
