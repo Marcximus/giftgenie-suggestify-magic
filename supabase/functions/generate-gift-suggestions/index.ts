@@ -37,20 +37,20 @@ CRITICAL REQUIREMENTS:
 4. Price range must be numbers only (e.g., "50-100")
 5. NO line breaks in JSON
 6. NO comments or extra text
-7. Each suggestion must have these exact fields:
-   - "title": specific product name with brand
-   - "description": clear description
-   - "priceRange": price range (e.g., "50-100")
-   - "reason": why this gift is trending
+7. EVERY suggestion MUST have ALL of these fields:
+   - "title": specific product name with brand (e.g., "Sony WH-1000XM4 Headphones")
+   - "description": clear description (at least 20 words)
+   - "priceRange": price range with only numbers (e.g., "50-100")
+   - "reason": why this gift is trending (at least 10 words)
 
-Example of valid response format:
-[{"title":"Sony WH-1000XM4 Headphones","description":"Premium noise cancelling headphones with industry-leading technology","priceRange":"250-300","reason":"Top rated for audio quality"},{"title":"Nintendo Switch OLED","description":"Latest gaming console with enhanced display","priceRange":"300-350","reason":"Most popular gaming system"}]
+Example of EXACT format required (shortened to 2 items for brevity):
+[{"title":"Sony WH-1000XM4 Headphones","description":"Premium noise cancelling headphones with industry-leading technology and 30-hour battery life, perfect for music lovers and travelers","priceRange":"250-300","reason":"Top rated for audio quality and consistently ranked as the best noise cancelling headphones"},{"title":"Nintendo Switch OLED","description":"Latest gaming console featuring a vibrant 7-inch OLED screen, enhanced audio, and 64GB storage for ultimate gaming experience","priceRange":"300-350","reason":"Most popular gaming system with strong sales and extensive game library"}]
 
-If you cannot generate exactly 8 suggestions, respond with an error message instead.`
+IMPORTANT: If you cannot generate EXACTLY 8 complete suggestions with ALL required fields, respond with an error message instead.`
           },
           {
             role: "user",
-            content: `Generate EXACTLY 8 gift suggestions for: ${prompt}`
+            content: `Generate EXACTLY 8 complete gift suggestions with ALL required fields for: ${prompt}. Remember, each suggestion MUST include title, description, priceRange, and reason.`
           }
         ],
         temperature: 0.7,
@@ -88,13 +88,23 @@ If you cannot generate exactly 8 suggestions, respond with an error message inst
         throw new Error(`Expected 8 suggestions, got ${suggestions.length}`);
       }
 
-      // Validate each suggestion
+      // Validate each suggestion thoroughly
       suggestions = suggestions.map((suggestion, index) => {
+        // Check all required fields exist
         const requiredFields = ['title', 'description', 'priceRange', 'reason'];
-        const missingFields = requiredFields.filter(field => !suggestion[field]);
+        const missingFields = requiredFields.filter(field => !suggestion[field] || suggestion[field].trim() === '');
         
         if (missingFields.length > 0) {
-          throw new Error(`Suggestion ${index} missing fields: ${missingFields.join(', ')}`);
+          throw new Error(`Suggestion ${index} missing or empty fields: ${missingFields.join(', ')}`);
+        }
+
+        // Validate field content
+        if (suggestion.description.split(' ').length < 20) {
+          throw new Error(`Suggestion ${index} description too short (needs at least 20 words)`);
+        }
+
+        if (suggestion.reason.split(' ').length < 10) {
+          throw new Error(`Suggestion ${index} reason too short (needs at least 10 words)`);
         }
 
         // Validate price range format
