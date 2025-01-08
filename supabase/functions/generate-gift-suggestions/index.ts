@@ -8,14 +8,37 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Helper function to validate price range
+const validatePriceRange = (suggestion: any, originalRange: string): boolean => {
+  const [minStr, maxStr] = originalRange.split('-').map(n => parseInt(n));
+  const min = minStr * 0.8;  // 20% below minimum
+  const max = maxStr * 1.2;  // 20% above maximum
+  
+  // Extract numeric values from the suggestion's price range
+  const suggestedPrice = suggestion.priceRange.replace(/[^0-9-]/g, '');
+  const [suggestedMin, suggestedMax] = suggestedPrice.split('-').map(n => parseInt(n));
+  
+  return suggestedMin >= min && suggestedMax <= max;
+};
+
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
+    if (!openAIApiKey) {
+      throw new Error('OpenAI API key not configured');
+    }
+
     const { prompt } = await req.json();
     console.log('Processing request with prompt:', prompt);
+
+    // Extract price range from prompt if it exists
+    const priceRangeMatch = prompt.match(/Budget:\s*\$?(\d+-\d+)/i);
+    const originalPriceRange = priceRangeMatch ? priceRangeMatch[1] : null;
+    console.log('Extracted price range:', originalPriceRange);
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -28,39 +51,15 @@ serve(async (req) => {
         messages: [
           {
             role: "system",
-            content: `You are a gift suggestion expert. You MUST return EXACTLY 8 gift suggestions in a STRICT JSON array format.
-
-CRITICAL REQUIREMENTS:
-1. Return EXACTLY 8 items, no more, no less
-2. Use ONLY double quotes (") for strings
-3. NO special characters in strings
-4. Price range must be numbers only (e.g., "50-100")
-5. NO line breaks in JSON
-6. NO comments or extra text
-7. EVERY suggestion MUST have ALL of these fields:
-   - "title": specific product name with brand (e.g., "Sony WH-1000XM4 Headphones")
-   - "description": DETAILED description with at least 20 words. Include key features, benefits, and use cases. Make it compelling and informative.
-   - "priceRange": price range with only numbers (e.g., "50-100")
-   - "reason": why this gift is trending (at least 10 words)
-
-Example of EXACT format required (shortened to 2 items for brevity):
-[{"title":"Sony WH-1000XM4 Headphones","description":"Premium noise cancelling headphones featuring industry-leading technology, 30-hour battery life, touch controls, and multipoint pairing. Perfect for music lovers, travelers, and remote workers who need crystal-clear audio and peace from ambient noise.","priceRange":"250-300","reason":"Top rated for audio quality and consistently ranked as the best noise cancelling headphones in 2024"},{"title":"Nintendo Switch OLED","description":"Latest gaming console featuring a vibrant 7-inch OLED screen, enhanced audio, 64GB storage, improved kickstand, and LAN port in the dock. Perfect for both handheld and TV gaming with access to an extensive game library.","priceRange":"300-350","reason":"Most popular gaming system with strong sales, extensive game library, and versatile gaming options"}]
-
-IMPORTANT: If you cannot generate EXACTLY 8 complete suggestions with ALL required fields and minimum word counts, respond with an error message instead.`
+            content: `You are a gift suggestion assistant. Generate 8 gift suggestions based on the description provided. STRICT BUDGET RULE: When a price range is mentioned (e.g., $20-40), you MUST ensure ALL suggestions stay within 20% of the range bounds. Example: for $20-40, suggestions MUST be between $16-48, no exceptions. For each suggestion, provide: title (specific product name), description (brief description), priceRange (actual price range, format as 'X-Y'), and reason (why this gift). Return ONLY a raw JSON array. No markdown, no code blocks, just the array. Response must be valid JSON.`
           },
           {
             role: "user",
-            content: `Generate EXACTLY 8 complete gift suggestions with ALL required fields for: ${prompt}. Remember:
-1. Each description MUST be at least 20 words and include key features, benefits, and use cases
-2. Each reason MUST be at least 10 words
-3. Each suggestion MUST include title, description, priceRange, and reason
-4. Make descriptions detailed and compelling to drive interest`
+            content: prompt
           }
         ],
         temperature: 0.7,
-        max_tokens: 2000,
-        presence_penalty: 0.3,
-        frequency_penalty: 0.5
+        max_tokens: 1000,
       }),
     });
 
@@ -79,60 +78,50 @@ IMPORTANT: If you cannot generate EXACTLY 8 complete suggestions with ALL requir
     let suggestions;
     try {
       const content = data.choices[0].message.content.trim();
-      console.log('Raw content:', content);
+      // Clean the content by removing any markdown formatting
+      const cleanContent = content
+        .replace(/```json\s*/g, '')
+        .replace(/```\s*$/g, '')
+        .trim();
       
-      suggestions = JSON.parse(content);
-      console.log('Parsed suggestions:', suggestions);
+      console.log('Cleaned content:', cleanContent);
+      suggestions = JSON.parse(cleanContent);
 
       if (!Array.isArray(suggestions)) {
         throw new Error('Response is not an array');
       }
 
-      if (suggestions.length !== 8) {
-        throw new Error(`Expected 8 suggestions, got ${suggestions.length}`);
-      }
-
-      // Validate each suggestion thoroughly
-      suggestions = suggestions.map((suggestion, index) => {
-        // Check all required fields exist
+      // Validate each suggestion has required fields and price range
+      suggestions = suggestions.filter((suggestion, index) => {
         const requiredFields = ['title', 'description', 'priceRange', 'reason'];
-        const missingFields = requiredFields.filter(field => !suggestion[field] || suggestion[field].trim() === '');
+        const missingFields = requiredFields.filter(field => !suggestion[field]);
         
         if (missingFields.length > 0) {
-          throw new Error(`Suggestion ${index} missing or empty fields: ${missingFields.join(', ')}`);
+          console.warn(`Suggestion ${index} missing fields:`, missingFields);
+          return false;
         }
 
-        // Validate field content
-        if (suggestion.description.split(' ').length < 20) {
-          throw new Error(`Suggestion ${index} description too short (needs at least 20 words)`);
+        // If we have an original price range, validate the suggestion's price
+        if (originalPriceRange && !validatePriceRange(suggestion, originalPriceRange)) {
+          console.warn(`Suggestion ${index} outside price range:`, suggestion.priceRange);
+          return false;
         }
 
-        if (suggestion.reason.split(' ').length < 10) {
-          throw new Error(`Suggestion ${index} reason too short (needs at least 10 words)`);
-        }
-
-        // Validate price range format
-        const priceRangeFormat = /^\d+-\d+$/;
-        if (!priceRangeFormat.test(suggestion.priceRange)) {
-          throw new Error(`Invalid price range format in suggestion ${index}: ${suggestion.priceRange}`);
-        }
-
-        // Validate string fields
-        for (const field of ['title', 'description', 'reason']) {
-          if (typeof suggestion[field] !== 'string') {
-            throw new Error(`Field ${field} in suggestion ${index} is not a string`);
-          }
-        }
-
-        return suggestion;
+        return true;
       });
 
-    } catch (error) {
-      console.error('Failed to process suggestions:', error);
+      // Ensure we still have enough suggestions
+      if (suggestions.length < 4) {
+        throw new Error('Not enough valid suggestions generated');
+      }
+
+    } catch (parseError) {
+      console.error('Failed to parse OpenAI response:', parseError);
+      console.error('Raw content:', data.choices[0].message.content);
       return new Response(
         JSON.stringify({
-          error: 'Failed to parse suggestions',
-          details: error.message
+          error: 'Failed to parse AI response',
+          details: parseError.message
         }),
         {
           status: 500,
