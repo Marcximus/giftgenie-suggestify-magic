@@ -9,11 +9,11 @@ export const useAmazonProducts = () => {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
-  const getAmazonProduct = async (searchTerm: string, retryCount = 0): Promise<AmazonProduct | null> => {
+  const getAmazonProduct = async (searchTerm: string, priceRange: string, retryCount = 0): Promise<AmazonProduct | null> => {
     try {
-      console.log(`Attempting Amazon product request for: ${searchTerm}`);
+      console.log(`Attempting Amazon product request for: ${searchTerm} with price range: ${priceRange}`);
       const { data, error } = await supabase.functions.invoke('get-amazon-products', {
-        body: { searchTerm }
+        body: { searchTerm, priceRange }
       });
 
       if (error) {
@@ -24,7 +24,7 @@ export const useAmazonProducts = () => {
           console.log(`Rate limited. Retrying in ${delay/1000} seconds...`);
           
           await sleep(delay);
-          return getAmazonProduct(searchTerm, retryCount + 1);
+          return getAmazonProduct(searchTerm, priceRange, retryCount + 1);
         }
         
         throw error;
@@ -41,7 +41,7 @@ export const useAmazonProducts = () => {
       if (retryCount < AMAZON_CONFIG.MAX_RETRIES) {
         const delay = calculateBackoffDelay(retryCount);
         await sleep(delay);
-        return getAmazonProduct(searchTerm, retryCount + 1);
+        return getAmazonProduct(searchTerm, priceRange, retryCount + 1);
       }
       return null;
     }

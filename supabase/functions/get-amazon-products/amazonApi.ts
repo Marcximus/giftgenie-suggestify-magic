@@ -30,7 +30,17 @@ function logRequest() {
   requestLog.push({ timestamp: Date.now(), count: 1 });
 }
 
-export async function searchProduct(searchTerm: string, apiKey: string): Promise<string> {
+interface SearchOptions {
+  min?: number;
+  max?: number;
+  sortBy?: 'LOWEST_PRICE' | 'HIGHEST_PRICE' | 'RELEVANCE';
+}
+
+export async function searchProduct(
+  searchTerm: string, 
+  apiKey: string,
+  options: SearchOptions = {}
+): Promise<string> {
   if (isRateLimited()) {
     throw new AmazonApiError(
       'Rate limit exceeded',
@@ -39,9 +49,23 @@ export async function searchProduct(searchTerm: string, apiKey: string): Promise
     );
   }
 
-  console.log('Searching Amazon for:', searchTerm);
+  console.log('Searching Amazon for:', searchTerm, 'with options:', options);
   
-  const searchUrl = `https://${RAPIDAPI_HOST}/search?query=${encodeURIComponent(searchTerm)}&country=US`;
+  // Build search URL with price constraints
+  const searchParams = new URLSearchParams({
+    query: searchTerm,
+    country: 'US',
+    sort_by: options.sortBy || 'RELEVANCE'
+  });
+
+  if (options.min !== undefined) {
+    searchParams.append('min_price', options.min.toString());
+  }
+  if (options.max !== undefined) {
+    searchParams.append('max_price', options.max.toString());
+  }
+  
+  const searchUrl = `https://${RAPIDAPI_HOST}/search?${searchParams.toString()}`;
   
   try {
     logRequest();

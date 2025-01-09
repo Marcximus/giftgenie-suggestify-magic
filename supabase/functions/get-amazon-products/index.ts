@@ -5,6 +5,36 @@ import type { ProductResponse } from './types.ts';
 
 const RAPIDAPI_KEY = Deno.env.get('RAPIDAPI_KEY');
 
+// Helper to parse price range and return min/max values
+const parsePriceRange = (priceRange: string): { min?: number; max?: number } => {
+  // Remove currency symbols and convert to lowercase for consistent parsing
+  const cleanRange = priceRange.toLowerCase().replace(/[$usd]/g, '').trim();
+  
+  // Handle different price range formats
+  if (cleanRange.includes('under')) {
+    const max = parseFloat(cleanRange.replace('under', ''));
+    return { max };
+  }
+  
+  if (cleanRange.includes('over')) {
+    const min = parseFloat(cleanRange.replace('over', ''));
+    return { min };
+  }
+  
+  if (cleanRange.includes('-')) {
+    const [min, max] = cleanRange.split('-').map(p => parseFloat(p.trim()));
+    return { min, max };
+  }
+  
+  // If it's a single number, treat it as the max price
+  const singlePrice = parseFloat(cleanRange);
+  if (!isNaN(singlePrice)) {
+    return { max: singlePrice * 1.2 }; // Add 20% buffer for single price
+  }
+  
+  return {};
+};
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -17,12 +47,16 @@ serve(async (req) => {
       throw new Error('RapidAPI key not configured');
     }
 
-    const { searchTerm } = await req.json();
-    console.log('Processing request for search term:', searchTerm);
+    const { searchTerm, priceRange } = await req.json();
+    console.log('Processing request for search term:', searchTerm, 'Price range:', priceRange);
+    
+    // Parse price range to get min/max values
+    const { min, max } = parsePriceRange(priceRange);
+    console.log('Parsed price range:', { min, max });
     
     try {
-      // First API call: Search for product
-      const asin = await searchProduct(searchTerm, RAPIDAPI_KEY);
+      // First API call: Search for product with price constraints
+      const asin = await searchProduct(searchTerm, RAPIDAPI_KEY, { min, max });
       
       // Add delay between requests to help prevent rate limiting
       await new Promise(resolve => setTimeout(resolve, 500));
@@ -51,7 +85,7 @@ serve(async (req) => {
         description: description,
         price: parseFloat(product.price?.current_price || '0'),
         currency: product.price?.currency || 'USD',
-        imageUrl: product.product_photo, // Use the product_photo field from the API response
+        imageUrl: product.product_photo,
         rating: parseFloat(product.product_star_rating || '0'),
         totalRatings: product.product_num_ratings,
         asin: product.asin,

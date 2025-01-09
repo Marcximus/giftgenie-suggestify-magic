@@ -29,7 +29,7 @@ export const useSuggestions = () => {
   const processGiftSuggestion = async (suggestion: GiftSuggestion): Promise<GiftSuggestion> => {
     try {
       console.log('Processing suggestion:', suggestion.title);
-      const amazonProduct = await getAmazonProduct(suggestion.title);
+      const amazonProduct = await getAmazonProduct(suggestion.title, suggestion.priceRange);
       
       if (amazonProduct && amazonProduct.asin) {
         return {
