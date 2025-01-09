@@ -8,41 +8,41 @@ const RAPIDAPI_HOST = 'real-time-amazon-data.p.rapidapi.com';
 // Helper to parse price range and return min/max values
 const parsePriceRange = (priceRange: string): { min?: number; max?: number } => {
   try {
+    if (!priceRange) {
+      console.log('No price range provided');
+      return {};
+    }
+
     console.log('Parsing price range:', priceRange);
-    const cleanRange = priceRange.toLowerCase().replace(/[$usd\s]/g, '').trim();
+    // Remove currency symbols, spaces, and convert to lowercase
+    const cleanRange = priceRange.toLowerCase().replace(/[^0-9\-\.]/g, '');
     
-    if (cleanRange.includes('under')) {
-      const max = parseFloat(cleanRange.replace('under', ''));
-      console.log('Parsed under price range:', { max });
-      return isNaN(max) ? {} : { max };
+    if (!cleanRange) {
+      console.log('No numeric values found in price range');
+      return {};
     }
-    
-    if (cleanRange.includes('over')) {
-      const min = parseFloat(cleanRange.replace('over', ''));
-      console.log('Parsed over price range:', { min });
-      return isNaN(min) ? {} : { min };
-    }
-    
-    if (cleanRange.includes('-')) {
-      const [minStr, maxStr] = cleanRange.split('-').map(p => p.trim());
-      const min = parseFloat(minStr);
-      const max = parseFloat(maxStr);
-      console.log('Parsed range price range:', { min, max });
-      return {
-        ...(isNaN(min) ? {} : { min }),
-        ...(isNaN(max) ? {} : { max })
-      };
-    }
-    
+
+    // Handle single number case
     const singlePrice = parseFloat(cleanRange);
     if (!isNaN(singlePrice)) {
-      // For a single price, set a range of ±20%
-      const min = Math.max(0, singlePrice * 0.8);
-      const max = singlePrice * 1.2;
+      const min = Math.max(0, Math.floor(singlePrice * 0.8));
+      const max = Math.ceil(singlePrice * 1.2);
       console.log('Parsed single price range:', { min, max });
       return { min, max };
     }
-    
+
+    // Handle range case (e.g., "100-200")
+    if (cleanRange.includes('-')) {
+      const [minStr, maxStr] = cleanRange.split('-');
+      const min = parseFloat(minStr);
+      const max = parseFloat(maxStr);
+      
+      if (!isNaN(min) && !isNaN(max)) {
+        console.log('Parsed range:', { min, max });
+        return { min: Math.floor(min), max: Math.ceil(max) };
+      }
+    }
+
     console.log('Could not parse price range, returning empty constraints');
     return {};
   } catch (error) {
@@ -63,24 +63,31 @@ serve(async (req) => {
     }
 
     const { searchTerm, priceRange } = await req.json();
+    
+    if (!searchTerm) {
+      throw new Error('Search term is required');
+    }
+
     console.log('Processing request:', { searchTerm, priceRange });
     
     // Parse price range to get min/max values
     const { min, max } = parsePriceRange(priceRange);
-    console.log('Parsed price constraints:', { min, max });
+    console.log('Price constraints:', { min, max });
 
     // Build search URL with all parameters
     const searchParams = new URLSearchParams({
       query: searchTerm,
       country: 'US',
-      sort_by: 'BEST_SELLERS',
-      is_prime: 'true',
-      four_stars_and_up: 'true'
+      sort_by: 'RELEVANCE'
     });
 
     // Add optional price filters if they exist
-    if (typeof min === 'number') searchParams.append('min_price', min.toString());
-    if (typeof max === 'number') searchParams.append('max_price', max.toString());
+    if (typeof min === 'number') {
+      searchParams.append('min_price', min.toString());
+    }
+    if (typeof max === 'number') {
+      searchParams.append('max_price', max.toString());
+    }
 
     const searchUrl = `https://${RAPIDAPI_HOST}/search?${searchParams.toString()}`;
     console.log('Search URL:', searchUrl);
@@ -93,12 +100,12 @@ serve(async (req) => {
     });
 
     if (!response.ok) {
+      const errorText = await response.text();
       console.error('Amazon API error:', {
         status: response.status,
-        statusText: response.statusText
+        statusText: response.statusText,
+        body: errorText
       });
-      const errorText = await response.text();
-      console.error('Error response:', errorText);
       throw new Error(`Amazon API error: ${response.status}`);
     }
 
@@ -113,13 +120,13 @@ serve(async (req) => {
     // Extract data from search results
     const product = searchData.data.products[0];
     const productData: ProductResponse = {
-      title: product.title,
-      description: product.product_description || product.title,
-      price: parseFloat(product.price?.current_price || '0'),
+      title: product.title || searchTerm,
+      description: product.product_description || product.title || searchTerm,
+      price: product.price?.current_price ? parseFloat(product.price.current_price) : 0,
       currency: product.price?.currency || 'USD',
       imageUrl: product.product_photo || product.thumbnail,
-      rating: parseFloat(product.product_star_rating || '0'),
-      totalRatings: parseInt(product.product_num_ratings || '0', 10),
+      rating: product.product_star_rating ? parseFloat(product.product_star_rating) : undefined,
+      totalRatings: product.product_num_ratings ? parseInt(product.product_num_ratings, 10) : undefined,
       asin: product.asin,
     };
 
