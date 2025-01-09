@@ -1,87 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
-
-// Simple in-memory rate limiting
-const requestLog: { timestamp: number }[] = [];
-const RATE_LIMIT = {
-  WINDOW_MS: 60000, // 1 minute
-  MAX_REQUESTS: 5,
-};
-
-function isRateLimited(): boolean {
-  const now = Date.now();
-  const windowStart = now - RATE_LIMIT.WINDOW_MS;
-  
-  // Clean up old requests
-  const recentRequests = requestLog.filter(req => req.timestamp > windowStart);
-  requestLog.length = 0;
-  requestLog.push(...recentRequests);
-  
-  return recentRequests.length >= RATE_LIMIT.MAX_REQUESTS;
-}
-
-async function searchAmazonProduct(keyword: string) {
-  if (isRateLimited()) {
-    throw new Error('RATE_LIMITED');
-  }
-
-  console.log('Searching Amazon for:', keyword);
-  const url = `https://real-time-amazon-data.p.rapidapi.com/search?query=${encodeURIComponent(keyword)}&country=US`;
-  
-  try {
-    requestLog.push({ timestamp: Date.now() });
-    const response = await fetch(url, {
-      headers: {
-        'X-RapidAPI-Key': Deno.env.get('RAPIDAPI_KEY') || '',
-        'X-RapidAPI-Host': 'real-time-amazon-data.p.rapidapi.com'
-      }
-    });
-
-    if (!response.ok) {
-      console.error('Amazon API error:', response.status);
-      if (response.status === 429) {
-        throw new Error('RATE_LIMITED');
-      }
-      if (response.status === 403) {
-        throw new Error('API_KEY_INVALID');
-      }
-      throw new Error(`Amazon API error: ${response.status}`);
-    }
-
-    const data = await response.json();
-    console.log('Amazon API response:', JSON.stringify(data, null, 2));
-
-    if (data.status === 'ERROR') {
-      throw new Error(data.error.message);
-    }
-
-    const product = data.data?.products?.[0];
-    if (!product) {
-      console.log('No product found for keyword:', keyword);
-      return null;
-    }
-
-    return {
-      title: product.title,
-      description: product.description || product.title,
-      priceRange: `USD ${product.price?.current_price || '0'}`,
-      reason: `This ${product.title} would make a great gift because it's highly rated and matches your requirements.`,
-      amazon_asin: product.asin,
-      amazon_url: product.asin ? `https://www.amazon.com/dp/${product.asin}` : undefined,
-      amazon_price: product.price?.current_price,
-      amazon_image_url: product.image,
-      amazon_rating: product.rating,
-      amazon_total_ratings: product.ratings_total
-    };
-  } catch (error) {
-    console.error('Error fetching Amazon product:', error);
-    throw error;
-  }
-}
+import { corsHeaders } from '../_shared/cors.ts';
+import { searchAmazonProduct, AmazonApiError } from '../_shared/amazon-api.ts';
+import { GiftSuggestion } from '../_shared/types.ts';
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -140,46 +60,45 @@ serve(async (req) => {
       throw new Error('Invalid suggestions format');
     }
 
-    // Search Amazon products for each suggestion
-    const products = [];
+    // Process suggestions sequentially to avoid rate limits
+    const products: GiftSuggestion[] = [];
     for (const suggestion of suggestions) {
       try {
         const product = await searchAmazonProduct(suggestion);
         if (product) {
-          products.push(product);
+          products.push({
+            title: product.title || suggestion,
+            description: product.description || suggestion,
+            priceRange: `${product.price?.currency || 'USD'} ${product.price?.current_price || '0'}`,
+            reason: `This ${product.title} would make a great gift because it matches your requirements.`,
+            amazon_asin: product.asin,
+            amazon_url: product.asin ? `https://www.amazon.com/dp/${product.asin}` : undefined,
+            amazon_price: product.price?.current_price,
+            amazon_image_url: product.main_image,
+            amazon_rating: product.rating,
+            amazon_total_ratings: product.ratings_total
+          });
         }
         // Add delay between requests to help prevent rate limiting
         await new Promise(resolve => setTimeout(resolve, 1000));
       } catch (error) {
-        if (error.message === 'RATE_LIMITED') {
+        console.error('Error processing suggestion:', suggestion, error);
+        if (error instanceof AmazonApiError && error.status === 429) {
           return new Response(
             JSON.stringify({
               error: 'Rate limit exceeded. Please try again in a moment.',
-              retryAfter: '30'
+              retryAfter: error.retryAfter
             }),
             {
               status: 429,
               headers: {
                 ...corsHeaders,
                 'Content-Type': 'application/json',
-                'Retry-After': '30'
+                'Retry-After': error.retryAfter || '30'
               }
             }
           );
         }
-        if (error.message === 'API_KEY_INVALID') {
-          return new Response(
-            JSON.stringify({
-              error: 'API authentication failed. Please check API key configuration.',
-              details: 'Invalid or expired API key'
-            }),
-            {
-              status: 403,
-              headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-            }
-          );
-        }
-        console.error('Error processing suggestion:', suggestion, error);
         continue; // Skip failed products but continue with others
       }
     }
@@ -192,13 +111,14 @@ serve(async (req) => {
   } catch (error) {
     console.error('Error in generate-gift-suggestions function:', error);
     
+    const status = error instanceof AmazonApiError ? error.status || 500 : 500;
     return new Response(
       JSON.stringify({ 
         error: error.message,
         details: 'Failed to generate gift suggestions'
       }),
       {
-        status: 500,
+        status,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       }
     );
