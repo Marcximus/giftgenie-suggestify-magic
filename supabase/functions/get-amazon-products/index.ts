@@ -9,6 +9,9 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Add delay helper function
+const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
 interface AmazonSearchResult {
   data: {
     products: Array<{
@@ -50,6 +53,9 @@ serve(async (req) => {
     const { searchTerm } = await req.json();
     console.log('Searching Amazon for:', searchTerm);
 
+    // Add initial delay to help prevent rate limiting
+    await delay(500);
+
     // Step 1: Search for products using the exact title from ChatGPT
     const searchUrl = `https://${RAPIDAPI_HOST}/search?query=${encodeURIComponent(searchTerm)}&country=US`;
     console.log('Search URL:', searchUrl);
@@ -64,6 +70,25 @@ serve(async (req) => {
     if (!searchResponse.ok) {
       console.error('Amazon search failed with status:', searchResponse.status);
       console.error('Response:', await searchResponse.text());
+      
+      // Handle rate limiting specifically
+      if (searchResponse.status === 429) {
+        return new Response(
+          JSON.stringify({
+            error: 'Rate limit exceeded. Please try again in a moment.',
+            retryAfter: searchResponse.headers.get('Retry-After') || '30',
+          }),
+          {
+            status: 429,
+            headers: { 
+              ...corsHeaders, 
+              'Content-Type': 'application/json',
+              'Retry-After': searchResponse.headers.get('Retry-After') || '30'
+            }
+          }
+        );
+      }
+      
       throw new Error(`Amazon search failed: ${searchResponse.status}`);
     }
 
@@ -79,6 +104,9 @@ serve(async (req) => {
 
     console.log('Found product ASIN:', firstProduct.asin);
 
+    // Add delay between requests
+    await delay(500);
+
     // Step 2: Get detailed product information using the ASIN
     const detailsUrl = `https://${RAPIDAPI_HOST}/product-details?asin=${firstProduct.asin}&country=US`;
     console.log('Details URL:', detailsUrl);
@@ -93,6 +121,25 @@ serve(async (req) => {
     if (!detailsResponse.ok) {
       console.error('Product details failed with status:', detailsResponse.status);
       console.error('Response:', await detailsResponse.text());
+      
+      // Handle rate limiting for product details request
+      if (detailsResponse.status === 429) {
+        return new Response(
+          JSON.stringify({
+            error: 'Rate limit exceeded. Please try again in a moment.',
+            retryAfter: detailsResponse.headers.get('Retry-After') || '30',
+          }),
+          {
+            status: 429,
+            headers: { 
+              ...corsHeaders, 
+              'Content-Type': 'application/json',
+              'Retry-After': detailsResponse.headers.get('Retry-After') || '30'
+            }
+          }
+        );
+      }
+      
       throw new Error(`Product details failed: ${detailsResponse.status}`);
     }
 
