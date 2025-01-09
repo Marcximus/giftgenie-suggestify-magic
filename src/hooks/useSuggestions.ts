@@ -1,113 +1,27 @@
 import { useState } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useAmazonProducts } from './useAmazonProducts';
 
 interface GiftSuggestion {
   title: string;
   description: string;
   priceRange: string;
   reason: string;
+  amazon_asin?: string;
+  amazon_url?: string;
+  amazon_price?: number;
+  amazon_image_url?: string;
+  amazon_rating?: number;
+  amazon_total_ratings?: number;
 }
-
-interface AmazonProduct {
-  title: string;
-  description: string;
-  price: number;
-  currency: string;
-  imageUrl: string;
-  rating?: number;
-  totalRatings?: number;
-  asin: string;
-}
-
-// Queue for managing Amazon API requests
-const requestQueue: Array<() => Promise<any>> = [];
-let isProcessingQueue = false;
-const RETRY_DELAY = 30000; // 30 seconds default retry delay
-
-const processQueue = async () => {
-  if (isProcessingQueue || requestQueue.length === 0) return;
-  
-  isProcessingQueue = true;
-  try {
-    const request = requestQueue.shift();
-    if (request) {
-      await request();
-    }
-  } finally {
-    isProcessingQueue = false;
-    if (requestQueue.length > 0) {
-      // Add delay before processing next request
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      processQueue();
-    }
-  }
-};
 
 export const useSuggestions = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [suggestions, setSuggestions] = useState<GiftSuggestion[]>([]);
   const [lastQuery, setLastQuery] = useState('');
   const { toast } = useToast();
-
-  const getAmazonProduct = async (suggestion: GiftSuggestion): Promise<AmazonProduct> => {
-    try {
-      return new Promise((resolve, reject) => {
-        const makeRequest = async () => {
-          try {
-            const { data, error } = await supabase.functions.invoke('get-amazon-products', {
-              body: { searchTerm: suggestion.title }
-            });
-
-            if (error) {
-              if (error.status === 429) {
-                const retryAfter = parseInt(error.message.match(/\d+/)?.[0] || '30');
-                toast({
-                  title: "Rate limit reached",
-                  description: `Please wait ${retryAfter} seconds before trying again.`,
-                  variant: "destructive"
-                });
-                // Re-queue the request after delay
-                setTimeout(() => {
-                  requestQueue.push(makeRequest);
-                  processQueue();
-                }, retryAfter * 1000);
-                return;
-              }
-              throw error;
-            }
-
-            resolve(data);
-          } catch (error) {
-            console.error('Error in Amazon product request:', error);
-            // Return fallback data on error
-            resolve({
-              title: suggestion.title,
-              description: suggestion.description,
-              price: parseFloat(suggestion.priceRange.replace(/[^0-9.-]+/g, '')),
-              currency: 'USD',
-              imageUrl: '',
-              asin: ''
-            });
-          }
-        };
-
-        // Add request to queue
-        requestQueue.push(makeRequest);
-        processQueue();
-      });
-    } catch (error) {
-      console.error('Error getting Amazon product:', error);
-      return {
-        title: suggestion.title,
-        description: suggestion.description,
-        price: parseFloat(suggestion.priceRange.replace(/[^0-9.-]+/g, '')),
-        currency: 'USD',
-        imageUrl: '',
-        asin: ''
-      };
-    }
-  };
+  const { getAmazonProduct } = useAmazonProducts();
 
   const generateSuggestions = async (query: string, append: boolean = false) => {
     if (!query.trim()) return;
@@ -141,7 +55,7 @@ export const useSuggestions = () => {
       // Process suggestions sequentially to avoid rate limits
       const enhancedSuggestions = [];
       for (const suggestion of data.suggestions) {
-        const amazonProduct = await getAmazonProduct(suggestion);
+        const amazonProduct = await getAmazonProduct(suggestion.title);
         enhancedSuggestions.push({
           ...suggestion,
           title: amazonProduct.title || suggestion.title,
