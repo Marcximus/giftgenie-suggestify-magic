@@ -4,14 +4,15 @@ import { supabase } from "@/integrations/supabase/client";
 
 interface AmazonButtonProps {
   title: string;
+  asin?: string;
 }
 
 let cachedAssociateId: string | null = null;
 
-export const AmazonButton = ({ title }: AmazonButtonProps) => {
+export const AmazonButton = ({ title, asin }: AmazonButtonProps) => {
   const [isLoading, setIsLoading] = useState(false);
 
-  const getAmazonUrl = async (searchTerm: string) => {
+  const getAmazonUrl = async (searchTerm: string, productAsin?: string) => {
     try {
       if (!cachedAssociateId) {
         setIsLoading(true);
@@ -20,20 +21,30 @@ export const AmazonButton = ({ title }: AmazonButtonProps) => {
         setIsLoading(false);
       }
       
+      // If we have an ASIN, create a direct product link
+      if (productAsin) {
+        return `https://www.amazon.com/dp/${productAsin}?tag=${cachedAssociateId}`;
+      }
+      
+      // Fallback to search if no ASIN available
       const searchQuery = searchTerm.replace(/\s+/g, '+');
-      // Explicitly using amazon.com domain and ensuring HTTPS
       return `https://www.amazon.com/s?k=${searchQuery}&tag=${cachedAssociateId}`;
     } catch (error) {
       console.error('Error getting Amazon Associate ID:', error);
       setIsLoading(false);
+      
+      // Even in error case, try to use ASIN if available
+      if (productAsin) {
+        return `https://www.amazon.com/dp/${productAsin}`;
+      }
+      
       const searchQuery = title.replace(/\s+/g, '+');
-      // Fallback also uses amazon.com domain
       return `https://www.amazon.com/s?k=${searchQuery}`;
     }
   };
 
   const handleClick = async () => {
-    const url = await getAmazonUrl(title);
+    const url = await getAmazonUrl(title, asin);
     // Open in new tab with noopener and noreferrer for security
     window.open(url, '_blank', 'noopener,noreferrer');
   };

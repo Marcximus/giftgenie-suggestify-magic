@@ -12,6 +12,7 @@ interface Product {
   imageUrl?: string;
   rating?: number;
   totalRatings?: number;
+  asin?: string;
 }
 
 interface ProductCardProps extends Product {
@@ -24,6 +25,7 @@ export const ProductCard = ({
   price, 
   rating,
   totalRatings,
+  asin,
   onMoreLikeThis 
 }: ProductCardProps) => {
   return (
@@ -51,7 +53,7 @@ export const ProductCard = ({
         </div>
       </CardContent>
       <CardFooter className="p-2 sm:p-3 pt-0 flex flex-col gap-1.5">
-        <AmazonButton title={title} />
+        <AmazonButton title={title} asin={asin} />
         <Button 
           variant="outline" 
           size="sm"
