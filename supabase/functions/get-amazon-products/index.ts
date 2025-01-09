@@ -5,7 +5,7 @@ import { searchAmazonProduct } from './amazonApi.ts';
 const RAPIDAPI_KEY = Deno.env.get('RAPIDAPI_KEY');
 
 serve(async (req) => {
-  // Handle CORS
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -47,7 +47,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify(errorResponse),
       {
-        status: 400,
+        status: 500,
         headers: {
           ...corsHeaders,
           'Content-Type': 'application/json'

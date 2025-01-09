@@ -1,17 +1,16 @@
 const RAPIDAPI_HOST = 'real-time-amazon-data.p.rapidapi.com';
 
 export async function searchAmazonProduct(searchTerm: string, apiKey: string) {
-  console.log('Searching for product:', searchTerm);
+  console.log('Initial search attempt for:', searchTerm);
 
-  const searchParams = new URLSearchParams({
-    query: encodeURIComponent(searchTerm.trim()),
-    country: 'US',
-    category_id: 'aps',
-    sort_by: 'RELEVANCE'
-  });
+  async function performSearch(term: string) {
+    const searchParams = new URLSearchParams({
+      query: encodeURIComponent(term.trim()),
+      country: 'US',
+      category_id: 'aps',
+      sort_by: 'RELEVANCE'
+    });
 
-  try {
-    // First, search for products
     const searchResponse = await fetch(
       `https://${RAPIDAPI_HOST}/search?${searchParams.toString()}`,
       {
@@ -27,20 +26,11 @@ export async function searchAmazonProduct(searchTerm: string, apiKey: string) {
     }
 
     const searchData = await searchResponse.json();
-    console.log('Search response:', searchData);
+    console.log('Search response for term:', term, searchData);
+    return searchData;
+  }
 
-    if (!searchData.data?.products?.length) {
-      throw new Error('No products found');
-    }
-
-    const product = searchData.data.products[0];
-    const asin = product.asin;
-
-    if (!asin) {
-      throw new Error('Invalid product data: No ASIN found');
-    }
-
-    // Get detailed product information using ASIN
+  async function getProductDetails(asin: string) {
     const detailsResponse = await fetch(
       `https://${RAPIDAPI_HOST}/product-details?asin=${asin}&country=US`,
       {
@@ -57,6 +47,35 @@ export async function searchAmazonProduct(searchTerm: string, apiKey: string) {
 
     const detailsData = await detailsResponse.json();
     console.log('Product details response:', detailsData);
+    return detailsData;
+  }
+
+  try {
+    // First attempt with full search term
+    let searchData = await performSearch(searchTerm);
+    
+    // If no products found, try with first 3 words
+    if (!searchData.data?.products?.length) {
+      console.log('No products found with full search term, trying first 3 words');
+      const firstThreeWords = searchTerm.split(' ').slice(0, 3).join(' ');
+      console.log('Attempting search with:', firstThreeWords);
+      searchData = await performSearch(firstThreeWords);
+      
+      // If still no products found, throw error
+      if (!searchData.data?.products?.length) {
+        throw new Error('No products found with either search attempt');
+      }
+    }
+
+    const product = searchData.data.products[0];
+    const asin = product.asin;
+
+    if (!asin) {
+      throw new Error('Invalid product data: No ASIN found');
+    }
+
+    // Get detailed product information
+    const detailsData = await getProductDetails(asin);
 
     if (detailsData.data) {
       return {
