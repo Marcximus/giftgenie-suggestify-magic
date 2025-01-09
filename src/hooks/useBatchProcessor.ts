@@ -22,25 +22,31 @@ export const useBatchProcessor = <T, R>() => {
       onError = console.error,
       batchSize = AMAZON_CONFIG.MAX_CONCURRENT_REQUESTS,
       staggerDelay = AMAZON_CONFIG.STAGGER_DELAY,
-      parallel = true // Enable parallel processing by default
+      parallel = true
     } = options;
 
     setIsProcessing(true);
     const results: R[] = [];
+    const errors: any[] = [];
     
     try {
-      // Process items in batches
+      // Process items in chunks to avoid overwhelming the system
       for (let i = 0; i < items.length; i += batchSize) {
         const batch = items.slice(i, i + batchSize);
         
         if (parallel) {
-          // Process all items in the batch simultaneously
-          const batchPromises = batch.map(item => 
-            processFn(item).catch(error => {
+          // Process batch items concurrently with Promise.all
+          const batchPromises = batch.map(async (item, index) => {
+            try {
+              // Add minimal stagger even in parallel mode to prevent rate limits
+              if (index > 0) await sleep(staggerDelay);
+              return await processFn(item);
+            } catch (error) {
+              errors.push({ error, item });
               onError(error, item);
               return null;
-            })
-          );
+            }
+          });
           
           const batchResults = await Promise.all(batchPromises);
           results.push(...batchResults.filter(Boolean));
@@ -52,13 +58,24 @@ export const useBatchProcessor = <T, R>() => {
               if (result) results.push(result);
               if (staggerDelay > 0) await sleep(staggerDelay);
             } catch (error) {
+              errors.push({ error, item });
               onError(error, item);
             }
           }
         }
+
+        // Add a small delay between batches to prevent rate limiting
+        if (i + batchSize < items.length) {
+          await sleep(AMAZON_CONFIG.BASE_RETRY_DELAY);
+        }
       }
     } finally {
       setIsProcessing(false);
+    }
+
+    // Log any errors that occurred during processing
+    if (errors.length > 0) {
+      console.warn(`Batch processing completed with ${errors.length} errors:`, errors);
     }
 
     return results;

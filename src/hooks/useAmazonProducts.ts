@@ -5,9 +5,10 @@ import { AmazonProduct } from '@/utils/amazon/types';
 import { calculateBackoffDelay, sleep } from '@/utils/amazon/rateLimiter';
 import { AMAZON_CONFIG } from '@/utils/amazon/config';
 
-// Simple in-memory cache
+// Improved in-memory cache with LRU-like behavior
+const MAX_CACHE_SIZE = 100;
+const CACHE_DURATION = 10 * 60 * 1000; // 10 minutes
 const productCache = new Map<string, { data: AmazonProduct; timestamp: number }>();
-const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
 export const useAmazonProducts = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -15,9 +16,13 @@ export const useAmazonProducts = () => {
 
   const clearStaleCache = useCallback(() => {
     const now = Date.now();
+    let deletedCount = 0;
+    
+    // Remove stale entries and trim cache if too large
     for (const [key, value] of productCache.entries()) {
-      if (now - value.timestamp > CACHE_DURATION) {
+      if (now - value.timestamp > CACHE_DURATION || productCache.size - deletedCount > MAX_CACHE_SIZE) {
         productCache.delete(key);
+        deletedCount++;
       }
     }
   }, []);
@@ -58,8 +63,13 @@ export const useAmazonProducts = () => {
         data.price = parseFloat(data.price.toFixed(2));
       }
 
-      // Cache the successful response
+      // Cache successful responses
       if (data) {
+        // Remove oldest entry if cache is full
+        if (productCache.size >= MAX_CACHE_SIZE) {
+          const oldestKey = productCache.keys().next().value;
+          productCache.delete(oldestKey);
+        }
         productCache.set(cacheKey, { data, timestamp: Date.now() });
       }
 
