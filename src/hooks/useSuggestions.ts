@@ -16,8 +16,31 @@ interface GiftSuggestion {
   amazon_total_ratings?: number;
 }
 
-const BASE_RETRY_DELAY = 30000; // 30 seconds in milliseconds
-const MAX_RETRIES = 3;
+const BASE_RETRY_DELAY = 2000; // Start with 2 seconds
+const MAX_RETRIES = 5;
+const MAX_BACKOFF_DELAY = 30000; // Maximum delay of 30 seconds
+
+// Queue for managing API requests
+const requestQueue: Array<() => Promise<any>> = [];
+let isProcessingQueue = false;
+
+const processQueue = async () => {
+  if (isProcessingQueue || requestQueue.length === 0) return;
+  
+  isProcessingQueue = true;
+  try {
+    const request = requestQueue.shift();
+    if (request) {
+      await request();
+    }
+  } finally {
+    isProcessingQueue = false;
+    if (requestQueue.length > 0) {
+      await new Promise(resolve => setTimeout(resolve, BASE_RETRY_DELAY));
+      processQueue();
+    }
+  }
+};
 
 export const useSuggestions = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -34,79 +57,97 @@ export const useSuggestions = () => {
       setSuggestions([]);
     }
 
-    try {
-      const { data, error } = await supabase.functions.invoke('generate-gift-suggestions', {
-        body: { prompt: query }
-      });
+    const makeRequest = async () => {
+      try {
+        console.log('Attempting to generate suggestions:', { query, retryCount });
+        const { data, error } = await supabase.functions.invoke('generate-gift-suggestions', {
+          body: { prompt: query }
+        });
 
-      if (error) {
-        // Handle rate limit error with exponential backoff
-        if (error.status === 429) {
-          const retryDelay = BASE_RETRY_DELAY * Math.pow(2, retryCount);
-          const retryAfter = parseInt(error.message?.match(/\d+/)?.[0] || '30');
+        if (error) {
+          console.error('Error from generate-gift-suggestions:', error);
           
-          if (retryCount < MAX_RETRIES) {
-            toast({
-              title: "Rate limit reached",
-              description: `Retrying in ${Math.ceil(retryDelay/1000)} seconds...`,
-              duration: retryDelay
+          if (error.status === 429) {
+            const delay = Math.min(BASE_RETRY_DELAY * Math.pow(2, retryCount), MAX_BACKOFF_DELAY);
+            
+            if (retryCount < MAX_RETRIES) {
+              toast({
+                title: "Please wait",
+                description: `Retrying in ${Math.ceil(delay/1000)} seconds... (Attempt ${retryCount + 1}/${MAX_RETRIES})`,
+                duration: delay
+              });
+              
+              await new Promise(resolve => setTimeout(resolve, delay));
+              return generateSuggestions(query, append, retryCount + 1);
+            } else {
+              toast({
+                title: "Error",
+                description: "Unable to get suggestions after multiple attempts. Please try again later.",
+                variant: "destructive"
+              });
+              return;
+            }
+          }
+          throw error;
+        }
+
+        if (!data?.suggestions || !Array.isArray(data.suggestions)) {
+          throw new Error('Invalid response format');
+        }
+
+        // Process suggestions sequentially with queuing
+        const enhancedSuggestions = [];
+        for (const suggestion of data.suggestions) {
+          try {
+            const amazonProduct = await new Promise((resolve) => {
+              const request = async () => {
+                try {
+                  const product = await getAmazonProduct(suggestion.title);
+                  resolve(product);
+                } catch (error) {
+                  console.error('Error getting Amazon product:', error);
+                  resolve(null);
+                }
+              };
+              requestQueue.push(request);
+              processQueue();
             });
 
-            await new Promise(resolve => setTimeout(resolve, retryDelay));
-            return generateSuggestions(query, append, retryCount + 1);
-          } else {
-            toast({
-              title: "Error",
-              description: "Unable to get suggestions after multiple attempts. Please try again later.",
-              variant: "destructive"
-            });
-            return;
+            if (amazonProduct) {
+              enhancedSuggestions.push({
+                ...suggestion,
+                title: amazonProduct.title || suggestion.title,
+                description: amazonProduct.description || suggestion.description,
+                priceRange: `${amazonProduct.currency} ${amazonProduct.price}`,
+                amazon_asin: amazonProduct.asin,
+                amazon_url: amazonProduct.asin ? `https://www.amazon.com/dp/${amazonProduct.asin}` : undefined,
+                amazon_price: amazonProduct.price,
+                amazon_image_url: amazonProduct.imageUrl,
+                amazon_rating: amazonProduct.rating,
+                amazon_total_ratings: amazonProduct.totalRatings
+              });
+            }
+          } catch (error) {
+            console.error('Error processing suggestion:', error);
+            continue;
           }
         }
-        throw error;
-      }
 
-      if (!data?.suggestions || !Array.isArray(data.suggestions)) {
-        throw new Error('Invalid response format');
+        setSuggestions(prev => append ? [...prev, ...enhancedSuggestions] : enhancedSuggestions);
+        
+      } catch (error) {
+        console.error('Error getting suggestions:', error);
+        toast({
+          title: "Error",
+          description: "Failed to get gift suggestions. Please try again.",
+          variant: "destructive"
+        });
+      } finally {
+        setIsLoading(false);
       }
+    };
 
-      // Process suggestions sequentially with delays
-      const enhancedSuggestions = [];
-      for (const suggestion of data.suggestions) {
-        try {
-          const amazonProduct = await getAmazonProduct(suggestion.title);
-          enhancedSuggestions.push({
-            ...suggestion,
-            title: amazonProduct.title || suggestion.title,
-            description: amazonProduct.description || suggestion.description,
-            priceRange: `${amazonProduct.currency} ${amazonProduct.price}`,
-            amazon_asin: amazonProduct.asin,
-            amazon_url: amazonProduct.asin ? `https://www.amazon.com/dp/${amazonProduct.asin}` : undefined,
-            amazon_price: amazonProduct.price,
-            amazon_image_url: amazonProduct.imageUrl,
-            amazon_rating: amazonProduct.rating,
-            amazon_total_ratings: amazonProduct.totalRatings
-          });
-          // Add delay between Amazon API requests
-          await new Promise(resolve => setTimeout(resolve, 2000));
-        } catch (error) {
-          console.error('Error processing suggestion:', error);
-          continue;
-        }
-      }
-
-      setSuggestions(prev => append ? [...prev, ...enhancedSuggestions] : enhancedSuggestions);
-      
-    } catch (error) {
-      console.error('Error getting suggestions:', error);
-      toast({
-        title: "Error",
-        description: "Failed to get gift suggestions. Please try again.",
-        variant: "destructive"
-      });
-    } finally {
-      setIsLoading(false);
-    }
+    await makeRequest();
   };
 
   const handleSearch = async (query: string) => {
