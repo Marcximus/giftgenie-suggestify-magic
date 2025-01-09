@@ -6,14 +6,31 @@ import { people, ageRanges, priceRanges } from '@/data/gift-selector-data';
 import { getInterests } from '@/utils/interest-utils';
 
 interface SelectorProps {
-  onGiftSelect: (query: string) => void;
+  onSelectionComplete: (query: string) => void;
+  onUpdate: (query: string) => void;
+  onReset: () => void;
+  visible: boolean;
 }
 
-export const DynamicGiftSelector = ({ onGiftSelect }: SelectorProps) => {
+export const DynamicGiftSelector = ({ 
+  onSelectionComplete, 
+  onUpdate,
+  onReset,
+  visible 
+}: SelectorProps) => {
   const [currentPhase, setCurrentPhase] = useState<'person' | 'age' | 'price' | 'interest' | 'complete'>('person');
   const [selectedPerson, setSelectedPerson] = useState<string>('');
   const [selectedAge, setSelectedAge] = useState<string>('');
   const [selectedPrice, setSelectedPrice] = useState<string>('');
+
+  useEffect(() => {
+    if (visible) {
+      setCurrentPhase('person');
+      setSelectedPerson('');
+      setSelectedAge('');
+      setSelectedPrice('');
+    }
+  }, [visible]);
 
   const updateSearchText = (phase: string, value: string) => {
     let query = '';
@@ -48,13 +65,15 @@ export const DynamicGiftSelector = ({ onGiftSelect }: SelectorProps) => {
         setCurrentPhase('interest');
         break;
       case 'interest':
-        onGiftSelect(query);
+        onSelectionComplete(query);
         setCurrentPhase('complete');
         return;
     }
     
-    onGiftSelect(query);
+    onUpdate(query);
   };
+
+  if (!visible) return null;
 
   return (
     <div className="w-full space-y-4 animate-in fade-in slide-in-from-top-4 duration-500">
