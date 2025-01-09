@@ -19,14 +19,27 @@ serve(async (req) => {
     const { prompt } = await req.json();
     console.log('Processing request with prompt:', prompt);
 
-    // Extract budget range from the prompt
-    const budgetMatch = prompt.match(/budget.*?(\d+)\s*-\s*(\d+)/i);
-    const minBudget = budgetMatch ? parseInt(budgetMatch[1]) : 0;
-    const maxBudget = budgetMatch ? parseInt(budgetMatch[2]) : 1000;
+    // Extract budget range from the prompt - now handles more formats
+    const budgetMatch = prompt.match(/(?:budget|USD|price)[^\d]*(\d+)(?:\s*-\s*(\d+))?/i);
+    console.log('Budget match:', budgetMatch);
+    
+    let minBudget = 0;
+    let maxBudget = 1000;
 
-    // Calculate target price range (focusing on upper 70% of range)
-    const targetMinBudget = Math.round(minBudget + (maxBudget - minBudget) * 0.3);
-    const targetMaxBudget = maxBudget;
+    if (budgetMatch) {
+      if (budgetMatch[2]) {
+        // Range format (e.g., "200-300")
+        minBudget = parseInt(budgetMatch[1]);
+        maxBudget = parseInt(budgetMatch[2]);
+      } else {
+        // Single number format (e.g., "USD 200" or "budget 200")
+        const budget = parseInt(budgetMatch[1]);
+        minBudget = Math.max(0, budget - (budget * 0.2)); // 20% below
+        maxBudget = budget;
+      }
+    }
+
+    console.log('Parsed budget range:', { minBudget, maxBudget });
 
     // Extract gender context
     const isMale = prompt.toLowerCase().includes('brother') || 
@@ -48,41 +61,41 @@ serve(async (req) => {
     const interests = interestMatch ? interestMatch[1].trim() : '';
 
     // Enhance the prompt with specific instructions about budget and quality
-    let enhancedPrompt = `As a luxury gift curator, recommend 8 PREMIUM gift suggestions for ${prompt}. 
+    let enhancedPrompt = `As a gift curator, recommend 8 thoughtful gift suggestions for ${prompt}. 
 
 STRICT REQUIREMENTS:
-1. Budget: Each suggestion MUST be priced between $${targetMinBudget} and $${targetMaxBudget}
-   - Focus on the premium end of this range
-   - NO items below $${targetMinBudget}
-   - Prioritize items in the $${Math.round(targetMinBudget + (targetMaxBudget - targetMinBudget) * 0.3)}-$${targetMaxBudget} range
+1. Budget: Each suggestion MUST be priced between $${minBudget} and $${maxBudget}
+   - Spread suggestions across the entire price range
+   - NO items outside this range
+   - Mix of price points within the range
 
 2. Quality Standards:
-   - Only suggest premium, high-end brands
+   - Suggest specific products from well-known brands
    - Each item must be a specific product (e.g., "TAG Heuer Formula 1 Chronograph 43mm" not just "watch")
    - Include model numbers or specific editions
    - Focus on latest models/versions
 
 3. Interest Alignment:${interests ? `
    - Suggested items must relate to: ${interests}
-   - Choose premium items within these interest categories` : ''}
+   - Choose quality items within these interest categories` : ''}
 
 4. Diversity:
    - No duplicate categories
    - Vary price points within the allowed range
-   - Mix of practical and aspirational items
+   - Mix of practical and fun items
 
 Format each suggestion as:
-"Brand Model/Edition with Key Premium Feature"
+"Brand Model/Edition with Key Feature"
 
-Example premium suggestions:
+Example suggestions:
 ["YETI Tundra 65 Cooler in Navy with Permafrost Insulation",
  "Garmin Fenix 7X Sapphire Solar Edition with Titanium Band",
  "Sony WH-1000XM5 Wireless Headphones with LDAC Hi-Res Audio"]`;
 
     if (isMale) {
-      enhancedPrompt += "\n\nCRITICAL: Only suggest premium gifts appropriate for men/boys. Focus on masculine aesthetics and preferences. Absolutely no women's items.";
+      enhancedPrompt += "\n\nCRITICAL: Only suggest gifts appropriate for men/boys. Focus on masculine aesthetics and preferences. Absolutely no women's items.";
     } else if (isFemale) {
-      enhancedPrompt += "\n\nCRITICAL: Only suggest premium gifts appropriate for women/girls. Focus on feminine aesthetics and preferences. Absolutely no men's items.";
+      enhancedPrompt += "\n\nCRITICAL: Only suggest gifts appropriate for women/girls. Focus on feminine aesthetics and preferences. Absolutely no men's items.";
     }
 
     if (isRateLimited()) {
