@@ -3,12 +3,6 @@ project_id = "ckcqttsdpxfbpkzljctl"
 [functions.generate-gift-suggestions]
 verify_jwt = false
 
-[functions.generate-gift-image]
-verify_jwt = false
-
-[functions.get-pexels-image]
-verify_jwt = false
-
 [functions.get-amazon-products]
 verify_jwt = false
 
