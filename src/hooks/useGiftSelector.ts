@@ -7,6 +7,8 @@ export const useGiftSelector = (onUpdate: (query: string) => void) => {
   const [selectedPrice, setSelectedPrice] = useState<string>('');
 
   const updateSearchText = (phase: string, value: string) => {
+    console.log('Updating search text:', { phase, value, selectedPerson, selectedAge, selectedPrice });
+    
     let query = '';
     
     switch (phase) {
@@ -14,26 +16,25 @@ export const useGiftSelector = (onUpdate: (query: string) => void) => {
         query = `Gift for ${value.toLowerCase()}`;
         break;
       case 'age':
-        query = selectedPerson ? `Gift for ${selectedPerson.toLowerCase()} (${value} years old)` : '';
+        query = `Gift for ${selectedPerson.toLowerCase()} (${value} years old)`;
         break;
       case 'price':
-        query = selectedPerson && selectedAge ? 
-          `Gift for ${selectedPerson.toLowerCase()} (${selectedAge} years old) - Budget: ${value}` : '';
+        query = `Gift for ${selectedPerson.toLowerCase()} (${selectedAge} years old) - Budget: ${value}`;
         break;
       case 'interest':
-        query = selectedPerson && selectedAge && selectedPrice ?
-          `Gift ideas for a ${selectedAge} year old ${selectedPerson.toLowerCase()} who likes ${value.toLowerCase()} with a budget of ${selectedPrice}` : '';
+        query = `Gift ideas for a ${selectedAge} year old ${selectedPerson.toLowerCase()} who likes ${value.toLowerCase()} with a budget of ${selectedPrice}`;
         break;
       default:
         query = '';
     }
     
+    console.log('Generated query:', query);
     return query;
   };
 
   const handleSelection = (phase: string, value: string, onComplete?: (query: string) => void) => {
-    const query = updateSearchText(phase, value);
-    
+    console.log('Handling selection:', { phase, value });
+
     switch (phase) {
       case 'person':
         setSelectedPerson(value);
@@ -49,18 +50,23 @@ export const useGiftSelector = (onUpdate: (query: string) => void) => {
         break;
       case 'interest':
         if (onComplete) {
-          onComplete(query);
+          const finalQuery = updateSearchText(phase, value);
+          console.log('Completing with query:', finalQuery);
+          onComplete(finalQuery);
         }
         setCurrentPhase('complete');
         return;
     }
     
+    const query = updateSearchText(phase, value);
     if (query) {
+      console.log('Updating with query:', query);
       onUpdate(query);
     }
   };
 
   const reset = () => {
+    console.log('Resetting selector state');
     setCurrentPhase('person');
     setSelectedPerson('');
     setSelectedAge('');
