@@ -3,6 +3,29 @@ import { corsHeaders } from '../_shared/cors.ts';
 import { searchAmazonProduct, AmazonApiError } from '../_shared/amazon-api.ts';
 import { GiftSuggestion } from '../_shared/types.ts';
 
+// Track API requests with a simple in-memory store
+const requestLog: { timestamp: number }[] = [];
+const RATE_LIMIT = {
+  WINDOW_MS: 60000, // 1 minute
+  MAX_REQUESTS: 10, // Maximum requests per minute
+  RETRY_AFTER: 30 // Seconds to wait before retrying
+};
+
+function isRateLimited(): boolean {
+  const now = Date.now();
+  // Clean up old requests
+  const windowStart = now - RATE_LIMIT.WINDOW_MS;
+  const recentRequests = requestLog.filter(req => req.timestamp > windowStart);
+  requestLog.length = 0;
+  requestLog.push(...recentRequests);
+  
+  return recentRequests.length >= RATE_LIMIT.MAX_REQUESTS;
+}
+
+function logRequest() {
+  requestLog.push({ timestamp: Date.now() });
+}
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -10,8 +33,30 @@ serve(async (req) => {
   }
 
   try {
+    // Check rate limit before processing
+    if (isRateLimited()) {
+      console.log('Rate limit exceeded, returning 429');
+      return new Response(
+        JSON.stringify({
+          error: 'Rate limit exceeded. Please try again in a moment.',
+          retryAfter: RATE_LIMIT.RETRY_AFTER
+        }),
+        {
+          status: 429,
+          headers: {
+            ...corsHeaders,
+            'Content-Type': 'application/json',
+            'Retry-After': RATE_LIMIT.RETRY_AFTER.toString()
+          }
+        }
+      );
+    }
+
     const { prompt } = await req.json();
     console.log('Processing request with prompt:', prompt);
+
+    // Log this request
+    logRequest();
 
     // Get gift suggestions from GPT
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -41,6 +86,7 @@ serve(async (req) => {
     });
 
     if (!response.ok) {
+      console.error('OpenAI API error:', response.status);
       throw new Error(`OpenAI API error: ${response.status}`);
     }
 
@@ -60,7 +106,7 @@ serve(async (req) => {
       throw new Error('Invalid suggestions format');
     }
 
-    // Process suggestions sequentially to avoid rate limits
+    // Process suggestions sequentially with delay between requests
     const products: GiftSuggestion[] = [];
     for (const suggestion of suggestions) {
       try {
@@ -80,7 +126,7 @@ serve(async (req) => {
           });
         }
         // Add delay between requests to help prevent rate limiting
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        await new Promise(resolve => setTimeout(resolve, 2000));
       } catch (error) {
         console.error('Error processing suggestion:', suggestion, error);
         if (error instanceof AmazonApiError && error.status === 429) {
