@@ -32,6 +32,10 @@ const loadingMessages = [
   "Holding your browser hostage for suspense…",
   "Watching sparks fly as the code panics…",
   "Squeezing the API for hidden gems…",
+  "Hoping the AI doesn't rebel before we find a gift…",
+  "Forcing AI to care about your shopping crisis…",
+  "Bribing the model with fresh data so it cooperates…",
+  "Prying gift ideas out of AI's cold, digital hands…",
   "Here we go..."
 ];
 
