@@ -34,3 +34,8 @@ export interface ProductResponse {
   totalRatings?: number;
   asin: string;
 }
+
+export interface RateLimitInfo {
+  timestamp: number;
+  count: number;
+}

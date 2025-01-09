@@ -18,6 +18,7 @@ serve(async (req) => {
     }
 
     const { searchTerm } = await req.json();
+    console.log('Processing request for search term:', searchTerm);
     
     try {
       // First API call: Search for product

@@ -9,3 +9,10 @@ export const createRapidApiHeaders = (apiKey: string) => ({
   'X-RapidAPI-Key': apiKey,
   'X-RapidAPI-Host': RAPIDAPI_HOST,
 });
+
+// Rate limiting configuration
+export const RATE_LIMIT = {
+  MAX_REQUESTS: 5,
+  WINDOW_MS: 10000, // 10 seconds
+  RETRY_AFTER: 30, // seconds
+};

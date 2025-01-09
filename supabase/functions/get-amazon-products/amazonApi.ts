@@ -1,5 +1,5 @@
-import { RAPIDAPI_HOST, createRapidApiHeaders } from './config.ts';
-import type { AmazonSearchResult, AmazonProductDetails } from './types.ts';
+import { RAPIDAPI_HOST, createRapidApiHeaders, RATE_LIMIT } from './config.ts';
+import type { AmazonSearchResult, AmazonProductDetails, RateLimitInfo } from './types.ts';
 
 export class AmazonApiError extends Error {
   constructor(
@@ -12,71 +12,122 @@ export class AmazonApiError extends Error {
   }
 }
 
+// Simple in-memory rate limiting
+const requestLog: RateLimitInfo[] = [];
+
+function isRateLimited(): boolean {
+  const now = Date.now();
+  // Clean up old requests
+  const windowStart = now - RATE_LIMIT.WINDOW_MS;
+  const recentRequests = requestLog.filter(req => req.timestamp > windowStart);
+  requestLog.length = 0;
+  requestLog.push(...recentRequests);
+  
+  return requestLog.length >= RATE_LIMIT.MAX_REQUESTS;
+}
+
+function logRequest() {
+  requestLog.push({ timestamp: Date.now(), count: 1 });
+}
+
 export async function searchProduct(searchTerm: string, apiKey: string): Promise<string> {
+  if (isRateLimited()) {
+    throw new AmazonApiError(
+      'Rate limit exceeded',
+      429,
+      RATE_LIMIT.RETRY_AFTER.toString()
+    );
+  }
+
   console.log('Searching Amazon for:', searchTerm);
   
   const searchUrl = `https://${RAPIDAPI_HOST}/search?query=${encodeURIComponent(searchTerm)}&country=US`;
-  const response = await fetch(searchUrl, {
-    headers: createRapidApiHeaders(apiKey),
-  });
+  
+  try {
+    logRequest();
+    const response = await fetch(searchUrl, {
+      headers: createRapidApiHeaders(apiKey),
+    });
 
-  if (!response.ok) {
-    console.error('Amazon search failed with status:', response.status);
-    const responseText = await response.text();
-    console.error('Response:', responseText);
-    
-    if (response.status === 429) {
-      throw new AmazonApiError(
-        'Rate limit exceeded',
-        response.status,
-        response.headers.get('Retry-After') || '30'
-      );
+    if (!response.ok) {
+      console.error('Amazon search failed with status:', response.status);
+      const responseText = await response.text();
+      console.error('Response:', responseText);
+      
+      if (response.status === 429) {
+        throw new AmazonApiError(
+          'Rate limit exceeded',
+          response.status,
+          response.headers.get('Retry-After') || '30'
+        );
+      }
+      
+      if (response.status === 403) {
+        throw new AmazonApiError('Invalid API key', response.status);
+      }
+      
+      throw new AmazonApiError(`Amazon search failed: ${response.status}`, response.status);
     }
-    
-    if (response.status === 403) {
-      throw new AmazonApiError('Invalid API key', response.status);
+
+    const searchData = await response.json() as AmazonSearchResult;
+    console.log('Search results:', JSON.stringify(searchData, null, 2));
+
+    const firstProduct = searchData.data?.products?.[0];
+    if (!firstProduct?.asin) {
+      throw new AmazonApiError('No products found');
     }
-    
-    throw new AmazonApiError(`Amazon search failed: ${response.status}`, response.status);
+
+    return firstProduct.asin;
+  } catch (error) {
+    if (error instanceof AmazonApiError) {
+      throw error;
+    }
+    throw new AmazonApiError(`Failed to search Amazon: ${error.message}`);
   }
-
-  const searchData = await response.json() as AmazonSearchResult;
-  console.log('Search results:', JSON.stringify(searchData, null, 2));
-
-  const firstProduct = searchData.data?.products?.[0];
-  if (!firstProduct?.asin) {
-    throw new AmazonApiError('No products found');
-  }
-
-  return firstProduct.asin;
 }
 
 export async function getProductDetails(asin: string, apiKey: string): Promise<AmazonProductDetails> {
-  console.log('Fetching details for ASIN:', asin);
-  
-  const detailsUrl = `https://${RAPIDAPI_HOST}/product-details?asin=${asin}&country=US`;
-  const response = await fetch(detailsUrl, {
-    headers: createRapidApiHeaders(apiKey),
-  });
-
-  if (!response.ok) {
-    console.error('Product details failed with status:', response.status);
-    const responseText = await response.text();
-    console.error('Response:', responseText);
-    
-    if (response.status === 429) {
-      throw new AmazonApiError(
-        'Rate limit exceeded',
-        response.status,
-        response.headers.get('Retry-After') || '30'
-      );
-    }
-    
-    throw new AmazonApiError(`Product details failed: ${response.status}`, response.status);
+  if (isRateLimited()) {
+    throw new AmazonApiError(
+      'Rate limit exceeded',
+      429,
+      RATE_LIMIT.RETRY_AFTER.toString()
+    );
   }
 
-  const detailsData = await response.json() as AmazonProductDetails;
-  console.log('Product details received:', JSON.stringify(detailsData, null, 2));
+  console.log('Fetching details for ASIN:', asin);
   
-  return detailsData;
+  try {
+    logRequest();
+    const detailsUrl = `https://${RAPIDAPI_HOST}/product-details?asin=${asin}&country=US`;
+    const response = await fetch(detailsUrl, {
+      headers: createRapidApiHeaders(apiKey),
+    });
+
+    if (!response.ok) {
+      console.error('Product details failed with status:', response.status);
+      const responseText = await response.text();
+      console.error('Response:', responseText);
+      
+      if (response.status === 429) {
+        throw new AmazonApiError(
+          'Rate limit exceeded',
+          response.status,
+          response.headers.get('Retry-After') || '30'
+        );
+      }
+      
+      throw new AmazonApiError(`Product details failed: ${response.status}`, response.status);
+    }
+
+    const detailsData = await response.json() as AmazonProductDetails;
+    console.log('Product details received:', JSON.stringify(detailsData, null, 2));
+    
+    return detailsData;
+  } catch (error) {
+    if (error instanceof AmazonApiError) {
+      throw error;
+    }
+    throw new AmazonApiError(`Failed to get product details: ${error.message}`);
+  }
 }
