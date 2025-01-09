@@ -86,10 +86,12 @@ export const useSuggestions = () => {
             title: amazonProduct.title || suggestion.title,
             description: amazonProduct.description || suggestion.description,
             priceRange: `${amazonProduct.currency} ${amazonProduct.price}`,
-            imageUrl: amazonProduct.imageUrl,
-            rating: amazonProduct.rating,
-            totalRatings: amazonProduct.totalRatings,
-            asin: amazonProduct.asin
+            amazon_asin: amazonProduct.asin,
+            amazon_url: `https://www.amazon.com/dp/${amazonProduct.asin}`,
+            amazon_price: amazonProduct.price,
+            amazon_image_url: amazonProduct.imageUrl,
+            amazon_rating: amazonProduct.rating,
+            amazon_total_ratings: amazonProduct.totalRatings
           };
         })
       );

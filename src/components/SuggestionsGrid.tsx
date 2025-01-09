@@ -8,6 +8,12 @@ interface GiftSuggestion {
   description: string;
   priceRange: string;
   reason: string;
+  amazon_asin?: string;
+  amazon_url?: string;
+  amazon_price?: number;
+  amazon_image_url?: string;
+  amazon_rating?: number;
+  amazon_total_ratings?: number;
 }
 
 interface SuggestionsGridProps {
@@ -47,8 +53,12 @@ export const SuggestionsGrid = ({
               <ProductCard
                 title={suggestion.title}
                 description={`${suggestion.description}\n\nWhy this gift? ${suggestion.reason}`}
-                price={suggestion.priceRange}
-                amazonUrl="#"
+                price={suggestion.amazon_price ? suggestion.amazon_price.toString() : suggestion.priceRange}
+                amazonUrl={suggestion.amazon_url || "#"}
+                imageUrl={suggestion.amazon_image_url}
+                rating={suggestion.amazon_rating}
+                totalRatings={suggestion.amazon_total_ratings}
+                asin={suggestion.amazon_asin}
                 onMoreLikeThis={onMoreLikeThis}
               />
             </div>
