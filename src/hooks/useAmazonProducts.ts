@@ -40,40 +40,65 @@ export const useAmazonProducts = () => {
       }
 
       console.log(`Attempting Amazon product request for: ${searchTerm} with price range: ${priceRange}`);
-      const { data, error } = await supabase.functions.invoke('get-amazon-products', {
+      
+      // Try with full search term first
+      const response = await supabase.functions.invoke('get-amazon-products', {
         body: { searchTerm, priceRange }
       });
 
-      if (error) {
-        console.error('Error in Amazon product request:', error);
-        
-        if (error.status === 429 && retryCount < AMAZON_CONFIG.MAX_RETRIES) {
+      if (response.error) {
+        // Handle 404 (No products found) differently
+        if (response.error.status === 404) {
+          console.log('No products found for search term:', searchTerm);
+          
+          // Try with first 3 words if the search term has more than 3 words
+          const words = searchTerm.split(' ');
+          if (words.length > 3) {
+            const simplifiedSearch = words.slice(0, 3).join(' ');
+            console.log('Attempting simplified search with:', simplifiedSearch);
+            
+            const simplifiedResponse = await supabase.functions.invoke('get-amazon-products', {
+              body: { searchTerm: simplifiedSearch, priceRange }
+            });
+
+            if (!simplifiedResponse.error) {
+              return simplifiedResponse.data;
+            }
+          }
+          
+          // If both attempts fail, return null without showing an error toast
+          return null;
+        }
+
+        // Handle rate limiting
+        if (response.error.status === 429 && retryCount < AMAZON_CONFIG.MAX_RETRIES) {
           const delay = calculateBackoffDelay(retryCount);
           console.log(`Rate limited. Retrying in ${delay/1000} seconds...`);
-          
           await sleep(delay);
           return getAmazonProduct(searchTerm, priceRange, retryCount + 1);
         }
-        
-        throw error;
-      }
 
-      // Ensure price is properly formatted
-      if (data && typeof data.price === 'number') {
-        data.price = parseFloat(data.price.toFixed(2));
+        // For other errors, show a toast
+        toast({
+          title: "Error fetching product",
+          description: response.error.message,
+          variant: "destructive",
+        });
+        
+        throw response.error;
       }
 
       // Cache successful responses
-      if (data) {
+      if (response.data) {
         // Remove oldest entry if cache is full
         if (productCache.size >= MAX_CACHE_SIZE) {
           const oldestKey = productCache.keys().next().value;
           productCache.delete(oldestKey);
         }
-        productCache.set(cacheKey, { data, timestamp: Date.now() });
+        productCache.set(cacheKey, { data: response.data, timestamp: Date.now() });
       }
 
-      return data;
+      return response.data;
     } catch (error) {
       console.error('Error getting Amazon product:', error);
       if (retryCount < AMAZON_CONFIG.MAX_RETRIES) {
