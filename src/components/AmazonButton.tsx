@@ -21,9 +21,9 @@ export const AmazonButton = ({ title, asin }: AmazonButtonProps) => {
         setIsLoading(false);
       }
       
-      // If we have an ASIN, create a direct product link
+      // If we have an ASIN, create a direct product link with the new format
       if (productAsin) {
-        return `https://www.amazon.com/dp/${productAsin}?tag=${cachedAssociateId}`;
+        return `https://www.amazon.com/dp/${productAsin}/ref=nosim?tag=${cachedAssociateId}`;
       }
       
       // Fallback to search if no ASIN available
@@ -35,7 +35,7 @@ export const AmazonButton = ({ title, asin }: AmazonButtonProps) => {
       
       // Even in error case, try to use ASIN if available
       if (productAsin) {
-        return `https://www.amazon.com/dp/${productAsin}`;
+        return `https://www.amazon.com/dp/${productAsin}/ref=nosim`;
       }
       
       const searchQuery = title.replace(/\s+/g, '+');
