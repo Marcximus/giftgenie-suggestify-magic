@@ -18,7 +18,7 @@ const loadingMessages = [
   "Hacking into Santa's mainframe for extra data...",
   "Analyzing quantum gift physics..",
   "Consulting a wild pack of fortune cookies..",
-  "Infiltrating the your receiver's wishful thinking..",
+  "Infiltrating your receiver's wishful thinking..",
   "Eavesdropping on your receiver's secret confessions…",
   "Comparing notes with the North Pole's top giftologists...",
   "Brewing gift-giving magic...",
