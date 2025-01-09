@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { SearchBox } from './SearchBox';
-import { DynamicGiftSelector } from './DynamicGiftSelector';
 
 interface SearchHeaderProps {
   onSearch: (query: string) => void;
@@ -16,7 +15,6 @@ const loadingMessages = [
 
 export const SearchHeader = ({ onSearch, isLoading }: SearchHeaderProps) => {
   const [currentLoadingMessage, setCurrentLoadingMessage] = useState(0);
-  const [showSelector, setShowSelector] = useState(true);
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -38,27 +36,8 @@ export const SearchHeader = ({ onSearch, isLoading }: SearchHeaderProps) => {
     };
   }, [isLoading]);
 
-  const handleSelectionComplete = (query: string) => {
-    onSearch(query);
-    setShowSelector(false);
-  };
-
-  const handleSelectorUpdate = (query: string) => {
-    // Just update the query without triggering a search
-  };
-
-  const handleReset = () => {
-    setShowSelector(true);
-  };
-
   return (
     <div className="space-y-6">
-      <DynamicGiftSelector 
-        onSelectionComplete={handleSelectionComplete}
-        onUpdate={handleSelectorUpdate}
-        onReset={handleReset}
-        visible={showSelector}
-      />
       <SearchBox onSearch={onSearch} isLoading={isLoading} />
       {isLoading && (
         <p className="text-primary/80 animate-pulse text-sm md:text-base font-medium">
