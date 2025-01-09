@@ -1,8 +1,10 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { Button } from "@/components/ui/button";
 import { Search, RefreshCw } from 'lucide-react';
 import { DynamicGiftSelector } from './DynamicGiftSelector';
 import { Link } from 'react-router-dom';
+import { debounce } from '@/utils/debounce';
+import { useToast } from '@/components/ui/use-toast';
 
 interface SearchBoxProps {
   onSearch: (query: string) => void;
@@ -12,12 +14,30 @@ interface SearchBoxProps {
 export const SearchBox = ({ onSearch, isLoading }: SearchBoxProps) => {
   const [query, setQuery] = useState('');
   const [showSelector, setShowSelector] = useState(true);
+  const { toast } = useToast();
+
+  // Debounced search function
+  const debouncedSearch = useCallback(
+    debounce((searchQuery: string) => {
+      if (searchQuery.trim()) {
+        onSearch(searchQuery);
+        setShowSelector(false);
+      }
+    }, 500),
+    [onSearch]
+  );
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (query.trim()) {
       onSearch(query);
       setShowSelector(false);
+    } else {
+      toast({
+        title: "Empty search",
+        description: "Please enter a search term or use the gift selector below.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -34,6 +54,14 @@ export const SearchBox = ({ onSearch, isLoading }: SearchBoxProps) => {
   const handleReset = () => {
     setQuery('');
     setShowSelector(true);
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const newQuery = e.target.value;
+    setQuery(newQuery);
+    if (newQuery.length >= 3) {
+      debouncedSearch(newQuery);
+    }
   };
 
   return (
@@ -53,7 +81,7 @@ export const SearchBox = ({ onSearch, isLoading }: SearchBoxProps) => {
           <textarea
             placeholder="E.g., 'Tech-savvy dad who loves cooking'"
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={handleInputChange}
             className="w-full min-h-[40px] max-h-[120px] text-sm sm:text-base p-2 sm:p-3 rounded-md border border-input bg-background/50 backdrop-blur-sm resize-y overflow-auto focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 transition-all duration-200 group-hover:border-primary/50"
             style={{ lineHeight: '1.5' }}
           />
