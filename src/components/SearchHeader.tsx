@@ -24,7 +24,7 @@ export const SearchHeader = ({ onSearch, isLoading }: SearchHeaderProps) => {
         setCurrentLoadingMessage((prev) => 
           prev < loadingMessages.length - 1 ? prev + 1 : prev
         );
-      }, 2000);
+      }, 3500); // Increased from 2000ms to 3500ms for slower transitions
     } else {
       setCurrentLoadingMessage(0);
     }
@@ -40,7 +40,7 @@ export const SearchHeader = ({ onSearch, isLoading }: SearchHeaderProps) => {
     <div className="space-y-6">
       <SearchBox onSearch={onSearch} isLoading={isLoading} />
       {isLoading && (
-        <p className="text-primary/80 animate-pulse text-sm md:text-base font-medium">
+        <p className="text-[#8E9196] text-center animate-pulse text-sm md:text-base font-medium">
           {loadingMessages[currentLoadingMessage]}
         </p>
       )}
