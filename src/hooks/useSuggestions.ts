@@ -109,6 +109,25 @@ export const useSuggestions = () => {
   };
 
   const handleMoreLikeThis = async (title: string) => {
+    // Extract gender context from the last query
+    const isMale = lastQuery.toLowerCase().includes('brother') || 
+                  lastQuery.toLowerCase().includes('father') || 
+                  lastQuery.toLowerCase().includes('husband') || 
+                  lastQuery.toLowerCase().includes('boyfriend') || 
+                  lastQuery.toLowerCase().includes('son') || 
+                  lastQuery.toLowerCase().includes('grandpa');
+
+    const isFemale = lastQuery.toLowerCase().includes('sister') || 
+                    lastQuery.toLowerCase().includes('mother') || 
+                    lastQuery.toLowerCase().includes('wife') || 
+                    lastQuery.toLowerCase().includes('girlfriend') || 
+                    lastQuery.toLowerCase().includes('daughter') || 
+                    lastQuery.toLowerCase().includes('grandma');
+
+    const genderContext = isMale ? 'male' : isFemale ? 'female' : '';
+    const genderInstruction = genderContext ? 
+      `IMPORTANT: Only suggest gifts appropriate for ${genderContext} recipients. Do not include items specifically designed for ${isMale ? 'women' : 'men'}.` : '';
+    
     const cleanTitle = title
       .toLowerCase()
       .replace(/[^\w\s]/g, ' ')
@@ -119,6 +138,7 @@ export const useSuggestions = () => {
     2. Are in a similar category
     3. Have similar features or characteristics
     4. Are in a comparable price range
+    ${genderInstruction}
     Please ensure each suggestion is distinct but closely related to the original item.`;
     
     setLastQuery(query);
