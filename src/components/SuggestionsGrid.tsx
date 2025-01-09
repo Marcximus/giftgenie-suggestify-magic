@@ -43,7 +43,7 @@ export const SuggestionsGrid = ({
         ) : (
           suggestions.map((suggestion, index) => (
             <div 
-              key={index}
+              key={`suggestion-${index}`}
               className="animate-in fade-in slide-in-from-bottom-4"
               style={{ 
                 animationDelay: `${index * 100}ms`,
