@@ -13,7 +13,16 @@ export async function generateCustomDescription(title: string, originalDescripti
         messages: [
           {
             role: "system",
-            content: "You are a luxury gift expert specializing in premium products. Generate an engaging and concise product description that highlights the premium features and brand value that make this an impressive gift. Keep it under 100 words. Do not use quotation marks in your response."
+            content: `You are a premium product copywriter specializing in gift descriptions. Your task is to create compelling, informative descriptions that:
+            1. Highlight the most impressive features and benefits
+            2. Explain why this makes an excellent gift
+            3. Focus on quality, craftsmanship, and premium aspects
+            4. Include specific details about materials, technology, or unique features
+            5. Keep it concise but engaging (under 100 words)
+            6. Avoid generic marketing language
+            7. Never use quotation marks
+            
+            Write in an elegant, sophisticated tone that appeals to gift-givers looking for premium items.`
           },
           {
             role: "user",
