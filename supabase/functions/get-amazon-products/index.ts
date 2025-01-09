@@ -4,6 +4,45 @@ import { searchAmazonProduct } from './amazonApi.ts';
 import type { PriceRange } from './types.ts';
 
 const RAPIDAPI_KEY = Deno.env.get('RAPIDAPI_KEY');
+const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
+
+async function generateProductDescription(title: string, originalDescription: string): Promise<string> {
+  try {
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${OPENAI_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: "gpt-4o-mini",
+        messages: [
+          {
+            role: "system",
+            content: "Generate a concise, engaging product description in 15-20 words. Focus on key benefits and features."
+          },
+          {
+            role: "user",
+            content: `Product: ${title}\nOriginal Description: ${originalDescription}\nGenerate a concise description.`
+          }
+        ],
+        temperature: 0.7,
+        max_tokens: 100,
+      }),
+    });
+
+    if (!response.ok) {
+      console.error('OpenAI API error:', response.status);
+      return originalDescription;
+    }
+
+    const data = await response.json();
+    return data.choices[0].message.content;
+  } catch (error) {
+    console.error('Error generating description:', error);
+    return originalDescription;
+  }
+}
 
 function parsePriceRange(priceRange: string): PriceRange {
   try {
@@ -12,14 +51,12 @@ function parsePriceRange(priceRange: string): PriceRange {
       return {};
     }
 
-    // Remove currency symbols and clean the string
     const cleanRange = priceRange.replace(/[^0-9\-\.]/g, '');
     if (!cleanRange) {
       console.log('No numeric values found in price range');
       return {};
     }
 
-    // Handle single number case
     if (!cleanRange.includes('-')) {
       const price = parseFloat(cleanRange);
       if (!isNaN(price)) {
@@ -30,7 +67,6 @@ function parsePriceRange(priceRange: string): PriceRange {
       }
     }
 
-    // Handle range case (e.g., "100-200")
     const [minStr, maxStr] = cleanRange.split('-');
     const min = parseFloat(minStr);
     const max = parseFloat(maxStr);
@@ -48,7 +84,6 @@ function parsePriceRange(priceRange: string): PriceRange {
 }
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -70,6 +105,14 @@ serve(async (req) => {
     try {
       const product = await searchAmazonProduct(searchTerm, RAPIDAPI_KEY, min, max);
       console.log('Product found:', product);
+
+      // Generate a concise description using OpenAI
+      if (product.description) {
+        product.description = await generateProductDescription(
+          product.title,
+          product.description
+        );
+      }
 
       return new Response(
         JSON.stringify(product),
