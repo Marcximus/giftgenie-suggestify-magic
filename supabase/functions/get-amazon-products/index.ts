@@ -43,6 +43,7 @@ serve(async (req) => {
 
   try {
     if (!RAPIDAPI_KEY) {
+      console.error('RapidAPI key not configured');
       throw new Error('RapidAPI key not configured');
     }
 
@@ -61,6 +62,8 @@ serve(async (req) => {
     });
 
     if (!searchResponse.ok) {
+      console.error('Amazon search failed with status:', searchResponse.status);
+      console.error('Response:', await searchResponse.text());
       throw new Error(`Amazon search failed: ${searchResponse.status}`);
     }
 
@@ -70,13 +73,17 @@ serve(async (req) => {
     // Get the first product's ASIN
     const firstProduct = searchData.data?.products?.[0];
     if (!firstProduct?.asin) {
+      console.error('No products found in search results');
       throw new Error('No products found');
     }
 
     console.log('Found product ASIN:', firstProduct.asin);
 
     // Step 2: Get detailed product information using the ASIN
-    const detailsResponse = await fetch(`https://${RAPIDAPI_HOST}/product-details?asin=${firstProduct.asin}&country=US`, {
+    const detailsUrl = `https://${RAPIDAPI_HOST}/product-details?asin=${firstProduct.asin}&country=US`;
+    console.log('Details URL:', detailsUrl);
+
+    const detailsResponse = await fetch(detailsUrl, {
       headers: {
         'X-RapidAPI-Key': RAPIDAPI_KEY,
         'X-RapidAPI-Host': RAPIDAPI_HOST,
@@ -84,6 +91,8 @@ serve(async (req) => {
     });
 
     if (!detailsResponse.ok) {
+      console.error('Product details failed with status:', detailsResponse.status);
+      console.error('Response:', await detailsResponse.text());
       throw new Error(`Product details failed: ${detailsResponse.status}`);
     }
 
@@ -108,7 +117,6 @@ serve(async (req) => {
       description = 'No description available';
     }
 
-    // Insert the product data into the database
     const productData = {
       title: product.title,
       description: description,
@@ -118,7 +126,6 @@ serve(async (req) => {
       rating: product.rating,
       totalRatings: product.ratings_total,
       asin: product.asin,
-      amazonUrl: `https://www.amazon.com/dp/${product.asin}`,
     };
 
     return new Response(
