@@ -16,7 +16,8 @@ interface GiftSuggestion {
   amazon_total_ratings?: number;
 }
 
-const RETRY_DELAY = 30000; // 30 seconds in milliseconds
+const BASE_RETRY_DELAY = 30000; // 30 seconds in milliseconds
+const MAX_RETRIES = 3;
 
 export const useSuggestions = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -39,17 +40,19 @@ export const useSuggestions = () => {
       });
 
       if (error) {
-        // Handle rate limit error
+        // Handle rate limit error with exponential backoff
         if (error.status === 429) {
-          toast({
-            title: "Rate limit reached",
-            description: "Please wait while we process your request...",
-            duration: RETRY_DELAY
-          });
+          const retryDelay = BASE_RETRY_DELAY * Math.pow(2, retryCount);
+          const retryAfter = parseInt(error.message?.match(/\d+/)?.[0] || '30');
+          
+          if (retryCount < MAX_RETRIES) {
+            toast({
+              title: "Rate limit reached",
+              description: `Retrying in ${Math.ceil(retryDelay/1000)} seconds...`,
+              duration: retryDelay
+            });
 
-          // Retry after delay if we haven't exceeded max retries
-          if (retryCount < 3) {
-            await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
+            await new Promise(resolve => setTimeout(resolve, retryDelay));
             return generateSuggestions(query, append, retryCount + 1);
           } else {
             toast({
@@ -67,7 +70,7 @@ export const useSuggestions = () => {
         throw new Error('Invalid response format');
       }
 
-      // Process suggestions sequentially to avoid rate limits
+      // Process suggestions sequentially with delays
       const enhancedSuggestions = [];
       for (const suggestion of data.suggestions) {
         try {
@@ -84,8 +87,8 @@ export const useSuggestions = () => {
             amazon_rating: amazonProduct.rating,
             amazon_total_ratings: amazonProduct.totalRatings
           });
-          // Add delay between requests to help prevent rate limiting
-          await new Promise(resolve => setTimeout(resolve, 1000));
+          // Add delay between Amazon API requests
+          await new Promise(resolve => setTimeout(resolve, 2000));
         } catch (error) {
           console.error('Error processing suggestion:', error);
           continue;
