@@ -29,7 +29,7 @@ export const useAmazonProducts = () => {
       
       return product;
 
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error getting Amazon product:', error);
       
       // Handle rate limiting
@@ -40,12 +40,14 @@ export const useAmazonProducts = () => {
         return getAmazonProduct(searchTerm, priceRange, retryCount + 1);
       }
 
-      // For other errors, show a toast
-      toast({
-        title: "Error fetching product",
-        description: error.message,
-        variant: "destructive",
-      });
+      // Don't show toast for 404 errors as they're expected when no products are found
+      if (error.status !== 404) {
+        toast({
+          title: "Error fetching product",
+          description: error.message,
+          variant: "destructive",
+        });
+      }
       
       return null;
     }
