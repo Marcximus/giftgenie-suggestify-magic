@@ -61,12 +61,12 @@ export const ProductCard = ({
           description={cleanedDescription} 
           imageUrl={imageUrl} 
         />
-        <CardTitle className="text-xs sm:text-sm mt-2 px-2 sm:px-3 line-clamp-2 min-h-[2.5rem] text-center group-hover:text-primary transition-colors duration-200">
+        <CardTitle className="text-xs sm:text-sm mt-2 px-2 sm:px-3 line-clamp-2 min-h-[2.5rem] text-center group-hover:text-primary transition-colors duration-200 overflow-hidden">
           {title}
         </CardTitle>
       </CardHeader>
       <CardContent className="p-2 sm:p-3 pt-1 flex-grow flex flex-col">
-        <p className="text-[0.65rem] sm:text-[0.7rem] leading-relaxed line-clamp-2 text-muted-foreground mb-auto overflow-hidden">
+        <p className="text-[0.65rem] sm:text-[0.7rem] leading-relaxed line-clamp-3 text-muted-foreground mb-auto">
           {cleanedDescription}
         </p>
         <div className="mt-2 flex items-center justify-between">
