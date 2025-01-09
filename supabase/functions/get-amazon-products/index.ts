@@ -18,7 +18,13 @@ serve(async (req) => {
     const { searchTerm, priceRange } = await req.json();
     
     if (!searchTerm?.trim()) {
-      throw new Error('Search term is required');
+      return new Response(
+        JSON.stringify({ error: 'Search term is required' }),
+        { 
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
     }
 
     console.log('Processing request:', { searchTerm, priceRange });
@@ -27,25 +33,62 @@ serve(async (req) => {
       const product = await searchAmazonProduct(searchTerm, RAPIDAPI_KEY);
       console.log('Product found:', product);
 
+      if (!product) {
+        // Return a 404 instead of 500 when no products are found
+        return new Response(
+          JSON.stringify({ 
+            error: 'No products found',
+            searchTerm,
+            suggestion: 'Try a more general search term'
+          }),
+          { 
+            status: 404,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          }
+        );
+      }
+
       return new Response(
         JSON.stringify(product),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     } catch (error) {
       console.error('Error searching Amazon product:', error);
-      throw new Error(`Failed to search Amazon product: ${error.message}`);
+      
+      // Handle specific error cases
+      if (error.message.includes('rate limit')) {
+        return new Response(
+          JSON.stringify({
+            error: 'Rate limit exceeded',
+            details: 'Please try again in a few moments'
+          }),
+          { 
+            status: 429,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          }
+        );
+      }
+
+      return new Response(
+        JSON.stringify({
+          error: 'Failed to fetch product data',
+          details: error.message
+        }),
+        { 
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
     }
 
   } catch (error) {
     console.error('Error in get-amazon-products function:', error);
     
-    const errorResponse = {
-      error: error.message || 'Failed to fetch Amazon product data',
-      details: error.message || 'An unexpected error occurred'
-    };
-
     return new Response(
-      JSON.stringify(errorResponse),
+      JSON.stringify({
+        error: 'Internal server error',
+        details: error.message
+      }),
       {
         status: 500,
         headers: {

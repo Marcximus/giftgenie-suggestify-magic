@@ -22,6 +22,9 @@ export async function searchAmazonProduct(searchTerm: string, apiKey: string) {
     );
 
     if (!searchResponse.ok) {
+      if (searchResponse.status === 429) {
+        throw new Error('rate limit exceeded');
+      }
       throw new Error(`Amazon Search API error: ${searchResponse.status}`);
     }
 
@@ -42,7 +45,8 @@ export async function searchAmazonProduct(searchTerm: string, apiKey: string) {
     );
 
     if (!detailsResponse.ok) {
-      throw new Error(`Amazon Details API error: ${detailsResponse.status}`);
+      console.warn(`Failed to get product details for ASIN ${asin}, status: ${detailsResponse.status}`);
+      return null;
     }
 
     const detailsData = await detailsResponse.json();
@@ -61,9 +65,10 @@ export async function searchAmazonProduct(searchTerm: string, apiKey: string) {
       console.log('Attempting search with:', firstThreeWords);
       searchData = await performSearch(firstThreeWords);
       
-      // If still no products found, throw error
+      // If still no products found, return null instead of throwing
       if (!searchData.data?.products?.length) {
-        throw new Error('No products found with either search attempt');
+        console.log('No products found with either search attempt');
+        return null;
       }
     }
 
@@ -71,13 +76,14 @@ export async function searchAmazonProduct(searchTerm: string, apiKey: string) {
     const asin = product.asin;
 
     if (!asin) {
-      throw new Error('Invalid product data: No ASIN found');
+      console.warn('Invalid product data: No ASIN found');
+      return null;
     }
 
     // Get detailed product information
     const detailsData = await getProductDetails(asin);
 
-    if (detailsData.data) {
+    if (detailsData?.data) {
       return {
         title: detailsData.data.product_title || product.title,
         description: detailsData.data.product_description || product.product_description || product.title,
