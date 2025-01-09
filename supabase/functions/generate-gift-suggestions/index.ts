@@ -15,7 +15,6 @@ const requests: number[] = [];
 
 function isRateLimited(): boolean {
   const now = Date.now();
-  // Remove requests older than the window
   while (requests.length > 0 && requests[0] < now - RATE_LIMIT.WINDOW_MS) {
     requests.shift();
   }
