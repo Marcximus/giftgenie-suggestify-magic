@@ -27,6 +27,23 @@ export const useAmazonProducts = () => {
     }
   }, []);
 
+  const trySearchWithTerm = async (searchTerm: string, priceRange: string): Promise<AmazonProduct | null> => {
+    console.log('Attempting search with term:', searchTerm);
+    const response = await supabase.functions.invoke('get-amazon-products', {
+      body: { searchTerm, priceRange }
+    });
+
+    if (!response.error) {
+      return response.data;
+    }
+
+    if (response.error.status !== 404) {
+      throw response.error;
+    }
+
+    return null;
+  };
+
   const getAmazonProduct = async (searchTerm: string, priceRange: string, retryCount = 0): Promise<AmazonProduct | null> => {
     try {
       const cacheKey = `${searchTerm}-${priceRange}`;
@@ -42,70 +59,60 @@ export const useAmazonProducts = () => {
       console.log(`Attempting Amazon product request for: ${searchTerm} with price range: ${priceRange}`);
       
       // Try with full search term first
-      const response = await supabase.functions.invoke('get-amazon-products', {
-        body: { searchTerm, priceRange }
-      });
-
-      if (response.error) {
-        // Handle 404 (No products found) differently
-        if (response.error.status === 404) {
-          console.log('No products found for search term:', searchTerm);
-          
-          // Try with first 3 words if the search term has more than 3 words
-          const words = searchTerm.split(' ');
-          if (words.length > 3) {
-            const simplifiedSearch = words.slice(0, 3).join(' ');
-            console.log('Attempting simplified search with:', simplifiedSearch);
-            
-            const simplifiedResponse = await supabase.functions.invoke('get-amazon-products', {
-              body: { searchTerm: simplifiedSearch, priceRange }
-            });
-
-            if (!simplifiedResponse.error) {
-              return simplifiedResponse.data;
-            }
-          }
-          
-          // If both attempts fail, return null without showing an error toast
-          return null;
+      let product = await trySearchWithTerm(searchTerm, priceRange);
+      
+      // If no product found and search term has more than 3 words, try with first 3 words
+      if (!product) {
+        const words = searchTerm.split(' ');
+        if (words.length > 3) {
+          const simplifiedSearch = words.slice(0, 3).join(' ');
+          console.log('No products found, attempting simplified search with:', simplifiedSearch);
+          product = await trySearchWithTerm(simplifiedSearch, priceRange);
         }
+      }
 
-        // Handle rate limiting
-        if (response.error.status === 429 && retryCount < AMAZON_CONFIG.MAX_RETRIES) {
-          const delay = calculateBackoffDelay(retryCount);
-          console.log(`Rate limited. Retrying in ${delay/1000} seconds...`);
-          await sleep(delay);
-          return getAmazonProduct(searchTerm, priceRange, retryCount + 1);
+      // If still no product found, try with just the first two words
+      if (!product) {
+        const words = searchTerm.split(' ');
+        if (words.length > 2) {
+          const briefSearch = words.slice(0, 2).join(' ');
+          console.log('Still no products found, attempting brief search with:', briefSearch);
+          product = await trySearchWithTerm(briefSearch, priceRange);
         }
+      }
 
-        // For other errors, show a toast
+      // If no product found after all attempts, show a toast
+      if (!product) {
         toast({
-          title: "Error fetching product",
-          description: response.error.message,
+          title: "No products found",
+          description: "Try searching with a more general term",
           variant: "destructive",
         });
-        
-        throw response.error;
+        return null;
       }
 
-      // Cache successful responses
-      if (response.data) {
-        // Remove oldest entry if cache is full
-        if (productCache.size >= MAX_CACHE_SIZE) {
-          const oldestKey = productCache.keys().next().value;
-          productCache.delete(oldestKey);
-        }
-        productCache.set(cacheKey, { data: response.data, timestamp: Date.now() });
-      }
+      // Cache successful response
+      productCache.set(cacheKey, { data: product, timestamp: Date.now() });
+      return product;
 
-      return response.data;
     } catch (error) {
       console.error('Error getting Amazon product:', error);
-      if (retryCount < AMAZON_CONFIG.MAX_RETRIES) {
+      
+      // Handle rate limiting
+      if (error.status === 429 && retryCount < AMAZON_CONFIG.MAX_RETRIES) {
         const delay = calculateBackoffDelay(retryCount);
+        console.log(`Rate limited. Retrying in ${delay/1000} seconds...`);
         await sleep(delay);
         return getAmazonProduct(searchTerm, priceRange, retryCount + 1);
       }
+
+      // For other errors, show a toast
+      toast({
+        title: "Error fetching product",
+        description: error.message,
+        variant: "destructive",
+      });
+      
       return null;
     }
   };
