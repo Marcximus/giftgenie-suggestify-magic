@@ -1,43 +1,5 @@
 const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
 
-export async function generateCustomDescription(title: string, originalDescription: string): Promise<string> {
-  try {
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${OPENAI_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: "gpt-4o",
-        messages: [
-          {
-            role: "system",
-            content: "You are a luxury gift expert specializing in premium products. Generate an engaging and concise product description that highlights the premium features and brand value that make this an impressive gift. Keep it under 100 words. Do not use quotation marks in your response."
-          },
-          {
-            role: "user",
-            content: `Product: ${title}\nOriginal Description: ${originalDescription}\n\nGenerate a premium gift-focused description without quotation marks.`
-          }
-        ],
-        temperature: 0.7,
-        max_tokens: 150,
-      }),
-    });
-
-    if (!response.ok) {
-      console.error('OpenAI API error:', response.status);
-      return originalDescription;
-    }
-
-    const data = await response.json();
-    return data.choices?.[0]?.message?.content?.replace(/['"]/g, '') || originalDescription;
-  } catch (error) {
-    console.error('Error generating custom description:', error);
-    return originalDescription;
-  }
-}
-
 export async function generateGiftSuggestions(prompt: string): Promise<string[]> {
   const response = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
