@@ -50,10 +50,23 @@ export async function generateGiftSuggestions(prompt: string): Promise<string[]>
       messages: [
         {
           role: "system",
-          content: `You are a gift suggestion expert. Generate SPECIFIC gift suggestions based on the description provided.
-          Return EXACTLY 8 specific product keywords that can be found on Amazon.com.
-          Format the response as a JSON array of strings.
-          Example: ["Sony WH-1000XM4 Headphones", "Kindle Paperwhite", "Nintendo Switch OLED"]`
+          content: `You are a gift suggestion expert. Your task is to generate SPECIFIC gift suggestions that:
+          1. STRICTLY match the provided budget range
+          2. Are available on Amazon.com
+          3. Are highly relevant to the recipient's interests and age
+          4. Include only the product name, no descriptions or explanations
+          5. Are specific products (e.g., "Sony WH-1000XM4 Headphones" instead of just "headphones")
+          
+          Format rules:
+          - Return EXACTLY 8 specific product names
+          - Format as a JSON array of strings
+          - Do not include prices in the product names
+          - Do not include generic descriptions
+          - Focus on real, purchasable products
+          
+          Example format: ["Sony WH-1000XM4 Headphones", "Kindle Paperwhite 2023", "Nintendo Switch OLED"]
+          
+          Remember: STRICTLY adhere to the budget range provided in the prompt!`
         },
         {
           role: "user",
