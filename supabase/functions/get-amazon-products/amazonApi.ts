@@ -4,8 +4,15 @@ export async function searchAmazonProduct(searchTerm: string, apiKey: string) {
   console.log('Initial search attempt for:', searchTerm);
 
   async function performSearch(term: string) {
+    // Clean the search term before sending to API
+    const cleanedTerm = term
+      .replace(/&/g, 'and') // Replace & with 'and'
+      .replace(/[^\w\s-]/g, ' ') // Remove special characters except hyphens
+      .replace(/\s+/g, ' ') // Replace multiple spaces with single space
+      .trim();
+
     const searchParams = new URLSearchParams({
-      query: encodeURIComponent(term.trim()),
+      query: encodeURIComponent(cleanedTerm),
       country: 'US',
       category_id: 'aps',
       sort_by: 'RELEVANCE'
@@ -29,7 +36,7 @@ export async function searchAmazonProduct(searchTerm: string, apiKey: string) {
     }
 
     const searchData = await searchResponse.json();
-    console.log('Search response for term:', term, searchData);
+    console.log('Search response for term:', cleanedTerm, searchData);
     return searchData;
   }
 
@@ -58,16 +65,30 @@ export async function searchAmazonProduct(searchTerm: string, apiKey: string) {
     // First attempt with full search term
     let searchData = await performSearch(searchTerm);
     
-    // If no products found, try with first 3 words
+    // If no products found, try with a more generic search
     if (!searchData.data?.products?.length) {
-      console.log('No products found with full search term, trying first 3 words');
-      const firstThreeWords = searchTerm.split(' ').slice(0, 3).join(' ');
-      console.log('Attempting search with:', firstThreeWords);
-      searchData = await performSearch(firstThreeWords);
+      // Split the search term and remove common descriptive words
+      const words = searchTerm.split(' ')
+        .filter(word => !['with', 'and', 'in', 'for', 'by', 'the', 'a', 'an'].includes(word.toLowerCase()))
+        .filter(word => word.length > 2);
       
-      // If still no products found, return null instead of throwing
+      // Try with first two main words
+      if (words.length > 1) {
+        const genericSearch = words.slice(0, 2).join(' ');
+        console.log('Attempting more generic search with:', genericSearch);
+        searchData = await performSearch(genericSearch);
+      }
+      
+      // If still no results, try with just the first word
+      if (!searchData.data?.products?.length && words.length > 0) {
+        const singleWordSearch = words[0];
+        console.log('Final attempt with single word:', singleWordSearch);
+        searchData = await performSearch(singleWordSearch);
+      }
+      
+      // If still no products found, return null
       if (!searchData.data?.products?.length) {
-        console.log('No products found with either search attempt');
+        console.log('No products found with any search attempt');
         return null;
       }
     }
