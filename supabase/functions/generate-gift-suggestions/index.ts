@@ -6,14 +6,13 @@ import { GiftSuggestion } from '../_shared/types.ts';
 // Track API requests with a simple in-memory store
 const requestLog: { timestamp: number }[] = [];
 const RATE_LIMIT = {
-  WINDOW_MS: 60000, // 1 minute
-  MAX_REQUESTS: 10, // Maximum requests per minute
-  RETRY_AFTER: 30 // Seconds to wait before retrying
+  WINDOW_MS: 30000, // 30 seconds
+  MAX_REQUESTS: 15, // Maximum requests per 30 seconds
+  RETRY_AFTER: 15 // Seconds to wait before retrying
 };
 
 function isRateLimited(): boolean {
   const now = Date.now();
-  // Clean up old requests
   const windowStart = now - RATE_LIMIT.WINDOW_MS;
   const recentRequests = requestLog.filter(req => req.timestamp > windowStart);
   requestLog.length = 0;
@@ -27,13 +26,11 @@ function logRequest() {
 }
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    // Check rate limit before processing
     if (isRateLimited()) {
       console.log('Rate limit exceeded, returning 429');
       return new Response(
@@ -55,10 +52,8 @@ serve(async (req) => {
     const { prompt } = await req.json();
     console.log('Processing request with prompt:', prompt);
 
-    // Log this request
     logRequest();
 
-    // Get gift suggestions from GPT
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -66,7 +61,7 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: "gpt-4o-mini",
+        model: "gpt-4",
         messages: [
           {
             role: "system",
@@ -97,7 +92,6 @@ serve(async (req) => {
       throw new Error('Invalid response format from OpenAI API');
     }
 
-    // Parse the suggestions and clean up the JSON
     const suggestions = JSON.parse(
       data.choices[0].message.content.replace(/```json\n?|\n?```/g, '').trim()
     );
@@ -106,48 +100,51 @@ serve(async (req) => {
       throw new Error('Invalid suggestions format');
     }
 
-    // Process suggestions sequentially with delay between requests
-    const products: GiftSuggestion[] = [];
-    for (const suggestion of suggestions) {
-      try {
-        const product = await searchAmazonProduct(suggestion);
-        if (product) {
-          products.push({
-            title: product.title || suggestion,
-            description: product.description || suggestion,
-            priceRange: `${product.price?.currency || 'USD'} ${product.price?.current_price || '0'}`,
-            reason: `This ${product.title} would make a great gift because it matches your requirements.`,
-            amazon_asin: product.asin,
-            amazon_url: product.asin ? `https://www.amazon.com/dp/${product.asin}` : undefined,
-            amazon_price: product.price?.current_price,
-            amazon_image_url: product.main_image,
-            amazon_rating: product.rating,
-            amazon_total_ratings: product.ratings_total
+    // Process suggestions in parallel with a maximum delay of 1 second between requests
+    const productPromises = suggestions.map((suggestion, index) => {
+      return new Promise<GiftSuggestion>(async (resolve) => {
+        // Add a small delay between requests to avoid overwhelming the API
+        await new Promise(r => setTimeout(r, index * 1000));
+        
+        try {
+          const product = await searchAmazonProduct(suggestion);
+          if (product) {
+            resolve({
+              title: product.title || suggestion,
+              description: product.description || suggestion,
+              priceRange: `${product.price?.currency || 'USD'} ${product.price?.current_price || '0'}`,
+              reason: `This ${product.title} would make a great gift because it matches your requirements.`,
+              amazon_asin: product.asin,
+              amazon_url: product.asin ? `https://www.amazon.com/dp/${product.asin}` : undefined,
+              amazon_price: product.price?.current_price,
+              amazon_image_url: product.main_image,
+              amazon_rating: product.rating,
+              amazon_total_ratings: product.ratings_total
+            });
+          } else {
+            resolve({
+              title: suggestion,
+              description: suggestion,
+              priceRange: 'Price not available',
+              reason: 'This item matches your requirements.',
+              search_query: suggestion
+            });
+          }
+        } catch (error) {
+          console.error('Error processing suggestion:', suggestion, error);
+          // Return a basic suggestion without Amazon data rather than failing completely
+          resolve({
+            title: suggestion,
+            description: suggestion,
+            priceRange: 'Price not available',
+            reason: 'This item matches your requirements.',
+            search_query: suggestion
           });
         }
-        // Add delay between requests to help prevent rate limiting
-        await new Promise(resolve => setTimeout(resolve, 2000));
-      } catch (error) {
-        console.error('Error processing suggestion:', suggestion, error);
-        if (error instanceof AmazonApiError && error.status === 429) {
-          return new Response(
-            JSON.stringify({
-              error: 'Rate limit exceeded. Please try again in a moment.',
-              retryAfter: error.retryAfter
-            }),
-            {
-              status: 429,
-              headers: {
-                ...corsHeaders,
-                'Content-Type': 'application/json',
-                'Retry-After': error.retryAfter || '30'
-              }
-            }
-          );
-        }
-        continue; // Skip failed products but continue with others
-      }
-    }
+      });
+    });
+
+    const products = await Promise.all(productPromises);
 
     return new Response(
       JSON.stringify({ suggestions: products }),
