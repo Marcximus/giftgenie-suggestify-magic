@@ -46,31 +46,22 @@ export async function generateGiftSuggestions(prompt: string): Promise<string[]>
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      model: "gpt-4o-mini",
+      model: "gpt-4o",
       messages: [
         {
           role: "system",
-          content: `You are a gift suggestion expert. Your task is to generate SPECIFIC gift suggestions that:
-          1. STRICTLY match the provided budget range
-          2. Are available on Amazon.com
-          3. Are highly relevant to the recipient's interests and age
-          4. Include only the product name, no descriptions or explanations
-          5. Are specific products (e.g., "Sony WH-1000XM4 Headphones" instead of just "headphones")
+          content: `You are a luxury gift recommendation expert specializing in premium, high-quality gifts. Your suggestions should:
+          1. Always be specific products from well-known, premium brands
+          2. Stay within the specified budget range, focusing on the middle to upper range
+          3. Be currently available for purchase on Amazon
+          4. Match the recipient's interests and preferences perfectly
+          5. Include the brand name in each suggestion
           
-          Format rules:
-          - Return EXACTLY 8 specific product names
-          - Format as a JSON array of strings
-          - Do not include prices in the product names
-          - Do not include generic descriptions
-          - Focus on real, purchasable products
-          
-          Example format: ["Sony WH-1000XM4 Headphones", "Kindle Paperwhite 2023", "Nintendo Switch OLED"]
-          
-          Remember: STRICTLY adhere to the budget range provided in the prompt!`
+          Never suggest generic or low-quality items. Focus on premium products that would truly impress the recipient.`
         },
-        {
-          role: "user",
-          content: prompt
+        { 
+          role: "user", 
+          content: prompt 
         }
       ],
       temperature: 0.7,

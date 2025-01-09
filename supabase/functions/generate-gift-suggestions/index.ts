@@ -19,7 +19,12 @@ serve(async (req) => {
     const { prompt } = await req.json();
     console.log('Processing request with prompt:', prompt);
 
-    // Extract gender context from the prompt
+    // Extract budget range from the prompt
+    const budgetMatch = prompt.match(/budget.*?(\d+)\s*-\s*(\d+)/i);
+    const minBudget = budgetMatch ? parseInt(budgetMatch[1]) : 0;
+    const maxBudget = budgetMatch ? parseInt(budgetMatch[2]) : 1000;
+
+    // Extract gender context
     const isMale = prompt.toLowerCase().includes('brother') || 
                   prompt.toLowerCase().includes('father') || 
                   prompt.toLowerCase().includes('husband') || 
@@ -34,12 +39,30 @@ serve(async (req) => {
                     prompt.toLowerCase().includes('daughter') || 
                     prompt.toLowerCase().includes('grandma');
 
-    // Enhance the prompt with gender-specific context
-    let enhancedPrompt = prompt;
+    // Enhance the prompt with specific instructions about budget and quality
+    let enhancedPrompt = `Act as a luxury gift expert. Generate 8 PREMIUM gift suggestions for ${prompt}. 
+
+STRICT REQUIREMENTS:
+1. Price Range: Each suggestion MUST be priced between $${minBudget} and $${maxBudget}. DO NOT suggest items below ${minBudget}$.
+2. Quality: Focus on premium, high-quality brands and products that would impress the recipient.
+3. Specificity: Suggest specific products with brand names (e.g., "Callaway Mavrik Pro Golf Driver" instead of just "golf club")
+4. Relevance: Ensure each suggestion directly relates to the recipient's interests
+5. Variety: Provide a diverse range of suggestions within the specified category
+
+Format rules:
+- Return EXACTLY 8 specific product names
+- Format as a JSON array of strings
+- Include brand names
+- Focus on premium, name-brand items
+- Aim for the middle to upper range of the budget
+
+Example format for premium items:
+["Nike Air Zoom Alphafly NEXT% Premium Running Shoes", "Garmin Forerunner 955 Solar GPS Smartwatch", "YETI Tundra 45 Hard Cooler"]`;
+
     if (isMale) {
-      enhancedPrompt = `${prompt}. IMPORTANT: Only suggest gifts appropriate for men/boys. Do not include women's clothing, accessories, or gender-specific items meant for women.`;
+      enhancedPrompt += "\nIMPORTANT: Only suggest premium gifts appropriate for men/boys. Do not include women's items.";
     } else if (isFemale) {
-      enhancedPrompt = `${prompt}. IMPORTANT: Only suggest gifts appropriate for women/girls. Do not include men's clothing, accessories, or gender-specific items meant for men.`;
+      enhancedPrompt += "\nIMPORTANT: Only suggest premium gifts appropriate for women/girls. Do not include men's items.";
     }
 
     if (isRateLimited()) {
