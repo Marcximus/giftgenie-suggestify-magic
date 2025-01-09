@@ -70,11 +70,15 @@ CRITICAL RULES:
 Format each suggestion as: "Brand Model/Edition with Key Feature"
 Example: "Sony WH-1000XM5 Noise Cancelling Headphones with LDAC"
 
+IMPORTANT: Your response must be a valid JSON array of strings. Do not include any explanatory text outside the array.
+Example response format:
+["Product 1 name", "Product 2 name", "Product 3 name"]
+
 Remember: Focus on relevance and quality. Each suggestion should be thoughtful and match both interests and budget.`
         },
         { 
           role: "user", 
-          content: prompt 
+          content: `${prompt}\n\nIMPORTANT: Respond with ONLY a JSON array of strings. No other text.` 
         }
       ],
       temperature: 0.9,
@@ -87,7 +91,25 @@ Remember: Focus on relevance and quality. Each suggestion should be thoughtful a
   }
 
   const data = await response.json();
-  return JSON.parse(
-    data.choices[0].message.content.replace(/```json\n?|\n?```/g, '').trim()
-  );
+  const content = data.choices[0].message.content.trim();
+  
+  try {
+    // Try to parse the content directly
+    return JSON.parse(content);
+  } catch (e) {
+    console.error('Failed to parse OpenAI response directly:', e);
+    
+    // If direct parsing fails, try to extract JSON array
+    const match = content.match(/\[[\s\S]*\]/);
+    if (match) {
+      try {
+        return JSON.parse(match[0]);
+      } catch (e2) {
+        console.error('Failed to parse extracted JSON array:', e2);
+        throw new Error('Failed to parse gift suggestions from OpenAI response');
+      }
+    }
+    
+    throw new Error('No valid JSON array found in OpenAI response');
+  }
 }
