@@ -29,13 +29,36 @@ function logRequest() {
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response('ok', { 
+      headers: {
+        ...corsHeaders,
+        'Access-Control-Allow-Methods': 'POST, OPTIONS',
+        'Access-Control-Max-Age': '86400',
+      }
+    });
   }
 
   try {
-    if (!Deno.env.get('OPENAI_API_KEY')) {
-      throw new Error('OpenAI API key not configured');
+    // Check rate limiting
+    if (isRateLimited()) {
+      console.log('Rate limit exceeded');
+      return new Response(
+        JSON.stringify({
+          error: 'Too many requests. Please try again later.',
+          retryAfter: RATE_LIMIT.RETRY_AFTER
+        }),
+        {
+          status: 429,
+          headers: {
+            ...corsHeaders,
+            'Content-Type': 'application/json',
+            'Retry-After': RATE_LIMIT.RETRY_AFTER.toString()
+          }
+        }
+      );
     }
+
+    logRequest();
 
     const { prompt } = await req.json();
     console.log('Processing request with prompt:', prompt);
@@ -108,31 +131,15 @@ STRICT REQUIREMENTS:
       enhancedPrompt += "\n\nCRITICAL: Only suggest gifts appropriate for women/girls. Focus on feminine aesthetics and preferences. Absolutely no men's items.";
     }
 
-    if (isRateLimited()) {
-      console.log('Rate limit exceeded, returning 429');
-      return new Response(
-        JSON.stringify({
-          error: 'Rate limit exceeded. Please try again in a moment.',
-          retryAfter: RATE_LIMIT.RETRY_AFTER
-        }),
-        {
-          status: 429,
-          headers: {
-            ...corsHeaders,
-            'Content-Type': 'application/json',
-            'Retry-After': RATE_LIMIT.RETRY_AFTER.toString()
-          }
-        }
-      );
-    }
-
-    logRequest();
+    console.log('Generating suggestions with prompt:', enhancedPrompt);
 
     const suggestions = await generateGiftSuggestions(enhancedPrompt);
     
     if (!Array.isArray(suggestions)) {
       throw new Error('Invalid suggestions format');
     }
+
+    console.log('Raw suggestions:', suggestions);
 
     const productPromises = suggestions.map((suggestion, index) => {
       return new Promise<GiftSuggestion>(async (resolve) => {
