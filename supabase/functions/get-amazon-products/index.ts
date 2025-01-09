@@ -13,6 +13,7 @@ interface AmazonSearchResult {
   data: {
     products: Array<{
       asin: string;
+      title: string;
     }>;
   };
 }
@@ -48,9 +49,11 @@ serve(async (req) => {
     const { searchTerm } = await req.json();
     console.log('Searching Amazon for:', searchTerm);
 
-    // Step 1: Search for products
-    console.log('Attempting search with full cleaned title:', searchTerm);
-    const searchResponse = await fetch(`https://${RAPIDAPI_HOST}/search?query=${encodeURIComponent(searchTerm)}&country=US`, {
+    // Step 1: Search for products using the exact title from ChatGPT
+    const searchUrl = `https://${RAPIDAPI_HOST}/search?query=${encodeURIComponent(searchTerm)}&country=US`;
+    console.log('Search URL:', searchUrl);
+
+    const searchResponse = await fetch(searchUrl, {
       headers: {
         'X-RapidAPI-Key': RAPIDAPI_KEY,
         'X-RapidAPI-Host': RAPIDAPI_HOST,
@@ -62,7 +65,7 @@ serve(async (req) => {
     }
 
     const searchData = await searchResponse.json() as AmazonSearchResult;
-    console.log('Search results received');
+    console.log('Search results:', searchData);
 
     // Get the first product's ASIN
     const firstProduct = searchData.data?.products?.[0];
@@ -70,7 +73,9 @@ serve(async (req) => {
       throw new Error('No products found');
     }
 
-    // Step 2: Get detailed product information
+    console.log('Found product ASIN:', firstProduct.asin);
+
+    // Step 2: Get detailed product information using the ASIN
     const detailsResponse = await fetch(`https://${RAPIDAPI_HOST}/product-details?asin=${firstProduct.asin}&country=US`, {
       headers: {
         'X-RapidAPI-Key': RAPIDAPI_KEY,
@@ -86,6 +91,8 @@ serve(async (req) => {
     console.log('Product details received for ASIN:', firstProduct.asin);
 
     const product = detailsData.data;
+    
+    // Combine all available description sources
     const description = product.description || 
                        product.feature_bullets?.join(' ') || 
                        product.product_information?.join(' ') || 
