@@ -12,6 +12,16 @@ export class AmazonApiError extends Error {
   }
 }
 
+function parsePrice(priceStr: string | null): number | undefined {
+  if (!priceStr) return undefined;
+  
+  // Remove currency symbol and any commas
+  const cleanPrice = priceStr.replace(/[^0-9.]/g, '');
+  const price = parseFloat(cleanPrice);
+  
+  return isNaN(price) ? undefined : price;
+}
+
 export async function searchAmazonProduct(
   searchTerm: string,
   apiKey: string,
@@ -38,38 +48,40 @@ export async function searchAmazonProduct(
     searchParams.append('max_price', maxPrice.toString());
   }
 
-  const url = `https://${RAPIDAPI_HOST}/search?${searchParams.toString()}`;
-  
   try {
-    console.log('Making request to:', url);
-    const response = await fetch(url, {
+    // First, search for products
+    const searchResponse = await fetch(`https://${RAPIDAPI_HOST}/search?${searchParams.toString()}`, {
       headers: {
         'X-RapidAPI-Key': apiKey,
         'X-RapidAPI-Host': RAPIDAPI_HOST,
       }
     });
 
-    if (!response.ok) {
-      console.error('Amazon API error:', response.status, response.statusText);
-      const retryAfter = response.headers.get('Retry-After');
+    if (!searchResponse.ok) {
+      console.error('Amazon Search API error:', searchResponse.status, searchResponse.statusText);
       throw new AmazonApiError(
-        `Amazon API error: ${response.status}`,
-        response.status,
-        retryAfter || undefined
+        `Amazon Search API error: ${searchResponse.status}`,
+        searchResponse.status,
+        searchResponse.headers.get('Retry-After') || undefined
       );
     }
 
-    const data = await response.json();
-    console.log('Search response:', data);
+    const searchData = await searchResponse.json();
+    console.log('Search response:', searchData);
 
-    if (!data.data?.products?.length) {
+    if (!searchData.data?.products?.length) {
       throw new AmazonApiError('No products found');
     }
 
-    const product = data.data.products[0];
+    const product = searchData.data.products[0];
+    const asin = product.asin;
 
-    // Get detailed product information
-    const detailsResponse = await fetch(`https://${RAPIDAPI_HOST}/product-details?asin=${product.asin}&country=US`, {
+    if (!asin) {
+      throw new AmazonApiError('Invalid product data: No ASIN found');
+    }
+
+    // Get detailed product information using ASIN
+    const detailsResponse = await fetch(`https://${RAPIDAPI_HOST}/product-details?asin=${asin}&country=US`, {
       headers: {
         'X-RapidAPI-Key': apiKey,
         'X-RapidAPI-Host': RAPIDAPI_HOST,
@@ -78,18 +90,21 @@ export async function searchAmazonProduct(
 
     if (detailsResponse.ok) {
       const detailsData = await detailsResponse.json();
-      console.log('Details response:', detailsData);
+      console.log('Product details response:', detailsData);
 
       if (detailsData.data) {
+        const price = parsePrice(detailsData.data.product_price);
+        const originalPrice = parsePrice(detailsData.data.product_original_price);
+
         return {
           title: detailsData.data.product_title || product.title,
           description: detailsData.data.product_description || product.product_description || product.title,
-          price: detailsData.data.price?.current_price || product.price?.current_price,
-          currency: detailsData.data.price?.currency || product.price?.currency || 'USD',
-          imageUrl: detailsData.data.product_photos?.[0] || product.product_photo || product.thumbnail,
-          rating: detailsData.data.product_rating ? parseFloat(detailsData.data.product_rating) : undefined,
+          price: price || originalPrice,
+          currency: detailsData.data.currency || 'USD',
+          imageUrl: detailsData.data.product_photos?.[0] || detailsData.data.product_photo || product.product_photo || product.thumbnail,
+          rating: detailsData.data.product_star_rating ? parseFloat(detailsData.data.product_star_rating) : undefined,
           totalRatings: detailsData.data.product_num_ratings ? parseInt(detailsData.data.product_num_ratings, 10) : undefined,
-          asin: product.asin,
+          asin: asin,
         };
       }
     }
@@ -98,12 +113,12 @@ export async function searchAmazonProduct(
     return {
       title: product.title,
       description: product.product_description || product.title,
-      price: product.price?.current_price,
+      price: parsePrice(product.price?.current_price) || undefined,
       currency: product.price?.currency || 'USD',
       imageUrl: product.product_photo || product.thumbnail,
       rating: product.product_star_rating ? parseFloat(product.product_star_rating) : undefined,
       totalRatings: product.product_num_ratings ? parseInt(product.product_num_ratings, 10) : undefined,
-      asin: product.asin,
+      asin: asin,
     };
   } catch (error) {
     console.error('Error searching Amazon:', error);
