@@ -1,9 +1,13 @@
-import { RateLimitInfo } from './types.ts';
+interface RequestLog {
+  timestamp: number;
+}
 
-const requestLog: RateLimitInfo[] = [];
-const RATE_LIMIT = {
-  MAX_REQUESTS: 5,
-  WINDOW_MS: 10000, // 10 seconds
+const requestLog: RequestLog[] = [];
+
+export const RATE_LIMIT = {
+  WINDOW_MS: 30000, // 30 seconds
+  MAX_REQUESTS: 15, // Maximum requests per 30 seconds
+  RETRY_AFTER: 15 // Seconds to wait before retrying
 };
 
 export function isRateLimited(): boolean {
@@ -16,6 +20,6 @@ export function isRateLimited(): boolean {
   return recentRequests.length >= RATE_LIMIT.MAX_REQUESTS;
 }
 
-export function logRequest() {
-  requestLog.push({ timestamp: Date.now(), count: 1 });
+export function logRequest(): void {
+  requestLog.push({ timestamp: Date.now() });
 }
