@@ -7,6 +7,7 @@ interface BatchProcessorOptions<T, R> {
   onError?: (error: any, item: T) => void;
   batchSize?: number;
   staggerDelay?: number;
+  parallel?: boolean;
 }
 
 export const useBatchProcessor = <T, R>() => {
@@ -20,7 +21,8 @@ export const useBatchProcessor = <T, R>() => {
       processFn,
       onError = console.error,
       batchSize = AMAZON_CONFIG.MAX_CONCURRENT_REQUESTS,
-      staggerDelay = AMAZON_CONFIG.STAGGER_DELAY
+      staggerDelay = AMAZON_CONFIG.STAGGER_DELAY,
+      parallel = true // Enable parallel processing by default
     } = options;
 
     setIsProcessing(true);
@@ -31,21 +33,29 @@ export const useBatchProcessor = <T, R>() => {
       for (let i = 0; i < items.length; i += batchSize) {
         const batch = items.slice(i, i + batchSize);
         
-        const batchPromises = batch.map(async (item, index) => {
-          try {
-            // Add stagger delay after first request
-            if (index > 0) {
-              await sleep(staggerDelay);
+        if (parallel) {
+          // Process all items in the batch simultaneously
+          const batchPromises = batch.map(item => 
+            processFn(item).catch(error => {
+              onError(error, item);
+              return null;
+            })
+          );
+          
+          const batchResults = await Promise.all(batchPromises);
+          results.push(...batchResults.filter(Boolean));
+        } else {
+          // Process items sequentially with stagger delay
+          for (const item of batch) {
+            try {
+              const result = await processFn(item);
+              if (result) results.push(result);
+              if (staggerDelay > 0) await sleep(staggerDelay);
+            } catch (error) {
+              onError(error, item);
             }
-            return await processFn(item);
-          } catch (error) {
-            onError(error, item);
-            return null;
           }
-        });
-
-        const batchResults = await Promise.all(batchPromises);
-        results.push(...batchResults.filter(Boolean));
+        }
       }
     } finally {
       setIsProcessing(false);
