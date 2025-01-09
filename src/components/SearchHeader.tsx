@@ -26,9 +26,12 @@ const loadingMessages = [
   "Inflating balloon animals for moral support...",
   "Tracking down that one unicorn who knows everything...",
   "Hacking into the receiver's mainframe",
-  "Asking the gift gods for advice...",
-  "Comparing notes with Santa...",
-  "Searching the Amazon forest...",
+  "Shaking the server until it spits something out…",
+  "Intimidating the data into cooperating…",
+  "Shoving zeros and ones into formation…",
+  "Holding your browser hostage for suspense…",
+  "Watching sparks fly as the code panics…",
+  "Squeezing the API for hidden gems…",
   "Here we go..."
 ];
 
