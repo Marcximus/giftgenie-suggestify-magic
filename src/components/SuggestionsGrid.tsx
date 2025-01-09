@@ -52,7 +52,7 @@ export const SuggestionsGrid = ({
             >
               <ProductCard
                 title={suggestion.title}
-                description={`${suggestion.description}\n\nWhy this gift? ${suggestion.reason}`}
+                description={suggestion.description}
                 price={suggestion.amazon_price ? suggestion.amazon_price.toString() : suggestion.priceRange}
                 amazonUrl={suggestion.amazon_url || "#"}
                 imageUrl={suggestion.amazon_image_url}
