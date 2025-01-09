@@ -26,12 +26,13 @@ export const ProductCard = ({
   rating,
   totalRatings,
   asin,
+  imageUrl,
   onMoreLikeThis 
 }: ProductCardProps) => {
   return (
     <Card className="group overflow-hidden hover:shadow-lg transition-all duration-300 border-accent/20 backdrop-blur-sm bg-white/80 hover:bg-white/90">
       <CardHeader className="p-0">
-        <ProductImage title={title} description={description} />
+        <ProductImage title={title} description={description} imageUrl={imageUrl} />
         <CardTitle className="text-xs sm:text-sm mt-2 px-2 sm:px-3 line-clamp-2 min-h-[2.5rem] text-center group-hover:text-primary transition-colors duration-200">
           {title}
         </CardTitle>
