@@ -3,7 +3,6 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAmazonProducts } from './useAmazonProducts';
 import { useBatchProcessor } from './useBatchProcessor';
-import { AMAZON_CONFIG } from '@/utils/amazon/config';
 
 interface GiftSuggestion {
   title: string;
@@ -109,21 +108,38 @@ export const useSuggestions = () => {
   };
 
   const handleMoreLikeThis = async (title: string) => {
-    // Extract gender context from the last query
-    const isMale = lastQuery.toLowerCase().includes('brother') || 
-                  lastQuery.toLowerCase().includes('father') || 
-                  lastQuery.toLowerCase().includes('husband') || 
-                  lastQuery.toLowerCase().includes('boyfriend') || 
-                  lastQuery.toLowerCase().includes('son') || 
-                  lastQuery.toLowerCase().includes('grandpa');
+    // Extract all context from the last query
+    const query = lastQuery.toLowerCase();
+    
+    // Gender context
+    const isMale = query.includes('brother') || 
+                  query.includes('father') || 
+                  query.includes('husband') || 
+                  query.includes('boyfriend') || 
+                  query.includes('son') || 
+                  query.includes('grandpa');
 
-    const isFemale = lastQuery.toLowerCase().includes('sister') || 
-                    lastQuery.toLowerCase().includes('mother') || 
-                    lastQuery.toLowerCase().includes('wife') || 
-                    lastQuery.toLowerCase().includes('girlfriend') || 
-                    lastQuery.toLowerCase().includes('daughter') || 
-                    lastQuery.toLowerCase().includes('grandma');
+    const isFemale = query.includes('sister') || 
+                    query.includes('mother') || 
+                    query.includes('wife') || 
+                    query.includes('girlfriend') || 
+                    query.includes('daughter') || 
+                    query.includes('grandma');
 
+    // Age context
+    const ageMatch = query.match(/(\d+)(?:\s*-\s*\d+)?\s*years?\s*old/i);
+    const ageContext = ageMatch ? `for ${ageMatch[0]}` : '';
+
+    // Budget context
+    const budgetMatch = query.match(/budget:\s*(\$?\d+(?:\s*-\s*\$?\d+)?)/i) || 
+                       query.match(/(\$?\d+(?:\s*-\s*\$?\d+)?)\s*budget/i);
+    const budgetContext = budgetMatch ? `within the budget of ${budgetMatch[1]}` : '';
+
+    // Interest context
+    const interestMatch = query.match(/who likes\s+([^.]+)/i);
+    const interestContext = interestMatch ? `related to ${interestMatch[1].trim()}` : '';
+
+    // Gender instruction
     const genderContext = isMale ? 'male' : isFemale ? 'female' : '';
     const genderInstruction = genderContext ? 
       `IMPORTANT: Only suggest gifts appropriate for ${genderContext} recipients. Do not include items specifically designed for ${isMale ? 'women' : 'men'}.` : '';
@@ -133,16 +149,21 @@ export const useSuggestions = () => {
       .replace(/[^\w\s]/g, ' ')
       .trim();
     
-    const query = `Find me 8 gift suggestions similar to "${cleanTitle}". Focus on products that:
+    // Construct a comprehensive prompt that maintains all context
+    const contextualPrompt = `Find me 8 gift suggestions similar to "${cleanTitle}" ${ageContext} ${budgetContext} ${interestContext}. Focus on products that:
     1. Serve a similar purpose or function
     2. Are in a similar category
     3. Have similar features or characteristics
     4. Are in a comparable price range
     ${genderInstruction}
+    IMPORTANT: 
+    - Maintain the same price range as the original query
+    - Ensure suggestions are age-appropriate
+    - Focus on the recipient's interests
     Please ensure each suggestion is distinct but closely related to the original item.`;
     
-    setLastQuery(query);
-    await generateSuggestions(query);
+    setLastQuery(contextualPrompt);
+    await generateSuggestions(contextualPrompt);
   };
 
   const handleStartOver = () => {
