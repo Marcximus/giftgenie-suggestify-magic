@@ -9,20 +9,6 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-interface AmazonProduct {
-  asin: string;
-  title: string;
-  description: string;
-  price: {
-    current_price: number;
-    currency: string;
-  };
-  rating: number;
-  ratings_total: number;
-  main_image: string;
-  images: string[];
-}
-
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -38,7 +24,7 @@ serve(async (req) => {
     console.log('Searching Amazon for:', searchTerm);
 
     // Step 1: Search for products
-    const searchResponse = await fetch(`https://${RAPIDAPI_HOST}/search?query=${encodeURIComponent(searchTerm)}&page=1&limit=10&country=US`, {
+    const searchResponse = await fetch(`https://${RAPIDAPI_HOST}/search?query=${encodeURIComponent(searchTerm)}&country=US`, {
       headers: {
         'X-RapidAPI-Key': RAPIDAPI_KEY,
         'X-RapidAPI-Host': RAPIDAPI_HOST,
