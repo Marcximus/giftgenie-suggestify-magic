@@ -41,6 +41,7 @@ export async function searchAmazonProduct(
   const url = `https://${RAPIDAPI_HOST}/search?${searchParams.toString()}`;
   
   try {
+    console.log('Making request to:', url);
     const response = await fetch(url, {
       headers: {
         'X-RapidAPI-Key': apiKey,
@@ -50,7 +51,12 @@ export async function searchAmazonProduct(
 
     if (!response.ok) {
       console.error('Amazon API error:', response.status, response.statusText);
-      throw new AmazonApiError(`Amazon API error: ${response.status}`, response.status);
+      const retryAfter = response.headers.get('Retry-After');
+      throw new AmazonApiError(
+        `Amazon API error: ${response.status}`,
+        response.status,
+        retryAfter || undefined
+      );
     }
 
     const data = await response.json();
@@ -73,6 +79,9 @@ export async function searchAmazonProduct(
     };
   } catch (error) {
     console.error('Error searching Amazon:', error);
-    throw error instanceof AmazonApiError ? error : new AmazonApiError(error.message);
+    if (error instanceof AmazonApiError) {
+      throw error;
+    }
+    throw new AmazonApiError(error.message);
   }
 }

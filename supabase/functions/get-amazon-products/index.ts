@@ -48,13 +48,14 @@ function parsePriceRange(priceRange: string): PriceRange {
 }
 
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
     if (!RAPIDAPI_KEY) {
-      throw new Error('RapidAPI key not configured');
+      throw new Error('RAPIDAPI_KEY not configured');
     }
 
     const { searchTerm, priceRange } = await req.json();
@@ -66,21 +67,26 @@ serve(async (req) => {
     console.log('Processing request:', { searchTerm, priceRange });
     const { min, max } = parsePriceRange(priceRange);
     
-    const product = await searchAmazonProduct(searchTerm, RAPIDAPI_KEY, min, max);
-    console.log('Product found:', product);
+    try {
+      const product = await searchAmazonProduct(searchTerm, RAPIDAPI_KEY, min, max);
+      console.log('Product found:', product);
 
-    return new Response(
-      JSON.stringify(product),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+      return new Response(
+        JSON.stringify(product),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    } catch (error) {
+      console.error('Error searching Amazon product:', error);
+      throw new Error(`Failed to search Amazon product: ${error.message}`);
+    }
 
   } catch (error) {
     console.error('Error in get-amazon-products function:', error);
     
     const status = error.status || 500;
     const response = {
-      error: error.message,
-      details: 'Failed to fetch Amazon product data',
+      error: error.message || 'Failed to fetch Amazon product data',
+      details: error.details || error.message || 'An unexpected error occurred',
       ...(error.retryAfter && { retryAfter: error.retryAfter })
     };
 
