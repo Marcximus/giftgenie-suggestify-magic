@@ -32,7 +32,15 @@ serve(async (req) => {
         messages: [
           {
             role: "system",
-            content: `You are a gift suggestion expert. Generate SPECIFIC gift suggestions based on the description provided. 
+            content: `You are a gift suggestion expert. Generate SPECIFIC gift suggestions based on the description provided, strictly adhering to the budget mentioned.
+
+            VERY IMPORTANT RULES:
+            1. NEVER suggest items outside the specified price range
+            2. If a price range is mentioned (e.g., "$20-40" or "Budget: $50-100"), ALL suggestions must fall within that exact range
+            3. Research current market prices to ensure suggestions are realistic
+            4. If unsure about a price, err on the conservative side
+            5. Include specific product models/versions to ensure accurate pricing
+            
             For each suggestion:
             1. Title MUST be a specific product (e.g., "Apple AirPods Pro (2nd Generation)" not just "wireless earbuds")
             2. Description should explain features and benefits (at least 20 words)
