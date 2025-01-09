@@ -2,7 +2,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { ProductImage } from "./ProductImage";
 import { AmazonButton } from "./AmazonButton";
 import { Button } from "./ui/button";
-import { Wand2 } from "lucide-react";
+import { Wand2, Star } from "lucide-react";
 
 interface Product {
   title: string;
@@ -10,6 +10,8 @@ interface Product {
   price: string;
   amazonUrl: string;
   imageUrl?: string;
+  rating?: number;
+  totalRatings?: number;
 }
 
 interface ProductCardProps extends Product {
@@ -20,6 +22,8 @@ export const ProductCard = ({
   title, 
   description, 
   price, 
+  rating,
+  totalRatings,
   onMoreLikeThis 
 }: ProductCardProps) => {
   return (
@@ -34,7 +38,17 @@ export const ProductCard = ({
         <p className="text-[0.65rem] sm:text-[0.7rem] leading-relaxed line-clamp-3 text-muted-foreground">
           {description}
         </p>
-        <p className="text-xs sm:text-sm font-bold mt-1 text-primary">USD {price}</p>
+        <div className="mt-2 flex items-center justify-between">
+          <p className="text-xs sm:text-sm font-bold text-primary">USD {price}</p>
+          {rating && (
+            <div className="flex items-center gap-1">
+              <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
+              <span className="text-xs text-muted-foreground">
+                {rating.toFixed(1)} ({totalRatings?.toLocaleString()})
+              </span>
+            </div>
+          )}
+        </div>
       </CardContent>
       <CardFooter className="p-2 sm:p-3 pt-0 flex flex-col gap-1.5">
         <AmazonButton title={title} />

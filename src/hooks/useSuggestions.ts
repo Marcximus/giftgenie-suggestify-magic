@@ -9,11 +9,44 @@ interface GiftSuggestion {
   reason: string;
 }
 
+interface AmazonProduct {
+  title: string;
+  description: string;
+  price: number;
+  currency: string;
+  imageUrl: string;
+  rating?: number;
+  totalRatings?: number;
+  asin: string;
+}
+
 export const useSuggestions = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [suggestions, setSuggestions] = useState<GiftSuggestion[]>([]);
   const [lastQuery, setLastQuery] = useState('');
   const { toast } = useToast();
+
+  const getAmazonProduct = async (suggestion: GiftSuggestion): Promise<AmazonProduct> => {
+    try {
+      const { data, error } = await supabase.functions.invoke('get-amazon-products', {
+        body: { searchTerm: suggestion.title }
+      });
+
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Error fetching Amazon product:', error);
+      // Return original suggestion data if Amazon API fails
+      return {
+        title: suggestion.title,
+        description: suggestion.description,
+        price: parseFloat(suggestion.priceRange.replace(/[^0-9.-]+/g, '')),
+        currency: 'USD',
+        imageUrl: '',
+        asin: ''
+      };
+    }
+  };
 
   const generateSuggestions = async (query: string, append: boolean = false) => {
     if (!query.trim()) return;
@@ -44,7 +77,24 @@ export const useSuggestions = () => {
         throw new Error('Invalid response format');
       }
 
-      setSuggestions(prev => append ? [...prev, ...data.suggestions] : data.suggestions);
+      // Enhance suggestions with Amazon product data
+      const enhancedSuggestions = await Promise.all(
+        data.suggestions.map(async (suggestion) => {
+          const amazonProduct = await getAmazonProduct(suggestion);
+          return {
+            ...suggestion,
+            title: amazonProduct.title || suggestion.title,
+            description: amazonProduct.description || suggestion.description,
+            priceRange: `${amazonProduct.currency} ${amazonProduct.price}`,
+            imageUrl: amazonProduct.imageUrl,
+            rating: amazonProduct.rating,
+            totalRatings: amazonProduct.totalRatings,
+            asin: amazonProduct.asin
+          };
+        })
+      );
+
+      setSuggestions(prev => append ? [...prev, ...enhancedSuggestions] : enhancedSuggestions);
       
     } catch (error) {
       console.error('Error getting suggestions:', error);
