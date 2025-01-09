@@ -49,13 +49,15 @@ serve(async (req) => {
       const productData: ProductResponse = {
         title: product.title,
         description: description,
-        price: product.price?.current_price || 0,
+        price: parseFloat(product.price?.current_price || '0'),
         currency: product.price?.currency || 'USD',
-        imageUrl: product.main_image,
-        rating: product.rating,
-        totalRatings: product.ratings_total,
+        imageUrl: product.product_photo, // Use the product_photo field from the API response
+        rating: parseFloat(product.product_star_rating || '0'),
+        totalRatings: product.product_num_ratings,
         asin: product.asin,
       };
+
+      console.log('Returning product data:', JSON.stringify(productData, null, 2));
 
       return new Response(JSON.stringify(productData), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }

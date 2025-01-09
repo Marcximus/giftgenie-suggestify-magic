@@ -17,9 +17,9 @@ export interface AmazonProductDetails {
       current_price: number;
       currency: string;
     };
-    rating?: number;
-    ratings_total?: number;
-    main_image?: string;
+    product_star_rating?: string;
+    product_num_ratings?: number;
+    product_photo?: string;
     asin: string;
   };
 }
