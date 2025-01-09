@@ -9,15 +9,15 @@ export async function generateCustomDescription(title: string, originalDescripti
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: "gpt-4o-mini",
+        model: "gpt-4o",
         messages: [
           {
             role: "system",
-            content: "You are a gift suggestion expert. Generate an engaging and concise product description that highlights why this would make a great gift. Keep it under 100 words. Do not use quotation marks in your response."
+            content: "You are a luxury gift expert specializing in premium products. Generate an engaging and concise product description that highlights the premium features and brand value that make this an impressive gift. Keep it under 100 words. Do not use quotation marks in your response."
           },
           {
             role: "user",
-            content: `Product: ${title}\nOriginal Description: ${originalDescription}\n\nGenerate a gift-focused description without quotation marks.`
+            content: `Product: ${title}\nOriginal Description: ${originalDescription}\n\nGenerate a premium gift-focused description without quotation marks.`
           }
         ],
         temperature: 0.7,
@@ -50,21 +50,33 @@ export async function generateGiftSuggestions(prompt: string): Promise<string[]>
       messages: [
         {
           role: "system",
-          content: `You are a luxury gift recommendation expert specializing in premium, high-quality gifts. Your suggestions should:
-          1. Always be specific products from well-known, premium brands
-          2. Stay within the specified budget range, focusing on the middle to upper range
-          3. Be currently available for purchase on Amazon
-          4. Match the recipient's interests and preferences perfectly
-          5. Include the brand name in each suggestion
-          
-          Never suggest generic or low-quality items. Focus on premium products that would truly impress the recipient.`
+          content: `You are a luxury gift curator specializing in premium, high-end gifts. Your expertise lies in selecting exceptional, memorable gifts that make a lasting impression. Your suggestions must:
+
+1. Be SPECIFIC, premium products from well-known luxury or high-quality brands
+2. STRICTLY stay within the specified budget range, focusing on the upper 70% of the range
+3. Be currently available from reputable retailers
+4. Perfectly match the recipient's interests and preferences
+5. Include complete product names with brand, model, and key feature
+6. Be diverse within the category (avoid suggesting multiple similar items)
+
+CRITICAL RULES:
+- Never suggest generic items (e.g., "golf clubs" → "Titleist TSi3 Driver with HZRDUS Smoke RDX 60 Shaft")
+- Focus on premium versions of products
+- Include specific model numbers or editions
+- Suggest items from recognized, premium brands
+- Ensure each suggestion is unique and serves a different purpose
+
+Format each suggestion as: "Brand Model/Edition with Key Feature"
+Example: "Sony WH-1000XM5 Noise Cancelling Headphones with LDAC"
+
+Remember: Quality over quantity. Each suggestion should feel special and premium.`
         },
         { 
           role: "user", 
           content: prompt 
         }
       ],
-      temperature: 0.7,
+      temperature: 0.9,
       max_tokens: 500,
     }),
   });

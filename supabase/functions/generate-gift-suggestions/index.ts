@@ -24,6 +24,10 @@ serve(async (req) => {
     const minBudget = budgetMatch ? parseInt(budgetMatch[1]) : 0;
     const maxBudget = budgetMatch ? parseInt(budgetMatch[2]) : 1000;
 
+    // Calculate target price range (focusing on upper 70% of range)
+    const targetMinBudget = Math.round(minBudget + (maxBudget - minBudget) * 0.3);
+    const targetMaxBudget = maxBudget;
+
     // Extract gender context
     const isMale = prompt.toLowerCase().includes('brother') || 
                   prompt.toLowerCase().includes('father') || 
@@ -39,30 +43,46 @@ serve(async (req) => {
                     prompt.toLowerCase().includes('daughter') || 
                     prompt.toLowerCase().includes('grandma');
 
+    // Extract interests
+    const interestMatch = prompt.match(/who likes\s+([^.]+)/i);
+    const interests = interestMatch ? interestMatch[1].trim() : '';
+
     // Enhance the prompt with specific instructions about budget and quality
-    let enhancedPrompt = `Act as a luxury gift expert. Generate 8 PREMIUM gift suggestions for ${prompt}. 
+    let enhancedPrompt = `As a luxury gift curator, recommend 8 PREMIUM gift suggestions for ${prompt}. 
 
 STRICT REQUIREMENTS:
-1. Price Range: Each suggestion MUST be priced between $${minBudget} and $${maxBudget}. DO NOT suggest items below ${minBudget}$.
-2. Quality: Focus on premium, high-quality brands and products that would impress the recipient.
-3. Specificity: Suggest specific products with brand names (e.g., "Callaway Mavrik Pro Golf Driver" instead of just "golf club")
-4. Relevance: Ensure each suggestion directly relates to the recipient's interests
-5. Variety: Provide a diverse range of suggestions within the specified category
+1. Budget: Each suggestion MUST be priced between $${targetMinBudget} and $${targetMaxBudget}
+   - Focus on the premium end of this range
+   - NO items below $${targetMinBudget}
+   - Prioritize items in the $${Math.round(targetMinBudget + (targetMaxBudget - targetMinBudget) * 0.3)}-$${targetMaxBudget} range
 
-Format rules:
-- Return EXACTLY 8 specific product names
-- Format as a JSON array of strings
-- Include brand names
-- Focus on premium, name-brand items
-- Aim for the middle to upper range of the budget
+2. Quality Standards:
+   - Only suggest premium, high-end brands
+   - Each item must be a specific product (e.g., "TAG Heuer Formula 1 Chronograph 43mm" not just "watch")
+   - Include model numbers or specific editions
+   - Focus on latest models/versions
 
-Example format for premium items:
-["Nike Air Zoom Alphafly NEXT% Premium Running Shoes", "Garmin Forerunner 955 Solar GPS Smartwatch", "YETI Tundra 45 Hard Cooler"]`;
+3. Interest Alignment:${interests ? `
+   - Suggested items must relate to: ${interests}
+   - Choose premium items within these interest categories` : ''}
+
+4. Diversity:
+   - No duplicate categories
+   - Vary price points within the allowed range
+   - Mix of practical and aspirational items
+
+Format each suggestion as:
+"Brand Model/Edition with Key Premium Feature"
+
+Example premium suggestions:
+["YETI Tundra 65 Cooler in Navy with Permafrost Insulation",
+ "Garmin Fenix 7X Sapphire Solar Edition with Titanium Band",
+ "Sony WH-1000XM5 Wireless Headphones with LDAC Hi-Res Audio"]`;
 
     if (isMale) {
-      enhancedPrompt += "\nIMPORTANT: Only suggest premium gifts appropriate for men/boys. Do not include women's items.";
+      enhancedPrompt += "\n\nCRITICAL: Only suggest premium gifts appropriate for men/boys. Focus on masculine aesthetics and preferences. Absolutely no women's items.";
     } else if (isFemale) {
-      enhancedPrompt += "\nIMPORTANT: Only suggest premium gifts appropriate for women/girls. Do not include men's items.";
+      enhancedPrompt += "\n\nCRITICAL: Only suggest premium gifts appropriate for women/girls. Focus on feminine aesthetics and preferences. Absolutely no men's items.";
     }
 
     if (isRateLimited()) {
