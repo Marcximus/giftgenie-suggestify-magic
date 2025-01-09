@@ -3,6 +3,46 @@ import { corsHeaders } from '../_shared/cors.ts';
 import { searchAmazonProduct, AmazonApiError } from '../_shared/amazon-api.ts';
 import { GiftSuggestion } from '../_shared/types.ts';
 
+const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
+
+async function generateCustomDescription(title: string, originalDescription: string): Promise<string> {
+  try {
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${OPENAI_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: "gpt-4o-mini",
+        messages: [
+          {
+            role: "system",
+            content: "You are a gift suggestion expert. Generate an engaging and concise product description that highlights why this would make a great gift. Keep it under 100 words."
+          },
+          {
+            role: "user",
+            content: `Product: ${title}\nOriginal Description: ${originalDescription}\n\nGenerate a gift-focused description.`
+          }
+        ],
+        temperature: 0.7,
+        max_tokens: 150,
+      }),
+    });
+
+    if (!response.ok) {
+      console.error('OpenAI API error:', response.status);
+      return originalDescription;
+    }
+
+    const data = await response.json();
+    return data.choices?.[0]?.message?.content || originalDescription;
+  } catch (error) {
+    console.error('Error generating custom description:', error);
+    return originalDescription;
+  }
+}
+
 // Track API requests with a simple in-memory store
 const requestLog: { timestamp: number }[] = [];
 const RATE_LIMIT = {
@@ -31,6 +71,13 @@ serve(async (req) => {
   }
 
   try {
+    if (!OPENAI_API_KEY) {
+      throw new Error('OpenAI API key not configured');
+    }
+
+    const { prompt } = await req.json();
+    console.log('Processing request with prompt:', prompt);
+
     if (isRateLimited()) {
       console.log('Rate limit exceeded, returning 429');
       return new Response(
@@ -49,15 +96,12 @@ serve(async (req) => {
       );
     }
 
-    const { prompt } = await req.json();
-    console.log('Processing request with prompt:', prompt);
-
     logRequest();
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${Deno.env.get('OPENAI_API_KEY')}`,
+        'Authorization': `Bearer ${OPENAI_API_KEY}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
@@ -100,18 +144,23 @@ serve(async (req) => {
       throw new Error('Invalid suggestions format');
     }
 
-    // Process suggestions in parallel with a maximum delay of 1 second between requests
+    // Process suggestions with enhanced product details and custom descriptions
     const productPromises = suggestions.map((suggestion, index) => {
       return new Promise<GiftSuggestion>(async (resolve) => {
-        // Add a small delay between requests to avoid overwhelming the API
         await new Promise(r => setTimeout(r, index * 1000));
         
         try {
           const product = await searchAmazonProduct(suggestion);
           if (product) {
+            // Generate custom description using ChatGPT
+            const customDescription = await generateCustomDescription(
+              product.title || suggestion,
+              product.description || suggestion
+            );
+
             resolve({
               title: product.title || suggestion,
-              description: product.description || suggestion,
+              description: customDescription,
               priceRange: `${product.price?.currency || 'USD'} ${product.price?.current_price || '0'}`,
               reason: `This ${product.title} would make a great gift because it matches your requirements.`,
               amazon_asin: product.asin,
@@ -132,7 +181,6 @@ serve(async (req) => {
           }
         } catch (error) {
           console.error('Error processing suggestion:', suggestion, error);
-          // Return a basic suggestion without Amazon data rather than failing completely
           resolve({
             title: suggestion,
             description: suggestion,

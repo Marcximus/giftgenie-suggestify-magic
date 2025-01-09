@@ -1,8 +1,5 @@
-import { AmazonProduct } from './types.ts';
-import { isRateLimited, logRequest } from './rate-limiter.ts';
-
-const RAPIDAPI_KEY = Deno.env.get('RAPIDAPI_KEY');
-const RAPIDAPI_HOST = 'real-time-amazon-data.p.rapidapi.com';
+import { RAPIDAPI_HOST } from './config.ts';
+import type { AmazonProduct } from './types.ts';
 
 export class AmazonApiError extends Error {
   constructor(
@@ -15,55 +12,98 @@ export class AmazonApiError extends Error {
   }
 }
 
-export async function searchAmazonProduct(keyword: string): Promise<AmazonProduct> {
-  if (!RAPIDAPI_KEY) {
+export async function searchAmazonProduct(
+  searchTerm: string,
+  apiKey: string,
+  minPrice?: number,
+  maxPrice?: number
+): Promise<AmazonProduct> {
+  if (!apiKey) {
     throw new AmazonApiError('RapidAPI key not configured', 403);
   }
 
-  if (isRateLimited()) {
-    throw new AmazonApiError('Rate limit exceeded', 429, '30');
+  console.log('Searching Amazon for:', searchTerm, { minPrice, maxPrice });
+  
+  const searchParams = new URLSearchParams({
+    query: searchTerm.trim(),
+    country: 'US',
+    category_id: 'aps',
+    sort_by: 'RELEVANCE'
+  });
+
+  if (minPrice !== undefined) {
+    searchParams.append('min_price', minPrice.toString());
+  }
+  if (maxPrice !== undefined) {
+    searchParams.append('max_price', maxPrice.toString());
   }
 
-  console.log('Searching Amazon for:', keyword);
-  const url = `https://${RAPIDAPI_HOST}/search?query=${encodeURIComponent(keyword)}&country=US`;
-  
   try {
-    logRequest();
-    const response = await fetch(url, {
+    // First, search for the product
+    const searchResponse = await fetch(`https://${RAPIDAPI_HOST}/search?${searchParams.toString()}`, {
       headers: {
-        'X-RapidAPI-Key': RAPIDAPI_KEY,
-        'X-RapidAPI-Host': RAPIDAPI_HOST
+        'X-RapidAPI-Key': apiKey,
+        'X-RapidAPI-Host': RAPIDAPI_HOST,
       }
     });
 
-    if (!response.ok) {
-      console.error('Amazon API error:', response.status);
-      if (response.status === 429) {
-        throw new AmazonApiError('Rate limit exceeded', 429, response.headers.get('Retry-After') || '30');
-      }
-      if (response.status === 403) {
-        throw new AmazonApiError('Invalid API key', 403);
-      }
-      throw new AmazonApiError(`Amazon API error: ${response.status}`, response.status);
+    if (!searchResponse.ok) {
+      console.error('Amazon Search API error:', searchResponse.status);
+      throw new AmazonApiError(`Amazon API error: ${searchResponse.status}`, searchResponse.status);
     }
 
-    const data = await response.json();
-    console.log('Amazon API response:', JSON.stringify(data, null, 2));
+    const searchData = await searchResponse.json();
+    console.log('Search response:', searchData);
 
-    if (data.status === 'ERROR') {
-      throw new AmazonApiError(data.error.message);
-    }
-
-    const product = data.data?.products?.[0];
-    if (!product) {
+    if (!searchData.data?.products?.[0]) {
       throw new AmazonApiError('No products found');
     }
 
-    return product;
-  } catch (error) {
-    if (error instanceof AmazonApiError) {
-      throw error;
+    const product = searchData.data.products[0];
+    const asin = product.asin;
+
+    // Then, get detailed product information using the ASIN
+    if (asin) {
+      const detailsResponse = await fetch(`https://${RAPIDAPI_HOST}/product-details?asin=${asin}&country=US`, {
+        headers: {
+          'X-RapidAPI-Key': apiKey,
+          'X-RapidAPI-Host': RAPIDAPI_HOST,
+        }
+      });
+
+      if (detailsResponse.ok) {
+        const detailsData = await detailsResponse.json();
+        console.log('Details response:', detailsData);
+
+        if (detailsData.data) {
+          // Combine search and details data, preferring details when available
+          return {
+            title: detailsData.data.product_title || product.title,
+            description: detailsData.data.product_description || product.product_description || product.title,
+            price: detailsData.data.price?.current_price || product.price?.current_price,
+            currency: detailsData.data.price?.currency || product.price?.currency || 'USD',
+            imageUrl: detailsData.data.product_photos?.[0] || product.product_photo || product.thumbnail,
+            rating: detailsData.data.product_rating ? parseFloat(detailsData.data.product_rating) : undefined,
+            totalRatings: detailsData.data.product_num_ratings ? parseInt(detailsData.data.product_num_ratings, 10) : undefined,
+            asin: asin,
+          };
+        }
+      }
     }
-    throw new AmazonApiError(`Failed to search Amazon: ${error.message}`);
+
+    // Fallback to search data if details request fails
+    return {
+      title: product.title,
+      description: product.product_description || product.title,
+      price: product.price?.current_price,
+      currency: product.price?.currency || 'USD',
+      imageUrl: product.product_photo || product.thumbnail,
+      rating: product.product_star_rating ? parseFloat(product.product_star_rating) : undefined,
+      totalRatings: product.product_num_ratings ? parseInt(product.product_num_ratings, 10) : undefined,
+      asin: asin,
+    };
+  } catch (error) {
+    console.error('Error searching Amazon:', error);
+    throw error instanceof AmazonApiError ? error : new AmazonApiError(error.message);
   }
 }
