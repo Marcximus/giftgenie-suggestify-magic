@@ -1,98 +1,146 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { generateGiftSuggestions } from '../_shared/openai.ts';
+import { processGiftSuggestion } from '../_shared/product-processor.ts';
+import { corsHeaders } from '../_shared/cors.ts';
+import { GiftSuggestion } from '../_shared/types.ts';
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
+    return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
-    if (!openAIApiKey) {
+    if (!Deno.env.get('OPENAI_API_KEY')) {
       throw new Error('OpenAI API key not configured');
     }
 
     const { prompt } = await req.json();
     console.log('Processing request with prompt:', prompt);
 
-    // Extract budget range from the prompt
+    // Extract budget range from the prompt - now handles more formats
     const budgetMatch = prompt.match(/(?:budget|USD|price)[^\d]*(\d+)(?:\s*-\s*(\d+))?/i);
+    console.log('Budget match:', budgetMatch);
+    
     let minBudget = 0;
     let maxBudget = 1000;
 
     if (budgetMatch) {
       if (budgetMatch[2]) {
+        // Range format (e.g., "200-300")
         minBudget = parseInt(budgetMatch[1]);
         maxBudget = parseInt(budgetMatch[2]);
       } else {
+        // Single number format (e.g., "USD 200" or "budget 200")
         const budget = parseInt(budgetMatch[1]);
-        minBudget = Math.max(0, budget - (budget * 0.2));
+        minBudget = Math.max(0, budget - (budget * 0.2)); // 20% below
         maxBudget = budget;
       }
     }
 
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: "gpt-4o",
-        messages: [
-          {
-            role: "system",
-            content: `You are a gift suggestion expert. Generate 8 specific gift suggestions that:
-1. Stay within the budget range
-2. Are specific products with brand names
-3. Are currently available from major retailers
-4. Match the recipient's interests
-5. Offer a mix of practical and unique items
+    console.log('Parsed budget range:', { minBudget, maxBudget });
 
-Format each suggestion as a specific product (e.g., "Sony WH-1000XM4 Headphones" not just "headphones")
+    // Extract gender context
+    const isMale = prompt.toLowerCase().includes('brother') || 
+                  prompt.toLowerCase().includes('father') || 
+                  prompt.toLowerCase().includes('husband') || 
+                  prompt.toLowerCase().includes('boyfriend') || 
+                  prompt.toLowerCase().includes('son') || 
+                  prompt.toLowerCase().includes('grandpa');
 
-IMPORTANT: Return ONLY a JSON array of strings. No other text.
-Example: ["Product 1", "Product 2", "Product 3"]`
-          },
-          { 
-            role: "user", 
-            content: `${prompt}\n\nBudget: $${minBudget}-${maxBudget}` 
-          }
-        ],
-        temperature: 0.8,
-        max_tokens: 500,
-      }),
-    });
+    const isFemale = prompt.toLowerCase().includes('sister') || 
+                    prompt.toLowerCase().includes('mother') || 
+                    prompt.toLowerCase().includes('wife') || 
+                    prompt.toLowerCase().includes('girlfriend') || 
+                    prompt.toLowerCase().includes('daughter') || 
+                    prompt.toLowerCase().includes('grandma');
 
-    if (!response.ok) {
-      throw new Error(`OpenAI API error: ${response.status}`);
+    // Extract interests
+    const interestMatch = prompt.match(/who likes\s+([^.]+)/i);
+    const interests = interestMatch ? interestMatch[1].trim() : '';
+
+    // Enhance the prompt with specific instructions about budget and quality
+    let enhancedPrompt = `As a gift curator, recommend 8 thoughtful gift suggestions for ${prompt}. 
+
+STRICT REQUIREMENTS:
+1. Budget: Each suggestion MUST be priced between $${minBudget} and $${maxBudget}
+   - Spread suggestions across the entire price range
+   - NO items outside this range
+   - Mix of price points within the range
+
+2. Quality Standards:
+   - Suggest specific products from well-known brands
+   - Each item must be a specific product (e.g., "TAG Heuer Formula 1 Chronograph 43mm" not just "watch")
+   - Include model numbers or specific editions
+   - Focus on latest models/versions
+
+3. Interest Alignment:${interests ? `
+   - Suggested items must relate to: ${interests}
+   - Choose quality items within these interest categories` : ''}
+
+4. Diversity:
+   - No duplicate categories
+   - Vary price points within the allowed range
+   - Mix of practical and fun items
+
+Format each suggestion as:
+"Brand Model/Edition with Key Feature"
+
+Example suggestions:
+["YETI Tundra 65 Cooler in Navy with Permafrost Insulation",
+ "Garmin Fenix 7X Sapphire Solar Edition with Titanium Band",
+ "Sony WH-1000XM5 Wireless Headphones with LDAC Hi-Res Audio"]`;
+
+    if (isMale) {
+      enhancedPrompt += "\n\nCRITICAL: Only suggest gifts appropriate for men/boys. Focus on masculine aesthetics and preferences. Absolutely no women's items.";
+    } else if (isFemale) {
+      enhancedPrompt += "\n\nCRITICAL: Only suggest gifts appropriate for women/girls. Focus on feminine aesthetics and preferences. Absolutely no men's items.";
     }
 
-    const data = await response.json();
-    const suggestions = JSON.parse(data.choices[0].message.content);
+    if (isRateLimited()) {
+      console.log('Rate limit exceeded, returning 429');
+      return new Response(
+        JSON.stringify({
+          error: 'Rate limit exceeded. Please try again in a moment.',
+          retryAfter: RATE_LIMIT.RETRY_AFTER
+        }),
+        {
+          status: 429,
+          headers: {
+            ...corsHeaders,
+            'Content-Type': 'application/json',
+            'Retry-After': RATE_LIMIT.RETRY_AFTER.toString()
+          }
+        }
+      );
+    }
 
+    logRequest();
+
+    const suggestions = await generateGiftSuggestions(enhancedPrompt);
+    
     if (!Array.isArray(suggestions)) {
       throw new Error('Invalid suggestions format');
     }
 
+    const productPromises = suggestions.map((suggestion, index) => {
+      return new Promise<GiftSuggestion>(async (resolve) => {
+        await new Promise(r => setTimeout(r, index * 1000));
+        const product = await processGiftSuggestion(suggestion);
+        resolve(product);
+      });
+    });
+
+    const products = await Promise.all(productPromises);
+
     return new Response(
-      JSON.stringify({ suggestions }),
-      { 
-        headers: { 
-          ...corsHeaders,
-          'Content-Type': 'application/json'
-        }
-      }
+      JSON.stringify({ suggestions: products }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
   } catch (error) {
     console.error('Error in generate-gift-suggestions function:', error);
+    
     return new Response(
       JSON.stringify({ 
         error: error.message,
