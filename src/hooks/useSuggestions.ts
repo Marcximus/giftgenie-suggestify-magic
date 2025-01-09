@@ -16,6 +16,8 @@ interface GiftSuggestion {
   amazon_total_ratings?: number;
 }
 
+const RETRY_DELAY = 30000; // 30 seconds in milliseconds
+
 export const useSuggestions = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [suggestions, setSuggestions] = useState<GiftSuggestion[]>([]);
@@ -23,7 +25,7 @@ export const useSuggestions = () => {
   const { toast } = useToast();
   const { getAmazonProduct } = useAmazonProducts();
 
-  const generateSuggestions = async (query: string, append: boolean = false) => {
+  const generateSuggestions = async (query: string, append: boolean = false, retryCount: number = 0) => {
     if (!query.trim()) return;
     
     setIsLoading(true);
@@ -37,13 +39,26 @@ export const useSuggestions = () => {
       });
 
       if (error) {
+        // Handle rate limit error
         if (error.status === 429) {
           toast({
-            title: "Please wait",
-            description: "Our service is experiencing high demand. Please try again in a moment.",
-            variant: "destructive"
+            title: "Rate limit reached",
+            description: "Please wait while we process your request...",
+            duration: RETRY_DELAY
           });
-          return;
+
+          // Retry after delay if we haven't exceeded max retries
+          if (retryCount < 3) {
+            await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
+            return generateSuggestions(query, append, retryCount + 1);
+          } else {
+            toast({
+              title: "Error",
+              description: "Unable to get suggestions after multiple attempts. Please try again later.",
+              variant: "destructive"
+            });
+            return;
+          }
         }
         throw error;
       }
@@ -55,19 +70,26 @@ export const useSuggestions = () => {
       // Process suggestions sequentially to avoid rate limits
       const enhancedSuggestions = [];
       for (const suggestion of data.suggestions) {
-        const amazonProduct = await getAmazonProduct(suggestion.title);
-        enhancedSuggestions.push({
-          ...suggestion,
-          title: amazonProduct.title || suggestion.title,
-          description: amazonProduct.description || suggestion.description,
-          priceRange: `${amazonProduct.currency} ${amazonProduct.price}`,
-          amazon_asin: amazonProduct.asin,
-          amazon_url: amazonProduct.asin ? `https://www.amazon.com/dp/${amazonProduct.asin}` : undefined,
-          amazon_price: amazonProduct.price,
-          amazon_image_url: amazonProduct.imageUrl,
-          amazon_rating: amazonProduct.rating,
-          amazon_total_ratings: amazonProduct.totalRatings
-        });
+        try {
+          const amazonProduct = await getAmazonProduct(suggestion.title);
+          enhancedSuggestions.push({
+            ...suggestion,
+            title: amazonProduct.title || suggestion.title,
+            description: amazonProduct.description || suggestion.description,
+            priceRange: `${amazonProduct.currency} ${amazonProduct.price}`,
+            amazon_asin: amazonProduct.asin,
+            amazon_url: amazonProduct.asin ? `https://www.amazon.com/dp/${amazonProduct.asin}` : undefined,
+            amazon_price: amazonProduct.price,
+            amazon_image_url: amazonProduct.imageUrl,
+            amazon_rating: amazonProduct.rating,
+            amazon_total_ratings: amazonProduct.totalRatings
+          });
+          // Add delay between requests to help prevent rate limiting
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        } catch (error) {
+          console.error('Error processing suggestion:', error);
+          continue;
+        }
       }
 
       setSuggestions(prev => append ? [...prev, ...enhancedSuggestions] : enhancedSuggestions);
