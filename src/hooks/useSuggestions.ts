@@ -16,6 +16,17 @@ interface GiftSuggestion {
   amazon_total_ratings?: number;
 }
 
+interface AmazonProductResponse {
+  title: string;
+  description: string;
+  price: number;
+  currency: string;
+  imageUrl: string;
+  rating?: number;
+  totalRatings?: number;
+  asin: string;
+}
+
 const BASE_RETRY_DELAY = 2000; // Start with 2 seconds
 const MAX_RETRIES = 5;
 const MAX_BACKOFF_DELAY = 30000; // Maximum delay of 30 seconds
@@ -99,11 +110,11 @@ export const useSuggestions = () => {
         const enhancedSuggestions = [];
         for (const suggestion of data.suggestions) {
           try {
-            const amazonProduct = await new Promise((resolve) => {
+            const amazonProduct = await new Promise<AmazonProductResponse | null>((resolve) => {
               const request = async () => {
                 try {
                   const product = await getAmazonProduct(suggestion.title);
-                  resolve(product);
+                  resolve(product as AmazonProductResponse);
                 } catch (error) {
                   console.error('Error getting Amazon product:', error);
                   resolve(null);
