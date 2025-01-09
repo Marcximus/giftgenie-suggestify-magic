@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { corsHeaders } from '../_shared/cors.ts';
 import { searchAmazonProduct, AmazonApiError } from '../_shared/amazon-api.ts';
 import { GiftSuggestion } from '../_shared/types.ts';
@@ -18,11 +19,11 @@ async function generateCustomDescription(title: string, originalDescription: str
         messages: [
           {
             role: "system",
-            content: "You are a gift suggestion expert. Generate an engaging and concise product description that highlights why this would make a great gift. Keep it under 100 words."
+            content: "You are a gift suggestion expert. Generate an engaging and concise product description that highlights why this would make a great gift. Keep it under 100 words. Do not use quotation marks in your response."
           },
           {
             role: "user",
-            content: `Product: ${title}\nOriginal Description: ${originalDescription}\n\nGenerate a gift-focused description.`
+            content: `Product: ${title}\nOriginal Description: ${originalDescription}\n\nGenerate a gift-focused description without quotation marks.`
           }
         ],
         temperature: 0.7,
@@ -36,7 +37,8 @@ async function generateCustomDescription(title: string, originalDescription: str
     }
 
     const data = await response.json();
-    return data.choices?.[0]?.message?.content || originalDescription;
+    // Remove any quotation marks from the generated description
+    return data.choices?.[0]?.message?.content?.replace(/['"]/g, '') || originalDescription;
   } catch (error) {
     console.error('Error generating custom description:', error);
     return originalDescription;
@@ -105,7 +107,7 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: "gpt-4",
+        model: "gpt-4o-mini",
         messages: [
           {
             role: "system",
@@ -152,7 +154,7 @@ serve(async (req) => {
         try {
           const product = await searchAmazonProduct(suggestion);
           if (product) {
-            // Generate custom description using ChatGPT
+            // Generate custom description using ChatGPT and remove any quotation marks
             const customDescription = await generateCustomDescription(
               product.title || suggestion,
               product.description || suggestion
@@ -160,9 +162,9 @@ serve(async (req) => {
 
             resolve({
               title: product.title || suggestion,
-              description: customDescription,
+              description: customDescription.replace(/['"]/g, ''), // Extra safety to remove any remaining quotes
               priceRange: `${product.price?.currency || 'USD'} ${product.price?.current_price || '0'}`,
-              reason: `This ${product.title} would make a great gift because it matches your requirements.`,
+              reason: `This ${product.title} would make a great gift because it matches your requirements.`.replace(/['"]/g, ''),
               amazon_asin: product.asin,
               amazon_url: product.asin ? `https://www.amazon.com/dp/${product.asin}` : undefined,
               amazon_price: product.price?.current_price,
