@@ -5,7 +5,29 @@ import { processGiftSuggestion } from '../_shared/product-processor.ts';
 import { corsHeaders } from '../_shared/cors.ts';
 import { GiftSuggestion } from '../_shared/types.ts';
 
+const RATE_LIMIT = {
+  MAX_REQUESTS: 50,
+  WINDOW_MS: 60000, // 1 minute
+  RETRY_AFTER: 60, // seconds
+};
+
+const requests: number[] = [];
+
+function isRateLimited(): boolean {
+  const now = Date.now();
+  // Remove requests older than the window
+  while (requests.length > 0 && requests[0] < now - RATE_LIMIT.WINDOW_MS) {
+    requests.shift();
+  }
+  return requests.length >= RATE_LIMIT.MAX_REQUESTS;
+}
+
+function logRequest() {
+  requests.push(Date.now());
+}
+
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -18,7 +40,7 @@ serve(async (req) => {
     const { prompt } = await req.json();
     console.log('Processing request with prompt:', prompt);
 
-    // Extract budget range from the prompt - now handles more formats
+    // Extract budget range from the prompt
     const budgetMatch = prompt.match(/(?:budget|USD|price)[^\d]*(\d+)(?:\s*-\s*(\d+))?/i);
     console.log('Budget match:', budgetMatch);
     
@@ -27,13 +49,11 @@ serve(async (req) => {
 
     if (budgetMatch) {
       if (budgetMatch[2]) {
-        // Range format (e.g., "200-300")
         minBudget = parseInt(budgetMatch[1]);
         maxBudget = parseInt(budgetMatch[2]);
       } else {
-        // Single number format (e.g., "USD 200" or "budget 200")
         const budget = parseInt(budgetMatch[1]);
-        minBudget = Math.max(0, budget - (budget * 0.2)); // 20% below
+        minBudget = Math.max(0, budget - (budget * 0.2));
         maxBudget = budget;
       }
     }
@@ -59,7 +79,6 @@ serve(async (req) => {
     const interestMatch = prompt.match(/who likes\s+([^.]+)/i);
     const interests = interestMatch ? interestMatch[1].trim() : '';
 
-    // Enhance the prompt with specific instructions about budget and quality
     let enhancedPrompt = `As a gift curator, recommend 8 thoughtful gift suggestions for ${prompt}. 
 
 STRICT REQUIREMENTS:
@@ -81,15 +100,7 @@ STRICT REQUIREMENTS:
 4. Diversity:
    - No duplicate categories
    - Vary price points within the allowed range
-   - Mix of practical and fun items
-
-Format each suggestion as:
-"Brand Model/Edition with Key Feature"
-
-Example suggestions:
-["YETI Tundra 65 Cooler in Navy with Permafrost Insulation",
- "Garmin Fenix 7X Sapphire Solar Edition with Titanium Band",
- "Sony WH-1000XM5 Wireless Headphones with LDAC Hi-Res Audio"]`;
+   - Mix of practical and fun items`;
 
     if (isMale) {
       enhancedPrompt += "\n\nCRITICAL: Only suggest gifts appropriate for men/boys. Focus on masculine aesthetics and preferences. Absolutely no women's items.";
@@ -126,8 +137,20 @@ Example suggestions:
     const productPromises = suggestions.map((suggestion, index) => {
       return new Promise<GiftSuggestion>(async (resolve) => {
         await new Promise(r => setTimeout(r, index * 1000));
-        const product = await processGiftSuggestion(suggestion);
-        resolve(product);
+        try {
+          const product = await processGiftSuggestion(suggestion);
+          resolve(product);
+        } catch (error) {
+          console.error('Error processing suggestion:', error);
+          // Return the original suggestion without Amazon data
+          resolve({
+            title: suggestion,
+            description: suggestion,
+            priceRange: `$${minBudget}-${maxBudget}`,
+            reason: 'Suggested based on your interests',
+            search_query: prompt
+          });
+        }
       });
     });
 
@@ -135,7 +158,12 @@ Example suggestions:
 
     return new Response(
       JSON.stringify({ suggestions: products }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { 
+        headers: { 
+          ...corsHeaders, 
+          'Content-Type': 'application/json'
+        } 
+      }
     );
 
   } catch (error) {
