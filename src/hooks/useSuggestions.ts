@@ -16,11 +16,11 @@ interface GiftSuggestion {
   amazon_total_ratings?: number;
 }
 
-const MAX_CONCURRENT_REQUESTS = 5; // Increased from 3
-const STAGGER_DELAY = 100; // Reduced from 500ms to 100ms
-const MAX_RETRIES = 2; // Reduced from 3
-const BASE_RETRY_DELAY = 1000; // Reduced from 2000ms
-const MAX_BACKOFF_DELAY = 5000; // Reduced from 10000ms
+const MAX_CONCURRENT_REQUESTS = 8; // Increased from 5 to 8
+const STAGGER_DELAY = 10; // Reduced from 100ms to 10ms
+const MAX_RETRIES = 1; // Reduced from 2 to 1
+const BASE_RETRY_DELAY = 500; // Reduced from 1000ms to 500ms
+const MAX_BACKOFF_DELAY = 2000; // Reduced from 5000ms to 2000ms
 
 export const useSuggestions = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -60,7 +60,7 @@ export const useSuggestions = () => {
         } catch (error) {
           console.error('Error processing product:', error);
           if (error.status === 429 && currentRetry < MAX_RETRIES) {
-            const delay = Math.min(BASE_RETRY_DELAY * Math.pow(1.5, currentRetry), MAX_BACKOFF_DELAY);
+            const delay = Math.min(BASE_RETRY_DELAY * Math.pow(1.25, currentRetry), MAX_BACKOFF_DELAY);
             await new Promise(resolve => setTimeout(resolve, delay));
             return processBatch([suggestion], currentRetry + 1);
           }
