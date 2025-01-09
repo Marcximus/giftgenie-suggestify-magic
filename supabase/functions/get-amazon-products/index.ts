@@ -1,6 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { corsHeaders } from './config.ts';
-import type { ProductResponse } from './types.ts';
 
 const RAPIDAPI_KEY = Deno.env.get('RAPIDAPI_KEY');
 const RAPIDAPI_HOST = 'real-time-amazon-data.p.rapidapi.com';
@@ -14,8 +13,8 @@ const parsePriceRange = (priceRange: string): { min?: number; max?: number } => 
     }
 
     console.log('Parsing price range:', priceRange);
-    // Remove currency symbols, spaces, and convert to lowercase
-    const cleanRange = priceRange.toLowerCase().replace(/[^0-9\-\.]/g, '');
+    // Remove currency symbols and clean the string
+    const cleanRange = priceRange.replace(/[^0-9\-\.]/g, '');
     
     if (!cleanRange) {
       console.log('No numeric values found in price range');
@@ -23,24 +22,22 @@ const parsePriceRange = (priceRange: string): { min?: number; max?: number } => 
     }
 
     // Handle single number case
-    const singlePrice = parseFloat(cleanRange);
-    if (!isNaN(singlePrice)) {
-      const min = Math.max(0, Math.floor(singlePrice * 0.8));
-      const max = Math.ceil(singlePrice * 1.2);
-      console.log('Parsed single price range:', { min, max });
-      return { min, max };
+    if (!cleanRange.includes('-')) {
+      const price = parseFloat(cleanRange);
+      if (!isNaN(price)) {
+        console.log('Single price value:', price);
+        return { min: Math.max(1, price * 0.8), max: price * 1.2 };
+      }
     }
 
     // Handle range case (e.g., "100-200")
-    if (cleanRange.includes('-')) {
-      const [minStr, maxStr] = cleanRange.split('-');
-      const min = parseFloat(minStr);
-      const max = parseFloat(maxStr);
-      
-      if (!isNaN(min) && !isNaN(max)) {
-        console.log('Parsed range:', { min, max });
-        return { min: Math.floor(min), max: Math.ceil(max) };
-      }
+    const [minStr, maxStr] = cleanRange.split('-');
+    const min = parseFloat(minStr);
+    const max = parseFloat(maxStr);
+    
+    if (!isNaN(min) && !isNaN(max)) {
+      console.log('Price range parsed:', { min, max });
+      return { min, max };
     }
 
     console.log('Could not parse price range, returning empty constraints');
@@ -64,7 +61,7 @@ serve(async (req) => {
 
     const { searchTerm, priceRange } = await req.json();
     
-    if (!searchTerm) {
+    if (!searchTerm?.trim()) {
       throw new Error('Search term is required');
     }
 
@@ -74,10 +71,11 @@ serve(async (req) => {
     const { min, max } = parsePriceRange(priceRange);
     console.log('Price constraints:', { min, max });
 
-    // Build search URL with all parameters
+    // Build search URL with basic parameters
     const searchParams = new URLSearchParams({
-      query: searchTerm,
+      query: searchTerm.trim(),
       country: 'US',
+      category_id: 'aps', // All departments
       sort_by: 'RELEVANCE'
     });
 
@@ -117,9 +115,9 @@ serve(async (req) => {
       throw new Error('No products found');
     }
 
-    // Extract data from search results
+    // Extract data from first product in search results
     const product = searchData.data.products[0];
-    const productData: ProductResponse = {
+    const productData = {
       title: product.title || searchTerm,
       description: product.product_description || product.title || searchTerm,
       price: product.price?.current_price ? parseFloat(product.price.current_price) : 0,
