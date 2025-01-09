@@ -16,11 +16,11 @@ interface GiftSuggestion {
   amazon_total_ratings?: number;
 }
 
-const MAX_CONCURRENT_REQUESTS = 8; // Increased from 5 to 8
-const STAGGER_DELAY = 10; // Reduced from 100ms to 10ms
-const MAX_RETRIES = 1; // Reduced from 2 to 1
-const BASE_RETRY_DELAY = 500; // Reduced from 1000ms to 500ms
-const MAX_BACKOFF_DELAY = 2000; // Reduced from 5000ms to 2000ms
+const MAX_CONCURRENT_REQUESTS = 12; // Increased from 8 to 12
+const STAGGER_DELAY = 5; // Reduced from 10ms to 5ms
+const MAX_RETRIES = 1;
+const BASE_RETRY_DELAY = 250; // Reduced from 500ms to 250ms
+const MAX_BACKOFF_DELAY = 1000; // Reduced from 2000ms to 1000ms
 
 export const useSuggestions = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -36,7 +36,9 @@ export const useSuggestions = () => {
     const results = await Promise.all(
       items.map(async (suggestion, index) => {
         // Minimal stagger to prevent exact simultaneous requests
-        await new Promise(resolve => setTimeout(resolve, index * STAGGER_DELAY));
+        if (index > 0) {
+          await new Promise(resolve => setTimeout(resolve, STAGGER_DELAY));
+        }
         
         try {
           console.log('Fetching Amazon product for:', suggestion.title);
@@ -60,7 +62,7 @@ export const useSuggestions = () => {
         } catch (error) {
           console.error('Error processing product:', error);
           if (error.status === 429 && currentRetry < MAX_RETRIES) {
-            const delay = Math.min(BASE_RETRY_DELAY * Math.pow(1.25, currentRetry), MAX_BACKOFF_DELAY);
+            const delay = Math.min(BASE_RETRY_DELAY * Math.pow(1.1, currentRetry), MAX_BACKOFF_DELAY);
             await new Promise(resolve => setTimeout(resolve, delay));
             return processBatch([suggestion], currentRetry + 1);
           }
