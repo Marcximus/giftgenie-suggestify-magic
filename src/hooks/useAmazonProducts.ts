@@ -13,8 +13,8 @@ interface AmazonProduct {
   asin: string;
 }
 
-const MAX_RETRIES = 3;
-const BASE_DELAY = 1000; // 1 second
+const MAX_RETRIES = 2; // Reduced from 3
+const BASE_DELAY = 500; // Reduced from 1000ms
 
 export const useAmazonProducts = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -31,7 +31,7 @@ export const useAmazonProducts = () => {
         console.error('Error in Amazon product request:', error);
         
         if (error.status === 429 && retryCount < MAX_RETRIES) {
-          const delay = BASE_DELAY * Math.pow(2, retryCount);
+          const delay = BASE_DELAY * Math.pow(1.5, retryCount);
           console.log(`Rate limited. Retrying in ${delay/1000} seconds...`);
           
           await new Promise(resolve => setTimeout(resolve, delay));
@@ -45,7 +45,7 @@ export const useAmazonProducts = () => {
     } catch (error) {
       console.error('Error getting Amazon product:', error);
       if (retryCount < MAX_RETRIES) {
-        const delay = BASE_DELAY * Math.pow(2, retryCount);
+        const delay = BASE_DELAY * Math.pow(1.5, retryCount);
         await new Promise(resolve => setTimeout(resolve, delay));
         return getAmazonProduct(searchTerm, retryCount + 1);
       }

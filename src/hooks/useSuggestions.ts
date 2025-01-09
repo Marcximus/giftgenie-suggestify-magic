@@ -16,22 +16,11 @@ interface GiftSuggestion {
   amazon_total_ratings?: number;
 }
 
-interface AmazonProductResponse {
-  title: string;
-  description: string;
-  price: number;
-  currency: string;
-  imageUrl: string;
-  rating?: number;
-  totalRatings?: number;
-  asin: string;
-}
-
-const MAX_CONCURRENT_REQUESTS = 3;
-const STAGGER_DELAY = 500; // 500ms between requests
-const MAX_RETRIES = 3;
-const BASE_RETRY_DELAY = 2000;
-const MAX_BACKOFF_DELAY = 10000;
+const MAX_CONCURRENT_REQUESTS = 5; // Increased from 3
+const STAGGER_DELAY = 100; // Reduced from 500ms to 100ms
+const MAX_RETRIES = 2; // Reduced from 3
+const BASE_RETRY_DELAY = 1000; // Reduced from 2000ms
+const MAX_BACKOFF_DELAY = 5000; // Reduced from 10000ms
 
 export const useSuggestions = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -41,12 +30,12 @@ export const useSuggestions = () => {
   const { getAmazonProduct } = useAmazonProducts();
 
   const processBatch = async (items: any[], currentRetry = 0) => {
-    const enhancedSuggestions = [];
+    console.log(`Processing batch of ${items.length} items`);
     
-    // Process items in parallel with staggered starts
+    // Process items in parallel with minimal stagger
     const results = await Promise.all(
       items.map(async (suggestion, index) => {
-        // Stagger the requests
+        // Minimal stagger to prevent exact simultaneous requests
         await new Promise(resolve => setTimeout(resolve, index * STAGGER_DELAY));
         
         try {
@@ -71,7 +60,7 @@ export const useSuggestions = () => {
         } catch (error) {
           console.error('Error processing product:', error);
           if (error.status === 429 && currentRetry < MAX_RETRIES) {
-            const delay = Math.min(BASE_RETRY_DELAY * Math.pow(2, currentRetry), MAX_BACKOFF_DELAY);
+            const delay = Math.min(BASE_RETRY_DELAY * Math.pow(1.5, currentRetry), MAX_BACKOFF_DELAY);
             await new Promise(resolve => setTimeout(resolve, delay));
             return processBatch([suggestion], currentRetry + 1);
           }
@@ -106,21 +95,20 @@ export const useSuggestions = () => {
         throw new Error('Invalid response format');
       }
 
-      // Process suggestions in batches
+      // Process all suggestions in parallel with batching
       const batchSize = MAX_CONCURRENT_REQUESTS;
       const batches = [];
       for (let i = 0; i < data.suggestions.length; i += batchSize) {
         batches.push(data.suggestions.slice(i, i + batchSize));
       }
 
-      let allResults = [];
-      for (const batch of batches) {
-        const results = await processBatch(batch);
-        allResults = [...allResults, ...results];
-        
-        // Update UI as each batch completes
-        setSuggestions(prev => append ? [...prev, ...results] : results);
-      }
+      // Process batches concurrently
+      const batchResults = await Promise.all(
+        batches.map(batch => processBatch(batch))
+      );
+
+      const allResults = batchResults.flat();
+      setSuggestions(prev => append ? [...prev, ...allResults] : allResults);
 
     } catch (error) {
       console.error('Error getting suggestions:', error);
