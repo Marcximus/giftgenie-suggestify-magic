@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { corsHeaders } from './config.ts';
-import { searchAmazonProduct } from './amazonApi.ts';
+import { searchAmazonProduct, AmazonApiError } from './amazonApi.ts';
 import type { PriceRange } from './types.ts';
 
 const RAPIDAPI_KEY = Deno.env.get('RAPIDAPI_KEY');
@@ -15,7 +15,7 @@ async function generateProductDescription(title: string, originalDescription: st
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: "gpt-4o-mini",
+        model: "gpt-4",
         messages: [
           {
             role: "system",
@@ -120,6 +120,9 @@ serve(async (req) => {
       );
     } catch (error) {
       console.error('Error searching Amazon product:', error);
+      if (error instanceof AmazonApiError) {
+        throw error;
+      }
       throw new Error(`Failed to search Amazon product: ${error.message}`);
     }
 
@@ -129,7 +132,7 @@ serve(async (req) => {
     const status = error.status || 500;
     const response = {
       error: error.message || 'Failed to fetch Amazon product data',
-      details: error.details || error.message || 'An unexpected error occurred',
+      details: error.message || 'An unexpected error occurred',
       ...(error.retryAfter && { retryAfter: error.retryAfter })
     };
 

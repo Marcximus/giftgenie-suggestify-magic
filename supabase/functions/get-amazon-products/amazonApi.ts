@@ -62,7 +62,7 @@ export async function searchAmazonProduct(
     const data = await response.json();
     console.log('Search response:', data);
 
-    if (!data.data?.products?.[0]) {
+    if (!data.data?.products?.length) {
       throw new AmazonApiError('No products found');
     }
 
