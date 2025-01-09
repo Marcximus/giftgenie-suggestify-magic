@@ -4,7 +4,6 @@ import { corsHeaders } from './config.ts';
 const RAPIDAPI_KEY = Deno.env.get('RAPIDAPI_KEY');
 const RAPIDAPI_HOST = 'real-time-amazon-data.p.rapidapi.com';
 
-// Helper to parse price range and return min/max values
 const parsePriceRange = (priceRange: string): { min?: number; max?: number } => {
   try {
     if (!priceRange) {
@@ -48,8 +47,20 @@ const parsePriceRange = (priceRange: string): { min?: number; max?: number } => 
   }
 };
 
+const isValidImageUrl = (url: string): boolean => {
+  try {
+    if (!url) return false;
+    const urlObj = new URL(url);
+    return urlObj.protocol === 'https:' && 
+           (urlObj.hostname.includes('amazon.com') || 
+            urlObj.hostname.includes('amazonaws.com') ||
+            urlObj.hostname.includes('ssl-images-amazon.com'));
+  } catch {
+    return false;
+  }
+};
+
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -98,11 +109,9 @@ serve(async (req) => {
     });
 
     if (!response.ok) {
-      const errorText = await response.text();
       console.error('Amazon API error:', {
         status: response.status,
-        statusText: response.statusText,
-        body: errorText
+        statusText: response.statusText
       });
       throw new Error(`Amazon API error: ${response.status}`);
     }
@@ -117,12 +126,25 @@ serve(async (req) => {
 
     // Extract data from first product in search results
     const product = searchData.data.products[0];
+    
+    // Get the best available image URL
+    let imageUrl = null;
+    if (product.product_photo && isValidImageUrl(product.product_photo)) {
+      imageUrl = product.product_photo;
+    } else if (product.thumbnail && isValidImageUrl(product.thumbnail)) {
+      imageUrl = product.thumbnail;
+    } else if (product.main_image && isValidImageUrl(product.main_image)) {
+      imageUrl = product.main_image;
+    }
+    
+    console.log('Selected image URL:', imageUrl);
+
     const productData = {
       title: product.title || searchTerm,
       description: product.product_description || product.title || searchTerm,
       price: product.price?.current_price ? parseFloat(product.price.current_price) : 0,
       currency: product.price?.currency || 'USD',
-      imageUrl: product.product_photo || product.thumbnail,
+      imageUrl,
       rating: product.product_star_rating ? parseFloat(product.product_star_rating) : undefined,
       totalRatings: product.product_num_ratings ? parseInt(product.product_num_ratings, 10) : undefined,
       asin: product.asin,
