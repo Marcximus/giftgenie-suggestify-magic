@@ -37,6 +37,16 @@ const formatPrice = (price: string | number): string => {
   return `USD ${numericPrice.toFixed(2)}`;
 };
 
+// Function to clean description of questions
+const cleanDescription = (description: string): string => {
+  // Remove sentences that end with question marks
+  return description
+    .split(/[.!?]\s+/)
+    .filter(sentence => !sentence.trim().endsWith('?'))
+    .join('. ')
+    .trim();
+};
+
 export const ProductCard = ({ 
   title, 
   description, 
@@ -47,12 +57,14 @@ export const ProductCard = ({
   imageUrl,
   onMoreLikeThis 
 }: ProductCardProps) => {
+  const cleanedDescription = cleanDescription(description);
+
   return (
     <Card className="group overflow-hidden hover:shadow-lg transition-all duration-300 border-accent/20 backdrop-blur-sm bg-white/80 hover:bg-white/90">
       <CardHeader className="p-0">
         <ProductImage 
           title={title} 
-          description={description} 
+          description={cleanedDescription} 
           imageUrl={imageUrl} 
         />
         <CardTitle className="text-xs sm:text-sm mt-2 px-2 sm:px-3 line-clamp-2 min-h-[2.5rem] text-center group-hover:text-primary transition-colors duration-200 h-[2.5rem] overflow-hidden">
@@ -61,7 +73,7 @@ export const ProductCard = ({
       </CardHeader>
       <CardContent className="p-2 sm:p-3 pt-1">
         <p className="text-[0.65rem] sm:text-[0.7rem] leading-relaxed line-clamp-3 text-muted-foreground">
-          {description}
+          {cleanedDescription}
         </p>
         <div className="mt-2 flex items-center justify-between">
           <p className="text-xs sm:text-sm font-bold text-primary">{formatPrice(price)}</p>
