@@ -9,7 +9,57 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      product_suggestions: {
+        Row: {
+          amazon_asin: string | null
+          amazon_image_url: string | null
+          amazon_price: number | null
+          amazon_rating: number | null
+          amazon_total_ratings: number | null
+          amazon_url: string | null
+          created_at: string | null
+          description: string
+          id: string
+          price_range: string
+          reason: string | null
+          search_query: string
+          status: string | null
+          title: string
+        }
+        Insert: {
+          amazon_asin?: string | null
+          amazon_image_url?: string | null
+          amazon_price?: number | null
+          amazon_rating?: number | null
+          amazon_total_ratings?: number | null
+          amazon_url?: string | null
+          created_at?: string | null
+          description: string
+          id?: string
+          price_range: string
+          reason?: string | null
+          search_query: string
+          status?: string | null
+          title: string
+        }
+        Update: {
+          amazon_asin?: string | null
+          amazon_image_url?: string | null
+          amazon_price?: number | null
+          amazon_rating?: number | null
+          amazon_total_ratings?: number | null
+          amazon_url?: string | null
+          created_at?: string | null
+          description?: string
+          id?: string
+          price_range?: string
+          reason?: string | null
+          search_query?: string
+          status?: string | null
+          title?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
