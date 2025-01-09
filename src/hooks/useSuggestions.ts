@@ -20,6 +20,30 @@ interface AmazonProduct {
   asin: string;
 }
 
+// Queue for managing Amazon API requests
+const requestQueue: Array<() => Promise<any>> = [];
+let isProcessingQueue = false;
+const RETRY_DELAY = 30000; // 30 seconds default retry delay
+
+const processQueue = async () => {
+  if (isProcessingQueue || requestQueue.length === 0) return;
+  
+  isProcessingQueue = true;
+  try {
+    const request = requestQueue.shift();
+    if (request) {
+      await request();
+    }
+  } finally {
+    isProcessingQueue = false;
+    if (requestQueue.length > 0) {
+      // Add delay before processing next request
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      processQueue();
+    }
+  }
+};
+
 export const useSuggestions = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [suggestions, setSuggestions] = useState<GiftSuggestion[]>([]);
@@ -28,15 +52,52 @@ export const useSuggestions = () => {
 
   const getAmazonProduct = async (suggestion: GiftSuggestion): Promise<AmazonProduct> => {
     try {
-      const { data, error } = await supabase.functions.invoke('get-amazon-products', {
-        body: { searchTerm: suggestion.title }
-      });
+      return new Promise((resolve, reject) => {
+        const makeRequest = async () => {
+          try {
+            const { data, error } = await supabase.functions.invoke('get-amazon-products', {
+              body: { searchTerm: suggestion.title }
+            });
 
-      if (error) throw error;
-      return data;
+            if (error) {
+              if (error.status === 429) {
+                const retryAfter = parseInt(error.message.match(/\d+/)?.[0] || '30');
+                toast({
+                  title: "Rate limit reached",
+                  description: `Please wait ${retryAfter} seconds before trying again.`,
+                  variant: "destructive"
+                });
+                // Re-queue the request after delay
+                setTimeout(() => {
+                  requestQueue.push(makeRequest);
+                  processQueue();
+                }, retryAfter * 1000);
+                return;
+              }
+              throw error;
+            }
+
+            resolve(data);
+          } catch (error) {
+            console.error('Error in Amazon product request:', error);
+            // Return fallback data on error
+            resolve({
+              title: suggestion.title,
+              description: suggestion.description,
+              price: parseFloat(suggestion.priceRange.replace(/[^0-9.-]+/g, '')),
+              currency: 'USD',
+              imageUrl: '',
+              asin: ''
+            });
+          }
+        };
+
+        // Add request to queue
+        requestQueue.push(makeRequest);
+        processQueue();
+      });
     } catch (error) {
-      console.error('Error fetching Amazon product:', error);
-      // Return original suggestion data if Amazon API fails
+      console.error('Error getting Amazon product:', error);
       return {
         title: suggestion.title,
         description: suggestion.description,
@@ -77,24 +138,23 @@ export const useSuggestions = () => {
         throw new Error('Invalid response format');
       }
 
-      // Enhance suggestions with Amazon product data
-      const enhancedSuggestions = await Promise.all(
-        data.suggestions.map(async (suggestion) => {
-          const amazonProduct = await getAmazonProduct(suggestion);
-          return {
-            ...suggestion,
-            title: amazonProduct.title || suggestion.title,
-            description: amazonProduct.description || suggestion.description,
-            priceRange: `${amazonProduct.currency} ${amazonProduct.price}`,
-            amazon_asin: amazonProduct.asin,
-            amazon_url: `https://www.amazon.com/dp/${amazonProduct.asin}`,
-            amazon_price: amazonProduct.price,
-            amazon_image_url: amazonProduct.imageUrl,
-            amazon_rating: amazonProduct.rating,
-            amazon_total_ratings: amazonProduct.totalRatings
-          };
-        })
-      );
+      // Process suggestions sequentially to avoid rate limits
+      const enhancedSuggestions = [];
+      for (const suggestion of data.suggestions) {
+        const amazonProduct = await getAmazonProduct(suggestion);
+        enhancedSuggestions.push({
+          ...suggestion,
+          title: amazonProduct.title || suggestion.title,
+          description: amazonProduct.description || suggestion.description,
+          priceRange: `${amazonProduct.currency} ${amazonProduct.price}`,
+          amazon_asin: amazonProduct.asin,
+          amazon_url: amazonProduct.asin ? `https://www.amazon.com/dp/${amazonProduct.asin}` : undefined,
+          amazon_price: amazonProduct.price,
+          amazon_image_url: amazonProduct.imageUrl,
+          amazon_rating: amazonProduct.rating,
+          amazon_total_ratings: amazonProduct.totalRatings
+        });
+      }
 
       setSuggestions(prev => append ? [...prev, ...enhancedSuggestions] : enhancedSuggestions);
       
@@ -122,13 +182,11 @@ export const useSuggestions = () => {
   };
 
   const handleMoreLikeThis = async (title: string) => {
-    // Extract key features from the title
     const cleanTitle = title
       .toLowerCase()
       .replace(/[^\w\s]/g, ' ')
       .trim();
     
-    // Create a more focused query based on the product title
     const query = `Find me 8 gift suggestions similar to "${cleanTitle}". Focus on products that:
     1. Serve a similar purpose or function
     2. Are in a similar category
@@ -143,7 +201,6 @@ export const useSuggestions = () => {
   const handleStartOver = () => {
     setSuggestions([]);
     setLastQuery('');
-    // Trigger a window reload to ensure all components are reset
     window.location.reload();
   };
 
