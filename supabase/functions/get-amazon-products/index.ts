@@ -21,16 +21,16 @@ interface AmazonSearchResult {
 interface AmazonProductDetails {
   data: {
     title: string;
-    description: string;
-    product_information: string[];
-    feature_bullets: string[];
+    description?: string;
+    product_information?: string[] | string;
+    feature_bullets?: string[];
     price: {
       current_price: number;
       currency: string;
     };
-    rating: number;
-    ratings_total: number;
-    main_image: string;
+    rating?: number;
+    ratings_total?: number;
+    main_image?: string;
     asin: string;
   };
 }
@@ -92,11 +92,20 @@ serve(async (req) => {
 
     const product = detailsData.data;
     
-    // Combine all available description sources
-    const description = product.description || 
-                       product.feature_bullets?.join(' ') || 
-                       product.product_information?.join(' ') || 
-                       'No description available';
+    // Handle product information which might be a string or array
+    let description = '';
+    if (product.description) {
+      description = product.description;
+    } else {
+      const featureBullets = Array.isArray(product.feature_bullets) ? product.feature_bullets.join(' ') : '';
+      const productInfo = Array.isArray(product.product_information) 
+        ? product.product_information.join(' ')
+        : typeof product.product_information === 'string' 
+          ? product.product_information 
+          : '';
+      
+      description = featureBullets || productInfo || 'No description available';
+    }
 
     // Construct the direct Amazon product URL using the ASIN
     const amazonUrl = `https://www.amazon.com/dp/${product.asin}`;
