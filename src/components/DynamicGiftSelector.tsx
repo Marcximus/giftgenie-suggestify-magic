@@ -32,38 +32,43 @@ export const DynamicGiftSelector = ({
     }
   }, [visible, reset]);
 
-  if (!visible) return null;
+  // Render null conditionally after all hooks are called
+  const renderContent = () => {
+    if (!visible) return null;
 
-  return (
-    <div className="w-full space-y-4 animate-in fade-in slide-in-from-top-4 duration-500">
-      {currentPhase === 'person' && (
-        <PersonSelector
-          selectedPerson={selectedPerson}
-          onSelect={(value) => handleSelection('person', value)}
-        />
-      )}
+    return (
+      <div className="w-full space-y-4 animate-in fade-in slide-in-from-top-4 duration-500">
+        {currentPhase === 'person' && (
+          <PersonSelector
+            selectedPerson={selectedPerson}
+            onSelect={(value) => handleSelection('person', value)}
+          />
+        )}
 
-      {currentPhase === 'age' && (
-        <AgeSelector
-          onSelect={(value) => handleSelection('age', value)}
-        />
-      )}
+        {currentPhase === 'age' && (
+          <AgeSelector
+            onSelect={(value) => handleSelection('age', value)}
+          />
+        )}
 
-      {currentPhase === 'price' && (
-        <PriceSelector
-          onSelect={(value) => handleSelection('price', value)}
-        />
-      )}
+        {currentPhase === 'price' && (
+          <PriceSelector
+            onSelect={(value) => handleSelection('price', value)}
+          />
+        )}
 
-      {currentPhase === 'interest' && (
-        <InterestSelector
-          selectedPerson={selectedPerson}
-          selectedAge={selectedAge}
-          onSelect={(value) => handleSelection('interest', value, onSelectionComplete)}
-        />
-      )}
-    </div>
-  );
+        {currentPhase === 'interest' && (
+          <InterestSelector
+            selectedPerson={selectedPerson}
+            selectedAge={selectedAge}
+            onSelect={(value) => handleSelection('interest', value, onSelectionComplete)}
+          />
+        )}
+      </div>
+    );
+  };
+
+  return renderContent();
 };
 
 export default DynamicGiftSelector;
