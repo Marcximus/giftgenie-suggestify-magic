@@ -55,7 +55,7 @@ export const ProductCard = ({
           description={description} 
           imageUrl={imageUrl} 
         />
-        <CardTitle className="text-xs sm:text-sm mt-2 px-2 sm:px-3 line-clamp-2 min-h-[2.5rem] text-center group-hover:text-primary transition-colors duration-200">
+        <CardTitle className="text-xs sm:text-sm mt-2 px-2 sm:px-3 line-clamp-2 min-h-[2.5rem] text-center group-hover:text-primary transition-colors duration-200 h-[2.5rem] overflow-hidden">
           {title}
         </CardTitle>
       </CardHeader>

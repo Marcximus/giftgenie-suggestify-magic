@@ -19,6 +19,29 @@ serve(async (req) => {
     const { prompt } = await req.json();
     console.log('Processing request with prompt:', prompt);
 
+    // Extract gender context from the prompt
+    const isMale = prompt.toLowerCase().includes('brother') || 
+                  prompt.toLowerCase().includes('father') || 
+                  prompt.toLowerCase().includes('husband') || 
+                  prompt.toLowerCase().includes('boyfriend') || 
+                  prompt.toLowerCase().includes('son') || 
+                  prompt.toLowerCase().includes('grandpa');
+
+    const isFemale = prompt.toLowerCase().includes('sister') || 
+                    prompt.toLowerCase().includes('mother') || 
+                    prompt.toLowerCase().includes('wife') || 
+                    prompt.toLowerCase().includes('girlfriend') || 
+                    prompt.toLowerCase().includes('daughter') || 
+                    prompt.toLowerCase().includes('grandma');
+
+    // Enhance the prompt with gender-specific context
+    let enhancedPrompt = prompt;
+    if (isMale) {
+      enhancedPrompt = `${prompt}. IMPORTANT: Only suggest gifts appropriate for men/boys. Do not include women's clothing, accessories, or gender-specific items meant for women.`;
+    } else if (isFemale) {
+      enhancedPrompt = `${prompt}. IMPORTANT: Only suggest gifts appropriate for women/girls. Do not include men's clothing, accessories, or gender-specific items meant for men.`;
+    }
+
     if (isRateLimited()) {
       console.log('Rate limit exceeded, returning 429');
       return new Response(
@@ -39,7 +62,7 @@ serve(async (req) => {
 
     logRequest();
 
-    const suggestions = await generateGiftSuggestions(prompt);
+    const suggestions = await generateGiftSuggestions(enhancedPrompt);
     
     if (!Array.isArray(suggestions)) {
       throw new Error('Invalid suggestions format');
