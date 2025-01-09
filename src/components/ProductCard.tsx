@@ -66,7 +66,7 @@ export const ProductCard = ({
         </CardTitle>
       </CardHeader>
       <CardContent className="p-2 sm:p-3 pt-1 flex-grow flex flex-col">
-        <p className="text-[0.65rem] sm:text-[0.7rem] leading-relaxed line-clamp-3 text-muted-foreground mb-auto">
+        <p className="text-[0.65rem] sm:text-[0.7rem] leading-relaxed line-clamp-2 text-muted-foreground mb-auto overflow-hidden">
           {cleanedDescription}
         </p>
         <div className="mt-2 flex items-center justify-between">
