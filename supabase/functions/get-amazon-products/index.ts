@@ -1,16 +1,14 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { corsHeaders } from './config.ts';
-import { searchProduct, getProductDetails, AmazonApiError } from './amazonApi.ts';
 import type { ProductResponse } from './types.ts';
 
 const RAPIDAPI_KEY = Deno.env.get('RAPIDAPI_KEY');
+const RAPIDAPI_HOST = 'real-time-amazon-data.p.rapidapi.com';
 
 // Helper to parse price range and return min/max values
 const parsePriceRange = (priceRange: string): { min?: number; max?: number } => {
-  // Remove currency symbols and convert to lowercase for consistent parsing
   const cleanRange = priceRange.toLowerCase().replace(/[$usd]/g, '').trim();
   
-  // Handle different price range formats
   if (cleanRange.includes('under')) {
     const max = parseFloat(cleanRange.replace('under', ''));
     return { max };
@@ -26,10 +24,9 @@ const parsePriceRange = (priceRange: string): { min?: number; max?: number } => 
     return { min, max };
   }
   
-  // If it's a single number, treat it as the max price
   const singlePrice = parseFloat(cleanRange);
   if (!isNaN(singlePrice)) {
-    return { max: singlePrice * 1.2 }; // Add 20% buffer for single price
+    return { max: singlePrice * 1.2 };
   }
   
   return {};
@@ -43,7 +40,6 @@ serve(async (req) => {
 
   try {
     if (!RAPIDAPI_KEY) {
-      console.error('RapidAPI key not configured');
       throw new Error('RapidAPI key not configured');
     }
 
@@ -53,103 +49,83 @@ serve(async (req) => {
     // Parse price range to get min/max values
     const { min, max } = parsePriceRange(priceRange);
     console.log('Parsed price range:', { min, max });
+
+    // Build search URL with all parameters at once
+    const searchParams = new URLSearchParams({
+      query: searchTerm,
+      country: 'US',
+      sort_by: 'BEST_SELLERS', // Changed to get best-selling items first
+    });
+
+    // Add optional price filters
+    if (min !== undefined) searchParams.append('min_price', min.toString());
+    if (max !== undefined) searchParams.append('max_price', max.toString());
+
+    // Additional filters for better results
+    searchParams.append('is_prime', 'true');
+    searchParams.append('four_stars_and_up', 'true');
+
+    const searchUrl = `https://${RAPIDAPI_HOST}/search?${searchParams.toString()}`;
+    console.log('Search URL:', searchUrl);
+
+    const response = await fetch(searchUrl, {
+      headers: {
+        'X-RapidAPI-Key': RAPIDAPI_KEY,
+        'X-RapidAPI-Host': RAPIDAPI_HOST,
+      }
+    });
+
+    if (!response.ok) {
+      console.error('Amazon search failed with status:', response.status);
+      throw new Error(`Amazon search failed: ${response.status}`);
+    }
+
+    const searchData = await response.json();
+    console.log('Search response received');
+
+    if (!searchData.data?.products?.[0]) {
+      throw new Error('No products found');
+    }
+
+    // Extract data directly from search results
+    const product = searchData.data.products[0];
+    const productData: ProductResponse = {
+      title: product.title,
+      description: product.product_description || product.title,
+      price: parseFloat(product.price?.current_price || '0'),
+      currency: product.price?.currency || 'USD',
+      imageUrl: product.product_photo || product.thumbnail,
+      rating: parseFloat(product.product_star_rating || '0'),
+      totalRatings: parseInt(product.product_num_ratings || '0', 10),
+      asin: product.asin,
+    };
+
+    console.log('Returning product data:', productData);
+
+    return new Response(JSON.stringify(productData), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+
+  } catch (error) {
+    console.error('Error in get-amazon-products function:', error);
     
-    try {
-      // First API call: Search for product with price constraints
-      const asin = await searchProduct(searchTerm, RAPIDAPI_KEY, { min, max });
-      
-      // Add delay between requests to help prevent rate limiting
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      // Second API call: Get product details
-      const productDetails = await getProductDetails(asin, RAPIDAPI_KEY);
-      
-      // Format the response
-      const product = productDetails.data;
-      let description = '';
-      
-      if (typeof product.description === 'string') {
-        description = product.description;
-      } else if (Array.isArray(product.feature_bullets) && product.feature_bullets.length > 0) {
-        description = product.feature_bullets.join(' ');
-      } else if (Array.isArray(product.product_information)) {
-        description = product.product_information.join(' ');
-      } else if (typeof product.product_information === 'string') {
-        description = product.product_information;
-      } else {
-        description = 'No description available';
-      }
-
-      const productData: ProductResponse = {
-        title: product.title,
-        description: description,
-        price: parseFloat(product.price?.current_price || '0'),
-        currency: product.price?.currency || 'USD',
-        imageUrl: product.product_photo,
-        rating: parseFloat(product.product_star_rating || '0'),
-        totalRatings: product.product_num_ratings,
-        asin: product.asin,
-      };
-
-      console.log('Returning product data:', JSON.stringify(productData, null, 2));
-
-      return new Response(JSON.stringify(productData), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
-
-    } catch (error) {
-      console.error('Error in Amazon API calls:', error);
-      
-      if (error instanceof AmazonApiError) {
-        if (error.status === 429) {
-          return new Response(
-            JSON.stringify({
-              error: 'Rate limit exceeded. Please try again in a moment.',
-              retryAfter: error.retryAfter,
-            }),
-            {
-              status: 429,
-              headers: { 
-                ...corsHeaders, 
-                'Content-Type': 'application/json',
-                'Retry-After': error.retryAfter || '30'
-              }
-            }
-          );
-        }
-        
-        if (error.status === 403) {
-          return new Response(
-            JSON.stringify({
-              error: 'API authentication failed. Please check API key configuration.',
-              details: 'Invalid or expired API key'
-            }),
-            {
-              status: 403,
-              headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-            }
-          );
-        }
-      }
-      
-      // Return a fallback response for other errors
+    if (error.message.includes('rate limit')) {
       return new Response(
         JSON.stringify({ 
-          title: searchTerm,
-          description: "Product information temporarily unavailable",
-          price: 0,
-          currency: 'USD',
-          imageUrl: '',
-          asin: ''
+          error: 'Rate limit exceeded. Please try again in a moment.',
+          retryAfter: '30'
         }),
         {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          status: 429,
+          headers: { 
+            ...corsHeaders, 
+            'Content-Type': 'application/json',
+            'Retry-After': '30'
+          }
         }
       );
     }
 
-  } catch (error) {
-    console.error('Error in get-amazon-products function:', error);
     return new Response(
       JSON.stringify({ 
         error: error.message,
