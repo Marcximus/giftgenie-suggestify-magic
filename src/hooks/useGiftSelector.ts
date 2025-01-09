@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 
 export const useGiftSelector = (onUpdate: (query: string) => void) => {
   const [currentPhase, setCurrentPhase] = useState<'person' | 'age' | 'price' | 'interest' | 'complete'>('person');
@@ -6,7 +6,7 @@ export const useGiftSelector = (onUpdate: (query: string) => void) => {
   const [selectedAge, setSelectedAge] = useState<string>('');
   const [selectedPrice, setSelectedPrice] = useState<string>('');
 
-  const updateSearchText = (phase: string, value: string) => {
+  const updateSearchText = useCallback((phase: string, value: string) => {
     console.log('Updating search text:', { phase, value, selectedPerson, selectedAge, selectedPrice });
     
     let query = '';
@@ -30,48 +30,61 @@ export const useGiftSelector = (onUpdate: (query: string) => void) => {
     
     console.log('Generated query:', query);
     return query;
-  };
+  }, [selectedPerson, selectedAge, selectedPrice]);
 
-  const handleSelection = (phase: string, value: string, onComplete?: (query: string) => void) => {
+  const handleSelection = useCallback((phase: string, value: string, onComplete?: (query: string) => void) => {
     console.log('Handling selection:', { phase, value });
 
+    // First update the state based on the current phase
     switch (phase) {
       case 'person':
         setSelectedPerson(value);
-        setCurrentPhase('age');
         break;
       case 'age':
         setSelectedAge(value);
-        setCurrentPhase('price');
         break;
       case 'price':
         setSelectedPrice(value);
-        setCurrentPhase('interest');
         break;
-      case 'interest':
-        if (onComplete) {
-          const finalQuery = updateSearchText(phase, value);
-          console.log('Completing with query:', finalQuery);
-          onComplete(finalQuery);
-        }
-        setCurrentPhase('complete');
-        return;
     }
-    
-    const query = updateSearchText(phase, value);
-    if (query) {
-      console.log('Updating with query:', query);
-      onUpdate(query);
-    }
-  };
 
-  const reset = () => {
+    // Generate the query after state updates
+    const query = updateSearchText(phase, value);
+    
+    // Handle phase transition and query updates
+    if (phase === 'interest' && onComplete) {
+      console.log('Completing with query:', query);
+      onComplete(query);
+      setCurrentPhase('complete');
+    } else {
+      // Update the query and advance to next phase
+      console.log('Updating with query:', query);
+      if (query) {
+        onUpdate(query);
+      }
+      
+      // Advance to next phase
+      switch (phase) {
+        case 'person':
+          setCurrentPhase('age');
+          break;
+        case 'age':
+          setCurrentPhase('price');
+          break;
+        case 'price':
+          setCurrentPhase('interest');
+          break;
+      }
+    }
+  }, [updateSearchText, onUpdate]);
+
+  const reset = useCallback(() => {
     console.log('Resetting selector state');
     setCurrentPhase('person');
     setSelectedPerson('');
     setSelectedAge('');
     setSelectedPrice('');
-  };
+  }, []);
 
   return {
     currentPhase,
