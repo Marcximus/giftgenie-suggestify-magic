@@ -1,8 +1,12 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { corsHeaders } from './config.ts';
 
 const RAPIDAPI_KEY = Deno.env.get('RAPIDAPI_KEY');
 const RAPIDAPI_HOST = 'real-time-amazon-data.p.rapidapi.com';
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
 
 const parsePriceRange = (priceRange: string): { min?: number; max?: number } => {
   try {
@@ -25,6 +29,7 @@ const parsePriceRange = (priceRange: string): { min?: number; max?: number } => 
       const price = parseFloat(cleanRange);
       if (!isNaN(price)) {
         console.log('Single price value:', price);
+        // Create a range around the single price (±20%)
         return { min: Math.max(1, price * 0.8), max: price * 1.2 };
       }
     }
@@ -61,6 +66,7 @@ const isValidImageUrl = (url: string): boolean => {
 };
 
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -111,7 +117,8 @@ serve(async (req) => {
     if (!response.ok) {
       console.error('Amazon API error:', {
         status: response.status,
-        statusText: response.statusText
+        statusText: response.statusText,
+        url: searchUrl
       });
       throw new Error(`Amazon API error: ${response.status}`);
     }
@@ -139,6 +146,11 @@ serve(async (req) => {
     
     console.log('Selected image URL:', imageUrl);
 
+    // Ensure we have valid data before returning
+    if (!product.title && !product.asin) {
+      throw new Error('Invalid product data received');
+    }
+
     const productData = {
       title: product.title || searchTerm,
       description: product.product_description || product.title || searchTerm,
@@ -159,7 +171,8 @@ serve(async (req) => {
   } catch (error) {
     console.error('Error in get-amazon-products function:', error);
     
-    if (error.message.includes('rate limit')) {
+    // Handle rate limiting specifically
+    if (error.message?.toLowerCase().includes('rate limit')) {
       return new Response(
         JSON.stringify({ 
           error: 'Rate limit exceeded. Please try again in a moment.',
@@ -176,6 +189,7 @@ serve(async (req) => {
       );
     }
 
+    // For all other errors
     return new Response(
       JSON.stringify({ 
         error: error.message,
