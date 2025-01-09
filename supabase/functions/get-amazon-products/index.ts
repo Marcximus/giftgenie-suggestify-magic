@@ -65,7 +65,7 @@ serve(async (req) => {
     }
 
     const searchData = await searchResponse.json() as AmazonSearchResult;
-    console.log('Search results:', searchData);
+    console.log('Search results:', JSON.stringify(searchData, null, 2));
 
     // Get the first product's ASIN
     const firstProduct = searchData.data?.products?.[0];
@@ -88,40 +88,41 @@ serve(async (req) => {
     }
 
     const detailsData = await detailsResponse.json() as AmazonProductDetails;
-    console.log('Product details received for ASIN:', firstProduct.asin);
+    console.log('Product details received:', JSON.stringify(detailsData, null, 2));
 
     const product = detailsData.data;
     
-    // Handle product information which might be a string or array
+    // Construct product description from available data
     let description = '';
-    if (product.description) {
+    
+    // Try to get description from different sources in order of preference
+    if (typeof product.description === 'string') {
       description = product.description;
+    } else if (Array.isArray(product.feature_bullets) && product.feature_bullets.length > 0) {
+      description = product.feature_bullets.join(' ');
+    } else if (Array.isArray(product.product_information)) {
+      description = product.product_information.join(' ');
+    } else if (typeof product.product_information === 'string') {
+      description = product.product_information;
     } else {
-      const featureBullets = Array.isArray(product.feature_bullets) ? product.feature_bullets.join(' ') : '';
-      const productInfo = Array.isArray(product.product_information) 
-        ? product.product_information.join(' ')
-        : typeof product.product_information === 'string' 
-          ? product.product_information 
-          : '';
-      
-      description = featureBullets || productInfo || 'No description available';
+      description = 'No description available';
     }
 
-    // Construct the direct Amazon product URL using the ASIN
-    const amazonUrl = `https://www.amazon.com/dp/${product.asin}`;
-    
+    // Insert the product data into the database
+    const productData = {
+      title: product.title,
+      description: description,
+      price: product.price?.current_price || 0,
+      currency: product.price?.currency || 'USD',
+      imageUrl: product.main_image,
+      rating: product.rating,
+      totalRatings: product.ratings_total,
+      asin: product.asin,
+      amazonUrl: `https://www.amazon.com/dp/${product.asin}`,
+    };
+
     return new Response(
-      JSON.stringify({
-        title: product.title,
-        description: description,
-        price: product.price?.current_price || 0,
-        currency: product.price?.currency || 'USD',
-        imageUrl: product.main_image,
-        rating: product.rating,
-        totalRatings: product.ratings_total,
-        asin: product.asin,
-        amazonUrl: amazonUrl,
-      }),
+      JSON.stringify(productData),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       }
