@@ -1,7 +1,6 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react';
-import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
-import { RotateCcw } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
 
 interface Props {
   children: ReactNode;
@@ -9,13 +8,12 @@ interface Props {
 
 interface State {
   hasError: boolean;
-  error: Error | null;
+  error?: Error;
 }
 
 export class ErrorBoundary extends Component<Props, State> {
   public state: State = {
-    hasError: false,
-    error: null
+    hasError: false
   };
 
   public static getDerivedStateFromError(error: Error): State {
@@ -26,28 +24,15 @@ export class ErrorBoundary extends Component<Props, State> {
     console.error('Uncaught error:', error, errorInfo);
   }
 
-  private handleReset = () => {
-    this.setState({ hasError: false, error: null });
-  };
-
   public render() {
     if (this.state.hasError) {
       return (
         <div className="p-4">
           <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
             <AlertTitle>Something went wrong</AlertTitle>
             <AlertDescription>
-              <p className="mt-2 text-sm">
-                {this.state.error?.message || 'An unexpected error occurred'}
-              </p>
-              <Button
-                onClick={this.handleReset}
-                variant="outline"
-                className="mt-4"
-              >
-                <RotateCcw className="w-4 h-4 mr-2" />
-                Try Again
-              </Button>
+              {this.state.error?.message || 'An unexpected error occurred'}
             </AlertDescription>
           </Alert>
         </div>

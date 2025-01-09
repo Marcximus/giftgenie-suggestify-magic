@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { ProductImage } from "./ProductImage";
 import { AmazonButton } from "./AmazonButton";
@@ -52,7 +53,7 @@ const simplifyTitle = (title: string): string => {
     .trim();
 };
 
-export const ProductCard = ({ 
+const ProductCardComponent = ({ 
   title, 
   description, 
   price, 
@@ -110,3 +111,5 @@ export const ProductCard = ({
     </Card>
   );
 };
+
+export const ProductCard = memo(ProductCardComponent);
