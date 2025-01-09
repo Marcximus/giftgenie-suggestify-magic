@@ -1,8 +1,4 @@
-import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-
-const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
-const rapidApiKey = Deno.env.get('RAPIDAPI_KEY');
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -19,15 +15,18 @@ const RATE_LIMIT = {
 function isRateLimited(): boolean {
   const now = Date.now();
   const windowStart = now - RATE_LIMIT.WINDOW_MS;
+  
+  // Clean up old requests
   const recentRequests = requestLog.filter(req => req.timestamp > windowStart);
   requestLog.length = 0;
   requestLog.push(...recentRequests);
+  
   return recentRequests.length >= RATE_LIMIT.MAX_REQUESTS;
 }
 
 async function searchAmazonProduct(keyword: string) {
   if (isRateLimited()) {
-    throw new Error('Rate limit exceeded. Please try again in a moment.');
+    throw new Error('RATE_LIMITED');
   }
 
   console.log('Searching Amazon for:', keyword);
@@ -37,7 +36,7 @@ async function searchAmazonProduct(keyword: string) {
     requestLog.push({ timestamp: Date.now() });
     const response = await fetch(url, {
       headers: {
-        'X-RapidAPI-Key': rapidApiKey || '',
+        'X-RapidAPI-Key': Deno.env.get('RAPIDAPI_KEY') || '',
         'X-RapidAPI-Host': 'real-time-amazon-data.p.rapidapi.com'
       }
     });
@@ -45,14 +44,22 @@ async function searchAmazonProduct(keyword: string) {
     if (!response.ok) {
       console.error('Amazon API error:', response.status);
       if (response.status === 429) {
-        throw new Error('Rate limit exceeded');
+        throw new Error('RATE_LIMITED');
       }
-      throw new Error('Failed to fetch Amazon data');
+      if (response.status === 403) {
+        throw new Error('API_KEY_INVALID');
+      }
+      throw new Error(`Amazon API error: ${response.status}`);
     }
 
     const data = await response.json();
+    console.log('Amazon API response:', JSON.stringify(data, null, 2));
+
+    if (data.status === 'ERROR') {
+      throw new Error(data.error.message);
+    }
+
     const product = data.data?.products?.[0];
-    
     if (!product) {
       console.log('No product found for keyword:', keyword);
       return null;
@@ -72,11 +79,12 @@ async function searchAmazonProduct(keyword: string) {
     };
   } catch (error) {
     console.error('Error fetching Amazon product:', error);
-    return null;
+    throw error;
   }
 }
 
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -85,19 +93,11 @@ serve(async (req) => {
     const { prompt } = await req.json();
     console.log('Processing request with prompt:', prompt);
 
-    if (!openAIApiKey) {
-      throw new Error('OpenAI API key not configured');
-    }
-
-    if (!rapidApiKey) {
-      throw new Error('RapidAPI key not configured');
-    }
-
     // Get gift suggestions from GPT
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
+        'Authorization': `Bearer ${Deno.env.get('OPENAI_API_KEY')}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
@@ -132,43 +132,74 @@ serve(async (req) => {
     }
 
     // Parse the suggestions and clean up the JSON
-    const suggestions = JSON.parse(data.choices[0].message.content.replace(/```json\n?|\n?```/g, '').trim());
+    const suggestions = JSON.parse(
+      data.choices[0].message.content.replace(/```json\n?|\n?```/g, '').trim()
+    );
     
     if (!Array.isArray(suggestions)) {
       throw new Error('Invalid suggestions format');
     }
 
     // Search Amazon products for each suggestion
-    const products = await Promise.all(
-      suggestions.map(suggestion => searchAmazonProduct(suggestion))
-    );
-
-    // Filter out null results and format response
-    const validProducts = products.filter(product => product !== null);
+    const products = [];
+    for (const suggestion of suggestions) {
+      try {
+        const product = await searchAmazonProduct(suggestion);
+        if (product) {
+          products.push(product);
+        }
+        // Add delay between requests to help prevent rate limiting
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      } catch (error) {
+        if (error.message === 'RATE_LIMITED') {
+          return new Response(
+            JSON.stringify({
+              error: 'Rate limit exceeded. Please try again in a moment.',
+              retryAfter: '30'
+            }),
+            {
+              status: 429,
+              headers: {
+                ...corsHeaders,
+                'Content-Type': 'application/json',
+                'Retry-After': '30'
+              }
+            }
+          );
+        }
+        if (error.message === 'API_KEY_INVALID') {
+          return new Response(
+            JSON.stringify({
+              error: 'API authentication failed. Please check API key configuration.',
+              details: 'Invalid or expired API key'
+            }),
+            {
+              status: 403,
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+            }
+          );
+        }
+        console.error('Error processing suggestion:', suggestion, error);
+        continue; // Skip failed products but continue with others
+      }
+    }
 
     return new Response(
-      JSON.stringify({ suggestions: validProducts }),
+      JSON.stringify({ suggestions: products }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
   } catch (error) {
     console.error('Error in generate-gift-suggestions function:', error);
     
-    const status = error.message.includes('Rate limit') ? 429 : 
-                  error.message.includes('API key') ? 403 : 500;
-                  
     return new Response(
       JSON.stringify({ 
         error: error.message,
         details: 'Failed to generate gift suggestions'
       }),
       {
-        status,
-        headers: { 
-          ...corsHeaders, 
-          'Content-Type': 'application/json',
-          ...(status === 429 && { 'Retry-After': '30' })
-        }
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       }
     );
   }
