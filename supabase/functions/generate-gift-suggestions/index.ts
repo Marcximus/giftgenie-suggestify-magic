@@ -39,6 +39,19 @@ serve(async (req) => {
   }
 
   try {
+    // Verify OpenAI API key is configured
+    const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
+    if (!openAIApiKey) {
+      console.error('OpenAI API key not configured');
+      return new Response(
+        JSON.stringify({ error: 'OpenAI API key not configured' }),
+        { 
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
+    }
+
     // Check rate limiting
     if (isRateLimited()) {
       console.log('Rate limit exceeded');
