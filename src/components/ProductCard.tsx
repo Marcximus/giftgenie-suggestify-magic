@@ -41,6 +41,17 @@ const cleanDescription = (description: string): string => {
     .trim();
 };
 
+const simplifyTitle = (title: string): string => {
+  // Remove common Amazon-specific phrases
+  return title
+    .replace(/\s*\([^)]*\)/g, '') // Remove anything in parentheses
+    .replace(/,.*$/, '') // Remove everything after the first comma
+    .replace(/\s*-.*$/, '') // Remove everything after a dash
+    .replace(/\s*\|.*$/, '') // Remove everything after a pipe
+    .replace(/\s{2,}/g, ' ') // Remove extra spaces
+    .trim();
+};
+
 export const ProductCard = ({ 
   title, 
   description, 
@@ -52,18 +63,19 @@ export const ProductCard = ({
   onMoreLikeThis 
 }: ProductCardProps) => {
   const cleanedDescription = cleanDescription(description);
+  const simplifiedTitle = simplifyTitle(title);
 
   return (
     <Card className="group h-full flex flex-col overflow-hidden hover:shadow-lg transition-all duration-300 border-accent/20 backdrop-blur-sm bg-white/80 hover:bg-white/90">
       <CardHeader className="p-0 flex-none">
         <ProductImage 
-          title={title} 
+          title={simplifiedTitle} 
           description={cleanedDescription} 
           imageUrl={imageUrl} 
         />
-        <div className="h-[2.5rem] overflow-hidden mt-2 px-2 sm:px-3">
-          <CardTitle className="text-xs sm:text-sm line-clamp-2 text-center group-hover:text-primary transition-colors duration-200">
-            {title}
+        <div className="h-[1.75rem] overflow-hidden mt-2 px-2 sm:px-3">
+          <CardTitle className="text-xs sm:text-sm truncate text-center group-hover:text-primary transition-colors duration-200">
+            {simplifiedTitle}
           </CardTitle>
         </div>
       </CardHeader>
@@ -84,7 +96,7 @@ export const ProductCard = ({
         </div>
       </CardContent>
       <CardFooter className="p-2 sm:p-3 pt-0 flex flex-col gap-1.5 flex-none">
-        <AmazonButton title={title} asin={asin} />
+        <AmazonButton title={simplifiedTitle} asin={asin} />
         <Button 
           variant="outline" 
           size="sm"
