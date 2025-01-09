@@ -9,14 +9,23 @@ export const useGiftSelector = (onUpdate: (query: string) => void) => {
   const updateSearchText = (phase: string, value: string) => {
     let query = '';
     
-    if (phase === 'person') {
-      query = `Gift for ${value.toLowerCase()}`;
-    } else if (phase === 'age' && selectedPerson) {
-      query = `Gift for ${selectedPerson.toLowerCase()} (${value} years old)`;
-    } else if (phase === 'price' && selectedPerson && selectedAge) {
-      query = `Gift for ${selectedPerson.toLowerCase()} (${selectedAge} years old) - Budget: ${value}`;
-    } else if (phase === 'interest' && selectedPerson && selectedAge && selectedPrice) {
-      query = `Gift ideas for a ${selectedAge} year old ${selectedPerson.toLowerCase()} who likes ${value.toLowerCase()} with a budget of ${selectedPrice}`;
+    switch (phase) {
+      case 'person':
+        query = `Gift for ${value.toLowerCase()}`;
+        break;
+      case 'age':
+        query = selectedPerson ? `Gift for ${selectedPerson.toLowerCase()} (${value} years old)` : '';
+        break;
+      case 'price':
+        query = selectedPerson && selectedAge ? 
+          `Gift for ${selectedPerson.toLowerCase()} (${selectedAge} years old) - Budget: ${value}` : '';
+        break;
+      case 'interest':
+        query = selectedPerson && selectedAge && selectedPrice ?
+          `Gift ideas for a ${selectedAge} year old ${selectedPerson.toLowerCase()} who likes ${value.toLowerCase()} with a budget of ${selectedPrice}` : '';
+        break;
+      default:
+        query = '';
     }
     
     return query;
@@ -39,12 +48,16 @@ export const useGiftSelector = (onUpdate: (query: string) => void) => {
         setCurrentPhase('interest');
         break;
       case 'interest':
-        onComplete?.(query);
+        if (onComplete) {
+          onComplete(query);
+        }
         setCurrentPhase('complete');
         return;
     }
     
-    onUpdate(query);
+    if (query) {
+      onUpdate(query);
+    }
   };
 
   const reset = () => {
