@@ -30,6 +30,11 @@ export const useAmazonProducts = () => {
         throw error;
       }
 
+      // Ensure price is properly formatted
+      if (data && typeof data.price === 'number') {
+        data.price = parseFloat(data.price.toFixed(2));
+      }
+
       return data;
     } catch (error) {
       console.error('Error getting Amazon product:', error);

@@ -19,6 +19,24 @@ interface ProductCardProps extends Product {
   onMoreLikeThis?: (title: string) => void;
 }
 
+const formatPrice = (price: string | number): string => {
+  // If price is already a string and starts with a currency symbol, return as is
+  if (typeof price === 'string' && (price.startsWith('$') || price.startsWith('USD'))) {
+    return price;
+  }
+
+  // Convert to number if string
+  const numericPrice = typeof price === 'string' ? parseFloat(price) : price;
+
+  // Check if it's a valid number
+  if (isNaN(numericPrice)) {
+    return 'Price unavailable';
+  }
+
+  // Format the price with USD and two decimal places
+  return `USD ${numericPrice.toFixed(2)}`;
+};
+
 export const ProductCard = ({ 
   title, 
   description, 
@@ -46,7 +64,7 @@ export const ProductCard = ({
           {description}
         </p>
         <div className="mt-2 flex items-center justify-between">
-          <p className="text-xs sm:text-sm font-bold text-primary">USD {price}</p>
+          <p className="text-xs sm:text-sm font-bold text-primary">{formatPrice(price)}</p>
           {rating && (
             <div className="flex items-center gap-1">
               <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
