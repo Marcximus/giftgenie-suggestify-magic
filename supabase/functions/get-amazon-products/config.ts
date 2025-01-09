@@ -5,14 +5,8 @@ export const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-export const createRapidApiHeaders = (apiKey: string) => ({
-  'X-RapidAPI-Key': apiKey,
-  'X-RapidAPI-Host': RAPIDAPI_HOST,
-});
-
-// Rate limiting configuration
-export const RATE_LIMIT = {
-  MAX_REQUESTS: 5,
-  WINDOW_MS: 10000, // 10 seconds
-  RETRY_AFTER: 30, // seconds
+// Price range parsing configuration
+export const PRICE_RANGE = {
+  DEFAULT_RANGE_PERCENTAGE: 0.2, // ±20% for single price values
+  MIN_PRICE: 1, // Minimum allowed price
 };
