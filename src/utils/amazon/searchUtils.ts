@@ -2,6 +2,17 @@ import { supabase } from "@/integrations/supabase/client";
 import { AmazonProduct } from './types';
 import { toast } from "@/components/ui/use-toast";
 
+const cleanSearchTerm = (term: string): string => {
+  // Remove specific model numbers, sizes, and colors
+  return term
+    .replace(/\([^)]*\)/g, '') // Remove anything in parentheses
+    .replace(/with.*$/i, '') // Remove "with..." descriptions
+    .replace(/in \w+(?:\s+\w+)*$/, '') // Remove color descriptions
+    .replace(/\d+(?:\s*-\s*\d+)?\s*(?:gb|tb|inch|"|cm|mm)/gi, '') // Remove sizes
+    .replace(/\s+/g, ' ') // Replace multiple spaces with single space
+    .trim();
+};
+
 export const trySearchWithTerm = async (searchTerm: string, priceRange: string): Promise<AmazonProduct | null> => {
   console.log('Attempting search with term:', searchTerm);
   const response = await supabase.functions.invoke('get-amazon-products', {
@@ -25,23 +36,37 @@ export const searchWithFallback = async (searchTerm: string, priceRange: string)
     // Try with full search term first
     let product = await trySearchWithTerm(searchTerm, priceRange);
     
-    // If no product found and search term has more than 3 words, try with first 3 words
+    // If no product found, try with cleaned search term
     if (!product) {
-      const words = searchTerm.split(' ');
-      if (words.length > 3) {
-        const simplifiedSearch = words.slice(0, 3).join(' ');
-        console.log('No products found, attempting simplified search with:', simplifiedSearch);
-        product = await trySearchWithTerm(simplifiedSearch, priceRange);
+      const cleanedSearch = cleanSearchTerm(searchTerm);
+      if (cleanedSearch !== searchTerm) {
+        console.log('No products found, attempting with cleaned search term:', cleanedSearch);
+        product = await trySearchWithTerm(cleanedSearch, priceRange);
       }
     }
 
-    // If still no product found, try with just the first two words
+    // If still no product, try with first two significant words
     if (!product) {
-      const words = searchTerm.split(' ');
-      if (words.length > 2) {
+      const words = cleanSearchTerm(searchTerm)
+        .split(' ')
+        .filter(word => word.length > 2); // Filter out small words like "in", "of", etc
+      
+      if (words.length > 1) {
         const briefSearch = words.slice(0, 2).join(' ');
         console.log('Still no products found, attempting brief search with:', briefSearch);
         product = await trySearchWithTerm(briefSearch, priceRange);
+      }
+    }
+
+    // If still no product, try with just the first significant word
+    if (!product && searchTerm.split(' ').length > 1) {
+      const firstWord = cleanSearchTerm(searchTerm)
+        .split(' ')
+        .filter(word => word.length > 2)[0];
+      
+      if (firstWord) {
+        console.log('Final attempt with single word:', firstWord);
+        product = await trySearchWithTerm(firstWord, priceRange);
       }
     }
 
