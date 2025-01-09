@@ -39,10 +39,13 @@ serve(async (req) => {
             2. If a price range is mentioned (e.g., "$20-40" or "Budget: $50-100"), ALL suggestions must fall within that exact range
             3. Research current market prices to ensure suggestions are realistic
             4. If unsure about a price, err on the conservative side
-            5. Include specific product models/versions to ensure accurate pricing
+            5. ALWAYS suggest specific product models with brand names, model numbers, or versions
+               Example: "Apple AirPods Pro (2nd Generation)" instead of just "wireless earbuds"
+               Example: "LEGO Star Wars The Mandalorian Helmet 75328" instead of just "LEGO set"
+            6. Focus on products that are likely to be available on Amazon.com
             
             For each suggestion:
-            1. Title MUST be a specific product (e.g., "Apple AirPods Pro (2nd Generation)" not just "wireless earbuds")
+            1. Title MUST be a specific product that can be found on Amazon (include brand name, model, version)
             2. Description should explain features and benefits (at least 20 words)
             3. Price range should be realistic and include "USD" prefix
             4. Include a reason why this gift is appropriate
@@ -51,7 +54,7 @@ serve(async (req) => {
             {
               "suggestions": [
                 {
-                  "title": "specific product name",
+                  "title": "specific product name with brand and model",
                   "description": "detailed description",
                   "priceRange": "USD price",
                   "reason": "why this gift is appropriate"
@@ -88,6 +91,9 @@ serve(async (req) => {
       if (!Array.isArray(suggestions.suggestions)) {
         throw new Error('Response is not an array');
       }
+
+      // Log the suggestions for debugging
+      console.log('Generated suggestions:', JSON.stringify(suggestions, null, 2));
 
     } catch (parseError) {
       console.error('Failed to parse OpenAI response:', parseError);
