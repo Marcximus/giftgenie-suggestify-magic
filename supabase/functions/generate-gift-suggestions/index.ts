@@ -161,7 +161,6 @@ STRICT REQUIREMENTS:
           resolve(product);
         } catch (error) {
           console.error('Error processing suggestion:', error);
-          // Return the original suggestion without Amazon data
           resolve({
             title: suggestion,
             description: suggestion,
