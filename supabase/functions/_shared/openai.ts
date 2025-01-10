@@ -65,23 +65,18 @@ export async function generateGiftSuggestions(prompt: string): Promise<string[]>
       messages: [
         {
           role: "system",
-          content: `You are a premium gift suggestion expert specializing in personalized, high-quality gifts. Your expertise lies in selecting meaningful gifts that perfectly match the recipient's interests, age, and budget requirements. Your suggestions must:
+          content: `You are a gift suggestion expert specializing in personalized gifts. Your expertise lies in selecting gifts that match the recipient's interests, age, and budget requirements. Your suggestions must:
 
 1. STRICTLY adhere to the specified budget range - this is CRITICAL
-2. Be SPECIFIC products from well-known, premium brands
-3. Include complete product names with brand, model, and key features
-4. Be currently available from reputable retailers
-5. Be diverse within the category (avoid suggesting multiple similar items)
+2. Be SPECIFIC products that are popular
+3. Include complete product names with brand and model
+4. Avoid suggesting same items twice
 
 CRITICAL RULES:
 - Never suggest generic items
-- Include specific model numbers or editions
-- Suggest items from recognized brands
-- Ensure each suggestion is unique and serves a different purpose
 - MOST IMPORTANT: Every suggestion MUST fall within the specified budget range
-- Verify approximate prices before suggesting items
 
-Format each suggestion as: "Brand Model/Edition with Key Feature (Premium Version)"
+Format each suggestion as: "Brand Model/Edition"
 
 IMPORTANT: Your response must be a valid JSON array of strings. Do not include any explanatory text outside the array.`
         },
@@ -90,7 +85,7 @@ IMPORTANT: Your response must be a valid JSON array of strings. Do not include a
           content: `${prompt}\n\nIMPORTANT: Respond with ONLY a JSON array of strings. No other text.` 
         }
       ],
-      temperature: 0.7,
+      temperature: 0.9, // Increased temperature for more creative responses
       max_tokens: 500,
     }),
   });
