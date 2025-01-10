@@ -47,16 +47,9 @@ const ProductCardComponent = ({
       return;
     }
 
-    // If we have an ASIN, use that for a direct product link
-    if (asin) {
-      const productUrl = `https://www.amazon.com/dp/${asin}/ref=nosim?tag=${import.meta.env.VITE_AMAZON_ASSOCIATE_ID}`;
-      window.open(productUrl, '_blank', 'noopener,noreferrer');
-    } else {
-      // If no ASIN, create a search URL using the product title
-      const searchQuery = encodeURIComponent(simplifiedTitle);
-      const searchUrl = `https://www.amazon.com/s?k=${searchQuery}&tag=${import.meta.env.VITE_AMAZON_ASSOCIATE_ID}`;
-      window.open(searchUrl, '_blank', 'noopener,noreferrer');
-    }
+    // Always construct a direct product URL using the ASIN
+    const productUrl = `https://www.amazon.com/dp/${asin}/ref=nosim?tag=${import.meta.env.VITE_AMAZON_ASSOCIATE_ID}`;
+    window.open(productUrl, '_blank', 'noopener,noreferrer');
   };
 
   return (

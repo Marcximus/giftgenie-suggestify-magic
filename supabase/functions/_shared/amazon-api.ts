@@ -60,34 +60,43 @@ export async function searchAmazonProduct(
     }
 
     const product = searchData.data.products[0];
+    
+    // Ensure we have an ASIN
+    if (!product.asin) {
+      // If no ASIN found in first result, try next products
+      const productWithAsin = searchData.data.products.find(p => p.asin);
+      if (!productWithAsin) {
+        throw new AmazonApiError('No product with ASIN found');
+      }
+      product = productWithAsin;
+    }
+
     const asin = product.asin;
 
     // Then, get detailed product information using the ASIN
-    if (asin) {
-      const detailsResponse = await fetch(`https://${RAPIDAPI_HOST}/product-details?asin=${asin}&country=US`, {
-        headers: {
-          'X-RapidAPI-Key': apiKey,
-          'X-RapidAPI-Host': RAPIDAPI_HOST,
-        }
-      });
+    const detailsResponse = await fetch(`https://${RAPIDAPI_HOST}/product-details?asin=${asin}&country=US`, {
+      headers: {
+        'X-RapidAPI-Key': apiKey,
+        'X-RapidAPI-Host': RAPIDAPI_HOST,
+      }
+    });
 
-      if (detailsResponse.ok) {
-        const detailsData = await detailsResponse.json();
-        console.log('Details response:', detailsData);
+    if (detailsResponse.ok) {
+      const detailsData = await detailsResponse.json();
+      console.log('Details response:', detailsData);
 
-        if (detailsData.data) {
-          // Combine search and details data, preferring details when available
-          return {
-            title: detailsData.data.product_title || product.title,
-            description: detailsData.data.product_description || product.product_description || product.title,
-            price: detailsData.data.price?.current_price || product.price?.current_price,
-            currency: detailsData.data.price?.currency || product.price?.currency || 'USD',
-            imageUrl: detailsData.data.product_photos?.[0] || product.product_photo || product.thumbnail,
-            rating: detailsData.data.product_rating ? parseFloat(detailsData.data.product_rating) : undefined,
-            totalRatings: detailsData.data.product_num_ratings ? parseInt(detailsData.data.product_num_ratings, 10) : undefined,
-            asin: asin,
-          };
-        }
+      if (detailsData.data) {
+        // Combine search and details data, preferring details when available
+        return {
+          title: detailsData.data.product_title || product.title,
+          description: detailsData.data.product_description || product.product_description || product.title,
+          price: detailsData.data.price?.current_price || product.price?.current_price,
+          currency: detailsData.data.price?.currency || product.price?.currency || 'USD',
+          imageUrl: detailsData.data.product_photos?.[0] || product.product_photo || product.thumbnail,
+          rating: detailsData.data.product_rating ? parseFloat(detailsData.data.product_rating) : undefined,
+          totalRatings: detailsData.data.product_num_ratings ? parseInt(detailsData.data.product_num_ratings, 10) : undefined,
+          asin: asin,
+        };
       }
     }
 
