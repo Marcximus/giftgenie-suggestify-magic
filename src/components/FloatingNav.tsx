@@ -21,13 +21,13 @@ export const FloatingNav = () => {
         transition={{ duration: 0.6, type: "spring", stiffness: 100 }}
         className="container max-w-sm mx-auto px-4"
       >
-        <nav className="flex items-center justify-around gap-1 px-2 py-1.5 rounded-full backdrop-blur-md bg-white/10 border border-white/20 shadow-lg">
+        <nav className="flex items-center justify-around gap-1 px-2 py-0.5 rounded-full backdrop-blur-md bg-white/10 border border-white/20 shadow-lg">
           {navItems.map((item) => (
             <Link
               key={item.path}
               to={item.path}
               className={cn(
-                "relative px-3 py-1.5 rounded-full text-xs font-medium transition-colors text-center w-[90px]",
+                "relative px-2 py-1 rounded-full text-[11px] font-medium transition-colors text-center w-[90px] flex items-center justify-center",
                 "hover:text-primary hover:bg-white/20",
                 "active:scale-95",
                 "focus:outline-none focus:ring-2 focus:ring-primary/20",
