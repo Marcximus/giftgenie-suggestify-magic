@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/components/ui/use-toast";
 
 interface AmazonButtonProps {
   title: string;
@@ -21,39 +22,45 @@ export const AmazonButton = ({ title, asin }: AmazonButtonProps) => {
         setIsLoading(false);
       }
       
-      // If we have an ASIN, create a direct product link with the new format
+      // Only create a product link if we have a valid ASIN
       if (productAsin) {
         return `https://www.amazon.com/dp/${productAsin}/ref=nosim?tag=${cachedAssociateId}`;
       }
       
-      // Fallback to search if no ASIN available
-      const searchQuery = searchTerm.replace(/\s+/g, '+');
-      return `https://www.amazon.com/s?k=${searchQuery}&tag=${cachedAssociateId}`;
+      // If no ASIN, show a toast and return null
+      toast({
+        title: "Product not found",
+        description: "This product is currently unavailable on Amazon.",
+        variant: "destructive",
+      });
+      return null;
+      
     } catch (error) {
       console.error('Error getting Amazon Associate ID:', error);
       setIsLoading(false);
-      
-      // Even in error case, try to use ASIN if available
-      if (productAsin) {
-        return `https://www.amazon.com/dp/${productAsin}/ref=nosim`;
-      }
-      
-      const searchQuery = title.replace(/\s+/g, '+');
-      return `https://www.amazon.com/s?k=${searchQuery}`;
+      toast({
+        title: "Error",
+        description: "Unable to generate Amazon link. Please try again.",
+        variant: "destructive",
+      });
+      return null;
     }
   };
 
   const handleClick = async () => {
     const url = await getAmazonUrl(title, asin);
-    // Open in new tab with noopener and noreferrer for security
-    window.open(url, '_blank', 'noopener,noreferrer');
+    if (url) {
+      // Open in new tab with noopener and noreferrer for security
+      window.open(url, '_blank', 'noopener,noreferrer');
+    }
   };
 
   return (
     <Button 
       className="w-full bg-[#F97316] hover:bg-[#F97316]/90 shadow-sm text-sm py-1 transition-all duration-200" 
       onClick={handleClick}
-      disabled={isLoading}
+      disabled={isLoading || !asin}
+      aria-label={asin ? "View on Amazon" : "Product not available"}
     >
       {isLoading ? "Loading..." : "View on Amazon"}
     </Button>

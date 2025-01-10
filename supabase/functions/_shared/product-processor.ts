@@ -7,7 +7,7 @@ export async function processGiftSuggestion(suggestion: string): Promise<GiftSug
     console.log('Processing suggestion:', suggestion);
     const product = await searchAmazonProduct(suggestion);
     
-    if (product) {
+    if (product && product.asin) {
       const customDescription = await generateCustomDescription(
         product.title || suggestion,
         product.description || suggestion
@@ -22,21 +22,25 @@ export async function processGiftSuggestion(suggestion: string): Promise<GiftSug
         priceRange: `${product.price?.currency || 'USD'} ${product.price?.current_price || '0'}`,
         reason: reason.replace(/['"]/g, ''),
         amazon_asin: product.asin,
-        amazon_url: product.asin ? `https://www.amazon.com/dp/${product.asin}` : undefined,
+        amazon_url: `https://www.amazon.com/dp/${product.asin}`,
         amazon_price: product.price?.current_price,
         amazon_image_url: product.main_image,
         amazon_rating: product.rating,
         amazon_total_ratings: product.ratings_total,
-        search_query: suggestion
+        search_query: suggestion,
+        status: 'completed'
       };
     }
     
+    // If no valid product found, return a suggestion without Amazon details
+    console.log('No valid Amazon product found for:', suggestion);
     return {
       title: suggestion,
       description: suggestion,
       priceRange: 'Price not available',
       reason: 'This item matches your requirements.',
-      search_query: suggestion
+      search_query: suggestion,
+      status: 'pending'
     };
   } catch (error) {
     console.error('Error processing suggestion:', suggestion, error);
@@ -45,7 +49,8 @@ export async function processGiftSuggestion(suggestion: string): Promise<GiftSug
       description: suggestion,
       priceRange: 'Price not available',
       reason: 'This item matches your requirements.',
-      search_query: suggestion
+      search_query: suggestion,
+      status: 'error'
     };
   }
 }
