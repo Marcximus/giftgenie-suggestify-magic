@@ -1,128 +1,29 @@
+import { performSearch, simplifySearchTerm, getFallbackSearchTerms } from './searchUtils';
+import { getProductDetails } from './productDetails';
+import { getPriceFromMultipleSources } from './priceUtils';
+import { AmazonProduct } from './types';
+
 const RAPIDAPI_HOST = 'real-time-amazon-data.p.rapidapi.com';
 
-export async function searchAmazonProduct(searchTerm: string, apiKey: string) {
+export async function searchAmazonProduct(searchTerm: string, apiKey: string): Promise<AmazonProduct | null> {
   console.log('Initial search attempt for:', searchTerm);
 
-  async function performSearch(term: string) {
-    // Clean the search term before sending to API
-    const cleanedTerm = term
-      .replace(/\([^)]*\)/g, '') // Remove anything in parentheses
-      .replace(/&/g, 'and') // Replace & with 'and'
-      .replace(/[^\w\s-]/g, ' ') // Remove special characters except hyphens
-      .replace(/\s+/g, ' ') // Replace multiple spaces with single space
-      .trim();
-
-    console.log('Searching with cleaned term:', cleanedTerm);
-
-    const searchParams = new URLSearchParams({
-      query: cleanedTerm,
-      country: 'US',
-      category_id: 'aps',
-      sort_by: 'RELEVANCE'
-    });
-
-    const searchResponse = await fetch(
-      `https://${RAPIDAPI_HOST}/search?${searchParams.toString()}`,
-      {
-        headers: {
-          'X-RapidAPI-Key': apiKey,
-          'X-RapidAPI-Host': RAPIDAPI_HOST,
-        }
-      }
-    );
-
-    if (!searchResponse.ok) {
-      if (searchResponse.status === 429) {
-        throw new Error('rate limit exceeded');
-      }
-      throw new Error(`Amazon Search API error: ${searchResponse.status}`);
-    }
-
-    const searchData = await searchResponse.json();
-    console.log('Search response data:', {
-      title: searchData.data?.products?.[0]?.title,
-      price: searchData.data?.products?.[0]?.price
-    });
-    return searchData;
-  }
-
-  async function getProductDetails(asin: string) {
-    console.log('Fetching details for ASIN:', asin);
-    
-    const detailsResponse = await fetch(
-      `https://${RAPIDAPI_HOST}/product-details?asin=${asin}&country=US`,
-      {
-        headers: {
-          'X-RapidAPI-Key': apiKey,
-          'X-RapidAPI-Host': RAPIDAPI_HOST,
-        }
-      }
-    );
-
-    if (!detailsResponse.ok) {
-      console.warn(`Failed to get product details for ASIN ${asin}, status: ${detailsResponse.status}`);
-      return null;
-    }
-
-    const detailsData = await detailsResponse.json();
-    console.log('Product details response:', {
-      title: detailsData.data?.product_title,
-      price: detailsData.data?.product_price,
-      originalPrice: detailsData.data?.product_original_price
-    });
-    return detailsData;
-  }
-
-  function extractPrice(priceStr: string | null | undefined): number | undefined {
-    if (!priceStr) return undefined;
-    
-    // Remove currency symbol, commas, and any text
-    const cleanPrice = priceStr.replace(/[^0-9.]/g, '');
-    const price = parseFloat(cleanPrice);
-    
-    if (isNaN(price)) {
-      console.warn('Failed to parse price:', { original: priceStr, cleaned: cleanPrice });
-      return undefined;
-    }
-
-    // Log successful price extraction
-    console.log('Extracted price:', { original: priceStr, parsed: price });
-    return price;
-  }
-
   try {
-    // Remove specific model numbers, sizes, and colors from search term
-    const genericSearchTerm = searchTerm
-      .replace(/\([^)]*\)/g, '') // Remove anything in parentheses
-      .replace(/\b(?:edition|version|series)\b/gi, '') // Remove common suffixes
-      .replace(/-.*$/, '') // Remove anything after a hyphen
-      .replace(/\d+(?:\s*-\s*\d+)?\s*(?:gb|tb|inch|"|cm|mm)/gi, '') // Remove sizes
-      .trim();
-
+    // Get generic search term
+    const genericSearchTerm = simplifySearchTerm(searchTerm);
     console.log('Attempting search with generic term:', genericSearchTerm);
     
     // First attempt with generic search term
-    let searchData = await performSearch(genericSearchTerm);
+    let searchData = await performSearch(genericSearchTerm, apiKey, RAPIDAPI_HOST);
     
-    // If no products found, try with even more simplified search
+    // If no products found, try with fallback search terms
     if (!searchData.data?.products?.length) {
-      // Split the search term and remove common descriptive words
-      const words = genericSearchTerm.split(' ')
-        .filter(word => !['with', 'and', 'in', 'for', 'by', 'the', 'a', 'an'].includes(word.toLowerCase()))
-        .filter(word => word.length > 2);
+      const fallbackTerms = getFallbackSearchTerms(genericSearchTerm);
       
-      // Try with first two main words
-      if (words.length > 1) {
-        const briefSearch = words.slice(0, 2).join(' ');
-        console.log('Attempting brief search with:', briefSearch);
-        searchData = await performSearch(briefSearch);
-      }
-      
-      // If still no results, try with just the first word
-      if (!searchData.data?.products?.length && words.length > 0) {
-        const singleWordSearch = words[0];
-        console.log('Final attempt with single word:', singleWordSearch);
-        searchData = await performSearch(singleWordSearch);
+      for (const term of fallbackTerms) {
+        console.log('Attempting fallback search with:', term);
+        searchData = await performSearch(term, apiKey, RAPIDAPI_HOST);
+        if (searchData.data?.products?.length) break;
       }
     }
 
@@ -141,13 +42,14 @@ export async function searchAmazonProduct(searchTerm: string, apiKey: string) {
     }
 
     // Get detailed product information
-    const detailsData = await getProductDetails(asin);
+    const detailsData = await getProductDetails(asin, apiKey, RAPIDAPI_HOST);
 
     if (detailsData?.data) {
-      // Try to get price from multiple possible sources
-      const price = extractPrice(detailsData.data.product_price) || 
-                   extractPrice(detailsData.data.product_original_price) ||
-                   extractPrice(product.price?.current_price);
+      const price = getPriceFromMultipleSources(
+        detailsData.data.product_price,
+        detailsData.data.product_original_price,
+        product.price?.current_price
+      );
 
       if (!price) {
         console.warn('No valid price found for product:', {
@@ -174,7 +76,11 @@ export async function searchAmazonProduct(searchTerm: string, apiKey: string) {
     }
 
     // Fallback to search data if details request fails
-    const searchPrice = extractPrice(product.price?.current_price);
+    const searchPrice = getPriceFromMultipleSources(
+      undefined,
+      undefined,
+      product.price?.current_price
+    );
     
     return {
       title: product.title,
