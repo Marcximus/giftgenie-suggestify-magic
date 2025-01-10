@@ -32,21 +32,19 @@ serve(async (req) => {
       );
     }
 
-    // Enhanced parameter extraction
+    // Enhanced gender detection
+    const maleRecipients = ['brother', 'father', 'husband', 'boyfriend', 'son', 'grandpa', 'uncle', 'nephew', 'male'];
+    const femaleRecipients = ['sister', 'mother', 'wife', 'girlfriend', 'daughter', 'grandma', 'aunt', 'niece', 'female'];
+    
+    const promptLower = prompt.toLowerCase();
+    const isMaleRecipient = maleRecipients.some(term => promptLower.includes(term));
+    const isFemaleRecipient = femaleRecipients.some(term => promptLower.includes(term));
+    
+    // Extract other parameters
     const ageMatch = prompt.match(/(\d+)(?:\s*-\s*(\d+))?\s*(?:year|years|yr|yrs)?(?:\s*old)?/i);
-    const genderMatch = prompt.match(/(?:brother|sister|mother|father|son|daughter|husband|wife|boyfriend|girlfriend)/i);
     const interestsMatch = prompt.match(/(?:loves?|enjoys?|likes?)\s+([^,.]+)/i);
     const budgetMatch = prompt.match(/(?:budget|USD|price)[^\d]*(\d+)(?:\s*-\s*(\d+))?/i);
 
-    // Extract parameters with defaults
-    const age = {
-      min: ageMatch ? parseInt(ageMatch[1]) : null,
-      max: ageMatch?.[2] ? parseInt(ageMatch[2]) : (ageMatch ? parseInt(ageMatch[1]) : null)
-    };
-
-    const gender = genderMatch ? genderMatch[0].toLowerCase() : null;
-    const interests = interestsMatch ? interestsMatch[1].trim() : null;
-    
     let minBudget = 25;
     let maxBudget = 100;
 
@@ -61,21 +59,29 @@ serve(async (req) => {
       }
     }
 
-    // Construct an enhanced prompt with specific instructions based on extracted parameters
+    // Construct a more specific prompt with strict gender guidelines
+    const genderContext = isMaleRecipient ? 'male' : isFemaleRecipient ? 'female' : 'gender-neutral';
+    const genderInstruction = isMaleRecipient ? 
+      'CRITICAL: Only suggest gifts that are appropriate and appealing for male recipients. Avoid items typically marketed to women.' :
+      isFemaleRecipient ?
+      'CRITICAL: Only suggest gifts that are appropriate and appealing for female recipients. Avoid items typically marketed to men.' :
+      'Suggest gender-neutral gifts that would appeal to any recipient.';
+
     const enhancedPrompt = `As a premium gift curator, suggest 8 highly specific and personalized gift ideas that STRICTLY match these criteria:
 
-${age.min ? `Age Range: ${age.min}${age.max ? `-${age.max}` : ''} years old
+${ageMatch ? `Age Range: ${ageMatch[1]}${ageMatch[2] ? `-${ageMatch[2]}` : ''} years old
 - Focus on age-appropriate items
 - Consider generational preferences and trends` : ''}
 
-${gender ? `Recipient: ${gender}
-- Ensure suggestions align with typical ${gender} preferences
-- Consider gender-specific trends and interests` : ''}
+Recipient Gender: ${genderContext}
+${genderInstruction}
+- Ensure all suggestions align with ${genderContext} preferences
+- Consider gender-specific trends and interests
 
-${interests ? `Key Interests: ${interests}
-- Prioritize items directly related to ${interests}
-- Include complementary items that enhance the ${interests} experience
-- Consider both equipment and accessories related to ${interests}` : ''}
+${interestsMatch ? `Key Interests: ${interestsMatch[1]}
+- Prioritize items directly related to ${interestsMatch[1]}
+- Include complementary items that enhance the ${interestsMatch[1]} experience
+- Consider both equipment and accessories related to ${interestsMatch[1]}` : ''}
 
 Budget Constraints: $${minBudget} - $${maxBudget}
 - Every suggestion MUST fall within this exact price range
@@ -138,19 +144,27 @@ Format each suggestion as:
       const price = product.amazon_price || parseFloat(product.priceRange.replace(/[^\d.]/g, ''));
       const withinBudget = price >= minBudget * 0.8 && price <= maxBudget * 1.2;
 
-      // Score the product relevance (basic implementation)
+      // Score the product relevance
       let relevanceScore = withinBudget ? 1 : 0;
       
       // Add to score based on matching criteria
-      if (interests && product.description.toLowerCase().includes(interests.toLowerCase())) {
+      if (interestsMatch && product.description.toLowerCase().includes(interestsMatch[1].toLowerCase())) {
         relevanceScore += 1;
       }
+
+      // Gender-specific scoring
+      const productDesc = (product.description + ' ' + product.title).toLowerCase();
+      if (isMaleRecipient && femaleRecipients.some(term => productDesc.includes(term))) {
+        relevanceScore = 0; // Exclude products with female-specific terms for male recipients
+      }
+      if (isFemaleRecipient && maleRecipients.some(term => productDesc.includes(term))) {
+        relevanceScore = 0; // Exclude products with male-specific terms for female recipients
+      }
       
-      // Require a minimum relevance score
       return relevanceScore > 0;
     });
 
-    // Sort by relevance (can be enhanced further)
+    // Sort by relevance and price
     filteredProducts.sort((a, b) => {
       const priceA = a.amazon_price || parseFloat(a.priceRange.replace(/[^\d.]/g, ''));
       const priceB = b.amazon_price || parseFloat(b.priceRange.replace(/[^\d.]/g, ''));
