@@ -7,7 +7,7 @@ import { GiftSuggestion } from '../_shared/types.ts';
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': '*',
   'Access-Control-Max-Age': '86400',
 };
 
@@ -16,22 +16,22 @@ serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { 
       status: 204,
-      headers: corsHeaders 
+      headers: { ...corsHeaders }
     });
   }
 
   try {
     // Validate OpenAI API key
-    if (!Deno.env.get('OPENAI_API_KEY')) {
+    const openAiKey = Deno.env.get('OPENAI_API_KEY');
+    if (!openAiKey) {
       console.error('OpenAI API key not configured');
       throw new Error('OpenAI API key not configured');
     }
 
-    // Parse request body
+    // Parse and validate request body
     const { prompt } = await req.json();
     console.log('Processing request with prompt:', prompt);
 
-    // Validate prompt
     if (!prompt || typeof prompt !== 'string' || prompt.trim().length < 3) {
       console.error('Invalid prompt received:', prompt);
       return new Response(
