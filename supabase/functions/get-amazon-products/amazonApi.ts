@@ -39,11 +39,16 @@ export async function searchAmazonProduct(searchTerm: string, apiKey: string) {
     }
 
     const searchData = await searchResponse.json();
-    console.log('Search response:', searchData);
+    console.log('Search response data:', {
+      title: searchData.data?.products?.[0]?.title,
+      price: searchData.data?.products?.[0]?.price
+    });
     return searchData;
   }
 
   async function getProductDetails(asin: string) {
+    console.log('Fetching details for ASIN:', asin);
+    
     const detailsResponse = await fetch(
       `https://${RAPIDAPI_HOST}/product-details?asin=${asin}&country=US`,
       {
@@ -60,8 +65,29 @@ export async function searchAmazonProduct(searchTerm: string, apiKey: string) {
     }
 
     const detailsData = await detailsResponse.json();
-    console.log('Product details response:', detailsData);
+    console.log('Product details response:', {
+      title: detailsData.data?.product_title,
+      price: detailsData.data?.product_price,
+      originalPrice: detailsData.data?.product_original_price
+    });
     return detailsData;
+  }
+
+  function extractPrice(priceStr: string | null | undefined): number | undefined {
+    if (!priceStr) return undefined;
+    
+    // Remove currency symbol, commas, and any text
+    const cleanPrice = priceStr.replace(/[^0-9.]/g, '');
+    const price = parseFloat(cleanPrice);
+    
+    if (isNaN(price)) {
+      console.warn('Failed to parse price:', { original: priceStr, cleaned: cleanPrice });
+      return undefined;
+    }
+
+    // Log successful price extraction
+    console.log('Extracted price:', { original: priceStr, parsed: price });
+    return price;
   }
 
   try {
@@ -118,10 +144,27 @@ export async function searchAmazonProduct(searchTerm: string, apiKey: string) {
     const detailsData = await getProductDetails(asin);
 
     if (detailsData?.data) {
+      // Try to get price from multiple possible sources
+      const price = extractPrice(detailsData.data.product_price) || 
+                   extractPrice(detailsData.data.product_original_price) ||
+                   extractPrice(product.price?.current_price);
+
+      if (!price) {
+        console.warn('No valid price found for product:', {
+          asin,
+          title: detailsData.data.product_title,
+          priceAttempts: {
+            productPrice: detailsData.data.product_price,
+            originalPrice: detailsData.data.product_original_price,
+            searchPrice: product.price?.current_price
+          }
+        });
+      }
+
       return {
         title: detailsData.data.product_title || product.title,
         description: detailsData.data.product_description || product.product_description || product.title,
-        price: parsePrice(detailsData.data.product_price) || parsePrice(detailsData.data.product_original_price),
+        price,
         currency: detailsData.data.currency || 'USD',
         imageUrl: detailsData.data.product_photo || detailsData.data.product_photos?.[0] || product.thumbnail,
         rating: detailsData.data.product_star_rating ? parseFloat(detailsData.data.product_star_rating) : undefined,
@@ -131,10 +174,12 @@ export async function searchAmazonProduct(searchTerm: string, apiKey: string) {
     }
 
     // Fallback to search data if details request fails
+    const searchPrice = extractPrice(product.price?.current_price);
+    
     return {
       title: product.title,
       description: product.product_description || product.title,
-      price: parsePrice(product.price?.current_price),
+      price: searchPrice,
       currency: product.price?.currency || 'USD',
       imageUrl: product.product_photo || product.thumbnail,
       rating: product.product_star_rating ? parseFloat(product.product_star_rating) : undefined,
@@ -145,14 +190,4 @@ export async function searchAmazonProduct(searchTerm: string, apiKey: string) {
     console.error('Error in searchAmazonProduct:', error);
     throw error;
   }
-}
-
-function parsePrice(priceStr: string | null | undefined): number | undefined {
-  if (!priceStr) return undefined;
-  
-  // Remove currency symbol and any commas
-  const cleanPrice = priceStr.replace(/[^0-9.]/g, '');
-  const price = parseFloat(cleanPrice);
-  
-  return isNaN(price) ? undefined : price;
 }

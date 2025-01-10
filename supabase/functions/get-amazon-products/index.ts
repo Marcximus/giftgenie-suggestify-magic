@@ -31,10 +31,8 @@ serve(async (req) => {
     
     try {
       const product = await searchAmazonProduct(searchTerm, RAPIDAPI_KEY);
-      console.log('Product found:', product);
-
+      
       if (!product) {
-        // Return a 404 instead of 500 when no products are found
         return new Response(
           JSON.stringify({ 
             error: 'No products found',
@@ -48,6 +46,14 @@ serve(async (req) => {
         );
       }
 
+      // Validate price before returning
+      if (!product.price) {
+        console.warn('Product found but price is missing:', {
+          asin: product.asin,
+          title: product.title
+        });
+      }
+
       return new Response(
         JSON.stringify(product),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -55,7 +61,6 @@ serve(async (req) => {
     } catch (error) {
       console.error('Error searching Amazon product:', error);
       
-      // Handle specific error cases
       if (error.message.includes('rate limit')) {
         return new Response(
           JSON.stringify({
