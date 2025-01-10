@@ -27,6 +27,8 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error("Name, email, and message are required");
     }
 
+    console.log("Sending email with data:", { name, email, message });
+
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: {
