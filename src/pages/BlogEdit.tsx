@@ -1,7 +1,6 @@
 import { useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Tables } from "@/integrations/supabase/types";
 import BlogPostForm from "@/components/blog/BlogPostForm";
 import { useToast } from "@/hooks/use-toast";
 
@@ -23,11 +22,12 @@ const BlogEdit = () => {
 
       const { data, error } = await supabase
         .from("blog_posts")
-        .select("*")
+        .select()
         .eq("slug", slug)
         .maybeSingle();
       
       if (error) {
+        console.error("Error fetching blog post:", error);
         toast({
           title: "Error",
           description: "Failed to fetch blog post",
