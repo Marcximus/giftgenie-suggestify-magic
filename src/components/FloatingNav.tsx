@@ -34,7 +34,7 @@ export const FloatingNav = () => {
                 location.pathname === item.path 
                   ? "text-primary bg-white/20" 
                   : "text-foreground/70",
-                item.name === "Ideas" && "animate-pulse-text"
+                item.name === "Ideas" && "animate-pulse-text text-primary"
               )}
             >
               {item.name}
