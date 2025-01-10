@@ -1,10 +1,12 @@
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 export const FloatingNav = () => {
   const isMobile = useIsMobile();
+  const location = useLocation();
+  
   const navItems = [
     { name: "Get The Gift", path: "/" },
     { name: "Ideas", path: "/blog" },
@@ -20,7 +22,7 @@ export const FloatingNav = () => {
         className="w-full max-w-md mx-4"
       >
         <nav className="flex items-center justify-around gap-1 px-3 py-2 rounded-full backdrop-blur-md bg-white/30 border border-white/20 shadow-lg">
-          {navItems.map((item, index) => (
+          {navItems.map((item) => (
             <Link
               key={item.path}
               to={item.path}
@@ -29,7 +31,7 @@ export const FloatingNav = () => {
                 "hover:text-primary hover:bg-white/40",
                 "active:scale-95",
                 "focus:outline-none focus:ring-2 focus:ring-primary/20",
-                index === 0 && "text-primary"
+                location.pathname === item.path && "text-primary"
               )}
             >
               {item.name}
