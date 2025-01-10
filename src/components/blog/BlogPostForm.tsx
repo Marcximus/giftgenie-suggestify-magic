@@ -119,7 +119,7 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
 
       <TabsContent value="edit">
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 text-left">
             <div className="grid gap-6 md:grid-cols-2">
               <FormField
                 control={form.control}
@@ -361,7 +361,7 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
         </Form>
       </TabsContent>
 
-      <TabsContent value="preview">
+      <TabsContent value="preview" className="text-left">
         <BlogPostPreview data={form.watch()} />
       </TabsContent>
     </Tabs>
