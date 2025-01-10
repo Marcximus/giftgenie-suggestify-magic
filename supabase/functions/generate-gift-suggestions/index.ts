@@ -36,9 +36,8 @@ serve(async (req) => {
     const budgetMatch = prompt.match(/(?:budget|USD|price)[^\d]*(\d+)(?:\s*-\s*(\d+))?/i);
     console.log('Budget match:', budgetMatch);
     
-    // Default budget range if none specified
-    let minBudget = 25;  // Default minimum budget
-    let maxBudget = 100; // Default maximum budget
+    let minBudget = 25;
+    let maxBudget = 100;
 
     if (budgetMatch) {
       if (budgetMatch[2]) {
@@ -46,8 +45,8 @@ serve(async (req) => {
         maxBudget = parseInt(budgetMatch[2]);
       } else {
         const budget = parseInt(budgetMatch[1]);
-        minBudget = budget * 0.8; // Allow 20% below target
-        maxBudget = budget * 1.2; // Allow 20% above target
+        minBudget = budget * 0.8;
+        maxBudget = budget * 1.2;
       }
     }
 
@@ -71,7 +70,7 @@ serve(async (req) => {
                     prompt.toLowerCase().includes('daughter') || 
                     prompt.toLowerCase().includes('grandma');
 
-    const interestMatch = prompt.match(/who likes\s+([^.]+)/i);
+    const interestMatch = prompt.match(/who likes\s+([^.]+)/i) || prompt.match(/likes\s+([^.]+)/i);
     const interests = interestMatch ? interestMatch[1].trim() : '';
     
     const getAgeGroup = (age: number | null) => {
@@ -85,44 +84,59 @@ serve(async (req) => {
 
     const ageGroup = getAgeGroup(age);
 
-    // Enhanced prompt with budget information
-    let enhancedPrompt = `As a highly personalized gift curator, suggest 8 premium gift ideas that STRICTLY fall within the budget range of $${minBudget} to $${maxBudget}. ${prompt}
+    // Enhanced prompt with diverse gift categories
+    let enhancedPrompt = `As a highly personalized gift curator, suggest 8 diverse and creative gift ideas that STRICTLY fall within the budget range of $${minBudget} to $${maxBudget}. ${prompt}
 
 CRITICAL REQUIREMENTS:
 1. Budget Constraints (STRICTLY ENFORCED):
    - Every suggestion MUST cost between $${minBudget} and $${maxBudget}
    - DO NOT suggest items outside this range
    - Verify prices before suggesting items
-   - If unsure about exact price, err on the side of caution
 
-2. Demographic Customization:
-   Age Group (${ageGroup}):
+2. Gift Category Diversity (VERY IMPORTANT):
+   Consider these diverse categories:
+   - Wearables (clothing, accessories, backpacks)
+   - Room Decor (posters, night lights, wall decals)
+   - Educational Items (books, learning toys)
+   - Practical Items (lunch boxes, water bottles)
+   - Entertainment (toys, games)
+   - Creative Items (art supplies, craft kits)
+   - Comfort Items (blankets, pillows, pajamas)
+   - Collectibles (figures, cards)
+
+3. Age-Appropriate Customization (${ageGroup}):
    ${age ? `- Target age: ${age} years old` : ''}
-   ${ageGroup === 'young adult' ? '- Focus on trending and innovative products\n   - Consider career and lifestyle needs\n   - Include tech-savvy options' : ''}
+   ${ageGroup === 'child' ? `
+   - Focus on durability and safety
+   - Consider developmental stage
+   - Include educational value
+   - Make it fun and engaging` : ''}
 
-3. Gender-Specific Considerations:${
+4. Interest-Based Integration:${interests ? `
+   Primary interest: ${interests}
+   Consider:
+   - Licensed merchandise (clothing, accessories)
+   - Themed room decor
+   - Related activity sets
+   - Books or media featuring ${interests}
+   - Practical items with ${interests} themes
+   - Creative supplies to make ${interests}-related art` : ''}
+
+5. Gender Considerations:${
   isMale ? `
    - Focus on masculine preferences
-   - Consider modern male interests
-   - Emphasize quality and functionality` : 
+   - Consider modern male interests` : 
   isFemale ? `
    - Focus on feminine preferences
-   - Consider modern female interests
-   - Emphasize style and practicality` : ''}
+   - Consider modern female interests` : ''}
 
-4. Interest-Based Customization:${interests ? `
-   - Primary interests: ${interests}
-   - Focus heavily on ${interests}-related items
-   - Include premium ${interests} equipment or accessories
-   - Consider skill level and experience` : ''}
-
-5. Quality Requirements:
+6. Quality Requirements:
    - Suggest only specific products from reputable brands
    - Include model numbers and key features
    - Focus on latest product versions
-   - Emphasize durability and premium quality
+   - Emphasize durability and quality
 
-IMPORTANT: Each suggestion MUST be a premium product that costs between $${minBudget} and $${maxBudget}. Do not suggest any items outside this range.
+IMPORTANT: Each suggestion MUST be a premium product that costs between $${minBudget} and $${maxBudget}. Ensure a mix of different categories for variety.
 
 Format each suggestion as:
 "Brand Model/Edition with Key Feature (Premium Version)"`;
@@ -131,7 +145,7 @@ Format each suggestion as:
       console.log('Rate limit exceeded, returning 429');
       return new Response(
         JSON.stringify({
-          error: 'Rate limit exceeded. Please try again in a moment.',
+          error: 'Rate limit exceeded',
           retryAfter: RATE_LIMIT.RETRY_AFTER
         }),
         {
@@ -167,13 +181,11 @@ Format each suggestion as:
     // More lenient budget filtering to account for price variations
     const filteredProducts = products.filter(product => {
       const price = product.amazon_price || parseFloat(product.priceRange.replace(/[^\d.]/g, ''));
-      // Allow for some price flexibility (20% margin)
       const minAllowed = minBudget * 0.8;
       const maxAllowed = maxBudget * 1.2;
       return price >= minAllowed && price <= maxAllowed;
     });
 
-    // If no products match the budget, return all products with a warning
     if (filteredProducts.length === 0) {
       console.log('No products within budget range, returning all suggestions');
       return new Response(
