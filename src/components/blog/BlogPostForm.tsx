@@ -34,7 +34,7 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
       excerpt: "",
       author: "",
       image_url: "",
-      published_at: null,
+      published_at: new Date().toISOString(),
       meta_title: "",
       meta_description: "",
       meta_keywords: "",
@@ -45,13 +45,15 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
   const onSubmit = async (data: BlogPostFormData) => {
     setIsSubmitting(true);
     try {
+      const currentTime = new Date().toISOString();
+      
       if (initialData?.id) {
         // Update existing post
         const { error } = await supabase
           .from("blog_posts")
           .update({
             ...data,
-            updated_at: new Date().toISOString(),
+            updated_at: currentTime,
           })
           .eq("id", initialData.id);
 
@@ -66,8 +68,9 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
           .from("blog_posts")
           .insert([{
             ...data,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
+            created_at: currentTime,
+            updated_at: currentTime,
+            published_at: currentTime,
           }]);
 
         if (error) throw error;
