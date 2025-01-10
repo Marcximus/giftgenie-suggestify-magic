@@ -31,7 +31,7 @@ export const SuggestionsGrid = ({
   onStartOver,
   isLoading 
 }: SuggestionsGridProps) => {
-  // Extract price range from the first suggestion's search query
+  // Extract price range from the first suggestion's search query if it exists
   const priceRangeMatch = suggestions[0]?.search_query?.match(/budget.*?(\d+)\s*-\s*(\d+)/i);
   const priceRange = priceRangeMatch ? `${priceRangeMatch[1]}-${priceRangeMatch[2]}` : undefined;
 
