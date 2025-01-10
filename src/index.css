@@ -31,18 +31,38 @@
   * {
     @apply border-border;
   }
+  
+  html {
+    -webkit-tap-highlight-color: transparent;
+  }
+  
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground antialiased;
     font-feature-settings: "rlig" 1, "calt" 1;
+  }
+  
+  /* Improve touch target sizes on mobile */
+  @media (max-width: 640px) {
+    button, 
+    [role="button"],
+    a {
+      @apply min-h-[44px] min-w-[44px];
+    }
+    
+    input,
+    select,
+    textarea {
+      @apply min-h-[44px];
+    }
   }
 }
 
 .search-container {
-  @apply max-w-3xl mx-auto px-4 py-12;
+  @apply max-w-3xl mx-auto px-4 py-8 sm:py-12;
 }
 
 .results-grid {
-  @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-8;
+  @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mt-8;
 }
 
 .product-card {
@@ -56,9 +76,17 @@
 /* Handle text overflow */
 textarea {
   @apply transition-all duration-200;
-  min-height: 40px;
+  min-height: 44px;
 }
 
 textarea:focus {
   height: auto;
+}
+
+/* Prevent text selection during touch interactions */
+.touch-manipulation {
+  touch-action: manipulation;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
 }

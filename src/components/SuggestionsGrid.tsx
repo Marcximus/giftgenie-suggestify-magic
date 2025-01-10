@@ -34,7 +34,7 @@ export const SuggestionsGrid = ({
   return (
     <>
       <div 
-        className="mt-6 sm:mt-8 md:mt-12 grid gap-3 sm:gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-4 animate-in fade-in slide-in-from-bottom-4 duration-500"
+        className="mt-6 sm:mt-8 md:mt-12 grid gap-4 sm:gap-5 md:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 animate-in fade-in slide-in-from-bottom-4 duration-500 px-4 sm:px-6 md:px-8"
         role="region"
         aria-label="Gift suggestions"
       >
@@ -76,23 +76,23 @@ export const SuggestionsGrid = ({
       </div>
       
       {suggestions.length > 0 && (
-        <div className="flex justify-center gap-3 mt-8 sm:mt-12">
+        <div className="flex flex-col sm:flex-row justify-center gap-3 mt-8 sm:mt-12 px-4 sm:px-6">
           <Button
             onClick={onGenerateMore}
             disabled={isLoading}
-            className="group bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-sm hover:shadow-md transition-all duration-200 min-h-[2.5rem] touch-manipulation"
+            className="group bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-sm hover:shadow-md transition-all duration-200 min-h-[3rem] sm:min-h-[2.75rem] touch-manipulation text-base sm:text-sm"
             aria-label="Generate more gift suggestions"
           >
-            <Sparkles className="w-4 h-4 mr-2 animate-pulse group-hover:animate-none" aria-hidden="true" />
+            <Sparkles className="w-5 h-5 sm:w-4 sm:h-4 mr-2 animate-pulse group-hover:animate-none" aria-hidden="true" />
             Generate More Ideas
           </Button>
           <Button
             onClick={onStartOver}
             variant="outline"
-            className="flex items-center gap-2 shadow-sm hover:shadow-md transition-all duration-200 hover:bg-secondary/80 min-h-[2.5rem] touch-manipulation"
+            className="flex items-center gap-2 shadow-sm hover:shadow-md transition-all duration-200 hover:bg-secondary/80 min-h-[3rem] sm:min-h-[2.75rem] touch-manipulation text-base sm:text-sm"
             aria-label="Start a new gift search"
           >
-            <RotateCcw className="w-4 h-4" aria-hidden="true" />
+            <RotateCcw className="w-5 h-5 sm:w-4 sm:h-4" aria-hidden="true" />
             Start Over
           </Button>
         </div>
