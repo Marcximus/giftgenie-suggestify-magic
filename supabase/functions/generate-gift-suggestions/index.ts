@@ -32,69 +32,53 @@ serve(async (req) => {
       );
     }
 
-    // Enhanced budget extraction with default values
-    const budgetMatch = prompt.match(/(?:budget|USD|price)[^\d]*(\d+)(?:\s*-\s*(\d+))?/i);
-    console.log('Budget match:', budgetMatch);
-    
-    let minBudget = 25;
-    let maxBudget = 100;
-
-    if (budgetMatch) {
-      if (budgetMatch[2]) {
-        minBudget = parseInt(budgetMatch[1]);
-        maxBudget = parseInt(budgetMatch[2]);
-      } else {
-        const budget = parseInt(budgetMatch[1]);
-        minBudget = budget * 0.8;
-        maxBudget = budget * 1.2;
-      }
-    }
-
     // Enhanced interest and context extraction
     const interests = prompt.match(/(?:loves?|enjoys?|likes?)\s+([^,.]+)/gi)?.map(match => 
       match.replace(/(?:loves?|enjoys?|likes?)\s+/i, '').trim()
     ) || [];
 
     const relationship = prompt.match(/(?:my|for)\s+([^,\s]+)/i)?.[1]?.toLowerCase() || '';
+    const ageMatch = prompt.match(/(\d+)(?:\s*-\s*\d+)?\s*years?\s*old/i);
+    const age = ageMatch ? ageMatch[1] : '';
     
-    // Construct a more detailed and creative prompt
-    const enhancedPrompt = `As a premium gift curator specializing in unique and thoughtful presents, suggest 8 diverse and creative gift ideas that STRICTLY fall within the budget range of $${minBudget} to $${maxBudget}. 
+    // Enhanced budget extraction
+    const budgetMatch = prompt.match(/(?:budget|USD|price)[^\d]*(\d+)(?:\s*-\s*(\d+))?/i);
+    const minBudget = budgetMatch ? parseInt(budgetMatch[1]) : 25;
+    const maxBudget = budgetMatch && budgetMatch[2] ? parseInt(budgetMatch[2]) : minBudget * 1.2;
 
-Key Focus: ${interests.join(', ')} for ${relationship}
+    // Construct a more focused and interest-specific prompt
+    const enhancedPrompt = `As a gift expert specializing in ${interests.join(', ')}, suggest 8 highly specific and personalized gift ideas for a ${age ? `${age}-year-old ` : ''}${relationship} who is passionate about ${interests.join(' and ')}. 
 
-CRITICAL REQUIREMENTS:
-1. Budget Constraints:
-   - Every suggestion MUST cost between $${minBudget} and $${maxBudget}
-   - Verify prices before suggesting items
+Key Requirements:
+1. Budget: STRICTLY between $${minBudget} and $${maxBudget}
+2. Interest Focus:
+   ${interests.map(interest => `- Suggest items that directly relate to ${interest}`).join('\n   ')}
+   - Each suggestion must clearly connect to at least one of their interests
+   - Include specialty or premium versions of items within their interest areas
 
-2. Gift Categories (Include at least 4 different categories):
-   - Gourmet & Culinary: artisanal chocolates, specialty foods, unique snacks
-   - Experience Gifts: tasting kits, DIY sets, subscription boxes
-   - Personalized Items: custom-made gifts, monogrammed items
-   - Wellness & Self-Care: aromatherapy, bath products, comfort items
-   - Creative & Hobby: craft supplies, activity sets, creative kits
-   - Home & Lifestyle: decor pieces, practical luxuries
-   - Unique Finds: unconventional but delightful items
-   - Local & Artisanal: handcrafted items, small-batch products
+3. Gift Categories (focus on their interests):
+   - High-quality equipment or gear for their hobbies
+   - Premium accessories related to their interests
+   - Learning resources or courses in their areas of interest
+   - Unique or limited edition items in their preferred categories
+   - Experiential gifts related to their passions
+   - Specialty or collector's items in their interest areas
 
-3. Creativity Guidelines:
-   - NO generic gift cards or basic items
-   - Focus on unique, premium versions of products
-   - Include unexpected but delightful combinations
-   - Consider seasonal relevance
-   - Think beyond obvious choices
-   ${interests.map(interest => `   - Incorporate ${interest} in creative ways`).join('\n')}
-
-4. Quality Requirements:
+4. Quality Guidelines:
    - Suggest only specific products from reputable brands
    - Include model numbers or specific editions
-   - Focus on premium versions within budget
-   - Emphasize craftsmanship and quality
+   - Focus on items that enhance their existing interests
+   - Emphasize durability and quality within budget
+   - Consider items that help them pursue their passions
 
 Format each suggestion as:
-"Brand Name Specific Product (Premium/Special Edition/Version)"
+"Brand Name Specific Product (Premium/Special Edition) - [Interest] Version"
 
-IMPORTANT: Each suggestion must be unique, specific, and actually available for purchase within the budget range.`;
+IMPORTANT: Each suggestion must be:
+- Directly related to at least one of their stated interests
+- Actually available for purchase
+- Within the specified budget range
+- Specific and detailed enough to find online`;
 
     if (isRateLimited()) {
       console.log('Rate limit exceeded, returning 429');
@@ -133,7 +117,7 @@ IMPORTANT: Each suggestion must be unique, specific, and actually available for 
 
     const products = await Promise.all(productPromises);
 
-    // More lenient budget filtering to account for price variations
+    // Filter products to ensure they match budget constraints
     const filteredProducts = products.filter(product => {
       const price = product.amazon_price || parseFloat(product.priceRange.replace(/[^\d.]/g, ''));
       return price >= minBudget * 0.8 && price <= maxBudget * 1.2;
