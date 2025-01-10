@@ -1,20 +1,6 @@
-import { ProductCard } from './ProductCard';
-import { Button } from './ui/button';
-import { Sparkles, RotateCcw } from 'lucide-react';
-import { SuggestionSkeleton } from './SuggestionSkeleton';
-
-interface GiftSuggestion {
-  title: string;
-  description: string;
-  priceRange: string;
-  reason: string;
-  amazon_asin?: string;
-  amazon_url?: string;
-  amazon_price?: number;
-  amazon_image_url?: string;
-  amazon_rating?: number;
-  amazon_total_ratings?: number;
-}
+import { GiftSuggestion } from '@/types/suggestions';
+import { SuggestionsGridItems } from './suggestions/SuggestionsGridItems';
+import { SuggestionsActions } from './suggestions/SuggestionsActions';
 
 interface SuggestionsGridProps {
   suggestions: GiftSuggestion[];
@@ -38,64 +24,19 @@ export const SuggestionsGrid = ({
         role="region"
         aria-label="Gift suggestions"
       >
-        {isLoading ? (
-          Array.from({ length: 8 }).map((_, index) => (
-            <div 
-              key={`skeleton-${index}`} 
-              className="animate-in fade-in slide-in-from-bottom-4" 
-              style={{ animationDelay: `${index * 100}ms` }}
-              aria-hidden="true"
-            >
-              <SuggestionSkeleton />
-            </div>
-          ))
-        ) : (
-          suggestions.map((suggestion, index) => (
-            <div 
-              key={`suggestion-${index}`}
-              className="animate-in fade-in slide-in-from-bottom-4"
-              style={{ 
-                animationDelay: `${index * 100}ms`,
-                animationFillMode: 'forwards' 
-              }}
-            >
-              <ProductCard
-                title={suggestion.title}
-                description={suggestion.description}
-                price={suggestion.amazon_price ? suggestion.amazon_price.toString() : suggestion.priceRange}
-                amazonUrl={suggestion.amazon_url || "#"}
-                imageUrl={suggestion.amazon_image_url}
-                rating={suggestion.amazon_rating}
-                totalRatings={suggestion.amazon_total_ratings}
-                asin={suggestion.amazon_asin}
-                onMoreLikeThis={onMoreLikeThis}
-              />
-            </div>
-          ))
-        )}
+        <SuggestionsGridItems 
+          suggestions={suggestions}
+          onMoreLikeThis={onMoreLikeThis}
+          isLoading={isLoading}
+        />
       </div>
       
       {suggestions.length > 0 && (
-        <div className="flex flex-col sm:flex-row justify-center gap-3 mt-8 sm:mt-12 px-4 sm:px-6">
-          <Button
-            onClick={onGenerateMore}
-            disabled={isLoading}
-            className="group bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-sm hover:shadow-md transition-all duration-200 min-h-[3rem] sm:min-h-[2.75rem] touch-manipulation text-base sm:text-sm"
-            aria-label="Generate more gift suggestions"
-          >
-            <Sparkles className="w-5 h-5 sm:w-4 sm:h-4 mr-2 animate-pulse group-hover:animate-none" aria-hidden="true" />
-            Generate More Ideas
-          </Button>
-          <Button
-            onClick={onStartOver}
-            variant="outline"
-            className="flex items-center gap-2 shadow-sm hover:shadow-md transition-all duration-200 hover:bg-secondary/80 min-h-[3rem] sm:min-h-[2.75rem] touch-manipulation text-base sm:text-sm"
-            aria-label="Start a new gift search"
-          >
-            <RotateCcw className="w-5 h-5 sm:w-4 sm:h-4" aria-hidden="true" />
-            Start Over
-          </Button>
-        </div>
+        <SuggestionsActions
+          onGenerateMore={onGenerateMore}
+          onStartOver={onStartOver}
+          isLoading={isLoading}
+        />
       )}
     </>
   );
