@@ -3,5 +3,6 @@ project_id = "ckcqttsdpxfbpkzljctl"
 [api]
 enabled = true
 
+[functions]
 [functions.generate-gift-suggestions]
 verify_jwt = false
