@@ -30,6 +30,14 @@ export const SuggestionsGridItems = ({
     );
   }
 
+  if (suggestions.length === 0) {
+    return (
+      <div className="col-span-full text-center text-muted-foreground py-8">
+        No suggestions found. Try adjusting your search criteria.
+      </div>
+    );
+  }
+
   return (
     <>
       {suggestions.map((suggestion, index) => (
