@@ -18,7 +18,10 @@ serve(async (req) => {
     console.log('Handling CORS preflight request');
     return new Response(null, { 
       status: 204,
-      headers: corsHeaders
+      headers: {
+        ...corsHeaders,
+        'Access-Control-Max-Age': '86400', // 24 hours
+      }
     });
   }
 
@@ -89,7 +92,8 @@ serve(async (req) => {
       { 
         headers: { 
           ...corsHeaders, 
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-store, no-cache, must-revalidate'
         } 
       }
     );
