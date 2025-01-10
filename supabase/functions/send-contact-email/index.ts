@@ -21,13 +21,26 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
+    if (!RESEND_API_KEY) {
+      console.error("RESEND_API_KEY is not set");
+      throw new Error("Email service configuration error");
+    }
+
     const { name, email, message }: ContactRequest = await req.json();
 
     if (!name || !email || !message) {
       throw new Error("Name, email, and message are required");
     }
 
-    console.log("Sending email with data:", { name, email, message });
+    console.log("Attempting to send email with data:", { name, email });
+
+    const emailContent = `
+      <h2>New Contact Form Message</h2>
+      <p><strong>From:</strong> ${name}</p>
+      <p><strong>Email:</strong> ${email}</p>
+      <p><strong>Message:</strong></p>
+      <p>${message}</p>
+    `;
 
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
@@ -39,13 +52,7 @@ const handler = async (req: Request): Promise<Response> => {
         from: "Get The Gift <onboarding@resend.dev>",
         to: ["ms@corporateconsulting.dk"],
         subject: `New Contact Form Message from ${name}`,
-        html: `
-          <h2>New Contact Form Message</h2>
-          <p><strong>From:</strong> ${name}</p>
-          <p><strong>Email:</strong> ${email}</p>
-          <p><strong>Message:</strong></p>
-          <p>${message}</p>
-        `,
+        html: emailContent,
         reply_to: email
       }),
     });
@@ -54,7 +61,7 @@ const handler = async (req: Request): Promise<Response> => {
     console.log("Resend API response:", responseData);
 
     if (!res.ok) {
-      console.error("Resend API error:", responseData);
+      console.error("Resend API error response:", responseData);
       throw new Error(`Failed to send email: ${responseData}`);
     }
 
@@ -64,7 +71,10 @@ const handler = async (req: Request): Promise<Response> => {
   } catch (error) {
     console.error("Error in send-contact-email function:", error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        error: error.message,
+        details: "Please check the Edge Function logs for more information"
+      }),
       {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
