@@ -42,7 +42,6 @@ const handler = async (req: Request): Promise<Response> => {
       <p>${message}</p>
     `;
 
-    // In testing mode, we can only send to the verified email
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: {
@@ -50,8 +49,8 @@ const handler = async (req: Request): Promise<Response> => {
         Authorization: `Bearer ${RESEND_API_KEY}`,
       },
       body: JSON.stringify({
-        from: "onboarding@resend.dev",
-        to: ["marcusasvendsen@gmail.com"], // Temporary: sending to verified email
+        from: "ms@corporateconsulting.dk",
+        to: ["ms@corporateconsulting.dk"],
         subject: `New Contact Form Message from ${name}`,
         html: emailContent,
         reply_to: email
@@ -62,7 +61,11 @@ const handler = async (req: Request): Promise<Response> => {
     console.log("Resend API response:", responseData);
 
     if (!res.ok) {
-      console.error("Resend API error response:", responseData);
+      const error = JSON.parse(responseData);
+      // Check if the error is related to domain verification
+      if (error?.statusCode === 403 && error?.message?.includes("verify a domain")) {
+        throw new Error("Domain verification required. Please try again later while we complete the setup process.");
+      }
       throw new Error(`Failed to send email: ${responseData}`);
     }
 
