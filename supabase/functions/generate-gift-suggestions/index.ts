@@ -35,8 +35,8 @@ serve(async (req) => {
       maxBudget = parseInt(budgetMatch[2]);
     } else {
       const budget = parseInt(budgetMatch[1]);
-      minBudget = budget;
-      maxBudget = budget;
+      minBudget = budget * 0.8; // Allow 20% below target
+      maxBudget = budget * 1.2; // Allow 20% above target
     }
 
     console.log('Parsed budget range:', { minBudget, maxBudget });
@@ -152,11 +152,26 @@ Format each suggestion as:
 
     const products = await Promise.all(productPromises);
 
-    // Filter out products that don't match the budget constraints
+    // More lenient budget filtering to account for price variations
     const filteredProducts = products.filter(product => {
       const price = product.amazon_price || parseFloat(product.priceRange.replace(/[^\d.]/g, ''));
-      return price >= minBudget && price <= maxBudget;
+      // Allow for some price flexibility (20% margin)
+      const minAllowed = minBudget * 0.8;
+      const maxAllowed = maxBudget * 1.2;
+      return price >= minAllowed && price <= maxAllowed;
     });
+
+    // If no products match the budget, return all products with a warning
+    if (filteredProducts.length === 0) {
+      console.log('No products within budget range, returning all suggestions');
+      return new Response(
+        JSON.stringify({ 
+          suggestions: products,
+          warning: 'Some suggestions may be outside your specified budget range.'
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     return new Response(
       JSON.stringify({ suggestions: filteredProducts }),
