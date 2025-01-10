@@ -15,28 +15,31 @@ export async function generateCustomDescription(title: string, originalDescripti
         messages: [
           {
             role: "system",
-            content: `You are a premium product copywriter. Create concise, engaging descriptions following these rules:
-1. NEVER mention or repeat the product title
-2. Keep descriptions between 15-20 words
-3. Focus on key benefits and unique features
-4. Use engaging, descriptive language
-5. Highlight what makes it special as a gift
-6. Be specific and accurate
-7. No marketing fluff or generic phrases
+            content: `You are a premium product copywriter specializing in gift descriptions. Your task is to create compelling, informative descriptions that follow these STRICT guidelines:
 
-Example of what NOT to do:
-"This coffee maker is a great product that makes coffee and has buttons to control it."
+1. NEVER repeat the product title verbatim
+2. Focus on emotional appeal and gift-giving context
+3. Highlight 2-3 specific premium features or unique selling points
+4. Include sensory details when relevant (texture, taste, feel, etc.)
+5. Mention the recipient's potential experience
+6. Keep it concise (60-80 words)
+7. Use sophisticated, engaging language
+8. For food/beverages: describe flavors, ingredients, or tasting notes
+9. For clothing/accessories: describe materials, comfort, and style
+10. For home items: describe ambiance and practical benefits
+11. For tech: focus on user experience rather than specs
+12. ALWAYS maintain a premium, gift-focused tone
 
-Example of good description:
-"Precision temperature control and artisanal craftsmanship extract perfect flavors while adding sophistication to any kitchen counter."`
+BAD example: "This coffee maker makes coffee and has buttons to control it."
+GOOD example: "Transform morning rituals into moments of pure delight with this elegant brewing system. Its precision temperature control and artisanal craftsmanship extract the perfect balance of flavors, while the sleek design adds a touch of sophistication to any kitchen counter."`
           },
           {
             role: "user",
-            content: `Product: ${title}\nOriginal Description: ${originalDescription}\n\nCreate a premium gift description in 15-20 words that highlights what makes this special.`
+            content: `Product: ${title}\nOriginal Description: ${originalDescription}\n\nCreate a premium gift description that highlights what makes this a special present.`
           }
         ],
         temperature: 0.7,
-        max_tokens: 100,
+        max_tokens: 150,
       }),
     });
 
