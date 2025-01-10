@@ -1,26 +1,29 @@
 import { useAmazonProducts } from './useAmazonProducts';
 import { useBatchProcessor } from './useBatchProcessor';
 import { GiftSuggestion } from '@/types/suggestions';
-import { useQuery } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 
 export const useAmazonProductProcessing = () => {
   const { getAmazonProduct } = useAmazonProducts();
   const { processBatch } = useBatchProcessor<GiftSuggestion, GiftSuggestion>();
+  const queryClient = useQueryClient();
 
   const processGiftSuggestion = async (suggestion: GiftSuggestion): Promise<GiftSuggestion> => {
     try {
       console.log('Processing suggestion:', suggestion.title);
       
-      // Use React Query for caching individual product requests
-      const { data: amazonProduct } = await useQuery({
-        queryKey: ['amazon-product', suggestion.title, suggestion.priceRange],
-        queryFn: () => getAmazonProduct(suggestion.title, suggestion.priceRange),
-        staleTime: 1000 * 60 * 60, // Consider data fresh for 1 hour
-        gcTime: 1000 * 60 * 60 * 24, // Keep in cache for 24 hours (formerly cacheTime)
-      });
+      // Use queryClient directly instead of useQuery hook
+      const cacheKey = ['amazon-product', suggestion.title, suggestion.priceRange];
+      const cachedData = queryClient.getQueryData(cacheKey);
+      
+      if (cachedData) {
+        return cachedData as GiftSuggestion;
+      }
+
+      const amazonProduct = await getAmazonProduct(suggestion.title, suggestion.priceRange);
       
       if (amazonProduct && amazonProduct.asin) {
-        return {
+        const processedSuggestion = {
           ...suggestion,
           title: amazonProduct.title || suggestion.title,
           description: amazonProduct.description || suggestion.description,
@@ -32,7 +35,13 @@ export const useAmazonProductProcessing = () => {
           amazon_rating: amazonProduct.rating,
           amazon_total_ratings: amazonProduct.totalRatings
         };
+
+        // Cache the processed suggestion
+        queryClient.setQueryData(cacheKey, processedSuggestion);
+        
+        return processedSuggestion;
       }
+      
       return suggestion;
     } catch (error) {
       console.error('Error processing suggestion:', error);
