@@ -1,7 +1,7 @@
-import { performSearch, simplifySearchTerm, getFallbackSearchTerms } from './searchUtils';
-import { getProductDetails } from './productDetails';
-import { getPriceFromMultipleSources } from './priceUtils';
-import { AmazonProduct } from './types';
+import { performSearch, simplifySearchTerm, getFallbackSearchTerms } from './searchUtils.ts';
+import { getProductDetails } from './productDetails.ts';
+import { getPriceFromMultipleSources } from './priceUtils.ts';
+import { AmazonProduct } from './types.ts';
 
 const RAPIDAPI_HOST = 'real-time-amazon-data.p.rapidapi.com';
 
