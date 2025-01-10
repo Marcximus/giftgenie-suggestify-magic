@@ -4,6 +4,8 @@ const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
 
 export async function generateCustomDescription(title: string, originalDescription: string): Promise<string> {
   try {
+    console.log('Generating custom description for:', title);
+    
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -15,27 +17,27 @@ export async function generateCustomDescription(title: string, originalDescripti
         messages: [
           {
             role: "system",
-            content: `You are a premium product copywriter. Create concise, engaging descriptions following these rules:
-1. NEVER mention or repeat the product title
+            content: `You are a creative product copywriter. Create engaging, concise descriptions following these rules:
+1. NEVER mention the product title or brand name
 2. Keep descriptions between 15-20 words
-3. Focus on key benefits and unique features
-4. Use engaging, descriptive language
+3. Focus on unique benefits and features
+4. Use vivid, descriptive language
 5. Highlight what makes it special as a gift
-6. Be specific and accurate
-7. No marketing fluff or generic phrases
+6. Be specific about key features
+7. Avoid generic marketing phrases
 
 Example of what NOT to do:
-"This coffee maker is a great product that makes coffee and has buttons to control it."
+"This product is great and has many features that you'll love."
 
 Example of good description:
-"Precision temperature control and artisanal craftsmanship extract perfect flavors while adding sophistication to any kitchen counter."`
+"Transforms any room into a sanctuary of clean air with whisper-quiet operation and advanced purification technology."`
           },
           {
             role: "user",
-            content: `Product: ${title}\nOriginal Description: ${originalDescription}\n\nCreate a premium gift description in 15-20 words that highlights what makes this special.`
+            content: `Product: ${title}\nOriginal Description: ${originalDescription}\n\nCreate an engaging gift description in 15-20 words that highlights what makes this special.`
           }
         ],
-        temperature: 0.7,
+        temperature: 0.8,
         max_tokens: 100,
       }),
     });
@@ -46,7 +48,9 @@ Example of good description:
     }
 
     const data = await response.json();
-    return data.choices?.[0]?.message?.content?.replace(/['"]/g, '') || originalDescription;
+    const generatedDescription = data.choices?.[0]?.message?.content?.replace(/['"]/g, '') || originalDescription;
+    console.log('Generated description:', generatedDescription);
+    return generatedDescription;
   } catch (error) {
     console.error('Error generating custom description:', error);
     return originalDescription;
