@@ -15,20 +15,23 @@ serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { 
-      status: 204, 
+      status: 204,
       headers: corsHeaders 
     });
   }
 
   try {
+    // Validate OpenAI API key
     if (!Deno.env.get('OPENAI_API_KEY')) {
       console.error('OpenAI API key not configured');
       throw new Error('OpenAI API key not configured');
     }
 
+    // Parse request body
     const { prompt } = await req.json();
     console.log('Processing request with prompt:', prompt);
 
+    // Validate prompt
     if (!prompt || typeof prompt !== 'string' || prompt.trim().length < 3) {
       console.error('Invalid prompt received:', prompt);
       return new Response(
