@@ -51,7 +51,7 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
   const [activeTab, setActiveTab] = useState("edit");
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { generateContent } = useAIContent();
+  const { generateContent, getFormFieldFromType } = useAIContent();
 
   const form = useForm<BlogPostFormData>({
     defaultValues: initialData || {
@@ -113,7 +113,7 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
       .replace(/(^-|-$)+/g, "");
   };
 
-  const handleAIGenerate = async (field: string) => {
+  const handleAIGenerate = async (type: 'excerpt' | 'seo-title' | 'seo-description' | 'seo-keywords' | 'improve-content') => {
     const currentTitle = form.getValues('title');
     const currentContent = form.getValues('content');
     
@@ -127,13 +127,14 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
     }
 
     const generatedContent = await generateContent(
-      field as any,
+      type,
       currentContent,
       currentTitle
     );
 
     if (generatedContent) {
-      form.setValue(field, generatedContent, { shouldDirty: true });
+      const formField = getFormFieldFromType(type);
+      form.setValue(formField, generatedContent, { shouldDirty: true });
       toast({
         title: "Success",
         description: "Content generated successfully!",

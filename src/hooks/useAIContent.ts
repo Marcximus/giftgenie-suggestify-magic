@@ -1,7 +1,14 @@
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 
-type ContentType = 'excerpt' | 'seo-title' | 'seo-description' | 'seo-keywords' | 'improve-content';
+export type ContentType = 'excerpt' | 'seo-title' | 'seo-description' | 'seo-keywords' | 'improve-content';
+
+export type BlogFormField = 
+  | 'excerpt'
+  | 'meta_title'
+  | 'meta_description'
+  | 'meta_keywords'
+  | 'content';
 
 export const useAIContent = () => {
   const { toast } = useToast();
@@ -38,5 +45,20 @@ export const useAIContent = () => {
     }
   };
 
-  return { generateContent };
+  const getFormFieldFromType = (type: ContentType): BlogFormField => {
+    switch (type) {
+      case 'excerpt':
+        return 'excerpt';
+      case 'seo-title':
+        return 'meta_title';
+      case 'seo-description':
+        return 'meta_description';
+      case 'seo-keywords':
+        return 'meta_keywords';
+      case 'improve-content':
+        return 'content';
+    }
+  };
+
+  return { generateContent, getFormFieldFromType };
 };
