@@ -50,14 +50,13 @@ const handler = async (req: Request): Promise<Response> => {
       }),
     });
 
-    if (!res.ok) {
-      const error = await res.text();
-      console.error("Resend API error:", error);
-      throw new Error("Failed to send email");
-    }
+    const responseData = await res.text();
+    console.log("Resend API response:", responseData);
 
-    const data = await res.json();
-    console.log("Email sent successfully:", data);
+    if (!res.ok) {
+      console.error("Resend API error:", responseData);
+      throw new Error(`Failed to send email: ${responseData}`);
+    }
 
     return new Response(JSON.stringify({ success: true }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
