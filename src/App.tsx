@@ -16,7 +16,7 @@ const queryClient = new QueryClient();
 
 const Navigation = () => (
   <nav className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50">
-    <div className="bg-white/80 backdrop-blur-sm rounded-full px-6 py-3 shadow-lg flex items-center gap-6">
+    <div className="bg-white/80 backdrop-blur-sm rounded-full px-12 py-3 shadow-lg flex items-center gap-12">
       <Link to="/" className="text-[#1EAEDB] hover:text-[#0FA0CE] transition-colors">
         Gift AI
       </Link>
