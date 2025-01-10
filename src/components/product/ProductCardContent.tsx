@@ -22,6 +22,13 @@ const formatPrice = (price: string | number): string => {
 };
 
 const formatDescription = (description: string): string => {
+  // If it's already a GPT-generated description (they typically end with a period),
+  // just clean up any HTML and return it
+  if (description.trim().endsWith('.')) {
+    return description.replace(/<[^>]*>/g, '').trim();
+  }
+
+  // Otherwise, it's an Amazon description that needs formatting
   // Remove any HTML tags that might come from Amazon
   const cleanDescription = description.replace(/<[^>]*>/g, '');
   
