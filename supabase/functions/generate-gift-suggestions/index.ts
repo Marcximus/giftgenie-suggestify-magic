@@ -50,96 +50,51 @@ serve(async (req) => {
       }
     }
 
-    console.log('Using budget range:', { minBudget, maxBudget });
+    // Enhanced interest and context extraction
+    const interests = prompt.match(/(?:loves?|enjoys?|likes?)\s+([^,.]+)/gi)?.map(match => 
+      match.replace(/(?:loves?|enjoys?|likes?)\s+/i, '').trim()
+    ) || [];
 
-    // Enhanced demographic extraction
-    const ageMatch = prompt.match(/(\d+)(?:\s*-\s*\d+)?\s*years?\s*old/i);
-    const age = ageMatch ? parseInt(ageMatch[1]) : null;
+    const relationship = prompt.match(/(?:my|for)\s+([^,\s]+)/i)?.[1]?.toLowerCase() || '';
     
-    const isMale = prompt.toLowerCase().includes('brother') || 
-                  prompt.toLowerCase().includes('father') || 
-                  prompt.toLowerCase().includes('husband') || 
-                  prompt.toLowerCase().includes('boyfriend') || 
-                  prompt.toLowerCase().includes('son') || 
-                  prompt.toLowerCase().includes('grandpa');
+    // Construct a more detailed and creative prompt
+    const enhancedPrompt = `As a premium gift curator specializing in unique and thoughtful presents, suggest 8 diverse and creative gift ideas that STRICTLY fall within the budget range of $${minBudget} to $${maxBudget}. 
 
-    const isFemale = prompt.toLowerCase().includes('sister') || 
-                    prompt.toLowerCase().includes('mother') || 
-                    prompt.toLowerCase().includes('wife') || 
-                    prompt.toLowerCase().includes('girlfriend') || 
-                    prompt.toLowerCase().includes('daughter') || 
-                    prompt.toLowerCase().includes('grandma');
-
-    const interestMatch = prompt.match(/who likes\s+([^.]+)/i) || prompt.match(/likes\s+([^.]+)/i);
-    const interests = interestMatch ? interestMatch[1].trim() : '';
-    
-    const getAgeGroup = (age: number | null) => {
-      if (!age) return 'adult';
-      if (age <= 12) return 'child';
-      if (age <= 19) return 'teen';
-      if (age <= 30) return 'young adult';
-      if (age <= 50) return 'adult';
-      return 'senior';
-    };
-
-    const ageGroup = getAgeGroup(age);
-
-    // Enhanced prompt with diverse gift categories
-    let enhancedPrompt = `As a highly personalized gift curator, suggest 8 diverse and creative gift ideas that STRICTLY fall within the budget range of $${minBudget} to $${maxBudget}. ${prompt}
+Key Focus: ${interests.join(', ')} for ${relationship}
 
 CRITICAL REQUIREMENTS:
-1. Budget Constraints (STRICTLY ENFORCED):
+1. Budget Constraints:
    - Every suggestion MUST cost between $${minBudget} and $${maxBudget}
-   - DO NOT suggest items outside this range
    - Verify prices before suggesting items
 
-2. Gift Category Diversity (VERY IMPORTANT):
-   Consider these diverse categories:
-   - Wearables (clothing, accessories, backpacks)
-   - Room Decor (posters, night lights, wall decals)
-   - Educational Items (books, learning toys)
-   - Practical Items (lunch boxes, water bottles)
-   - Entertainment (toys, games)
-   - Creative Items (art supplies, craft kits)
-   - Comfort Items (blankets, pillows, pajamas)
-   - Collectibles (figures, cards)
+2. Gift Categories (Include at least 4 different categories):
+   - Gourmet & Culinary: artisanal chocolates, specialty foods, unique snacks
+   - Experience Gifts: tasting kits, DIY sets, subscription boxes
+   - Personalized Items: custom-made gifts, monogrammed items
+   - Wellness & Self-Care: aromatherapy, bath products, comfort items
+   - Creative & Hobby: craft supplies, activity sets, creative kits
+   - Home & Lifestyle: decor pieces, practical luxuries
+   - Unique Finds: unconventional but delightful items
+   - Local & Artisanal: handcrafted items, small-batch products
 
-3. Age-Appropriate Customization (${ageGroup}):
-   ${age ? `- Target age: ${age} years old` : ''}
-   ${ageGroup === 'child' ? `
-   - Focus on durability and safety
-   - Consider developmental stage
-   - Include educational value
-   - Make it fun and engaging` : ''}
+3. Creativity Guidelines:
+   - NO generic gift cards or basic items
+   - Focus on unique, premium versions of products
+   - Include unexpected but delightful combinations
+   - Consider seasonal relevance
+   - Think beyond obvious choices
+   ${interests.map(interest => `   - Incorporate ${interest} in creative ways`).join('\n')}
 
-4. Interest-Based Integration:${interests ? `
-   Primary interest: ${interests}
-   Consider:
-   - Licensed merchandise (clothing, accessories)
-   - Themed room decor
-   - Related activity sets
-   - Books or media featuring ${interests}
-   - Practical items with ${interests} themes
-   - Creative supplies to make ${interests}-related art` : ''}
-
-5. Gender Considerations:${
-  isMale ? `
-   - Focus on masculine preferences
-   - Consider modern male interests` : 
-  isFemale ? `
-   - Focus on feminine preferences
-   - Consider modern female interests` : ''}
-
-6. Quality Requirements:
+4. Quality Requirements:
    - Suggest only specific products from reputable brands
-   - Include model numbers and key features
-   - Focus on latest product versions
-   - Emphasize durability and quality
-
-IMPORTANT: Each suggestion MUST be a premium product that costs between $${minBudget} and $${maxBudget}. Ensure a mix of different categories for variety.
+   - Include model numbers or specific editions
+   - Focus on premium versions within budget
+   - Emphasize craftsmanship and quality
 
 Format each suggestion as:
-"Brand Model/Edition with Key Feature (Premium Version)"`;
+"Brand Name Specific Product (Premium/Special Edition/Version)"
+
+IMPORTANT: Each suggestion must be unique, specific, and actually available for purchase within the budget range.`;
 
     if (isRateLimited()) {
       console.log('Rate limit exceeded, returning 429');
@@ -181,24 +136,11 @@ Format each suggestion as:
     // More lenient budget filtering to account for price variations
     const filteredProducts = products.filter(product => {
       const price = product.amazon_price || parseFloat(product.priceRange.replace(/[^\d.]/g, ''));
-      const minAllowed = minBudget * 0.8;
-      const maxAllowed = maxBudget * 1.2;
-      return price >= minAllowed && price <= maxAllowed;
+      return price >= minBudget * 0.8 && price <= maxBudget * 1.2;
     });
 
-    if (filteredProducts.length === 0) {
-      console.log('No products within budget range, returning all suggestions');
-      return new Response(
-        JSON.stringify({ 
-          suggestions: products,
-          warning: 'Some suggestions may be outside your specified budget range.'
-        }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
     return new Response(
-      JSON.stringify({ suggestions: filteredProducts }),
+      JSON.stringify({ suggestions: filteredProducts.length > 0 ? filteredProducts : products }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
