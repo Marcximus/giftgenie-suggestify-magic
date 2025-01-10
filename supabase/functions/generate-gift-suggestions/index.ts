@@ -32,130 +32,78 @@ serve(async (req) => {
       );
     }
 
-    // Enhanced gender and context extraction
-    const isMale = prompt.toLowerCase().includes('brother') || 
-                  prompt.toLowerCase().includes('father') || 
-                  prompt.toLowerCase().includes('husband') || 
-                  prompt.toLowerCase().includes('boyfriend') || 
-                  prompt.toLowerCase().includes('son') || 
-                  prompt.toLowerCase().includes('grandpa');
+    // Enhanced prompt analysis
+    const lowerPrompt = prompt.toLowerCase();
+    const hasGender = lowerPrompt.includes('man') || lowerPrompt.includes('woman') || 
+                     lowerPrompt.includes('boy') || lowerPrompt.includes('girl');
+    const hasAge = /\d+/.test(prompt);
+    const hasInterests = lowerPrompt.includes('likes') || lowerPrompt.includes('loves') || 
+                        lowerPrompt.includes('enjoys') || lowerPrompt.includes('interested');
 
-    const isFemale = prompt.toLowerCase().includes('sister') || 
-                    prompt.toLowerCase().includes('mother') || 
-                    prompt.toLowerCase().includes('wife') || 
-                    prompt.toLowerCase().includes('girlfriend') || 
-                    prompt.toLowerCase().includes('daughter') || 
-                    prompt.toLowerCase().includes('grandma');
-
-    const interests = prompt.match(/(?:loves?|enjoys?|likes?)\s+([^,.]+)/gi)?.map(match => 
-      match.replace(/(?:loves?|enjoys?|likes?)\s+/i, '').trim()
-    ) || [];
-
-    const relationship = prompt.match(/(?:my|for)\s+([^,\s]+)/i)?.[1]?.toLowerCase() || '';
-    const ageMatch = prompt.match(/(\d+)(?:\s*-\s*\d+)?\s*years?\s*old/i);
-    const age = ageMatch ? ageMatch[1] : '';
-    
+    // Default budget range for general queries
     const budgetMatch = prompt.match(/(?:budget|USD|price)[^\d]*(\d+)(?:\s*-\s*(\d+))?/i);
-    const minBudget = budgetMatch ? parseInt(budgetMatch[1]) : 25;
-    const maxBudget = budgetMatch && budgetMatch[2] ? parseInt(budgetMatch[2]) : minBudget * 1.2;
+    const minBudget = budgetMatch ? parseInt(budgetMatch[1]) : 50;
+    const maxBudget = budgetMatch && budgetMatch[2] ? parseInt(budgetMatch[2]) : minBudget * 3;
 
-    // Enhanced gender-specific prompt construction with strict filtering
-    const genderContext = isMale ? 'male' : isFemale ? 'female' : 'gender-neutral';
-    const genderInstruction = isMale ? 
-      `CRITICAL GENDER RESTRICTIONS:
-       - ONLY suggest products specifically designed for or marketed to men/boys
-       - DO NOT suggest ANY women's products
-       - For clothing/accessories, explicitly specify "Men's" in the product name
-       - For unisex items, ensure they are appropriate for male users` 
-      : isFemale ? 
-      `CRITICAL GENDER RESTRICTIONS:
-       - ONLY suggest products specifically designed for or marketed to women/girls
-       - DO NOT suggest ANY men's products
-       - For clothing/accessories, explicitly specify "Women's" in the product name
-       - For unisex items, ensure they are appropriate for female users`
-      : 'Consider suggesting gender-neutral items appropriate for anyone';
+    // Determine gender context
+    const isMale = lowerPrompt.includes('man') || lowerPrompt.includes('boy') || 
+                  lowerPrompt.includes('father') || lowerPrompt.includes('husband') || 
+                  lowerPrompt.includes('boyfriend') || lowerPrompt.includes('brother');
 
-    // Age-specific popular products suggestions
-    const ageBasedSuggestions = age ? `
-    If the specific interests don't yield enough great options, consider these popular items for ${age}-year-olds:
-    ${age < 12 ? `
-    - Age-appropriate educational toys and games
-    - Popular character merchandise
-    - Creative arts and crafts kits
-    - Interactive learning tools` 
-    : age < 20 ? `
-    - Popular tech gadgets and accessories
-    - Trending fashion items
-    - Gaming related items
-    - Popular entertainment merchandise` 
-    : age < 35 ? `
-    - Smart home devices
-    - Premium lifestyle accessories
-    - Fitness and wellness products
-    - Professional development tools` 
-    : age < 60 ? `
-    - Health and wellness products
-    - Premium home and garden items
-    - Hobby-specific premium tools
-    - Luxury lifestyle accessories`
-    : `
-    - Comfort and convenience items
-    - Health and wellness products
-    - Easy-to-use technology
-    - Premium leisure items`}` : '';
+    // For "has everything" type queries, focus on unique and experiential gifts
+    const hasEverything = lowerPrompt.includes('has everything') || 
+                         lowerPrompt.includes('hard to shop for') || 
+                         lowerPrompt.includes('difficult to buy for');
 
-    // Book recommendation instruction
-    const bookRecommendation = `
-    IMPORTANT: If reading or books are mentioned in interests, include at least one book suggestion that matches these criteria:
-    - Must be a specific, currently available book (include author name)
-    - Match the recipient's interests and age group
-    - Consider bestsellers and highly-rated books in their interest areas
-    - For fiction, match genre preferences
-    - For non-fiction, focus on their specific interests or hobbies`;
+    let enhancedPrompt = `As a luxury gift expert, suggest 8 thoughtful and unique gift ideas `;
+    
+    if (hasEverything) {
+      enhancedPrompt += `for someone who seemingly has everything. Focus on:
+      - Unique experiences and services
+      - Limited edition or customizable items
+      - Innovative new products they might not know about
+      - Luxury versions of everyday items
+      - Experiential gifts that create memories
+      - Personalized or bespoke items
+      - Collector's editions or rare finds
+      - Items that combine multiple interests\n\n`;
+    }
 
-    const enhancedPrompt = `As a gift expert specializing in ${interests.join(', ')}, suggest 8 highly specific and personalized gift ideas for a ${age ? `${age}-year-old ` : ''}${relationship} who is passionate about ${interests.join(' and ')}. 
+    if (isMale) {
+      enhancedPrompt += `CRITICAL: Ensure all suggestions are specifically appropriate for male recipients.\n`;
+    }
 
-${genderInstruction}
+    enhancedPrompt += `
+    Key Requirements:
+    1. Budget: Between $${minBudget} and $${maxBudget}
+    2. Gift Categories:
+       - Premium quality items from reputable brands
+       - Unique or limited edition products
+       - Experience-based gifts
+       - Luxury accessories or gadgets
+       - High-end hobby equipment
+       - Collector's items
+       - Innovative tech products
+       - Personalized luxury items
 
-${ageBasedSuggestions}
+    3. Quality Guidelines:
+       - Focus on premium brands and materials
+       - Include specific model numbers or editions
+       - Emphasize uniqueness and exclusivity
+       - Consider items that enhance lifestyle
+       - Include at least one experience-based gift
+       - Suggest items that show thoughtfulness
 
-${bookRecommendation}
+    Format each suggestion as:
+    "Brand Name Specific Product (Premium/Special Edition) - [Category] Version"
 
-Key Requirements:
-1. Budget: STRICTLY between $${minBudget} and $${maxBudget}
-
-2. Interest Focus:
-   ${interests.map(interest => `- Suggest items that directly relate to ${interest}`).join('\n   ')}
-   - Each suggestion must clearly connect to at least one of their interests
-   - Include specialty or premium versions of items within their interest areas
-
-3. Gift Categories (focus on their interests):
-   - High-quality equipment or gear for their hobbies
-   - Premium accessories related to their interests
-   - Learning resources or courses in their areas of interest
-   - Unique or limited edition items in their preferred categories
-   - Experiential gifts related to their passions
-   - Specialty or collector's items in their interest areas
-
-4. Quality Guidelines:
-   - Suggest only specific products from reputable brands
-   - Include model numbers or specific editions
-   - Focus on items that enhance their existing interests
-   - Emphasize durability and quality within budget
-   - Consider items that help them pursue their passions
-
-Format each suggestion as:
-"Brand Name Specific Product (Premium/Special Edition) - [Interest] Version"
-
-IMPORTANT: Each suggestion must be:
-- Strictly adhere to the gender requirements above
-- Directly related to at least one of their stated interests
-- Actually available for purchase
-- Within the specified budget range
-- Specific and detailed enough to find online`;
+    IMPORTANT: Each suggestion must be:
+    - Actually available for purchase
+    - Within the specified budget range
+    - Specific and detailed enough to find online
+    - Unique and memorable`;
 
     if (isRateLimited()) {
-      console.log('Rate limit exceeded, returning 429');
       return new Response(
         JSON.stringify({
           error: 'Rate limit exceeded',
@@ -180,18 +128,15 @@ IMPORTANT: Each suggestion must be:
       throw new Error('Invalid suggestions format');
     }
 
-    // Process suggestions with delay to avoid rate limits
-    const productPromises = suggestions.map((suggestion, index) => {
-      return new Promise<GiftSuggestion>(async (resolve) => {
+    const productPromises = suggestions.map((suggestion, index) => 
+      new Promise<GiftSuggestion>(async (resolve) => {
         await new Promise(r => setTimeout(r, index * 1000));
         const product = await processGiftSuggestion(suggestion);
         resolve(product);
-      });
-    });
+      })
+    );
 
     const products = await Promise.all(productPromises);
-
-    // Filter products to ensure they match budget constraints
     const filteredProducts = products.filter(product => {
       const price = product.amazon_price || parseFloat(product.priceRange.replace(/[^\d.]/g, ''));
       return price >= minBudget * 0.8 && price <= maxBudget * 1.2;
