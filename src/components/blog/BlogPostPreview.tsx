@@ -20,7 +20,10 @@ export const BlogPostPreview = ({ data }: BlogPostPreviewProps) => {
       {data.excerpt && (
         <p className="lead text-muted-foreground">{data.excerpt}</p>
       )}
-      <div className="mt-8">{data.content}</div>
+      <div 
+        className="mt-8"
+        dangerouslySetInnerHTML={{ __html: data.content }}
+      />
       {data.author && (
         <div className="mt-8 text-muted-foreground">
           Written by {data.author}
