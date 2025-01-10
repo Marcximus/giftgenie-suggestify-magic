@@ -10,13 +10,12 @@ export const useAmazonProductProcessing = () => {
 
   const processGiftSuggestion = async (suggestion: GiftSuggestion): Promise<GiftSuggestion> => {
     try {
-      console.log('Processing suggestion:', suggestion.title);
-      
-      // Use queryClient directly instead of useQuery hook
+      // Use queryClient directly for caching
       const cacheKey = ['amazon-product', suggestion.title, suggestion.priceRange];
       const cachedData = queryClient.getQueryData(cacheKey);
       
       if (cachedData) {
+        console.log('Cache hit for:', suggestion.title);
         return cachedData as GiftSuggestion;
       }
 
@@ -38,7 +37,6 @@ export const useAmazonProductProcessing = () => {
 
         // Cache the processed suggestion
         queryClient.setQueryData(cacheKey, processedSuggestion);
-        
         return processedSuggestion;
       }
       
