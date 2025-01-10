@@ -42,12 +42,21 @@ const BlogAdmin = () => {
 
   const handleDelete = async (postId: string) => {
     try {
-      const { error } = await supabase
+      // First, delete associated images
+      const { error: imagesError } = await supabase
+        .from("blog_post_images")
+        .delete()
+        .eq("blog_post_id", postId);
+
+      if (imagesError) throw imagesError;
+
+      // Then delete the post
+      const { error: postError } = await supabase
         .from("blog_posts")
         .delete()
         .eq("id", postId);
 
-      if (error) throw error;
+      if (postError) throw postError;
 
       toast({
         title: "Success",
@@ -56,6 +65,7 @@ const BlogAdmin = () => {
       
       refetch();
     } catch (error: any) {
+      console.error("Error deleting blog post:", error);
       toast({
         title: "Error",
         description: error.message || "Failed to delete blog post",
