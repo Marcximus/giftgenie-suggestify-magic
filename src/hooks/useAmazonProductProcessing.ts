@@ -19,6 +19,7 @@ export const useAmazonProductProcessing = () => {
         return cachedData as GiftSuggestion;
       }
 
+      console.log('Processing suggestion:', suggestion.title);
       const amazonProduct = await getAmazonProduct(suggestion.title, suggestion.priceRange);
       
       if (amazonProduct && amazonProduct.asin) {
@@ -54,9 +55,9 @@ export const useAmazonProductProcessing = () => {
         console.error('Error processing suggestion:', suggestion.title, error);
         return suggestion;
       },
-      parallel: true, // Enable parallel processing
-      batchSize: 4, // Process 4 items at a time
-      staggerDelay: 250 // Add small delay between items to prevent rate limiting
+      parallel: true, // Keep parallel processing enabled
+      batchSize: 8, // Process 8 items at a time
+      staggerDelay: 0 // No delay between requests for maximum speed
     });
   };
 
