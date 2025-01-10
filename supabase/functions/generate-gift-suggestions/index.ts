@@ -28,13 +28,11 @@ serve(async (req) => {
 
     if (budgetMatch) {
       if (budgetMatch[2]) {
-        // Range format (e.g., "200-300")
         minBudget = parseInt(budgetMatch[1]);
         maxBudget = parseInt(budgetMatch[2]);
       } else {
-        // Single number format (e.g., "USD 200" or "budget 200")
         const budget = parseInt(budgetMatch[1]);
-        minBudget = Math.max(0, budget - (budget * 0.2)); // 20% below
+        minBudget = Math.max(0, budget - (budget * 0.2));
         maxBudget = budget;
       }
     }
@@ -60,8 +58,8 @@ serve(async (req) => {
     const interestMatch = prompt.match(/who likes\s+([^.]+)/i);
     const interests = interestMatch ? interestMatch[1].trim() : '';
 
-    // Enhance the prompt with specific instructions about budget and quality
-    let enhancedPrompt = `As a gift curator, recommend 8 thoughtful gift suggestions for ${prompt}. 
+    // Enhanced prompt for more creative and diverse suggestions
+    let enhancedPrompt = `As a highly creative gift curator with expertise in unique and thoughtful presents, suggest 8 truly distinctive gift ideas for ${prompt}. 
 
 STRICT REQUIREMENTS:
 1. Budget: Each suggestion MUST be priced between $${minBudget} and $${maxBudget}
@@ -69,33 +67,44 @@ STRICT REQUIREMENTS:
    - NO items outside this range
    - Mix of price points within the range
 
-2. Quality Standards:
-   - Suggest specific products from well-known brands
-   - Each item must be a specific product (e.g., "TAG Heuer Formula 1 Chronograph 43mm" not just "watch")
-   - Include model numbers or specific editions
-   - Focus on latest models/versions
+2. Diversity & Creativity Requirements:
+   - Each suggestion MUST be from a different product category
+   - Include a mix of mainstream and unique, lesser-known items
+   - Focus on innovative, conversation-starting gifts
+   - Consider emerging brands and unique artisanal products
+   - Include experiential gifts when appropriate
+   - Think beyond conventional gift categories
 
-3. Interest Alignment:${interests ? `
-   - Suggested items must relate to: ${interests}
-   - Choose quality items within these interest categories` : ''}
+3. Quality Standards:
+   - Suggest specific products from both well-known and emerging brands
+   - Include model numbers or specific editions when relevant
+   - Focus on latest and innovative products
 
-4. Diversity:
-   - No duplicate categories
-   - Vary price points within the allowed range
-   - Mix of practical and fun items
+4. Interest Alignment:${interests ? `
+   - Use ${interests} as inspiration but think creatively beyond obvious choices
+   - Consider unique interpretations of these interests
+   - Include surprising but relevant crossover items` : ''}
+
+5. Uniqueness Guidelines:
+   - NO generic suggestions
+   - NO repetitive items
+   - Each item should serve a distinct purpose
+   - Include at least 2 unexpected or surprising suggestions
+   - Consider items that combine multiple interests in creative ways
 
 Format each suggestion as:
 "Brand Model/Edition with Key Feature"
 
-Example suggestions:
-["YETI Tundra 65 Cooler in Navy with Permafrost Insulation",
- "Garmin Fenix 7X Sapphire Solar Edition with Titanium Band",
- "Sony WH-1000XM5 Wireless Headphones with LDAC Hi-Res Audio"]`;
+Example of diverse suggestions:
+["MasterClass Annual Subscription with Gordon Ramsay Cooking Course",
+ "Ember Temperature Control Smart Mug 2 with 3-hour Battery Life",
+ "Uncommon Goods Molecular Gastronomy Kit with Recipe Book",
+ "Polaroid Hi-Print 2x3 Pocket Photo Printer with Bluetooth"]`;
 
     if (isMale) {
-      enhancedPrompt += "\n\nCRITICAL: Only suggest gifts appropriate for men/boys. Focus on masculine aesthetics and preferences. Absolutely no women's items.";
+      enhancedPrompt += "\n\nCRITICAL: Only suggest gifts appropriate for men/boys. Focus on masculine aesthetics while avoiding stereotypes. Think creatively about modern masculine interests.";
     } else if (isFemale) {
-      enhancedPrompt += "\n\nCRITICAL: Only suggest gifts appropriate for women/girls. Focus on feminine aesthetics and preferences. Absolutely no men's items.";
+      enhancedPrompt += "\n\nCRITICAL: Only suggest gifts appropriate for women/girls. Focus on feminine aesthetics while avoiding stereotypes. Think creatively about modern feminine interests.";
     }
 
     if (isRateLimited()) {
@@ -149,7 +158,7 @@ Example suggestions:
       }),
       {
         status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       }
     );
   }
