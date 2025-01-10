@@ -35,14 +35,27 @@ export const BlogImageUpload = ({ value, setValue }: BlogImageUploadProps) => {
 
     setIsUploading(true);
     try {
+      // First check if we have an authenticated session
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError || !session) {
+        throw new Error('You must be logged in to upload images');
+      }
+
       const fileExt = file.name.split('.').pop();
       const fileName = `${crypto.randomUUID()}.${fileExt}`;
+      
+      // Upload the file
       const { error: uploadError } = await supabase.storage
         .from('blog-images')
-        .upload(fileName, file);
+        .upload(fileName, file, {
+          upsert: false,
+          contentType: file.type
+        });
 
       if (uploadError) throw uploadError;
 
+      // Get the public URL
       const { data: { publicUrl } } = supabase.storage
         .from('blog-images')
         .getPublicUrl(fileName);
@@ -52,10 +65,11 @@ export const BlogImageUpload = ({ value, setValue }: BlogImageUploadProps) => {
         title: "Success",
         description: "Image uploaded successfully",
       });
-    } catch (error) {
+    } catch (error: any) {
+      console.error('Upload error:', error);
       toast({
         title: "Error",
-        description: "Failed to upload image",
+        description: error.message || "Failed to upload image",
         variant: "destructive",
       });
     } finally {
