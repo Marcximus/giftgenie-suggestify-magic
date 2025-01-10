@@ -21,9 +21,7 @@ const formatPrice = (price: string | number): string => {
   return `USD ${numericPrice.toFixed(2)}`;
 };
 
-const formatDescription = (description: string | undefined | null): string => {
-  if (!description) return 'No description available.';
-  
+const formatDescription = (description: string): string => {
   // Clean up any HTML and normalize whitespace
   const cleanDescription = description
     .replace(/<[^>]*>/g, '')

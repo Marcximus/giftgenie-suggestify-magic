@@ -19,10 +19,7 @@ serve(async (req) => {
     
     if (!searchTerm?.trim()) {
       return new Response(
-        JSON.stringify({ 
-          error: 'Search term is required',
-          details: 'Please provide a valid search term'
-        }),
+        JSON.stringify({ error: 'Search term is required' }),
         { 
           status: 400,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }

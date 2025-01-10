@@ -9,5 +9,4 @@ export interface GiftSuggestion {
   amazon_image_url?: string;
   amazon_rating?: number;
   amazon_total_ratings?: number;
-  search_query?: string;
 }

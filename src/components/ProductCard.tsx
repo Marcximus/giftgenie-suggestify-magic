@@ -19,9 +19,7 @@ interface ProductCardProps extends Product {
   onMoreLikeThis?: (title: string) => void;
 }
 
-const simplifyTitle = (title: string | undefined | null): string => {
-  if (!title) return 'Untitled Product';
-  
+const simplifyTitle = (title: string): string => {
   return title
     .replace(/\s*\([^)]*\)/g, '')
     .replace(/,.*$/, '')
@@ -29,27 +27,6 @@ const simplifyTitle = (title: string | undefined | null): string => {
     .replace(/\s*\|.*$/, '')
     .replace(/\s{2,}/g, ' ')
     .trim();
-};
-
-const extractPriceValue = (price: string): number => {
-  const numericPrice = parseFloat(price.replace(/[^\d.]/g, ''));
-  return isNaN(numericPrice) ? 0 : numericPrice;
-};
-
-const isWithinPriceRange = (price: string, minPrice?: number, maxPrice?: number): boolean => {
-  if (!minPrice && !maxPrice) return true;
-  
-  const numericPrice = extractPriceValue(price);
-  if (minPrice && maxPrice) {
-    return numericPrice >= minPrice && numericPrice <= maxPrice;
-  }
-  if (minPrice) {
-    return numericPrice >= minPrice;
-  }
-  if (maxPrice) {
-    return numericPrice <= maxPrice;
-  }
-  return true;
 };
 
 const ProductCardComponent = ({ 
@@ -112,4 +89,3 @@ const ProductCardComponent = ({
 };
 
 export const ProductCard = memo(ProductCardComponent);
-export { isWithinPriceRange, extractPriceValue };

@@ -1,6 +1,6 @@
-import { GiftSuggestion } from '@/types/suggestions';
 import { ProductCard } from '../ProductCard';
 import { SuggestionSkeleton } from '../SuggestionSkeleton';
+import { GiftSuggestion } from '@/types/suggestions';
 
 interface SuggestionsGridItemsProps {
   suggestions: GiftSuggestion[];
@@ -13,34 +13,38 @@ export const SuggestionsGridItems = ({
   onMoreLikeThis,
   isLoading
 }: SuggestionsGridItemsProps) => {
-  console.log('SuggestionsGridItems received suggestions:', suggestions);
-  console.log('isLoading:', isLoading);
-
   if (isLoading) {
     return (
       <>
-        {[...Array(8)].map((_, index) => (
-          <SuggestionSkeleton key={`skeleton-${index}`} />
+        {Array.from({ length: 8 }).map((_, index) => (
+          <div 
+            key={`skeleton-${index}`} 
+            className="animate-in fade-in slide-in-from-bottom-4" 
+            style={{ animationDelay: `${index * 100}ms` }}
+            aria-hidden="true"
+          >
+            <SuggestionSkeleton />
+          </div>
         ))}
       </>
     );
   }
 
-  if (!Array.isArray(suggestions) || suggestions.length === 0) {
-    console.log('No suggestions to display');
-    return null;
-  }
-
   return (
     <>
-      {suggestions.map((suggestion, index) => {
-        console.log(`Processing suggestion ${index}:`, suggestion);
-        return (
+      {suggestions.map((suggestion, index) => (
+        <div 
+          key={`suggestion-${index}`}
+          className="animate-in fade-in slide-in-from-bottom-4"
+          style={{ 
+            animationDelay: `${index * 100}ms`,
+            animationFillMode: 'forwards' 
+          }}
+        >
           <ProductCard
-            key={`product-${index}`}
             title={suggestion.title}
             description={suggestion.description}
-            price={suggestion.amazon_price?.toString() || suggestion.priceRange}
+            price={suggestion.amazon_price ? suggestion.amazon_price.toString() : suggestion.priceRange}
             amazonUrl={suggestion.amazon_url || "#"}
             imageUrl={suggestion.amazon_image_url}
             rating={suggestion.amazon_rating}
@@ -48,8 +52,8 @@ export const SuggestionsGridItems = ({
             asin={suggestion.amazon_asin}
             onMoreLikeThis={onMoreLikeThis}
           />
-        );
-      })}
+        </div>
+      ))}
     </>
   );
 };

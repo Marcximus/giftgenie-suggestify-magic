@@ -10,18 +10,7 @@ export const useAmazonProducts = () => {
   const [isLoading, setIsLoading] = useState(false);
 
   const getAmazonProduct = async (searchTerm: string, priceRange: string): Promise<AmazonProduct | null> => {
-    if (!searchTerm?.trim()) {
-      console.error('Search term is missing or empty');
-      toast({
-        title: "Invalid search term",
-        description: "Please provide a valid search term",
-        variant: "destructive",
-      });
-      return null;
-    }
-
     try {
-      setIsLoading(true);
       const cacheKey = `${searchTerm}-${priceRange}`;
       
       // Check cache first
@@ -71,8 +60,6 @@ export const useAmazonProducts = () => {
       }
       
       return null;
-    } finally {
-      setIsLoading(false);
     }
   };
 
