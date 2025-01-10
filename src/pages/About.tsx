@@ -82,7 +82,28 @@ const About = () => {
           </p>
         </div>
         
-        <p className="text-xl font-semibold text-center italic text-primary">
+        <h2 className="text-2xl font-bold mt-12 mb-4 text-primary">Disclaimer</h2>
+        
+        <h3 className="text-xl font-semibold mt-8 mb-3">Affiliate Links</h3>
+        <p className="text-lg mb-6">
+          We may include affiliate links to Amazon or other third-party retailers. If you click on one of these links and make a purchase, we may receive a small commission—at no additional cost to you. Aside from these affiliate relationships, we are not endorsed by, nor officially affiliated with, Amazon or any other external websites.
+        </p>
+        
+        <h3 className="text-xl font-semibold mt-8 mb-3">No Price Guarantees</h3>
+        <p className="text-lg mb-6">
+          While we strive to provide the most accurate information and deals available, we cannot guarantee that the prices suggested or found through our platform will remain the same at the time of your purchase. All external links, prices, and availability are subject to change without notice.
+        </p>
+        
+        <h3 className="text-xl font-semibold mt-8 mb-3">Potentially Quirky Suggestions</h3>
+        <p className="text-lg mb-6">
+          Our AI-driven gift recommendations are designed to be fun, creative, and sometimes a little unconventional. As a result, you may occasionally encounter suggestions that are out of the ordinary. Please use your own discretion before making a purchase.
+        </p>
+        
+        <p className="text-lg mb-12 italic">
+          By using our website and its services, you acknowledge that you understand and agree to this disclaimer in its entirety.
+        </p>
+        
+        <p className="text-xl font-semibold text-center italic text-primary mb-12">
           Get The Gift — Because mediocre gifts belong in the distant galaxy, far, far away.
         </p>
       </div>
