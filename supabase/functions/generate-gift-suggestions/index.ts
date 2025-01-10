@@ -19,27 +19,39 @@ serve(async (req) => {
     const { prompt } = await req.json();
     console.log('Processing request with prompt:', prompt);
 
-    // Enhanced budget extraction with strict validation
+    if (!prompt || typeof prompt !== 'string' || prompt.trim().length < 3) {
+      return new Response(
+        JSON.stringify({ 
+          error: 'Invalid prompt',
+          details: 'Please provide a more specific gift request'
+        }),
+        { 
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
+    }
+
+    // Enhanced budget extraction with default values
     const budgetMatch = prompt.match(/(?:budget|USD|price)[^\d]*(\d+)(?:\s*-\s*(\d+))?/i);
     console.log('Budget match:', budgetMatch);
     
-    if (!budgetMatch) {
-      throw new Error('No budget range specified in prompt');
+    // Default budget range if none specified
+    let minBudget = 25;  // Default minimum budget
+    let maxBudget = 100; // Default maximum budget
+
+    if (budgetMatch) {
+      if (budgetMatch[2]) {
+        minBudget = parseInt(budgetMatch[1]);
+        maxBudget = parseInt(budgetMatch[2]);
+      } else {
+        const budget = parseInt(budgetMatch[1]);
+        minBudget = budget * 0.8; // Allow 20% below target
+        maxBudget = budget * 1.2; // Allow 20% above target
+      }
     }
 
-    let minBudget = 0;
-    let maxBudget = 1000;
-
-    if (budgetMatch[2]) {
-      minBudget = parseInt(budgetMatch[1]);
-      maxBudget = parseInt(budgetMatch[2]);
-    } else {
-      const budget = parseInt(budgetMatch[1]);
-      minBudget = budget * 0.8; // Allow 20% below target
-      maxBudget = budget * 1.2; // Allow 20% above target
-    }
-
-    console.log('Parsed budget range:', { minBudget, maxBudget });
+    console.log('Using budget range:', { minBudget, maxBudget });
 
     // Enhanced demographic extraction
     const ageMatch = prompt.match(/(\d+)(?:\s*-\s*\d+)?\s*years?\s*old/i);
@@ -73,7 +85,7 @@ serve(async (req) => {
 
     const ageGroup = getAgeGroup(age);
 
-    // Enhanced prompt with strict budget enforcement
+    // Enhanced prompt with budget information
     let enhancedPrompt = `As a highly personalized gift curator, suggest 8 premium gift ideas that STRICTLY fall within the budget range of $${minBudget} to $${maxBudget}. ${prompt}
 
 CRITICAL REQUIREMENTS:
