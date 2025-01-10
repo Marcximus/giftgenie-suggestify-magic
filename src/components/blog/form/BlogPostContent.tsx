@@ -38,7 +38,13 @@ export const BlogPostContent = ({ form, handleAIGenerate }: BlogPostContentProps
       if (error) throw error;
 
       if (data?.content) {
-        form.setValue('content', data.content, { shouldDirty: true });
+        // Explicitly trigger form update with the new content
+        form.setValue('content', data.content, { 
+          shouldDirty: true,
+          shouldTouch: true,
+          shouldValidate: true 
+        });
+        
         toast({
           title: "Success",
           description: "Blog post generated successfully!",
@@ -120,7 +126,10 @@ export const BlogPostContent = ({ form, handleAIGenerate }: BlogPostContentProps
             <FormControl>
               <BlogEditor 
                 value={field.value} 
-                onChange={field.onChange}
+                onChange={(value) => {
+                  field.onChange(value);
+                  form.trigger('content'); // Trigger validation
+                }}
               />
             </FormControl>
             <FormMessage />
