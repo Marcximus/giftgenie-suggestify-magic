@@ -16,15 +16,11 @@ interface EditorToolbarProps {
   onLinkAdd: () => void;
 }
 
-const colors = [
-  '#000000', '#9b87f5', '#7E69AB', '#6E59A5', '#D6BCFA',
-  '#F97316', '#0EA5E9', '#8B5CF6', '#D946EF', '#ea384c'
-];
-
 export const EditorToolbar = ({ editor, onImageUpload, onLinkAdd }: EditorToolbarProps) => {
   return (
     <div className="border-b bg-muted/50 p-2 flex flex-wrap gap-2">
       <Button
+        type="button" // Add type="button" to prevent form submission
         onClick={() => editor.chain().focus().toggleBold().run()}
         variant={editor.isActive('bold') ? 'secondary' : 'ghost'}
         size="sm"
@@ -33,6 +29,7 @@ export const EditorToolbar = ({ editor, onImageUpload, onLinkAdd }: EditorToolba
       </Button>
       
       <Button
+        type="button"
         onClick={() => editor.chain().focus().toggleItalic().run()}
         variant={editor.isActive('italic') ? 'secondary' : 'ghost'}
         size="sm"
@@ -41,6 +38,7 @@ export const EditorToolbar = ({ editor, onImageUpload, onLinkAdd }: EditorToolba
       </Button>
 
       <Button
+        type="button"
         onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
         variant={editor.isActive('heading', { level: 2 }) ? 'secondary' : 'ghost'}
         size="sm"
@@ -49,6 +47,7 @@ export const EditorToolbar = ({ editor, onImageUpload, onLinkAdd }: EditorToolba
       </Button>
 
       <Button
+        type="button"
         onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
         variant={editor.isActive('heading', { level: 3 }) ? 'secondary' : 'ghost'}
         size="sm"
@@ -57,6 +56,7 @@ export const EditorToolbar = ({ editor, onImageUpload, onLinkAdd }: EditorToolba
       </Button>
 
       <Button
+        type="button"
         onClick={() => editor.chain().focus().toggleBulletList().run()}
         variant={editor.isActive('bulletList') ? 'secondary' : 'ghost'}
         size="sm"
@@ -65,6 +65,7 @@ export const EditorToolbar = ({ editor, onImageUpload, onLinkAdd }: EditorToolba
       </Button>
 
       <Button
+        type="button"
         onClick={() => editor.chain().focus().toggleOrderedList().run()}
         variant={editor.isActive('orderedList') ? 'secondary' : 'ghost'}
         size="sm"
@@ -73,6 +74,7 @@ export const EditorToolbar = ({ editor, onImageUpload, onLinkAdd }: EditorToolba
       </Button>
 
       <Button
+        type="button"
         onClick={() => editor.chain().focus().toggleBlockquote().run()}
         variant={editor.isActive('blockquote') ? 'secondary' : 'ghost'}
         size="sm"
@@ -81,6 +83,7 @@ export const EditorToolbar = ({ editor, onImageUpload, onLinkAdd }: EditorToolba
       </Button>
 
       <Button
+        type="button"
         onClick={onLinkAdd}
         variant={editor.isActive('link') ? 'secondary' : 'ghost'}
         size="sm"
@@ -89,6 +92,7 @@ export const EditorToolbar = ({ editor, onImageUpload, onLinkAdd }: EditorToolba
       </Button>
 
       <Button
+        type="button"
         onClick={onImageUpload}
         variant="ghost"
         size="sm"
@@ -97,6 +101,7 @@ export const EditorToolbar = ({ editor, onImageUpload, onLinkAdd }: EditorToolba
       </Button>
 
       <Button
+        type="button"
         onClick={() => editor.chain().focus().setTextAlign('left').run()}
         variant={editor.isActive({ textAlign: 'left' }) ? 'secondary' : 'ghost'}
         size="sm"
@@ -105,6 +110,7 @@ export const EditorToolbar = ({ editor, onImageUpload, onLinkAdd }: EditorToolba
       </Button>
 
       <Button
+        type="button"
         onClick={() => editor.chain().focus().setTextAlign('center').run()}
         variant={editor.isActive({ textAlign: 'center' }) ? 'secondary' : 'ghost'}
         size="sm"
@@ -113,6 +119,7 @@ export const EditorToolbar = ({ editor, onImageUpload, onLinkAdd }: EditorToolba
       </Button>
 
       <Button
+        type="button"
         onClick={() => editor.chain().focus().setTextAlign('right').run()}
         variant={editor.isActive({ textAlign: 'right' }) ? 'secondary' : 'ghost'}
         size="sm"
@@ -122,7 +129,7 @@ export const EditorToolbar = ({ editor, onImageUpload, onLinkAdd }: EditorToolba
 
       <Popover>
         <PopoverTrigger asChild>
-          <Button variant="ghost" size="sm">
+          <Button type="button" variant="ghost" size="sm">
             <Palette className="h-4 w-4" />
           </Button>
         </PopoverTrigger>
@@ -130,6 +137,7 @@ export const EditorToolbar = ({ editor, onImageUpload, onLinkAdd }: EditorToolba
           <div className="grid grid-cols-5 gap-2 p-2">
             {colors.map((color) => (
               <button
+                type="button"
                 key={color}
                 className="w-8 h-8 rounded-full border border-gray-200"
                 style={{ backgroundColor: color }}
@@ -142,3 +150,8 @@ export const EditorToolbar = ({ editor, onImageUpload, onLinkAdd }: EditorToolba
     </div>
   );
 };
+
+const colors = [
+  '#000000', '#9b87f5', '#7E69AB', '#6E59A5', '#D6BCFA',
+  '#F97316', '#0EA5E9', '#8B5CF6', '#D946EF', '#ea384c'
+];
