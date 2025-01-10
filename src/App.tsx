@@ -10,6 +10,9 @@ import { lazy } from "react";
 const Index = lazy(() => import("./pages/Index"));
 const Blog = lazy(() => import("./pages/Blog"));
 const BlogPost = lazy(() => import("./pages/BlogPost"));
+const BlogAdmin = lazy(() => import("./pages/BlogAdmin"));
+const BlogNew = lazy(() => import("./pages/BlogNew"));
+const BlogEdit = lazy(() => import("./pages/BlogEdit"));
 const About = lazy(() => import("./pages/About"));
 
 const queryClient = new QueryClient();
@@ -61,6 +64,9 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/blog" element={<Blog />} />
             <Route path="/blog/:slug" element={<BlogPost />} />
+            <Route path="/blog/admin" element={<BlogAdmin />} />
+            <Route path="/blog/new" element={<BlogNew />} />
+            <Route path="/blog/edit/:slug" element={<BlogEdit />} />
             <Route path="/about" element={<About />} />
           </Routes>
           <Navigation />
