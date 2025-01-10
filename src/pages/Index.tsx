@@ -2,6 +2,7 @@ import { lazy, Suspense } from 'react';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { useSuggestions } from '@/hooks/useSuggestions';
 import { SuggestionSkeleton } from '@/components/SuggestionSkeleton';
+import { FloatingNav } from '@/components/FloatingNav';
 
 const SearchHeader = lazy(() => import('@/components/SearchHeader').then(module => ({ default: module.SearchHeader })));
 const SuggestionsGrid = lazy(() => import('@/components/SuggestionsGrid').then(module => ({ default: module.SuggestionsGrid })));
@@ -18,6 +19,7 @@ const Index = () => {
 
   return (
     <ErrorBoundary>
+      <FloatingNav />
       <main className="min-h-screen bg-gradient-to-br from-background via-secondary/30 to-primary/5">
         <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-8 md:py-12 max-w-7xl">
           <header>
