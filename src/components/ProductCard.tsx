@@ -47,18 +47,21 @@ const ProductCardComponent = ({
       return;
     }
 
-    // Only open product page if we have an ASIN
+    // If we have an ASIN, use that for a direct product link
     if (asin) {
       const productUrl = `https://www.amazon.com/dp/${asin}/ref=nosim?tag=${import.meta.env.VITE_AMAZON_ASSOCIATE_ID}`;
       window.open(productUrl, '_blank', 'noopener,noreferrer');
     } else {
-      console.warn('No ASIN available for product:', simplifiedTitle);
+      // If no ASIN, create a search URL using the product title
+      const searchQuery = encodeURIComponent(simplifiedTitle);
+      const searchUrl = `https://www.amazon.com/s?k=${searchQuery}&tag=${import.meta.env.VITE_AMAZON_ASSOCIATE_ID}`;
+      window.open(searchUrl, '_blank', 'noopener,noreferrer');
     }
   };
 
   return (
     <Card 
-      className={`group h-full flex flex-col overflow-hidden hover:shadow-lg transition-all duration-300 border-accent/20 backdrop-blur-sm bg-white/80 hover:bg-white/90 ${asin ? 'cursor-pointer' : 'cursor-not-allowed opacity-70'}`}
+      className="group h-full flex flex-col overflow-hidden hover:shadow-lg transition-all duration-300 border-accent/20 backdrop-blur-sm bg-white/80 hover:bg-white/90 cursor-pointer"
       role="article"
       aria-label={`Product: ${simplifiedTitle}`}
       onClick={handleCardClick}
