@@ -10,15 +10,21 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  FormDescription,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Separator } from "@/components/ui/separator";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
+import { format } from "date-fns";
+import { CalendarIcon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { BlogImageUpload } from "./BlogImageUpload";
 import { BlogPostPreview } from "./BlogPostPreview";
 
-// Define a simpler interface for the form data
 interface BlogPostFormData {
   title: string;
   slug: string;
@@ -96,9 +102,16 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
     }
   };
 
+  const generateSlug = (title: string) => {
+    return title
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/(^-|-$)+/g, "");
+  };
+
   return (
-    <Tabs value={activeTab} onValueChange={setActiveTab}>
-      <TabsList className="mb-4">
+    <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+      <TabsList className="grid w-full grid-cols-2">
         <TabsTrigger value="edit">Edit</TabsTrigger>
         <TabsTrigger value="preview">Preview</TabsTrigger>
       </TabsList>
@@ -106,40 +119,53 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
       <TabsContent value="edit">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <FormField
-              control={form.control}
-              name="title"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Title</FormLabel>
-                  <FormControl>
-                    <Input {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <div className="grid gap-6 md:grid-cols-2">
+              <FormField
+                control={form.control}
+                name="title"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Title</FormLabel>
+                    <FormControl>
+                      <Input 
+                        {...field} 
+                        onChange={(e) => {
+                          field.onChange(e);
+                          if (!initialData) {
+                            form.setValue("slug", generateSlug(e.target.value));
+                          }
+                        }}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-            <FormField
-              control={form.control}
-              name="slug"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Slug</FormLabel>
-                  <FormControl>
-                    <Input {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+              <FormField
+                control={form.control}
+                name="slug"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Slug</FormLabel>
+                    <FormControl>
+                      <Input {...field} />
+                    </FormControl>
+                    <FormDescription>
+                      The URL-friendly version of the title
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
 
             <FormField
               control={form.control}
               name="image_url"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Image</FormLabel>
+                  <FormLabel>Featured Image</FormLabel>
                   <FormControl>
                     <BlogImageUpload 
                       value={field.value || ''} 
@@ -158,8 +184,15 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
                 <FormItem>
                   <FormLabel>Excerpt</FormLabel>
                   <FormControl>
-                    <Textarea {...field} />
+                    <Textarea 
+                      {...field} 
+                      value={field.value || ''}
+                      placeholder="Write a brief summary of your post..."
+                    />
                   </FormControl>
+                  <FormDescription>
+                    A short summary that appears in blog listings
+                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -172,7 +205,11 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
                 <FormItem>
                   <FormLabel>Content</FormLabel>
                   <FormControl>
-                    <Textarea className="min-h-[300px]" {...field} />
+                    <Textarea 
+                      className="min-h-[300px]" 
+                      {...field}
+                      placeholder="Write your blog post content here..."
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -193,9 +230,124 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
               )}
             />
 
+            <FormField
+              control={form.control}
+              name="published_at"
+              render={({ field }) => (
+                <FormItem className="flex flex-col">
+                  <FormLabel>Publish Date</FormLabel>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <FormControl>
+                        <Button
+                          variant={"outline"}
+                          className={cn(
+                            "w-[240px] pl-3 text-left font-normal",
+                            !field.value && "text-muted-foreground"
+                          )}
+                        >
+                          {field.value ? (
+                            format(new Date(field.value), "PPP")
+                          ) : (
+                            <span>Pick a date</span>
+                          )}
+                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                        </Button>
+                      </FormControl>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={field.value ? new Date(field.value) : undefined}
+                        onSelect={(date) => field.onChange(date?.toISOString())}
+                        disabled={(date) =>
+                          date > new Date() || date < new Date("1900-01-01")
+                        }
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                  <FormDescription>
+                    When to publish this post. Leave empty to save as draft.
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <Separator />
+
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium">SEO Settings</h3>
+              <div className="grid gap-4">
+                <FormField
+                  control={form.control}
+                  name="meta_title"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Meta Title</FormLabel>
+                      <FormControl>
+                        <Input 
+                          {...field} 
+                          value={field.value || ''}
+                          placeholder="SEO optimized title"
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        Appears in search engine results (50-60 characters recommended)
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="meta_description"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Meta Description</FormLabel>
+                      <FormControl>
+                        <Textarea 
+                          {...field} 
+                          value={field.value || ''}
+                          placeholder="Brief description for search engines"
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        Appears in search engine results (150-160 characters recommended)
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="meta_keywords"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Meta Keywords</FormLabel>
+                      <FormControl>
+                        <Input 
+                          {...field} 
+                          value={field.value || ''}
+                          placeholder="keyword1, keyword2, keyword3"
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        Comma-separated keywords for SEO
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </div>
+
             <div className="flex gap-4">
               <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? "Saving..." : "Save"}
+                {isSubmitting ? "Saving..." : initialData ? "Update Post" : "Create Post"}
               </Button>
               <Button
                 type="button"

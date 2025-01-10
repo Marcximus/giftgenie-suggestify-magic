@@ -8,17 +8,27 @@ interface BlogPostPreviewProps {
 
 export const BlogPostPreview = ({ data }: BlogPostPreviewProps) => {
   return (
-    <div className="prose max-w-none">
+    <article className="prose prose-sm md:prose-base lg:prose-lg max-w-none">
       <h1>{data.title}</h1>
       {data.image_url && (
         <img
           src={data.image_url}
           alt={data.title}
-          className="rounded-lg"
+          className="rounded-lg w-full h-auto object-cover"
         />
       )}
-      <p className="text-muted-foreground">{data.excerpt}</p>
-      <div>{data.content}</div>
-    </div>
+      {data.excerpt && (
+        <p className="lead text-muted-foreground">{data.excerpt}</p>
+      )}
+      <div className="mt-8">{data.content}</div>
+      {data.author && (
+        <div className="mt-8 text-muted-foreground">
+          Written by {data.author}
+          {data.published_at && (
+            <span> · {new Date(data.published_at).toLocaleDateString()}</span>
+          )}
+        </div>
+      )}
+    </article>
   );
 };
