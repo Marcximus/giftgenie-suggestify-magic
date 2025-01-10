@@ -16,15 +16,27 @@ const queryClient = new QueryClient();
 
 const Navigation = () => (
   <nav className="fixed bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 z-50 w-[90%] sm:w-auto">
-    <div className="bg-white/20 backdrop-blur-md rounded-full px-6 sm:px-12 py-2.5 sm:py-3 shadow-lg flex items-center justify-center sm:justify-between gap-6 sm:gap-12 border border-white/20">
-      <Link to="/" className="text-sm sm:text-base text-[#1EAEDB] hover:text-[#0FA0CE] transition-colors whitespace-nowrap">
+    <div className="bg-white/10 backdrop-blur-lg rounded-full px-6 sm:px-12 py-3 sm:py-4 shadow-xl flex items-center justify-center gap-8 sm:gap-16 border border-white/20 hover:bg-white/15 transition-all duration-300 group">
+      <Link 
+        to="/" 
+        className="text-sm sm:text-base text-[#1EAEDB] hover:text-[#0FA0CE] transition-all duration-300 relative whitespace-nowrap flex items-center justify-center group-hover:scale-105"
+      >
         Gift AI
+        <div className="absolute -bottom-1 left-0 w-0 h-0.5 bg-[#1EAEDB] group-hover:w-full transition-all duration-300"></div>
       </Link>
-      <Link to="/blog" className="text-sm sm:text-base text-[#1EAEDB] hover:text-[#0FA0CE] transition-colors whitespace-nowrap">
+      <Link 
+        to="/blog" 
+        className="text-sm sm:text-base text-[#1EAEDB] hover:text-[#0FA0CE] transition-all duration-300 relative whitespace-nowrap flex items-center justify-center group-hover:scale-105"
+      >
         Blog
+        <div className="absolute -bottom-1 left-0 w-0 h-0.5 bg-[#1EAEDB] group-hover:w-full transition-all duration-300"></div>
       </Link>
-      <Link to="/about" className="text-sm sm:text-base text-[#1EAEDB] hover:text-[#0FA0CE] transition-colors whitespace-nowrap">
+      <Link 
+        to="/about" 
+        className="text-sm sm:text-base text-[#1EAEDB] hover:text-[#0FA0CE] transition-all duration-300 relative whitespace-nowrap flex items-center justify-center group-hover:scale-105"
+      >
         About
+        <div className="absolute -bottom-1 left-0 w-0 h-0.5 bg-[#1EAEDB] group-hover:w-full transition-all duration-300"></div>
       </Link>
     </div>
   </nav>
