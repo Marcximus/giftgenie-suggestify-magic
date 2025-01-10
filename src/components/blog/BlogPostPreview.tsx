@@ -8,8 +8,8 @@ interface BlogPostPreviewProps {
 
 export const BlogPostPreview = ({ data }: BlogPostPreviewProps) => {
   return (
-    <article className="prose prose-sm md:prose-base lg:prose-lg max-w-none">
-      <h1>{data.title}</h1>
+    <article className="prose prose-sm md:prose-base lg:prose-lg max-w-none text-left">
+      <h1 className="text-left">{data.title}</h1>
       {data.image_url && (
         <img
           src={data.image_url}
@@ -18,14 +18,16 @@ export const BlogPostPreview = ({ data }: BlogPostPreviewProps) => {
         />
       )}
       {data.excerpt && (
-        <p className="lead text-muted-foreground">{data.excerpt}</p>
+        <p className="lead text-muted-foreground text-left">{data.excerpt}</p>
       )}
       <div 
-        className="mt-8"
-        dangerouslySetInnerHTML={{ __html: data.content }}
+        className="mt-8 text-left"
+        dangerouslySetInnerHTML={{ 
+          __html: data.content.replace(/```html\n?|\n?```/g, '') 
+        }}
       />
       {data.author && (
-        <div className="mt-8 text-muted-foreground">
+        <div className="mt-8 text-muted-foreground text-left">
           Written by {data.author}
           {data.published_at && (
             <span> · {new Date(data.published_at).toLocaleDateString()}</span>
