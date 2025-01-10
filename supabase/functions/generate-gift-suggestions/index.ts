@@ -7,99 +7,71 @@ import { GiftSuggestion } from '../_shared/types.ts';
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Access-Control-Max-Age': '86400',
 };
 
 serve(async (req) => {
   console.log('Received request:', req.method, req.url);
   
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    console.log('Handling CORS preflight request');
     return new Response(null, { 
-      status: 204,
-      headers: {
-        ...corsHeaders,
-        'Access-Control-Max-Age': '86400', // 24 hours
-      }
+      headers: corsHeaders,
+      status: 204
     });
   }
 
   try {
-    // Validate OpenAI API key
-    const openAiKey = Deno.env.get('OPENAI_API_KEY');
-    if (!openAiKey) {
-      console.error('OpenAI API key not configured');
-      throw new Error('OpenAI API key not configured');
-    }
-
-    // Parse and validate request body
     const { prompt } = await req.json();
-    console.log('Processing request with prompt:', prompt);
-
-    if (!prompt || typeof prompt !== 'string' || prompt.trim().length < 3) {
-      console.error('Invalid prompt received:', prompt);
-      return new Response(
-        JSON.stringify({ 
-          error: 'Invalid prompt',
-          details: 'Please provide a more specific gift request'
-        }),
-        { 
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
-      );
-    }
-
-    // Generate suggestions using OpenAI
-    console.log('Generating suggestions with OpenAI...');
-    const suggestions = await generateGiftSuggestions(prompt);
-    console.log('Generated suggestions:', suggestions);
     
-    if (!Array.isArray(suggestions)) {
-      console.error('Invalid suggestions format received:', suggestions);
-      throw new Error('Invalid suggestions format');
+    if (!prompt || typeof prompt !== 'string' || prompt.trim().length < 3) {
+      throw new Error('Invalid prompt provided');
     }
 
-    // Process suggestions with delay to avoid rate limits
+    console.log('Processing request with prompt:', prompt);
+    const suggestions = await generateGiftSuggestions(prompt);
+    
+    if (!Array.isArray(suggestions) || suggestions.length === 0) {
+      throw new Error('No valid suggestions generated');
+    }
+
     console.log('Processing suggestions with Amazon API...');
-    const productPromises = suggestions.map((suggestion, index) => {
-      return new Promise<GiftSuggestion>(async (resolve) => {
-        try {
-          // Add delay between requests to avoid rate limits
-          await new Promise(r => setTimeout(r, index * 1000));
-          const product = await processGiftSuggestion(suggestion);
-          resolve(product);
-        } catch (error) {
-          console.error(`Error processing suggestion "${suggestion}":`, error);
-          resolve({
-            title: suggestion,
-            description: suggestion,
-            priceRange: 'Price not available',
-            reason: 'This item matches your requirements.',
-            search_query: prompt,
-            status: 'error'
-          });
-        }
-      });
-    });
+    const products = await Promise.all(
+      suggestions.map((suggestion, index) => 
+        new Promise<GiftSuggestion>(async (resolve) => {
+          try {
+            await new Promise(r => setTimeout(r, index * 1000));
+            const product = await processGiftSuggestion(suggestion);
+            resolve(product);
+          } catch (error) {
+            console.error(`Error processing suggestion "${suggestion}":`, error);
+            resolve({
+              title: suggestion,
+              description: suggestion,
+              priceRange: 'Price not available',
+              reason: 'This item matches your requirements.',
+              search_query: prompt,
+              status: 'error'
+            });
+          }
+        })
+      )
+    );
 
-    const products = await Promise.all(productPromises);
     console.log('Successfully processed all products');
-
     return new Response(
       JSON.stringify({ suggestions: products }),
       { 
         headers: { 
-          ...corsHeaders, 
+          ...corsHeaders,
           'Content-Type': 'application/json',
           'Cache-Control': 'no-store, no-cache, must-revalidate'
-        } 
+        }
       }
     );
 
   } catch (error) {
     console.error('Error in generate-gift-suggestions function:', error);
-    
     return new Response(
       JSON.stringify({ 
         error: error.message,
@@ -107,7 +79,7 @@ serve(async (req) => {
       }),
       {
         status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       }
     );
   }
