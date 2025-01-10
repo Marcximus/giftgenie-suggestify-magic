@@ -35,12 +35,12 @@ const Blog = () => {
               Our suggestions feel tailor-made because they practically are. We use <span className="animate-pulse-text text-primary">AI</span> and <span className="animate-pulse-text text-primary">internet magic</span> to find the absolute best gift ideas and popular presents. Thanks to us, you can spend less time gift hunting and more time celebrating (or binge-watching your favorite show—we won't judge).
             </p>
           </div>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
             {[...Array(6)].map((_, i) => (
-              <Card key={i} className="animate-pulse h-[60px] flex overflow-hidden">
-                <div className="w-[60px] bg-gray-200"></div>
-                <div className="flex-1 p-3">
-                  <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+              <Card key={i} className="animate-pulse h-[40px] flex overflow-hidden">
+                <div className="w-[40px] bg-gray-200"></div>
+                <div className="flex-1 p-2">
+                  <div className="h-3 bg-gray-200 rounded w-3/4"></div>
                 </div>
               </Card>
             ))}
@@ -70,13 +70,13 @@ const Blog = () => {
             Our suggestions feel tailor-made because they practically are. We use <span className="animate-pulse-text text-primary">AI</span> and <span className="animate-pulse-text text-primary">internet magic</span> to find the absolute best gift ideas and popular presents. Thanks to us, you can spend less time gift hunting and more time celebrating (or binge-watching your favorite show—we won't judge).
           </p>
         </div>
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
           {posts?.map((post) => (
             <Link to={`/blog/post/${post.slug}`} key={post.id}>
               <article className="group">
-                <Card className="flex h-[60px] overflow-hidden transform transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
+                <Card className="flex h-[40px] overflow-hidden transform transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
                   {post.image_url && (
-                    <div className="w-[60px] relative overflow-hidden">
+                    <div className="w-[40px] relative overflow-hidden">
                       <img 
                         src={post.image_url} 
                         alt={post.title}
@@ -84,8 +84,8 @@ const Blog = () => {
                       />
                     </div>
                   )}
-                  <div className="flex-1 p-3 flex items-center">
-                    <h3 className="text-sm font-medium truncate group-hover:text-primary transition-colors">
+                  <div className="flex-1 p-2 flex items-center">
+                    <h3 className="text-xs font-medium truncate group-hover:text-primary transition-colors">
                       {post.title}
                     </h3>
                   </div>
