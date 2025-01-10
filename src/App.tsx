@@ -15,15 +15,15 @@ const About = lazy(() => import("./pages/About"));
 const queryClient = new QueryClient();
 
 const Navigation = () => (
-  <nav className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50">
-    <div className="bg-white/80 backdrop-blur-sm rounded-full px-12 py-3 shadow-lg flex items-center gap-12">
-      <Link to="/" className="text-[#1EAEDB] hover:text-[#0FA0CE] transition-colors">
+  <nav className="fixed bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 z-50 w-[90%] sm:w-auto">
+    <div className="bg-white/80 backdrop-blur-sm rounded-full px-6 sm:px-12 py-2.5 sm:py-3 shadow-lg flex items-center justify-center sm:justify-between gap-6 sm:gap-12">
+      <Link to="/" className="text-sm sm:text-base text-[#1EAEDB] hover:text-[#0FA0CE] transition-colors whitespace-nowrap">
         Gift AI
       </Link>
-      <Link to="/blog" className="text-[#1EAEDB] hover:text-[#0FA0CE] transition-colors">
+      <Link to="/blog" className="text-sm sm:text-base text-[#1EAEDB] hover:text-[#0FA0CE] transition-colors whitespace-nowrap">
         Blog
       </Link>
-      <Link to="/about" className="text-[#1EAEDB] hover:text-[#0FA0CE] transition-colors">
+      <Link to="/about" className="text-sm sm:text-base text-[#1EAEDB] hover:text-[#0FA0CE] transition-colors whitespace-nowrap">
         About
       </Link>
     </div>
