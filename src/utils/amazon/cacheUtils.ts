@@ -1,16 +1,45 @@
 import { AmazonProduct } from './types';
 
-const MAX_CACHE_SIZE = 100;
-const CACHE_DURATION = 10 * 60 * 1000; // 10 minutes
-const RETRY_ATTEMPTS = 3;
-const RETRY_DELAY = 1000; // 1 second
+const MAX_CACHE_SIZE = 500; // Increased from 100
+const CACHE_DURATION = 24 * 60 * 60 * 1000; // Increased to 24 hours
+const RETRY_ATTEMPTS = 2;
+const RETRY_DELAY = 500;
 
 interface CacheEntry {
   data: AmazonProduct;
   timestamp: number;
 }
 
+// Use a Map for O(1) lookups
 const productCache = new Map<string, CacheEntry>();
+
+// Add localStorage persistence
+const loadCacheFromStorage = () => {
+  try {
+    const cached = localStorage.getItem('amazonProductCache');
+    if (cached) {
+      const entries = JSON.parse(cached);
+      entries.forEach(([key, value]: [string, CacheEntry]) => {
+        productCache.set(key, value);
+      });
+    }
+  } catch (error) {
+    console.warn('Failed to load cache from storage:', error);
+  }
+};
+
+const saveCacheToStorage = () => {
+  try {
+    localStorage.setItem('amazonProductCache', 
+      JSON.stringify(Array.from(productCache.entries()))
+    );
+  } catch (error) {
+    console.warn('Failed to save cache to storage:', error);
+  }
+};
+
+// Initialize cache from localStorage
+loadCacheFromStorage();
 
 export const clearStaleCache = () => {
   const now = Date.now();
@@ -21,6 +50,10 @@ export const clearStaleCache = () => {
       productCache.delete(key);
       deletedCount++;
     }
+  }
+  
+  if (deletedCount > 0) {
+    saveCacheToStorage();
   }
 };
 
@@ -35,8 +68,9 @@ export const getCachedProduct = (cacheKey: string): AmazonProduct | null => {
 };
 
 export const cacheProduct = (cacheKey: string, product: AmazonProduct) => {
-  clearStaleCache(); // Ensure we clear stale entries before adding new ones
+  clearStaleCache();
   productCache.set(cacheKey, { data: product, timestamp: Date.now() });
+  saveCacheToStorage();
   console.log('Cached product:', cacheKey);
 };
 
@@ -54,12 +88,10 @@ export const withRetry = async <T>(
       lastError = error;
       console.warn(`Attempt ${attempt} failed:`, error.message);
       
-      // Don't retry on 404s or if it's the last attempt
       if (error.status === 404 || attempt === maxAttempts) {
         throw error;
       }
       
-      // Wait before retrying, with exponential backoff
       await new Promise(resolve => setTimeout(resolve, delayMs * attempt));
     }
   }

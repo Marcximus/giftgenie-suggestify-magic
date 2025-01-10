@@ -12,6 +12,7 @@ interface BatchProcessorOptions<T, R> {
 
 export const useBatchProcessor = <T, R>() => {
   const [isProcessing, setIsProcessing] = useState(false);
+  const [processingQueue, setProcessingQueue] = useState<T[]>([]);
 
   const processBatch = async (
     items: T[],
@@ -26,21 +27,27 @@ export const useBatchProcessor = <T, R>() => {
     } = options;
 
     setIsProcessing(true);
+    setProcessingQueue(items);
+    
     const results: R[] = [];
     const errors: any[] = [];
+    const processedItems = new Set<number>();
     
     try {
-      // Process items in chunks to avoid overwhelming the system
+      // Process items in chunks with improved concurrency
       for (let i = 0; i < items.length; i += batchSize) {
         const batch = items.slice(i, i + batchSize);
         
         if (parallel) {
-          // Process batch items concurrently with Promise.all
+          // Process batch items concurrently with improved error handling
           const batchPromises = batch.map(async (item, index) => {
+            const globalIndex = i + index;
             try {
-              // Add minimal stagger even in parallel mode to prevent rate limits
               if (index > 0) await sleep(staggerDelay);
-              return await processFn(item);
+              const result = await processFn(item);
+              processedItems.add(globalIndex);
+              setProcessingQueue(prev => prev.filter((_, idx) => !processedItems.has(idx)));
+              return result;
             } catch (error) {
               errors.push({ error, item });
               onError(error, item);
@@ -51,11 +58,14 @@ export const useBatchProcessor = <T, R>() => {
           const batchResults = await Promise.all(batchPromises);
           results.push(...batchResults.filter(Boolean));
         } else {
-          // Process items sequentially with stagger delay
-          for (const item of batch) {
+          // Sequential processing with progress tracking
+          for (const [index, item] of batch.entries()) {
+            const globalIndex = i + index;
             try {
               const result = await processFn(item);
               if (result) results.push(result);
+              processedItems.add(globalIndex);
+              setProcessingQueue(prev => prev.filter((_, idx) => !processedItems.has(idx)));
               if (staggerDelay > 0) await sleep(staggerDelay);
             } catch (error) {
               errors.push({ error, item });
@@ -64,16 +74,15 @@ export const useBatchProcessor = <T, R>() => {
           }
         }
 
-        // Add a small delay between batches to prevent rate limiting
         if (i + batchSize < items.length) {
           await sleep(AMAZON_CONFIG.BASE_RETRY_DELAY);
         }
       }
     } finally {
       setIsProcessing(false);
+      setProcessingQueue([]);
     }
 
-    // Log any errors that occurred during processing
     if (errors.length > 0) {
       console.warn(`Batch processing completed with ${errors.length} errors:`, errors);
     }
@@ -83,6 +92,7 @@ export const useBatchProcessor = <T, R>() => {
 
   return {
     processBatch,
-    isProcessing
+    isProcessing,
+    processingQueue
   };
 };
