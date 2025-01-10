@@ -78,7 +78,7 @@ export const ProductImage = ({ title, imageUrl }: ProductImageProps) => {
         <img
           src={getTinyPlaceholder(currentImageUrl)}
           alt=""
-          className="absolute inset-0 w-full h-full object-cover blur-lg scale-110 transform"
+          className="absolute inset-0 w-full h-full object-contain blur-lg scale-110 transform"
           aria-hidden="true"
         />
       )}
@@ -87,7 +87,7 @@ export const ProductImage = ({ title, imageUrl }: ProductImageProps) => {
       <img
         src={currentImageUrl || genericFallback}
         alt={`Product image of ${title}`}
-        className={`object-cover w-full h-full group-hover:scale-110 transition-all duration-500 ${
+        className={`w-full h-full object-contain group-hover:scale-105 transition-all duration-500 ${
           isLoading ? 'opacity-0' : 'opacity-100'
         } ${hasError ? 'opacity-0' : ''}`}
         loading="lazy"
