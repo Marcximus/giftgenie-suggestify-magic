@@ -58,8 +58,12 @@ const About = () => {
   return (
     <div className="container mx-auto px-4 py-8 max-w-4xl">
       <div className="prose prose-lg max-w-none">
-        <h1 className="text-4xl font-bold mb-8 text-center">
-          Welcome to Get The Gift — The Only Gift-Giving Sidekick You'll Ever Need
+        <h1 className="flex flex-col items-center gap-1 mb-8">
+          <span className="text-lg text-gray-600">Welcome to</span>
+          <Link to="/" className="text-4xl font-bold text-[#1EAEDB] hover:text-[#0FA0CE] transition-colors">
+            Get The Gift
+          </Link>
+          <span className="text-lg text-gray-600">- The Only Gift-Giving Sidekick You'll Ever Need!</span>
         </h1>
         
         <p className="text-lg mb-8">
