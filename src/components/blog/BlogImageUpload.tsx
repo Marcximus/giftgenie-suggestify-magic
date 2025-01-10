@@ -4,22 +4,9 @@ import { Upload, Image as ImageIcon, Wand2 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useState } from "react";
-import { UseFormSetValue } from "react-hook-form";
+import { UseFormSetValue, useFormContext } from "react-hook-form";
 import { Button } from "@/components/ui/button";
-
-interface BlogPostFormData {
-  title: string;
-  slug: string;
-  content: string;
-  excerpt: string | null;
-  author: string;
-  image_url: string | null;
-  published_at: string | null;
-  meta_title: string | null;
-  meta_description: string | null;
-  meta_keywords: string | null;
-  images: any[] | null;
-}
+import { BlogPostFormData } from "./types/BlogPostTypes";
 
 interface BlogImageUploadProps {
   value: string;
@@ -30,6 +17,7 @@ export const BlogImageUpload = ({ value, setValue }: BlogImageUploadProps) => {
   const [isUploading, setIsUploading] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const { toast } = useToast();
+  const form = useFormContext<BlogPostFormData>();
 
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -79,8 +67,16 @@ export const BlogImageUpload = ({ value, setValue }: BlogImageUploadProps) => {
   const handleGenerateImage = async () => {
     setIsGenerating(true);
     try {
+      const title = form.getValues('title');
+      if (!title) {
+        throw new Error('Please provide a title first');
+      }
+
       const { data, error } = await supabase.functions.invoke('generate-blog-image', {
-        body: { prompt: value || 'blog post featured image' }
+        body: { 
+          title,
+          prompt: "Create a professional featured image for a gift recommendation blog post" 
+        }
       });
 
       if (error) throw error;

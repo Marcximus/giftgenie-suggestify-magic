@@ -12,16 +12,16 @@ serve(async (req) => {
   }
 
   try {
-    const { prompt } = await req.json()
-    console.log('Generating image for prompt:', prompt)
+    const { prompt, title } = await req.json()
+    console.log('Generating image for blog post:', title)
 
     if (!Deno.env.get('OPENAI_API_KEY')) {
       console.error('OpenAI API key not configured')
       throw new Error('OpenAI API key not configured')
     }
 
-    // Create a more focused image prompt
-    const imagePrompt = `Professional blog post featured image for article about: ${prompt}. High quality, clean composition, modern style.`
+    // Create a more focused image prompt using the title
+    const imagePrompt = `Professional blog post featured image for article titled: "${title}". ${prompt || ''}. High quality, clean composition, modern style, suitable for a gift recommendation blog.`
     console.log('Using enhanced prompt:', imagePrompt)
 
     const response = await fetch('https://api.openai.com/v1/images/generations', {

@@ -5,6 +5,8 @@ import { Wand2 } from "lucide-react";
 import { UseFormReturn } from "react-hook-form";
 import { BlogPostFormData } from "../types/BlogPostTypes";
 import { BlogEditor } from "../BlogEditor";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/components/ui/use-toast";
 
 interface BlogPostContentProps {
   form: UseFormReturn<BlogPostFormData>;
@@ -12,6 +14,47 @@ interface BlogPostContentProps {
 }
 
 export const BlogPostContent = ({ form, handleAIGenerate }: BlogPostContentProps) => {
+  const { toast } = useToast();
+  const [isGenerating, setIsGenerating] = useState(false);
+
+  const generateFullPost = async () => {
+    const title = form.getValues('title');
+    if (!title) {
+      toast({
+        title: "Error",
+        description: "Please provide a title first",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsGenerating(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-blog-post', {
+        body: { title }
+      });
+
+      if (error) throw error;
+
+      if (data?.content) {
+        form.setValue('content', data.content);
+        toast({
+          title: "Success",
+          description: "Blog post generated successfully!",
+        });
+      }
+    } catch (error) {
+      console.error('Error generating blog post:', error);
+      toast({
+        title: "Error",
+        description: "Failed to generate blog post. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
   return (
     <>
       <FormField
@@ -47,7 +90,30 @@ export const BlogPostContent = ({ form, handleAIGenerate }: BlogPostContentProps
         name="content"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Content</FormLabel>
+            <FormLabel className="flex items-center justify-between">
+              Content
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={generateFullPost}
+                  disabled={isGenerating}
+                >
+                  <Wand2 className="w-4 h-4 mr-2" />
+                  {isGenerating ? "Generating..." : "Generate Full Post"}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleAIGenerate('improve-content')}
+                >
+                  <Wand2 className="w-4 h-4 mr-2" />
+                  Improve Content
+                </Button>
+              </div>
+            </FormLabel>
             <FormControl>
               <BlogEditor 
                 value={field.value} 
