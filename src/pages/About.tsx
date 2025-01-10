@@ -1,26 +1,89 @@
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { useState } from "react";
+
 const About = () => {
+  const [message, setMessage] = useState("");
+
   return (
     <div className="container mx-auto px-4 py-8 max-w-4xl">
-      <h1 className="text-4xl font-bold mb-8">About GiftGenie</h1>
-      
-      <div className="prose prose-lg">
-        <p>
-          Welcome to GiftGenie, your AI-powered gift suggestion platform. We're here to take the stress out of gift-giving by providing personalized recommendations based on your recipient's interests, age, and preferences.
+      <div className="prose prose-lg max-w-none">
+        <h1 className="text-4xl font-bold mb-8 text-center">
+          Welcome to Get The Gift — The Only Gift-Giving Sidekick You'll Ever Need
+        </h1>
+        
+        <p className="text-lg mb-8">
+          Are you tired of giving the same ol' scented candle or novelty mug every year? We thought so. That's why Get The Gift was created: to help you discover the perfect present for everyone on your list without the stress, guesswork, or frantic 3 A.M. Google searches for "best birthday gift ideas." We'll be the wise (and sometimes witty) friend at your side, guiding you through the vast universe of gift-giving, one brilliant recommendation at a time.
         </p>
         
-        <h2>Our Mission</h2>
-        <p>
-          Our mission is to make gift-giving a delightful experience. We believe that finding the perfect gift shouldn't be a challenge, which is why we've developed an intelligent system that understands individual preferences and suggests thoughtful, personalized gifts.
+        <h2 className="text-2xl font-bold mt-12 mb-4 text-primary">Our Mission: No More Meh Presents</h2>
+        <p className="text-lg mb-8">
+          We're on a mission to banish boring gifts from planet Earth. With our smart gift selection tool, you can wow your recipient with a unique, thoughtful item that actually fits their personality. Whether you're shopping for birthdays, holidays, anniversaries, or the "just because" moments, we're here to ensure every gift is worthy of a "Wow, how did you know?!" reaction.
         </p>
         
-        <h2>How It Works</h2>
-        <p>
-          GiftGenie uses advanced AI technology to analyze various factors including age, interests, occasion, and budget to generate tailored gift suggestions. Our platform connects with major retailers to ensure you get the best prices and reliable delivery options.
+        <h2 className="text-2xl font-bold mt-12 mb-4 text-primary">How We Work Our Gift-Giving Magic</h2>
+        
+        <h3 className="text-xl font-semibold mt-6 mb-3">AI-Powered Gift Suggestions</h3>
+        <p className="text-lg mb-6">
+          Our advanced algorithms evaluate your recipient's likes, dislikes, and that time they couldn't stop talking about alpaca socks (hey, it happens). Then, we conjure up a personalized list of options that'll make their eyes sparkle brighter than tinsel.
         </p>
         
-        <h2>Contact Us</h2>
-        <p>
-          Have questions or suggestions? We'd love to hear from you! Reach out to us at support@giftgenie.com
+        <h3 className="text-xl font-semibold mt-6 mb-3">Handpicked from Top Retailers</h3>
+        <p className="text-lg mb-6">
+          We scour all corners of the web—like ninjas in slippers—to bring you the best deals and delivery choices. Thanks to our partnerships with major retailers, you can snag the perfect gift while enjoying a wallet-friendly price and reliable shipping.
+        </p>
+        
+        <h3 className="text-xl font-semibold mt-6 mb-3">Expertly Curated Gift Guides</h3>
+        <p className="text-lg mb-8">
+          From "Unicorn-Loving Teens" to "World-Traveler Grandmas," we've got themed gift guides to inspire your creative side. We keep track of the latest trends, so you don't have to.
+        </p>
+        
+        <h2 className="text-2xl font-bold mt-12 mb-4 text-primary">Why Get The Gift?</h2>
+        <ul className="list-disc pl-6 mb-8 space-y-2">
+          <li className="text-lg">Stress-Free Experience: No more aimless online browsing or settling for random last-minute purchases.</li>
+          <li className="text-lg">Personal Touch: Our suggestions feel tailor-made because they practically are.</li>
+          <li className="text-lg">Time-Saving: Spend less time hunting and more time celebrating (or binge-watching your favorite show—we won't judge).</li>
+          <li className="text-lg">Ridiculously Fun: Because searching for awesome gifts should be an adventure, not a chore.</li>
+        </ul>
+        
+        <h2 className="text-2xl font-bold mt-12 mb-4 text-primary">Meet the Gift Gurus</h2>
+        <p className="text-lg mb-8">
+          We're a small (yet mighty) team of innovators, data nerds, and hopeless romantics who believe in the power of a perfect gift. Whether you're celebrating your dog's "gotcha day" or your best friend's milestone birthday, we're obsessed with finding a present that hits all the right notes.
+        </p>
+        
+        <h2 className="text-2xl font-bold mt-12 mb-4 text-primary">Ready to Make Someone's Day?</h2>
+        <p className="text-lg mb-8">
+          Let us handle the research, the comparisons, and the creative brainstorming. Your only job is to take all the credit (we're totally cool with that).
+        </p>
+        
+        <h2 className="text-2xl font-bold mt-12 mb-4 text-primary">Have Questions or Need a Gift Rescue?</h2>
+        <p className="text-lg mb-8">
+          We're always here to help. Send us a friendly "Hello!" and we'll do everything but wrap your presents (though we're working on that, too).
+        </p>
+        
+        <div className="bg-gray-50 p-6 rounded-lg shadow-sm mb-12">
+          <Textarea
+            placeholder="Type your message here..."
+            className="min-h-[100px] mb-4"
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+          />
+          <Button className="w-full">Send Message</Button>
+        </div>
+        
+        <h2 className="text-2xl font-bold mt-12 mb-4 text-primary">Get The Gift: Your Ticket to Gift-Giving Greatness</h2>
+        <p className="text-lg mb-8">
+          No more fruitcakes, mismatched socks, or re-gifted fiascos. At Get The Gift, we aim to transform every celebration into a story worth telling—complete with gasps of delight, big smiles, and maybe even happy tears. After all, the perfect gift is the key to anyone's heart (or at least their fridge magnets).
+        </p>
+        
+        <div className="bg-blue-50 p-6 rounded-lg mb-8">
+          <p className="text-lg font-medium mb-0">
+            Pro Tip: Bookmark us now. Future you will thank present you when those last-minute gift needs pop up!
+          </p>
+        </div>
+        
+        <p className="text-xl font-semibold text-center italic text-primary">
+          Get The Gift — Because mediocre gifts belong in the distant galaxy, far, far away.
         </p>
       </div>
     </div>
