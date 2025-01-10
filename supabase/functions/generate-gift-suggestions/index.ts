@@ -1,5 +1,5 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { corsHeaders } from '../_shared/cors.ts';
 import { GiftSuggestion } from '../_shared/types.ts';
 import { isRateLimited, logRequest, RATE_LIMIT } from '../_shared/rate-limiter.ts';
@@ -32,9 +32,20 @@ serve(async (req) => {
       );
     }
 
-    // Enhanced budget extraction with default values
+    // Enhanced parameter extraction
+    const ageMatch = prompt.match(/(\d+)(?:\s*-\s*(\d+))?\s*(?:year|years|yr|yrs)?(?:\s*old)?/i);
+    const genderMatch = prompt.match(/(?:brother|sister|mother|father|son|daughter|husband|wife|boyfriend|girlfriend)/i);
+    const interestsMatch = prompt.match(/(?:loves?|enjoys?|likes?)\s+([^,.]+)/i);
     const budgetMatch = prompt.match(/(?:budget|USD|price)[^\d]*(\d+)(?:\s*-\s*(\d+))?/i);
-    console.log('Budget match:', budgetMatch);
+
+    // Extract parameters with defaults
+    const age = {
+      min: ageMatch ? parseInt(ageMatch[1]) : null,
+      max: ageMatch?.[2] ? parseInt(ageMatch[2]) : (ageMatch ? parseInt(ageMatch[1]) : null)
+    };
+
+    const gender = genderMatch ? genderMatch[0].toLowerCase() : null;
+    const interests = interestsMatch ? interestsMatch[1].trim() : null;
     
     let minBudget = 25;
     let maxBudget = 100;
@@ -50,51 +61,40 @@ serve(async (req) => {
       }
     }
 
-    // Enhanced interest and context extraction
-    const interests = prompt.match(/(?:loves?|enjoys?|likes?)\s+([^,.]+)/gi)?.map(match => 
-      match.replace(/(?:loves?|enjoys?|likes?)\s+/i, '').trim()
-    ) || [];
+    // Construct an enhanced prompt with specific instructions based on extracted parameters
+    const enhancedPrompt = `As a premium gift curator, suggest 8 highly specific and personalized gift ideas that STRICTLY match these criteria:
 
-    const relationship = prompt.match(/(?:my|for)\s+([^,\s]+)/i)?.[1]?.toLowerCase() || '';
-    
-    // Construct a more detailed and creative prompt
-    const enhancedPrompt = `As a premium gift curator specializing in unique and thoughtful presents, suggest 8 diverse and creative gift ideas that STRICTLY fall within the budget range of $${minBudget} to $${maxBudget}. 
+${age.min ? `Age Range: ${age.min}${age.max ? `-${age.max}` : ''} years old
+- Focus on age-appropriate items
+- Consider generational preferences and trends` : ''}
 
-Key Focus: ${interests.join(', ')} for ${relationship}
+${gender ? `Recipient: ${gender}
+- Ensure suggestions align with typical ${gender} preferences
+- Consider gender-specific trends and interests` : ''}
 
-CRITICAL REQUIREMENTS:
-1. Budget Constraints:
-   - Every suggestion MUST cost between $${minBudget} and $${maxBudget}
-   - Verify prices before suggesting items
+${interests ? `Key Interests: ${interests}
+- Prioritize items directly related to ${interests}
+- Include complementary items that enhance the ${interests} experience
+- Consider both equipment and accessories related to ${interests}` : ''}
 
-2. Gift Categories (Include at least 4 different categories):
-   - Gourmet & Culinary: artisanal chocolates, specialty foods, unique snacks
-   - Experience Gifts: tasting kits, DIY sets, subscription boxes
-   - Personalized Items: custom-made gifts, monogrammed items
-   - Wellness & Self-Care: aromatherapy, bath products, comfort items
-   - Creative & Hobby: craft supplies, activity sets, creative kits
-   - Home & Lifestyle: decor pieces, practical luxuries
-   - Unique Finds: unconventional but delightful items
-   - Local & Artisanal: handcrafted items, small-batch products
+Budget Constraints: $${minBudget} - $${maxBudget}
+- Every suggestion MUST fall within this exact price range
+- Prioritize best value items within the range
+- Include a mix of price points within the range
 
-3. Creativity Guidelines:
-   - NO generic gift cards or basic items
-   - Focus on unique, premium versions of products
-   - Include unexpected but delightful combinations
-   - Consider seasonal relevance
-   - Think beyond obvious choices
-   ${interests.map(interest => `   - Incorporate ${interest} in creative ways`).join('\n')}
-
-4. Quality Requirements:
-   - Suggest only specific products from reputable brands
-   - Include model numbers or specific editions
-   - Focus on premium versions within budget
-   - Emphasize craftsmanship and quality
+Additional Requirements:
+1. Each suggestion must be a specific product (brand name, model number)
+2. Focus on currently trending and highly-rated items
+3. Include a mix of:
+   - Premium versions of everyday items
+   - Unique, specialized products
+   - Popular, well-reviewed items
+   - Innovative new releases
+4. Avoid generic suggestions
+5. Ensure each item has strong relevance to the recipient's profile
 
 Format each suggestion as:
-"Brand Name Specific Product (Premium/Special Edition/Version)"
-
-IMPORTANT: Each suggestion must be unique, specific, and actually available for purchase within the budget range.`;
+"Brand Name Specific Product Model/Version (with key feature)"`;
 
     if (isRateLimited()) {
       console.log('Rate limit exceeded, returning 429');
@@ -133,10 +133,34 @@ IMPORTANT: Each suggestion must be unique, specific, and actually available for 
 
     const products = await Promise.all(productPromises);
 
-    // More lenient budget filtering to account for price variations
+    // Enhanced filtering based on extracted parameters
     const filteredProducts = products.filter(product => {
       const price = product.amazon_price || parseFloat(product.priceRange.replace(/[^\d.]/g, ''));
-      return price >= minBudget * 0.8 && price <= maxBudget * 1.2;
+      const withinBudget = price >= minBudget * 0.8 && price <= maxBudget * 1.2;
+
+      // Score the product relevance (basic implementation)
+      let relevanceScore = withinBudget ? 1 : 0;
+      
+      // Add to score based on matching criteria
+      if (interests && product.description.toLowerCase().includes(interests.toLowerCase())) {
+        relevanceScore += 1;
+      }
+      
+      // Require a minimum relevance score
+      return relevanceScore > 0;
+    });
+
+    // Sort by relevance (can be enhanced further)
+    filteredProducts.sort((a, b) => {
+      const priceA = a.amazon_price || parseFloat(a.priceRange.replace(/[^\d.]/g, ''));
+      const priceB = b.amazon_price || parseFloat(b.priceRange.replace(/[^\d.]/g, ''));
+      
+      // Prefer items closer to the middle of the budget range
+      const targetPrice = (minBudget + maxBudget) / 2;
+      const priceDiffA = Math.abs(priceA - targetPrice);
+      const priceDiffB = Math.abs(priceB - targetPrice);
+      
+      return priceDiffA - priceDiffB;
     });
 
     return new Response(
