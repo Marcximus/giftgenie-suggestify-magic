@@ -31,15 +31,13 @@ const Blog = () => {
           <h1 className="text-2xl font-bold mb-6 text-center animate-fade-in">Blog</h1>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {[...Array(6)].map((_, i) => (
-              <Card key={i} className="animate-pulse h-[280px]">
-                <div className="h-32 bg-gray-200 rounded-t-lg"></div>
-                <CardHeader className="py-3">
-                  <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-                </CardHeader>
-                <CardContent className="py-2">
+              <Card key={i} className="animate-pulse h-[140px] flex overflow-hidden">
+                <div className="w-[100px] bg-gray-200"></div>
+                <div className="flex-1 p-3">
+                  <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
                   <div className="h-3 bg-gray-200 rounded w-full mb-2"></div>
                   <div className="h-3 bg-gray-200 rounded w-2/3"></div>
-                </CardContent>
+                </div>
               </Card>
             ))}
           </div>
@@ -67,9 +65,9 @@ const Blog = () => {
           {posts?.map((post) => (
             <Link to={`/blog/${post.slug}`} key={post.id}>
               <article className="group">
-                <Card className="h-[280px] overflow-hidden transform transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
+                <Card className="flex h-[140px] overflow-hidden transform transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
                   {post.image_url && (
-                    <div className="h-32 relative overflow-hidden">
+                    <div className="w-[100px] relative overflow-hidden">
                       <img 
                         src={post.image_url} 
                         alt={post.title}
@@ -77,16 +75,14 @@ const Blog = () => {
                       />
                     </div>
                   )}
-                  <CardHeader className="py-3 px-4">
-                    <CardTitle className="text-base font-semibold truncate group-hover:text-primary transition-colors">
+                  <div className="flex-1 p-3">
+                    <h3 className="text-base font-semibold truncate group-hover:text-primary transition-colors mb-1">
                       {post.title}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="py-2 px-4">
+                    </h3>
                     <p className="text-xs text-muted-foreground line-clamp-2 mb-2">
                       {post.excerpt}
                     </p>
-                    <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
                       <div className="flex items-center gap-1">
                         <User className="w-3 h-3" />
                         <span className="truncate max-w-[80px]">{post.author}</span>
@@ -98,7 +94,7 @@ const Blog = () => {
                         </span>
                       </div>
                     </div>
-                  </CardContent>
+                  </div>
                 </Card>
               </article>
             </Link>
