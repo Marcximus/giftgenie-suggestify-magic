@@ -1,9 +1,59 @@
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/components/ui/use-toast";
 
 const About = () => {
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { toast } = useToast();
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!name || !email || !message) {
+      toast({
+        title: "Error",
+        description: "Please fill in all fields",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      const { error } = await supabase.functions.invoke('send-contact-email', {
+        body: { name, email, message },
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Your message has been sent successfully!",
+      });
+
+      // Clear form
+      setName("");
+      setEmail("");
+      setMessage("");
+    } catch (error) {
+      console.error('Error sending message:', error);
+      toast({
+        title: "Error",
+        description: "Failed to send message. Please try again later.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-4xl">
@@ -61,15 +111,50 @@ const About = () => {
           We're always here to help. Send us a friendly "Hello!" and we'll do everything but wrap your presents (though we're working on that, too).
         </p>
         
-        <div className="bg-gray-50 p-6 rounded-lg shadow-sm mb-12">
-          <Textarea
-            placeholder="Type your message here..."
-            className="min-h-[100px] mb-4"
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-          />
-          <Button className="w-full">Send Message</Button>
-        </div>
+        <form onSubmit={handleSubmit} className="bg-gray-50 p-6 rounded-lg shadow-sm mb-12 space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="name">Name</Label>
+            <Input
+              id="name"
+              placeholder="Your name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required
+            />
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="email">Email</Label>
+            <Input
+              id="email"
+              type="email"
+              placeholder="Your email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="message">Message</Label>
+            <Textarea
+              id="message"
+              placeholder="Type your message here..."
+              className="min-h-[100px]"
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              required
+            />
+          </div>
+          
+          <Button 
+            type="submit" 
+            className="w-full"
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? "Sending..." : "Send Message"}
+          </Button>
+        </form>
         
         <h2 className="text-2xl font-bold mt-12 mb-4 text-primary">Get The Gift: Your Ticket to Gift-Giving Greatness</h2>
         <p className="text-lg mb-8">
