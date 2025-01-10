@@ -27,7 +27,7 @@ export const FloatingNav = () => {
               key={item.path}
               to={item.path}
               className={cn(
-                "relative px-3 py-1.5 rounded-full text-xs font-medium transition-colors text-center",
+                "relative px-3 py-1.5 rounded-full text-xs font-medium transition-colors text-center w-[90px]",
                 "hover:text-primary hover:bg-white/20",
                 "active:scale-95",
                 "focus:outline-none focus:ring-2 focus:ring-primary/20",
