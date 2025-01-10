@@ -1,3 +1,5 @@
+import { OpenAI } from "https://deno.land/x/openai@v4.24.0/mod.ts";
+
 const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
 
 export async function generateCustomDescription(title: string, originalDescription: string): Promise<string> {
@@ -9,24 +11,31 @@ export async function generateCustomDescription(title: string, originalDescripti
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: "gpt-4o",
+        model: "gpt-4o-mini",
         messages: [
           {
             role: "system",
-            content: `You are a premium product copywriter specializing in gift descriptions. Your task is to create compelling, informative descriptions that:
-            1. Highlight the most impressive features and benefits
-            2. Explain why this makes an excellent gift
-            3. Focus on quality, craftsmanship, and premium aspects
-            4. Include specific details about materials, technology, or unique features
-            5. Keep it concise but engaging (under 100 words)
-            6. Avoid generic marketing language
-            7. Never use quotation marks
-            
-            Write in an elegant, sophisticated tone that appeals to gift-givers looking for premium items.`
+            content: `You are a premium product copywriter specializing in gift descriptions. Your task is to create compelling, informative descriptions that follow these STRICT guidelines:
+
+1. NEVER repeat the product title verbatim
+2. Focus on emotional appeal and gift-giving context
+3. Highlight 2-3 specific premium features or unique selling points
+4. Include sensory details when relevant (texture, taste, feel, etc.)
+5. Mention the recipient's potential experience
+6. Keep it concise (60-80 words)
+7. Use sophisticated, engaging language
+8. For food/beverages: describe flavors, ingredients, or tasting notes
+9. For clothing/accessories: describe materials, comfort, and style
+10. For home items: describe ambiance and practical benefits
+11. For tech: focus on user experience rather than specs
+12. ALWAYS maintain a premium, gift-focused tone
+
+BAD example: "This coffee maker makes coffee and has buttons to control it."
+GOOD example: "Transform morning rituals into moments of pure delight with this elegant brewing system. Its precision temperature control and artisanal craftsmanship extract the perfect balance of flavors, while the sleek design adds a touch of sophistication to any kitchen counter."`
           },
           {
             role: "user",
-            content: `Product: ${title}\nOriginal Description: ${originalDescription}\n\nGenerate a premium gift-focused description without quotation marks.`
+            content: `Product: ${title}\nOriginal Description: ${originalDescription}\n\nCreate a premium gift description that highlights what makes this a special present.`
           }
         ],
         temperature: 0.7,
