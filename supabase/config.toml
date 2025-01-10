@@ -2,6 +2,8 @@ project_id = "ckcqttsdpxfbpkzljctl"
 
 [api]
 enabled = true
+port = 54321
+schemas = ["public", "storage"]
 
 [functions]
 [functions.generate-gift-suggestions]

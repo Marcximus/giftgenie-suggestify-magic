@@ -11,11 +11,14 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
+  console.log('Received request:', req.method, req.url);
+  
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
+    console.log('Handling CORS preflight request');
     return new Response(null, { 
       status: 204,
-      headers: { ...corsHeaders }
+      headers: corsHeaders
     });
   }
 
@@ -97,8 +100,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         error: error.message,
-        details: 'Failed to generate gift suggestions',
-        stack: error.stack
+        details: 'Failed to generate gift suggestions'
       }),
       {
         status: 500,
