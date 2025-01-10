@@ -50,67 +50,14 @@ serve(async (req) => {
       );
     }
 
-    // Generate suggestions using OpenAI with improved prompt structure
+    // Generate suggestions using OpenAI
     console.log('Generating suggestions with OpenAI...');
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openAiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: "gpt-4o",
-        messages: [
-          {
-            role: "system",
-            content: `You are a gift suggestion expert. Your task is to suggest specific, purchasable products that match the given criteria. Follow these rules strictly:
-
-1. Return EXACTLY 8 suggestions
-2. Each suggestion must be a specific, real product with brand name and model
-3. Format each suggestion as "Brand Product Name/Model"
-4. Ensure suggestions match any specified:
-   - Budget constraints
-   - Age requirements
-   - Gender preferences
-   - Interest categories
-5. Avoid generic descriptions
-6. Never repeat suggestions
-7. Include only the product names, no additional text
-
-RESPONSE FORMAT:
-Your response must be a valid JSON array of strings containing exactly 8 product suggestions.
-Example: ["Apple iPhone 14 Pro", "Sony WH-1000XM4 Headphones"]`
-          },
-          {
-            role: "user",
-            content: `Generate 8 specific gift suggestions for: ${prompt}\n\nRespond with ONLY a JSON array of strings. No other text.`
-          }
-        ],
-        temperature: 0.7,
-        max_tokens: 500,
-      }),
-    });
-
-    if (!response.ok) {
-      console.error('OpenAI API error:', response.status);
-      throw new Error(`OpenAI API error: ${response.status}`);
-    }
-
-    const data = await response.json();
-    console.log('OpenAI response:', data);
+    const suggestions = await generateGiftSuggestions(prompt);
+    console.log('Generated suggestions:', suggestions);
     
-    let suggestions;
-    try {
-      const content = data.choices[0].message.content.trim();
-      console.log('Parsed content:', content);
-      suggestions = JSON.parse(content);
-      
-      if (!Array.isArray(suggestions)) {
-        throw new Error('Response is not an array');
-      }
-    } catch (error) {
-      console.error('Failed to parse OpenAI response:', error);
-      throw new Error('Invalid response format from OpenAI');
+    if (!Array.isArray(suggestions)) {
+      console.error('Invalid suggestions format received:', suggestions);
+      throw new Error('Invalid suggestions format');
     }
 
     // Process suggestions with delay to avoid rate limits
