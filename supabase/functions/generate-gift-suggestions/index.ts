@@ -1,12 +1,16 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { corsHeaders } from '../_shared/cors.ts';
-import { GiftSuggestion } from '../_shared/types.ts';
-import { isRateLimited, logRequest, RATE_LIMIT } from '../_shared/rate-limiter.ts';
 import { generateGiftSuggestions } from '../_shared/openai.ts';
 import { processGiftSuggestion } from '../_shared/product-processor.ts';
+import { GiftSuggestion } from '../_shared/types.ts';
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
 
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -102,25 +106,7 @@ Additional Requirements:
 Format each suggestion as:
 "Brand Name Specific Product Model/Version (with key feature)"`;
 
-    if (isRateLimited()) {
-      console.log('Rate limit exceeded, returning 429');
-      return new Response(
-        JSON.stringify({
-          error: 'Rate limit exceeded',
-          retryAfter: RATE_LIMIT.RETRY_AFTER
-        }),
-        {
-          status: 429,
-          headers: {
-            ...corsHeaders,
-            'Content-Type': 'application/json',
-            'Retry-After': RATE_LIMIT.RETRY_AFTER.toString()
-          }
-        }
-      );
-    }
-
-    logRequest();
+    console.log('Enhanced prompt:', enhancedPrompt);
 
     const suggestions = await generateGiftSuggestions(enhancedPrompt);
     
