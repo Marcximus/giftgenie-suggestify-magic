@@ -31,12 +31,10 @@ const Blog = () => {
           <h1 className="text-2xl font-bold mb-6 text-center animate-fade-in">Blog</h1>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {[...Array(6)].map((_, i) => (
-              <Card key={i} className="animate-pulse h-[140px] flex overflow-hidden">
-                <div className="w-[100px] bg-gray-200"></div>
+              <Card key={i} className="animate-pulse h-[60px] flex overflow-hidden">
+                <div className="w-[60px] bg-gray-200"></div>
                 <div className="flex-1 p-3">
-                  <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
-                  <div className="h-3 bg-gray-200 rounded w-full mb-2"></div>
-                  <div className="h-3 bg-gray-200 rounded w-2/3"></div>
+                  <div className="h-4 bg-gray-200 rounded w-3/4"></div>
                 </div>
               </Card>
             ))}
@@ -65,9 +63,9 @@ const Blog = () => {
           {posts?.map((post) => (
             <Link to={`/blog/${post.slug}`} key={post.id}>
               <article className="group">
-                <Card className="flex h-[140px] overflow-hidden transform transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
+                <Card className="flex h-[60px] overflow-hidden transform transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
                   {post.image_url && (
-                    <div className="w-[100px] relative overflow-hidden">
+                    <div className="w-[60px] relative overflow-hidden">
                       <img 
                         src={post.image_url} 
                         alt={post.title}
@@ -75,25 +73,10 @@ const Blog = () => {
                       />
                     </div>
                   )}
-                  <div className="flex-1 p-3">
-                    <h3 className="text-base font-semibold truncate group-hover:text-primary transition-colors mb-1">
+                  <div className="flex-1 p-3 flex items-center">
+                    <h3 className="text-base font-semibold truncate group-hover:text-primary transition-colors">
                       {post.title}
                     </h3>
-                    <p className="text-xs text-muted-foreground line-clamp-2 mb-2">
-                      {post.excerpt}
-                    </p>
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                      <div className="flex items-center gap-1">
-                        <User className="w-3 h-3" />
-                        <span className="truncate max-w-[80px]">{post.author}</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Calendar className="w-3 h-3" />
-                        <span>
-                          {new Date(post.published_at || "").toLocaleDateString()}
-                        </span>
-                      </div>
-                    </div>
                   </div>
                 </Card>
               </article>
