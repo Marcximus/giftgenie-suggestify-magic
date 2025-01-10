@@ -8,6 +8,7 @@ import BlogNew from "@/pages/BlogNew";
 import BlogEdit from "@/pages/BlogEdit";
 import Auth from "@/pages/Auth";
 import { Toaster } from "@/components/ui/toaster";
+import { FloatingNav } from "@/components/FloatingNav";
 import "./App.css";
 
 function App() {
@@ -23,6 +24,7 @@ function App() {
         <Route path="/blog/edit/:slug" element={<BlogEdit />} />
         <Route path="/auth" element={<Auth />} />
       </Routes>
+      <FloatingNav />
       <Toaster />
     </Router>
   );
