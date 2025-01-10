@@ -34,7 +34,7 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
       excerpt: "",
       author: "",
       image_url: "",
-      published_at: new Date().toISOString(),
+      published_at: null,
       meta_title: "",
       meta_description: "",
       meta_keywords: "",
@@ -42,10 +42,11 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
     },
   });
 
-  const onSubmit = async (data: BlogPostFormData) => {
+  const onSubmit = async (data: BlogPostFormData, isDraft: boolean = false) => {
     setIsSubmitting(true);
     try {
       const currentTime = new Date().toISOString();
+      const publishedAt = isDraft ? null : currentTime;
       
       if (initialData?.id) {
         // Update existing post
@@ -54,13 +55,14 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
           .update({
             ...data,
             updated_at: currentTime,
+            published_at: publishedAt,
           })
           .eq("id", initialData.id);
 
         if (error) throw error;
         toast({
           title: "Success",
-          description: "Blog post updated successfully",
+          description: isDraft ? "Draft saved successfully" : "Blog post updated successfully",
         });
       } else {
         // Create new post
@@ -70,13 +72,13 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
             ...data,
             created_at: currentTime,
             updated_at: currentTime,
-            published_at: currentTime,
+            published_at: publishedAt,
           }]);
 
         if (error) throw error;
         toast({
           title: "Success",
-          description: "Blog post created successfully",
+          description: isDraft ? "Draft saved successfully" : "Blog post created successfully",
         });
       }
       navigate("/blog/admin");
@@ -137,7 +139,7 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
 
       <TabsContent value="edit">
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 text-left">
+          <form onSubmit={form.handleSubmit((data) => onSubmit(data, false))} className="space-y-6 text-left">
             <BlogPostBasicInfo 
               form={form} 
               generateSlug={generateSlug}
@@ -173,7 +175,15 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
 
             <div className="flex gap-4">
               <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? "Saving..." : initialData ? "Update Post" : "Create Post"}
+                {isSubmitting ? "Saving..." : initialData ? "Update Post" : "Publish Post"}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                disabled={isSubmitting}
+                onClick={() => onSubmit(form.getValues(), true)}
+              >
+                Save as Draft
               </Button>
               <Button
                 type="button"
