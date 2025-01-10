@@ -11,7 +11,7 @@ export const useSuggestions = () => {
   const { processSuggestions } = useAmazonProductProcessing();
 
   // Use React Query for caching suggestions
-  const { data: suggestions = [], isLoading, mutate: fetchSuggestions } = useMutation({
+  const { data: suggestions = [], isPending: isLoading, mutate: fetchSuggestions } = useMutation({
     mutationFn: async (query: string) => {
       const newSuggestions = await generateSuggestions(query);
       if (newSuggestions) {
