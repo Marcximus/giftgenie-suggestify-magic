@@ -50,7 +50,7 @@ const BlogPost = () => {
           <h1 className="text-2xl font-bold mb-4">Post not found</h1>
           <Button onClick={() => navigate("/blog")} variant="default">
             <ChevronLeft className="mr-2 h-4 w-4" />
-            Back to Blog
+            More Ideas
           </Button>
         </div>
       </>
@@ -78,7 +78,7 @@ const BlogPost = () => {
             className="mb-8 hover:bg-primary/10"
           >
             <ChevronLeft className="mr-2 h-4 w-4" />
-            Back to Blog
+            More Ideas
           </Button>
           
           {post.image_url && (
