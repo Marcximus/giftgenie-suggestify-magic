@@ -3,9 +3,11 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
 import BlogPostForm from "@/components/blog/BlogPostForm";
+import { useToast } from "@/hooks/use-toast";
 
 const BlogEdit = () => {
   const { slug } = useParams();
+  const { toast } = useToast();
 
   const { data: post, isLoading } = useQuery({
     queryKey: ["blog-post-edit", slug],
@@ -14,9 +16,25 @@ const BlogEdit = () => {
         .from("blog_posts")
         .select("*")
         .eq("slug", slug)
-        .single();
+        .maybeSingle();
       
-      if (error) throw error;
+      if (error) {
+        toast({
+          title: "Error",
+          description: "Failed to fetch blog post",
+          variant: "destructive",
+        });
+        throw error;
+      }
+
+      if (!data) {
+        toast({
+          title: "Not Found",
+          description: "The blog post you're trying to edit doesn't exist",
+          variant: "destructive",
+        });
+        return null;
+      }
 
       // Convert the database response to match BlogPostFormData structure
       const formattedPost = {
