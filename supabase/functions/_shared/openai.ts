@@ -4,8 +4,6 @@ const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
 
 export async function generateCustomDescription(title: string, originalDescription: string): Promise<string> {
   try {
-    console.log('Generating custom description for:', title);
-    
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -17,27 +15,27 @@ export async function generateCustomDescription(title: string, originalDescripti
         messages: [
           {
             role: "system",
-            content: `You are a creative product copywriter. Create engaging, concise descriptions following these rules:
-1. NEVER mention the product title or brand name
+            content: `You are a premium product copywriter. Create concise, engaging descriptions following these rules:
+1. NEVER mention or repeat the product title
 2. Keep descriptions between 15-20 words
-3. Focus on unique benefits and features
-4. Use vivid, descriptive language
+3. Focus on key benefits and unique features
+4. Use engaging, descriptive language
 5. Highlight what makes it special as a gift
-6. Be specific about key features
-7. Avoid generic marketing phrases
+6. Be specific and accurate
+7. No marketing fluff or generic phrases
 
 Example of what NOT to do:
-"This product is great and has many features that you'll love."
+"This coffee maker is a great product that makes coffee and has buttons to control it."
 
 Example of good description:
-"Transforms any room into a sanctuary of clean air with whisper-quiet operation and advanced purification technology."`
+"Precision temperature control and artisanal craftsmanship extract perfect flavors while adding sophistication to any kitchen counter."`
           },
           {
             role: "user",
-            content: `Product: ${title}\nOriginal Description: ${originalDescription}\n\nCreate an engaging gift description in 15-20 words that highlights what makes this special.`
+            content: `Product: ${title}\nOriginal Description: ${originalDescription}\n\nCreate a premium gift description in 15-20 words that highlights what makes this special.`
           }
         ],
-        temperature: 0.8,
+        temperature: 0.7,
         max_tokens: 100,
       }),
     });
@@ -48,9 +46,7 @@ Example of good description:
     }
 
     const data = await response.json();
-    const generatedDescription = data.choices?.[0]?.message?.content?.replace(/['"]/g, '') || originalDescription;
-    console.log('Generated description:', generatedDescription);
-    return generatedDescription;
+    return data.choices?.[0]?.message?.content?.replace(/['"]/g, '') || originalDescription;
   } catch (error) {
     console.error('Error generating custom description:', error);
     return originalDescription;
@@ -69,18 +65,23 @@ export async function generateGiftSuggestions(prompt: string): Promise<string[]>
       messages: [
         {
           role: "system",
-          content: `You are a gift suggestion expert specializing in personalized gifts. Your expertise lies in selecting gifts that match the recipient's interests, age, and budget requirements. Your suggestions must:
+          content: `You are a premium gift suggestion expert specializing in personalized, high-quality gifts. Your expertise lies in selecting meaningful gifts that perfectly match the recipient's interests, age, and budget requirements. Your suggestions must:
 
 1. STRICTLY adhere to the specified budget range - this is CRITICAL
-2. Be SPECIFIC products that are popular
-3. Include complete product names with brand and model
-4. Avoid suggesting same items twice
+2. Be SPECIFIC products from well-known, premium brands
+3. Include complete product names with brand, model, and key features
+4. Be currently available from reputable retailers
+5. Be diverse within the category (avoid suggesting multiple similar items)
 
 CRITICAL RULES:
 - Never suggest generic items
+- Include specific model numbers or editions
+- Suggest items from recognized brands
+- Ensure each suggestion is unique and serves a different purpose
 - MOST IMPORTANT: Every suggestion MUST fall within the specified budget range
+- Verify approximate prices before suggesting items
 
-Format each suggestion as: "Brand Model/Edition"
+Format each suggestion as: "Brand Model/Edition with Key Feature (Premium Version)"
 
 IMPORTANT: Your response must be a valid JSON array of strings. Do not include any explanatory text outside the array.`
         },
@@ -89,7 +90,7 @@ IMPORTANT: Your response must be a valid JSON array of strings. Do not include a
           content: `${prompt}\n\nIMPORTANT: Respond with ONLY a JSON array of strings. No other text.` 
         }
       ],
-      temperature: 0.9, // Increased temperature for more creative responses
+      temperature: 0.7,
       max_tokens: 500,
     }),
   });

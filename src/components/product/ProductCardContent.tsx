@@ -28,8 +28,11 @@ const formatDescription = (description: string): string => {
     .replace(/\s+/g, ' ')
     .trim();
 
-  // Ensure the description ends with a period
-  return cleanDescription.endsWith('.') ? cleanDescription : `${cleanDescription}.`;
+  // GPT descriptions are always used and are already formatted correctly
+  // They are concise (15-20 words) and end with a period
+  return cleanDescription.endsWith('.') ? 
+    cleanDescription : 
+    `${cleanDescription}.`;
 };
 
 export const ProductCardContent = ({ 
