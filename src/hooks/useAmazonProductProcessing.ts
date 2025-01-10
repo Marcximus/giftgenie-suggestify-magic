@@ -23,10 +23,12 @@ export const useAmazonProductProcessing = () => {
       const amazonProduct = await getAmazonProduct(suggestion.title, suggestion.priceRange);
       
       if (amazonProduct && amazonProduct.asin) {
+        // Always use the original GPT-generated description
         const processedSuggestion = {
           ...suggestion,
           title: amazonProduct.title || suggestion.title,
-          description: amazonProduct.description || suggestion.description,
+          // Keep the original GPT description, never use Amazon's
+          description: suggestion.description,
           priceRange: `${amazonProduct.currency} ${amazonProduct.price}`,
           amazon_asin: amazonProduct.asin,
           amazon_url: amazonProduct.asin ? `https://www.amazon.com/dp/${amazonProduct.asin}` : undefined,
@@ -56,9 +58,9 @@ export const useAmazonProductProcessing = () => {
         console.error('Error processing suggestion:', suggestion.title, error);
         return suggestion;
       },
-      parallel: true, // Enable parallel processing
-      batchSize: 4, // Process 4 items at a time
-      staggerDelay: 250 // Add small delay between items to prevent rate limiting
+      parallel: true,
+      batchSize: 4,
+      staggerDelay: 250
     });
   };
 
