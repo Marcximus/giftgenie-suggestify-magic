@@ -22,16 +22,33 @@ const formatPrice = (price: string | number): string => {
 };
 
 const formatDescription = (description: string): string => {
-  // Clean up any HTML and normalize whitespace
+  // First, clean up any HTML and normalize whitespace
   const cleanDescription = description
     .replace(/<[^>]*>/g, '')
     .replace(/\s+/g, ' ')
     .trim();
 
-  // Ensure description ends with a period
-  return cleanDescription.endsWith('.') ? 
-    cleanDescription : 
-    `${cleanDescription}.`;
+  // Check if this is a GPT-generated description
+  // GPT descriptions are typically more concise and end with a period
+  const isGPTDescription = cleanDescription.length <= 100 && 
+                          cleanDescription.endsWith('.') &&
+                          !cleanDescription.includes('Features:') &&
+                          !cleanDescription.includes('Specifications:');
+
+  if (isGPTDescription) {
+    // If it's a GPT description, return it as is
+    return cleanDescription;
+  }
+
+  // For Amazon descriptions, we'll do additional formatting
+  const words = cleanDescription.split(' ');
+  // Take first 15-20 words for consistency with GPT descriptions
+  const truncatedDescription = words.slice(0, Math.min(20, words.length)).join(' ');
+  
+  // Ensure it ends with a period
+  return truncatedDescription.endsWith('.') ? 
+    truncatedDescription : 
+    `${truncatedDescription}.`;
 };
 
 export const ProductCardContent = ({ 
