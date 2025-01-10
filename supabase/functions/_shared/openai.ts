@@ -1,11 +1,10 @@
-import { OpenAI } from "https://deno.land/x/openai@v4.24.0/mod.ts";
+import { OPENAI_API_KEY } from './config.ts';
 
-const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
-
-export async function generateCustomDescription(title: string, originalDescription: string): Promise<string> {
+export async function generateCustomDescription(
+  title: string,
+  originalDescription: string
+): Promise<string> {
   try {
-    console.log('Generating custom description for:', title);
-    
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -13,7 +12,7 @@ export async function generateCustomDescription(title: string, originalDescripti
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: "gpt-4o-mini",
+        model: "gpt-4o",
         messages: [
           {
             role: "system",
@@ -46,16 +45,85 @@ Remember to be specific about what makes this item valuable as a gift.`
     });
 
     if (!response.ok) {
-      console.error('OpenAI API error:', response.status);
-      return originalDescription;
+      throw new Error(`OpenAI API error: ${response.status}`);
     }
 
     const data = await response.json();
-    const generatedDescription = data.choices?.[0]?.message?.content?.replace(/['"]/g, '') || originalDescription;
-    console.log('Generated description:', generatedDescription);
-    return generatedDescription;
+    return data.choices[0].message.content.trim();
   } catch (error) {
     console.error('Error generating custom description:', error);
     return originalDescription;
+  }
+}
+
+export async function generateGiftSuggestions(prompt: string): Promise<string[]> {
+  console.log('Generating suggestions with prompt:', prompt);
+  
+  try {
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${OPENAI_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: "gpt-4o",
+        messages: [
+          {
+            role: "system",
+            content: `You are a gift suggestion expert. Your expertise lies in selecting gifts that match the recipient's interests, gender, age, and budget requirements. Your suggestions should:
+
+1. adhere to the specified budget range 
+2. Be SPECIFIC, popular products 
+3. Include complete product names with brand and model
+4. Avoid suggesting same items twice
+
+Format each suggestion as: "Brand Model/Edition"
+
+IMPORTANT: Your response must be a valid JSON array of strings. Do not include any explanatory text outside the array.`
+          },
+          { 
+            role: "user", 
+            content: `${prompt}\n\nIMPORTANT: Respond with ONLY a JSON array of strings. No other text.` 
+          }
+        ],
+        temperature: 0.9,
+        max_tokens: 500,
+      }),
+    });
+
+    if (!response.ok) {
+      console.error('OpenAI API error:', response.status);
+      throw new Error(`OpenAI API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    console.log('OpenAI response:', data);
+    
+    const content = data.choices[0].message.content.trim();
+    console.log('Parsed content:', content);
+    
+    try {
+      // Try to parse the content directly
+      return JSON.parse(content);
+    } catch (e) {
+      console.error('Failed to parse OpenAI response directly:', e);
+      
+      // If direct parsing fails, try to extract JSON array
+      const match = content.match(/\[[\s\S]*\]/);
+      if (match) {
+        try {
+          return JSON.parse(match[0]);
+        } catch (e2) {
+          console.error('Failed to parse extracted JSON array:', e2);
+          throw new Error('Failed to parse gift suggestions from OpenAI response');
+        }
+      }
+      
+      throw new Error('No valid JSON array found in OpenAI response');
+    }
+  } catch (error) {
+    console.error('Error in generateGiftSuggestions:', error);
+    throw error;
   }
 }
