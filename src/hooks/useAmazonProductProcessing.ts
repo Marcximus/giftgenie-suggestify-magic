@@ -1,6 +1,7 @@
 import { useAmazonProducts } from './useAmazonProducts';
 import { useBatchProcessor } from './useBatchProcessor';
 import { GiftSuggestion } from '@/types/suggestions';
+import { useQuery } from '@tanstack/react-query';
 
 export const useAmazonProductProcessing = () => {
   const { getAmazonProduct } = useAmazonProducts();
@@ -9,7 +10,14 @@ export const useAmazonProductProcessing = () => {
   const processGiftSuggestion = async (suggestion: GiftSuggestion): Promise<GiftSuggestion> => {
     try {
       console.log('Processing suggestion:', suggestion.title);
-      const amazonProduct = await getAmazonProduct(suggestion.title, suggestion.priceRange);
+      
+      // Use React Query for caching individual product requests
+      const { data: amazonProduct } = await useQuery({
+        queryKey: ['amazon-product', suggestion.title, suggestion.priceRange],
+        queryFn: () => getAmazonProduct(suggestion.title, suggestion.priceRange),
+        staleTime: 1000 * 60 * 60, // Consider data fresh for 1 hour
+        cacheTime: 1000 * 60 * 60 * 24, // Keep in cache for 24 hours
+      });
       
       if (amazonProduct && amazonProduct.asin) {
         return {
@@ -38,7 +46,10 @@ export const useAmazonProductProcessing = () => {
       onError: (error, suggestion) => {
         console.error('Error processing suggestion:', suggestion.title, error);
         return suggestion;
-      }
+      },
+      parallel: true, // Enable parallel processing
+      batchSize: 4, // Process 4 items at a time
+      staggerDelay: 250 // Add small delay between items to prevent rate limiting
     });
   };
 

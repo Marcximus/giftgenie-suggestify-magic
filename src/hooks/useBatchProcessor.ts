@@ -63,7 +63,7 @@ export const useBatchProcessor = <T, R>() => {
             const globalIndex = i + index;
             try {
               const result = await processFn(item);
-              if (result) results.push(result);
+              results.push(result);
               processedItems.add(globalIndex);
               setProcessingQueue(prev => prev.filter((_, idx) => !processedItems.has(idx)));
               if (staggerDelay > 0) await sleep(staggerDelay);
@@ -74,6 +74,7 @@ export const useBatchProcessor = <T, R>() => {
           }
         }
 
+        // Add a small delay between batches to prevent rate limiting
         if (i + batchSize < items.length) {
           await sleep(AMAZON_CONFIG.BASE_RETRY_DELAY);
         }
