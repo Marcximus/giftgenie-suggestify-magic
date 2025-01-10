@@ -29,18 +29,32 @@ export const useAmazonProducts = () => {
       
       if (product) {
         cacheProduct(cacheKey, product);
+        return product;
       }
+
+      // If no product found, show a more user-friendly message
+      toast({
+        title: "Product not found",
+        description: "We'll try to find similar products for you",
+        variant: "default",
+      });
       
-      return product;
+      return null;
 
     } catch (error: any) {
       console.error('Error getting Amazon product:', error);
       
-      // Don't show toast for 404 errors as they're expected when no products are found
-      if (error.status !== 404) {
+      // Handle different error types
+      if (error.status === 429) {
+        toast({
+          title: "Too many requests",
+          description: "Please wait a moment before trying again",
+          variant: "destructive",
+        });
+      } else if (error.status !== 404) {
         toast({
           title: "Error fetching product",
-          description: error.message,
+          description: "We'll try to find alternative products for you",
           variant: "destructive",
         });
       }

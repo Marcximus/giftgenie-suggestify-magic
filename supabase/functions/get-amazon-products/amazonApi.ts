@@ -6,13 +6,16 @@ export async function searchAmazonProduct(searchTerm: string, apiKey: string) {
   async function performSearch(term: string) {
     // Clean the search term before sending to API
     const cleanedTerm = term
+      .replace(/\([^)]*\)/g, '') // Remove anything in parentheses
       .replace(/&/g, 'and') // Replace & with 'and'
       .replace(/[^\w\s-]/g, ' ') // Remove special characters except hyphens
       .replace(/\s+/g, ' ') // Replace multiple spaces with single space
       .trim();
 
+    console.log('Searching with cleaned term:', cleanedTerm);
+
     const searchParams = new URLSearchParams({
-      query: encodeURIComponent(cleanedTerm),
+      query: cleanedTerm,
       country: 'US',
       category_id: 'aps',
       sort_by: 'RELEVANCE'
@@ -36,7 +39,7 @@ export async function searchAmazonProduct(searchTerm: string, apiKey: string) {
     }
 
     const searchData = await searchResponse.json();
-    console.log('Search response for term:', cleanedTerm, searchData);
+    console.log('Search response:', searchData);
     return searchData;
   }
 
@@ -62,21 +65,31 @@ export async function searchAmazonProduct(searchTerm: string, apiKey: string) {
   }
 
   try {
-    // First attempt with full search term
-    let searchData = await performSearch(searchTerm);
+    // Remove specific model numbers, sizes, and colors from search term
+    const genericSearchTerm = searchTerm
+      .replace(/\([^)]*\)/g, '') // Remove anything in parentheses
+      .replace(/\b(?:edition|version|series)\b/gi, '') // Remove common suffixes
+      .replace(/-.*$/, '') // Remove anything after a hyphen
+      .replace(/\d+(?:\s*-\s*\d+)?\s*(?:gb|tb|inch|"|cm|mm)/gi, '') // Remove sizes
+      .trim();
+
+    console.log('Attempting search with generic term:', genericSearchTerm);
     
-    // If no products found, try with a more generic search
+    // First attempt with generic search term
+    let searchData = await performSearch(genericSearchTerm);
+    
+    // If no products found, try with even more simplified search
     if (!searchData.data?.products?.length) {
       // Split the search term and remove common descriptive words
-      const words = searchTerm.split(' ')
+      const words = genericSearchTerm.split(' ')
         .filter(word => !['with', 'and', 'in', 'for', 'by', 'the', 'a', 'an'].includes(word.toLowerCase()))
         .filter(word => word.length > 2);
       
       // Try with first two main words
       if (words.length > 1) {
-        const genericSearch = words.slice(0, 2).join(' ');
-        console.log('Attempting more generic search with:', genericSearch);
-        searchData = await performSearch(genericSearch);
+        const briefSearch = words.slice(0, 2).join(' ');
+        console.log('Attempting brief search with:', briefSearch);
+        searchData = await performSearch(briefSearch);
       }
       
       // If still no results, try with just the first word
@@ -85,12 +98,12 @@ export async function searchAmazonProduct(searchTerm: string, apiKey: string) {
         console.log('Final attempt with single word:', singleWordSearch);
         searchData = await performSearch(singleWordSearch);
       }
-      
-      // If still no products found, return null
-      if (!searchData.data?.products?.length) {
-        console.log('No products found with any search attempt');
-        return null;
-      }
+    }
+
+    // If still no products found, return null
+    if (!searchData.data?.products?.length) {
+      console.log('No products found with any search attempt');
+      return null;
     }
 
     const product = searchData.data.products[0];
