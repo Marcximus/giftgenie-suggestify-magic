@@ -67,7 +67,11 @@ const ProductCardComponent = ({
   const simplifiedTitle = simplifyTitle(title);
 
   return (
-    <Card className="group h-full flex flex-col overflow-hidden hover:shadow-lg transition-all duration-300 border-accent/20 backdrop-blur-sm bg-white/80 hover:bg-white/90">
+    <Card 
+      className="group h-full flex flex-col overflow-hidden hover:shadow-lg transition-all duration-300 border-accent/20 backdrop-blur-sm bg-white/80 hover:bg-white/90"
+      role="article"
+      aria-label={`Product: ${simplifiedTitle}`}
+    >
       <CardHeader className="p-0 flex-none">
         <ProductImage 
           title={simplifiedTitle} 
@@ -85,10 +89,12 @@ const ProductCardComponent = ({
           {cleanedDescription}
         </p>
         <div className="mt-2 flex items-center justify-between">
-          <p className="text-xs sm:text-sm font-bold text-primary">{formatPrice(price)}</p>
+          <p className="text-xs sm:text-sm font-bold text-primary" aria-label={`Price: ${formatPrice(price)}`}>
+            {formatPrice(price)}
+          </p>
           {rating && (
-            <div className="flex items-center gap-1">
-              <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
+            <div className="flex items-center gap-1" aria-label={`Rating: ${rating.toFixed(1)} out of 5 stars from ${totalRatings?.toLocaleString()} reviews`}>
+              <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" aria-hidden="true" />
               <span className="text-xs text-muted-foreground">
                 {rating.toFixed(1)} ({totalRatings?.toLocaleString()})
               </span>
@@ -101,10 +107,11 @@ const ProductCardComponent = ({
         <Button 
           variant="outline" 
           size="sm"
-          className="w-full text-[0.65rem] h-7 opacity-70 hover:opacity-100"
+          className="w-full text-[0.65rem] h-7 opacity-70 hover:opacity-100 min-h-[2.5rem] touch-manipulation"
           onClick={() => onMoreLikeThis?.(title)}
+          aria-label={`Find more products similar to ${simplifiedTitle}`}
         >
-          <Wand2 className="w-2.5 h-2.5 mr-1" />
+          <Wand2 className="w-2.5 h-2.5 mr-1" aria-hidden="true" />
           More like this
         </Button>
       </CardFooter>

@@ -33,10 +33,19 @@ export const SuggestionsGrid = ({
 }: SuggestionsGridProps) => {
   return (
     <>
-      <div className="mt-6 sm:mt-8 md:mt-12 grid gap-3 sm:gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <div 
+        className="mt-6 sm:mt-8 md:mt-12 grid gap-3 sm:gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-4 animate-in fade-in slide-in-from-bottom-4 duration-500"
+        role="region"
+        aria-label="Gift suggestions"
+      >
         {isLoading ? (
           Array.from({ length: 8 }).map((_, index) => (
-            <div key={`skeleton-${index}`} className="animate-in fade-in slide-in-from-bottom-4" style={{ animationDelay: `${index * 100}ms` }}>
+            <div 
+              key={`skeleton-${index}`} 
+              className="animate-in fade-in slide-in-from-bottom-4" 
+              style={{ animationDelay: `${index * 100}ms` }}
+              aria-hidden="true"
+            >
               <SuggestionSkeleton />
             </div>
           ))
@@ -71,17 +80,19 @@ export const SuggestionsGrid = ({
           <Button
             onClick={onGenerateMore}
             disabled={isLoading}
-            className="group bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-sm hover:shadow-md transition-all duration-200"
+            className="group bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-sm hover:shadow-md transition-all duration-200 min-h-[2.5rem] touch-manipulation"
+            aria-label="Generate more gift suggestions"
           >
-            <Sparkles className="w-4 h-4 mr-2 animate-pulse group-hover:animate-none" />
+            <Sparkles className="w-4 h-4 mr-2 animate-pulse group-hover:animate-none" aria-hidden="true" />
             Generate More Ideas
           </Button>
           <Button
             onClick={onStartOver}
             variant="outline"
-            className="flex items-center gap-2 shadow-sm hover:shadow-md transition-all duration-200 hover:bg-secondary/80"
+            className="flex items-center gap-2 shadow-sm hover:shadow-md transition-all duration-200 hover:bg-secondary/80 min-h-[2.5rem] touch-manipulation"
+            aria-label="Start a new gift search"
           >
-            <RotateCcw className="w-4 h-4" />
+            <RotateCcw className="w-4 h-4" aria-hidden="true" />
             Start Over
           </Button>
         </div>
