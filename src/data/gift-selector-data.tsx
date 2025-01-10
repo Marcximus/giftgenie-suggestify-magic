@@ -13,8 +13,6 @@ export const people: Person[] = [
   { label: 'Daughter', icon: '👧' },
   { label: 'Boyfriend', icon: '💚' },
   { label: 'Girlfriend', icon: '💗' },
-  { label: 'Friend', icon: '🤝' },
-  { label: 'Colleague', icon: '👥' },
 ];
 
 export const ageRanges: AgeRange[] = [
