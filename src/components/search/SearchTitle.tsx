@@ -8,8 +8,9 @@ export const SearchTitle = () => {
           Get The Gift
         </h1>
       </Link>
-      <p className="text-xs sm:text-sm md:text-base text-muted-foreground animate-in fade-in slide-in-from-top-4 duration-700 delay-150 px-2">
-        Find the perfect gift with the power of AI. Describe the person or occasion below, and internet magic will find the absolute top ideas:
+      <p className="text-[0.7rem] sm:text-xs md:text-sm text-muted-foreground animate-in fade-in slide-in-from-top-4 duration-700 delay-150 px-2">
+        Find the perfect gift with the power of AI{'\n'}
+        Describe the person or occasion below, and let internet magic find the absolute top ideas:
       </p>
     </div>
   );
