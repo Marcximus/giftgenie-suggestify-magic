@@ -58,6 +58,7 @@ serve(async (req) => {
     const productPromises = suggestions.map((suggestion, index) => {
       return new Promise<GiftSuggestion>(async (resolve) => {
         try {
+          // Add delay between requests to avoid rate limits
           await new Promise(r => setTimeout(r, index * 1000));
           const product = await processGiftSuggestion(suggestion);
           resolve(product);
