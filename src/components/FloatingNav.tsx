@@ -14,14 +14,14 @@ export const FloatingNav = () => {
   ];
 
   return (
-    <div className="fixed inset-x-0 bottom-0 z-50 flex justify-center w-full pb-4">
+    <div className="fixed bottom-0 left-0 right-0 z-[9999] pb-4">
       <motion.div
         initial={{ y: 100, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.6, type: "spring", stiffness: 100 }}
-        className="w-full max-w-md mx-4"
+        className="container max-w-md mx-auto px-4"
       >
-        <nav className="flex items-center justify-around gap-1 px-3 py-2 rounded-full backdrop-blur-md bg-white/30 border border-white/20 shadow-lg">
+        <nav className="flex items-center justify-around gap-1 px-3 py-2 rounded-full backdrop-blur-md bg-white/80 border border-white/20 shadow-lg">
           {navItems.map((item) => (
             <Link
               key={item.path}
