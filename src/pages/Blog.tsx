@@ -27,17 +27,18 @@ const Blog = () => {
           <title>Blog - Get The Gift</title>
           <meta name="description" content="Discover gift-giving tips, ideas, and inspiration on our blog. Learn about the latest trends and get expert advice on finding the perfect gift." />
         </Helmet>
-        <div className="container mx-auto px-4 py-8">
-          <h1 className="text-3xl font-bold mb-8 text-center animate-fade-in">Blog</h1>
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <div className="container mx-auto px-4 py-6">
+          <h1 className="text-2xl font-bold mb-6 text-center animate-fade-in">Blog</h1>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {[...Array(6)].map((_, i) => (
-              <Card key={i} className="animate-pulse">
-                <CardHeader>
-                  <div className="h-6 bg-gray-200 rounded w-3/4"></div>
+              <Card key={i} className="animate-pulse h-[280px]">
+                <div className="h-32 bg-gray-200 rounded-t-lg"></div>
+                <CardHeader className="py-3">
+                  <div className="h-4 bg-gray-200 rounded w-3/4"></div>
                 </CardHeader>
-                <CardContent>
-                  <div className="h-4 bg-gray-200 rounded w-full mb-2"></div>
-                  <div className="h-4 bg-gray-200 rounded w-2/3"></div>
+                <CardContent className="py-2">
+                  <div className="h-3 bg-gray-200 rounded w-full mb-2"></div>
+                  <div className="h-3 bg-gray-200 rounded w-2/3"></div>
                 </CardContent>
               </Card>
             ))}
@@ -58,17 +59,17 @@ const Blog = () => {
           <meta property="og:image" content={posts[0].image_url} />
         )}
       </Helmet>
-      <div className="container mx-auto px-4 py-8">
-        <h1 className="text-3xl md:text-4xl font-bold mb-8 text-center bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/60 animate-fade-in">
+      <div className="container mx-auto px-4 py-6">
+        <h1 className="text-2xl md:text-3xl font-bold mb-6 text-center bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/60">
           Latest Articles
         </h1>
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {posts?.map((post) => (
             <Link to={`/blog/${post.slug}`} key={post.id}>
               <article className="group">
-                <Card className="h-full transform transition-all duration-300 hover:scale-[1.02] hover:shadow-xl">
+                <Card className="h-[280px] overflow-hidden transform transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
                   {post.image_url && (
-                    <div className="aspect-video relative overflow-hidden rounded-t-lg">
+                    <div className="h-32 relative overflow-hidden">
                       <img 
                         src={post.image_url} 
                         alt={post.title}
@@ -76,22 +77,22 @@ const Blog = () => {
                       />
                     </div>
                   )}
-                  <CardHeader>
-                    <CardTitle className="line-clamp-2 group-hover:text-primary transition-colors">
+                  <CardHeader className="py-3 px-4">
+                    <CardTitle className="text-base font-semibold truncate group-hover:text-primary transition-colors">
                       {post.title}
                     </CardTitle>
                   </CardHeader>
-                  <CardContent>
-                    <p className="text-muted-foreground line-clamp-3 mb-4">
+                  <CardContent className="py-2 px-4">
+                    <p className="text-xs text-muted-foreground line-clamp-2 mb-2">
                       {post.excerpt}
                     </p>
-                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                    <div className="flex items-center gap-3 text-xs text-muted-foreground">
                       <div className="flex items-center gap-1">
-                        <User className="w-4 h-4" />
-                        <span>{post.author}</span>
+                        <User className="w-3 h-3" />
+                        <span className="truncate max-w-[80px]">{post.author}</span>
                       </div>
                       <div className="flex items-center gap-1">
-                        <Calendar className="w-4 h-4" />
+                        <Calendar className="w-3 h-3" />
                         <span>
                           {new Date(post.published_at || "").toLocaleDateString()}
                         </span>
