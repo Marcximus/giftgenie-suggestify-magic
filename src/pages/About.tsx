@@ -5,6 +5,7 @@ import { WhyChooseUsSection } from "@/components/about/WhyChooseUsSection";
 import { TeamSection } from "@/components/about/TeamSection";
 import { ContactForm } from "@/components/about/ContactForm";
 import { DisclaimerSection } from "@/components/about/DisclaimerSection";
+import { FAQSection } from "@/components/about/FAQSection";
 
 const About = () => {
   return (
@@ -16,6 +17,7 @@ const About = () => {
           <FeaturesSection />
           <WhyChooseUsSection />
           <TeamSection />
+          <FAQSection />
           <ContactForm />
           <DisclaimerSection />
         </div>
