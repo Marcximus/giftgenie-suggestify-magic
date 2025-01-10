@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Wand2 } from "lucide-react";
 import { UseFormReturn } from "react-hook-form";
 import { BlogPostFormData } from "../types/BlogPostTypes";
-import { BlogEditor } from "../BlogEditor";
+import { BlogEditor } from "../editor/BlogEditor";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 
