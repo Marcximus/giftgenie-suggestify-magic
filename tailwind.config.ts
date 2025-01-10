@@ -79,17 +79,17 @@ export default {
 				},
 				'pulse-text': {
 					'0%, 100%': {
-						textShadow: '0 0 4px rgba(99, 102, 241, 0.1), 0 0 8px rgba(99, 102, 241, 0.1), 0 0 12px rgba(99, 102, 241, 0.1)'
+						textShadow: '0 0 4px rgba(99, 102, 241, 0.1), 0 0 8px rgba(99, 102, 241, 0.1), 0 0 12px rgba(99, 102, 241, 0.1), 0 0 16px rgba(99, 102, 241, 0.1)'
 					},
 					'50%': {
-						textShadow: '0 0 4px rgba(99, 102, 241, 0.3), 0 0 8px rgba(99, 102, 241, 0.3), 0 0 12px rgba(99, 102, 241, 0.3)'
+						textShadow: '0 0 4px rgba(99, 102, 241, 0.5), 0 0 8px rgba(99, 102, 241, 0.5), 0 0 12px rgba(99, 102, 241, 0.5), 0 0 16px rgba(99, 102, 241, 0.5)'
 					}
 				}
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
 				'accordion-up': 'accordion-up 0.2s ease-out',
-				'pulse-text': 'pulse-text 2s ease-in-out infinite'
+				'pulse-text': 'pulse-text 1.5s ease-in-out infinite'
 			}
 		}
 	},

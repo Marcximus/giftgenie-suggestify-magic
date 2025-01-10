@@ -31,7 +31,7 @@ const Blog = () => {
             <h1 className="text-2xl md:text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/60 mb-4">
               Gift Ideas
             </h1>
-            <p className="text-[10px] text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+            <p className="text-[8px] text-muted-foreground max-w-2xl mx-auto leading-relaxed">
               Our suggestions feel tailor-made because they practically are. We use <span className="animate-pulse-text text-primary">AI</span> and <span className="animate-pulse-text text-primary">internet magic</span> to find the absolute best gift ideas and popular presents. Thanks to us, you can spend less time gift hunting and more time celebrating (or binge-watching your favorite show—we won't judge).
             </p>
           </div>
@@ -66,7 +66,7 @@ const Blog = () => {
           <h1 className="text-2xl md:text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/60 mb-4">
             Gift Ideas
           </h1>
-          <p className="text-[10px] text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+          <p className="text-[8px] text-muted-foreground max-w-2xl mx-auto leading-relaxed">
             Our suggestions feel tailor-made because they practically are. We use <span className="animate-pulse-text text-primary">AI</span> and <span className="animate-pulse-text text-primary">internet magic</span> to find the absolute best gift ideas and popular presents. Thanks to us, you can spend less time gift hunting and more time celebrating (or binge-watching your favorite show—we won't judge).
           </p>
         </div>
