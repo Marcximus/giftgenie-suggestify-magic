@@ -13,19 +13,28 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Tables } from "@/integrations/supabase/types";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { BlogImageUpload } from "./BlogImageUpload";
 import { BlogPostPreview } from "./BlogPostPreview";
 
-type BlogPostFormData = Omit<
-  Tables<"blog_posts">,
-  "id" | "created_at" | "updated_at"
->;
+// Define a simpler interface for the form data
+interface BlogPostFormData {
+  title: string;
+  slug: string;
+  content: string;
+  excerpt: string | null;
+  author: string;
+  image_url: string | null;
+  published_at: string | null;
+  meta_title: string | null;
+  meta_description: string | null;
+  meta_keywords: string | null;
+  images: any[] | null;
+}
 
 interface BlogPostFormProps {
-  initialData?: Tables<"blog_posts">;
+  initialData?: BlogPostFormData & { id: string; created_at: string; updated_at: string };
 }
 
 const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
@@ -43,6 +52,10 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
       author: "",
       image_url: "",
       published_at: null,
+      meta_title: "",
+      meta_description: "",
+      meta_keywords: "",
+      images: [],
     },
   });
 
