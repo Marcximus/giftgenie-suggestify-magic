@@ -1,4 +1,4 @@
-import { BlogPostForm } from "@/components/blog/BlogPostForm";
+import BlogPostForm from "@/components/blog/BlogPostForm";
 
 const BlogNew = () => {
   return (

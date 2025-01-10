@@ -2,7 +2,7 @@ import { useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
-import { BlogPostForm } from "@/components/blog/BlogPostForm";
+import BlogPostForm from "@/components/blog/BlogPostForm";
 
 const BlogEdit = () => {
   const { slug } = useParams();
