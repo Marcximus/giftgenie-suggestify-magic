@@ -70,25 +70,26 @@ export default {
 			},
 			keyframes: {
 				'accordion-down': {
-					from: {
-						height: '0'
-					},
-					to: {
-						height: 'var(--radix-accordion-content-height)'
-					}
+					from: { height: '0' },
+					to: { height: 'var(--radix-accordion-content-height)' }
 				},
 				'accordion-up': {
-					from: {
-						height: 'var(--radix-accordion-content-height)'
+					from: { height: 'var(--radix-accordion-content-height)' },
+					to: { height: '0' }
+				},
+				'pulse-text': {
+					'0%, 100%': {
+						textShadow: '0 0 4px rgba(99, 102, 241, 0.1), 0 0 8px rgba(99, 102, 241, 0.1), 0 0 12px rgba(99, 102, 241, 0.1)'
 					},
-					to: {
-						height: '0'
+					'50%': {
+						textShadow: '0 0 4px rgba(99, 102, 241, 0.3), 0 0 8px rgba(99, 102, 241, 0.3), 0 0 12px rgba(99, 102, 241, 0.3)'
 					}
 				}
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
-				'accordion-up': 'accordion-up 0.2s ease-out'
+				'accordion-up': 'accordion-up 0.2s ease-out',
+				'pulse-text': 'pulse-text 2s ease-in-out infinite'
 			}
 		}
 	},
