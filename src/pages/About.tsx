@@ -59,13 +59,13 @@ const About = () => {
   return (
     <div className="container mx-auto px-4 py-8 max-w-4xl">
       <div className="prose prose-lg max-w-none">
-        <h1 className="flex flex-col items-center gap-1 mb-8">
-          <span className="text-lg text-gray-600">Welcome to</span>
-          <Link to="/" className="text-4xl font-bold text-[#1EAEDB] hover:text-[#0FA0CE] transition-colors">
+        <div className="text-center mb-8">
+          <span className="text-lg text-gray-600 block">Welcome to</span>
+          <Link to="/" className="text-4xl font-bold text-[#1EAEDB] hover:text-[#0FA0CE] transition-colors block">
             Get The Gift
           </Link>
-          <span className="text-lg text-gray-600">- The Only Gift-Giving Sidekick You'll Ever Need!</span>
-        </h1>
+          <span className="text-lg text-gray-600 block">- The Only Gift-Giving Sidekick You'll Ever Need!</span>
+        </div>
         
         <p className="text-lg mb-8">
           Are you tired of giving the same ol' scented candle or novelty mug every year? We thought so. That's why Get The Gift was created: to help you discover the perfect present for everyone on your list without the stress, guesswork, or frantic 3 A.M. Google searches for "best birthday gift ideas." We'll be the wise (and sometimes witty) friend at your side, guiding you through the vast universe of gift-giving, one brilliant recommendation at a time.
