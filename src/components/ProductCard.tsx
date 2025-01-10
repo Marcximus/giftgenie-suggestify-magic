@@ -19,7 +19,9 @@ interface ProductCardProps extends Product {
   onMoreLikeThis?: (title: string) => void;
 }
 
-const simplifyTitle = (title: string): string => {
+const simplifyTitle = (title: string | undefined | null): string => {
+  if (!title) return 'Untitled Product';
+  
   return title
     .replace(/\s*\([^)]*\)/g, '')
     .replace(/,.*$/, '')
