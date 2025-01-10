@@ -72,7 +72,7 @@ const Blog = () => {
         </div>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {posts?.map((post) => (
-            <Link to={`/blog/${post.slug}`} key={post.id}>
+            <Link to={`/blog/post/${post.slug}`} key={post.id}>
               <article className="group">
                 <Card className="flex h-[60px] overflow-hidden transform transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
                   {post.image_url && (
