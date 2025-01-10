@@ -19,31 +19,32 @@ serve(async (req) => {
     const { prompt } = await req.json();
     console.log('Processing request with prompt:', prompt);
 
-    // Extract budget range from the prompt - now handles more formats
+    // Enhanced budget extraction with strict validation
     const budgetMatch = prompt.match(/(?:budget|USD|price)[^\d]*(\d+)(?:\s*-\s*(\d+))?/i);
     console.log('Budget match:', budgetMatch);
     
+    if (!budgetMatch) {
+      throw new Error('No budget range specified in prompt');
+    }
+
     let minBudget = 0;
     let maxBudget = 1000;
 
-    if (budgetMatch) {
-      if (budgetMatch[2]) {
-        minBudget = parseInt(budgetMatch[1]);
-        maxBudget = parseInt(budgetMatch[2]);
-      } else {
-        const budget = parseInt(budgetMatch[1]);
-        minBudget = Math.max(0, budget - (budget * 0.2));
-        maxBudget = budget;
-      }
+    if (budgetMatch[2]) {
+      minBudget = parseInt(budgetMatch[1]);
+      maxBudget = parseInt(budgetMatch[2]);
+    } else {
+      const budget = parseInt(budgetMatch[1]);
+      minBudget = budget;
+      maxBudget = budget;
     }
 
     console.log('Parsed budget range:', { minBudget, maxBudget });
 
-    // Enhanced demographic and interest extraction
+    // Enhanced demographic extraction
     const ageMatch = prompt.match(/(\d+)(?:\s*-\s*\d+)?\s*years?\s*old/i);
     const age = ageMatch ? parseInt(ageMatch[1]) : null;
     
-    // Gender detection
     const isMale = prompt.toLowerCase().includes('brother') || 
                   prompt.toLowerCase().includes('father') || 
                   prompt.toLowerCase().includes('husband') || 
@@ -58,11 +59,9 @@ serve(async (req) => {
                     prompt.toLowerCase().includes('daughter') || 
                     prompt.toLowerCase().includes('grandma');
 
-    // Interest extraction with categories
     const interestMatch = prompt.match(/who likes\s+([^.]+)/i);
     const interests = interestMatch ? interestMatch[1].trim() : '';
     
-    // Age group categorization for tone adjustment
     const getAgeGroup = (age: number | null) => {
       if (!age) return 'adult';
       if (age <= 12) return 'child';
@@ -74,53 +73,47 @@ serve(async (req) => {
 
     const ageGroup = getAgeGroup(age);
 
-    // Enhanced prompt construction with demographic-specific guidance
-    let enhancedPrompt = `As a highly personalized gift curator, suggest 8 thoughtfully curated gift ideas ${prompt}. 
+    // Enhanced prompt with strict budget enforcement
+    let enhancedPrompt = `As a highly personalized gift curator, suggest 8 premium gift ideas that STRICTLY fall within the budget range of $${minBudget} to $${maxBudget}. ${prompt}
 
-DEMOGRAPHIC CUSTOMIZATION:
-1. Age Group (${ageGroup}):
+CRITICAL REQUIREMENTS:
+1. Budget Constraints (STRICTLY ENFORCED):
+   - Every suggestion MUST cost between $${minBudget} and $${maxBudget}
+   - DO NOT suggest items outside this range
+   - Verify prices before suggesting items
+   - If unsure about exact price, err on the side of caution
+
+2. Demographic Customization:
+   Age Group (${ageGroup}):
    ${age ? `- Target age: ${age} years old` : ''}
-   ${ageGroup === 'child' ? '- Focus on educational and developmental value\n   - Ensure age-appropriate safety standards\n   - Include interactive and engaging elements' : ''}
-   ${ageGroup === 'teen' ? '- Consider current trends and social factors\n   - Focus on identity expression and peer acceptance\n   - Include tech-savvy and social media relevant items' : ''}
-   ${ageGroup === 'young adult' ? '- Focus on lifestyle enhancement and practical value\n   - Consider career and personal development\n   - Include trendy and innovative products' : ''}
-   ${ageGroup === 'senior' ? '- Prioritize ease of use and practicality\n   - Consider comfort and quality of life\n   - Include items that promote activity and engagement' : ''}
+   ${ageGroup === 'young adult' ? '- Focus on trending and innovative products\n   - Consider career and lifestyle needs\n   - Include tech-savvy options' : ''}
 
-2. Budget Requirements:
-   - Price range: $${minBudget} to $${maxBudget}
-   - Spread suggestions across the entire price range
-   - Ensure value proposition matches price point
+3. Gender-Specific Considerations:${
+  isMale ? `
+   - Focus on masculine preferences
+   - Consider modern male interests
+   - Emphasize quality and functionality` : 
+  isFemale ? `
+   - Focus on feminine preferences
+   - Consider modern female interests
+   - Emphasize style and practicality` : ''}
 
-3. Interest-Based Customization:${interests ? `
+4. Interest-Based Customization:${interests ? `
    - Primary interests: ${interests}
-   - Suggest items that combine multiple interests
-   - Include complementary activities and accessories
+   - Focus heavily on ${interests}-related items
+   - Include premium ${interests} equipment or accessories
    - Consider skill level and experience` : ''}
 
-4. Gender-Specific Considerations:${
-  isMale ? `
-   - Focus on masculine aesthetics while avoiding stereotypes
-   - Consider modern male interests and lifestyle
-   - Include innovative takes on traditional male-oriented gifts` :
-  isFemale ? `
-   - Focus on feminine aesthetics while avoiding stereotypes
-   - Consider modern female interests and lifestyle
-   - Include innovative takes on traditional female-oriented gifts` : ''
-}
-
-5. Quality and Relevance:
-   - Suggest specific products from reputable brands
+5. Quality Requirements:
+   - Suggest only specific products from reputable brands
    - Include model numbers and key features
-   - Focus on latest and innovative products
-   - Consider durability and long-term value
+   - Focus on latest product versions
+   - Emphasize durability and premium quality
 
-6. Personalization Factors:
-   - Match gift sophistication to age group
-   - Consider lifestyle and daily routines
-   - Include items that encourage personal growth
-   - Focus on creating meaningful experiences
+IMPORTANT: Each suggestion MUST be a premium product that costs between $${minBudget} and $${maxBudget}. Do not suggest any items outside this range.
 
 Format each suggestion as:
-"Brand Model/Edition with Key Feature"`;
+"Brand Model/Edition with Key Feature (Premium Version)"`;
 
     if (isRateLimited()) {
       console.log('Rate limit exceeded, returning 429');
@@ -148,6 +141,7 @@ Format each suggestion as:
       throw new Error('Invalid suggestions format');
     }
 
+    // Process suggestions with delay to avoid rate limits
     const productPromises = suggestions.map((suggestion, index) => {
       return new Promise<GiftSuggestion>(async (resolve) => {
         await new Promise(r => setTimeout(r, index * 1000));
@@ -158,8 +152,14 @@ Format each suggestion as:
 
     const products = await Promise.all(productPromises);
 
+    // Filter out products that don't match the budget constraints
+    const filteredProducts = products.filter(product => {
+      const price = product.amazon_price || parseFloat(product.priceRange.replace(/[^\d.]/g, ''));
+      return price >= minBudget && price <= maxBudget;
+    });
+
     return new Response(
-      JSON.stringify({ suggestions: products }),
+      JSON.stringify({ suggestions: filteredProducts }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 

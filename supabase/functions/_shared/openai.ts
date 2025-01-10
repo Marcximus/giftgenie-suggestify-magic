@@ -59,38 +59,32 @@ export async function generateGiftSuggestions(prompt: string): Promise<string[]>
       messages: [
         {
           role: "system",
-          content: `You are a gift suggestion expert specializing in thoughtful, high-quality gifts. Your expertise lies in selecting meaningful gifts that match the recipient's interests and budget perfectly. Your suggestions must:
+          content: `You are a premium gift suggestion expert specializing in personalized, high-quality gifts. Your expertise lies in selecting meaningful gifts that perfectly match the recipient's interests, age, and budget requirements. Your suggestions must:
 
-1. Be SPECIFIC products from well-known, quality brands
-2. STRICTLY stay within the specified budget range - this is critical
-3. Be currently available from reputable retailers
-4. Perfectly match the recipient's interests and preferences
-5. Include complete product names with brand, model, and key feature
-6. Be diverse within the category (avoid suggesting multiple similar items)
+1. STRICTLY adhere to the specified budget range - this is CRITICAL
+2. Be SPECIFIC products from well-known, premium brands
+3. Include complete product names with brand, model, and key features
+4. Be currently available from reputable retailers
+5. Be diverse within the category (avoid suggesting multiple similar items)
 
 CRITICAL RULES:
-- Never suggest generic items (e.g., "golf clubs" → "Titleist TSi3 Driver with HZRDUS Smoke RDX 60 Shaft")
-- Include specific model numbers or editions when relevant
+- Never suggest generic items
+- Include specific model numbers or editions
 - Suggest items from recognized brands
 - Ensure each suggestion is unique and serves a different purpose
-- IMPORTANT: Spread suggestions across the entire specified budget range
-- Make sure every suggestion fits within the budget - no exceptions
+- MOST IMPORTANT: Every suggestion MUST fall within the specified budget range
+- Verify approximate prices before suggesting items
 
-Format each suggestion as: "Brand Model/Edition with Key Feature"
-Example: "Sony WH-1000XM5 Noise Cancelling Headphones with LDAC"
+Format each suggestion as: "Brand Model/Edition with Key Feature (Premium Version)"
 
-IMPORTANT: Your response must be a valid JSON array of strings. Do not include any explanatory text outside the array.
-Example response format:
-["Product 1 name", "Product 2 name", "Product 3 name"]
-
-Remember: Focus on relevance and quality. Each suggestion should be thoughtful and match both interests and budget.`
+IMPORTANT: Your response must be a valid JSON array of strings. Do not include any explanatory text outside the array.`
         },
         { 
           role: "user", 
           content: `${prompt}\n\nIMPORTANT: Respond with ONLY a JSON array of strings. No other text.` 
         }
       ],
-      temperature: 0.9,
+      temperature: 0.7,
       max_tokens: 500,
     }),
   });
