@@ -1,6 +1,6 @@
+import { GiftSuggestion } from '@/types/suggestions';
 import { ProductCard } from '../ProductCard';
 import { SuggestionSkeleton } from '../SuggestionSkeleton';
-import { GiftSuggestion } from '@/types/suggestions';
 
 interface SuggestionsGridItemsProps {
   suggestions: GiftSuggestion[];
@@ -13,46 +13,34 @@ export const SuggestionsGridItems = ({
   onMoreLikeThis,
   isLoading
 }: SuggestionsGridItemsProps) => {
+  console.log('SuggestionsGridItems received suggestions:', suggestions);
+  console.log('isLoading:', isLoading);
+
   if (isLoading) {
     return (
       <>
-        {Array.from({ length: 8 }).map((_, index) => (
-          <div 
-            key={`skeleton-${index}`} 
-            className="animate-in fade-in slide-in-from-bottom-4" 
-            style={{ animationDelay: `${index * 100}ms` }}
-            aria-hidden="true"
-          >
-            <SuggestionSkeleton />
-          </div>
+        {[...Array(8)].map((_, index) => (
+          <SuggestionSkeleton key={`skeleton-${index}`} />
         ))}
       </>
     );
   }
 
-  if (suggestions.length === 0) {
-    return (
-      <div className="col-span-full text-center text-muted-foreground py-8">
-        No suggestions found. Try adjusting your search criteria.
-      </div>
-    );
+  if (!Array.isArray(suggestions) || suggestions.length === 0) {
+    console.log('No suggestions to display');
+    return null;
   }
 
   return (
     <>
-      {suggestions.map((suggestion, index) => (
-        <div 
-          key={`suggestion-${index}`}
-          className="animate-in fade-in slide-in-from-bottom-4"
-          style={{ 
-            animationDelay: `${index * 100}ms`,
-            animationFillMode: 'forwards' 
-          }}
-        >
+      {suggestions.map((suggestion, index) => {
+        console.log(`Processing suggestion ${index}:`, suggestion);
+        return (
           <ProductCard
+            key={`product-${index}`}
             title={suggestion.title}
             description={suggestion.description}
-            price={suggestion.amazon_price ? suggestion.amazon_price.toString() : suggestion.priceRange}
+            price={suggestion.amazon_price?.toString() || suggestion.priceRange}
             amazonUrl={suggestion.amazon_url || "#"}
             imageUrl={suggestion.amazon_image_url}
             rating={suggestion.amazon_rating}
@@ -60,8 +48,8 @@ export const SuggestionsGridItems = ({
             asin={suggestion.amazon_asin}
             onMoreLikeThis={onMoreLikeThis}
           />
-        </div>
-      ))}
+        );
+      })}
     </>
   );
 };

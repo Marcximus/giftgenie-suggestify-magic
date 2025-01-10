@@ -31,12 +31,15 @@ export const SuggestionsGrid = ({
   onStartOver,
   isLoading 
 }: SuggestionsGridProps) => {
+  console.log('SuggestionsGrid received suggestions:', suggestions);
+  
   // Extract price range from the first suggestion's search query if it exists
   const priceRangeMatch = suggestions[0]?.search_query?.match(/budget.*?(\d+)\s*-\s*(\d+)/i);
   const priceRange = priceRangeMatch ? `${priceRangeMatch[1]}-${priceRangeMatch[2]}` : undefined;
 
   // Filter suggestions based on price range
   const filteredSuggestions = filterSuggestionsByPrice(suggestions, priceRange);
+  console.log('Filtered suggestions:', filteredSuggestions);
 
   // Show message if no results in price range
   const noResultsInRange = suggestions.length > 0 && filteredSuggestions.length === 0;
