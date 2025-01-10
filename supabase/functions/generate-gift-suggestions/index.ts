@@ -39,7 +39,11 @@ serve(async (req) => {
 
     console.log('Parsed budget range:', { minBudget, maxBudget });
 
-    // Extract gender context
+    // Enhanced demographic and interest extraction
+    const ageMatch = prompt.match(/(\d+)(?:\s*-\s*\d+)?\s*years?\s*old/i);
+    const age = ageMatch ? parseInt(ageMatch[1]) : null;
+    
+    // Gender detection
     const isMale = prompt.toLowerCase().includes('brother') || 
                   prompt.toLowerCase().includes('father') || 
                   prompt.toLowerCase().includes('husband') || 
@@ -54,58 +58,69 @@ serve(async (req) => {
                     prompt.toLowerCase().includes('daughter') || 
                     prompt.toLowerCase().includes('grandma');
 
-    // Extract interests
+    // Interest extraction with categories
     const interestMatch = prompt.match(/who likes\s+([^.]+)/i);
     const interests = interestMatch ? interestMatch[1].trim() : '';
+    
+    // Age group categorization for tone adjustment
+    const getAgeGroup = (age: number | null) => {
+      if (!age) return 'adult';
+      if (age <= 12) return 'child';
+      if (age <= 19) return 'teen';
+      if (age <= 30) return 'young adult';
+      if (age <= 50) return 'adult';
+      return 'senior';
+    };
 
-    // Enhanced prompt for more creative and diverse suggestions
-    let enhancedPrompt = `As a highly creative gift curator with expertise in unique and thoughtful presents, suggest 8 truly distinctive gift ideas for ${prompt}. 
+    const ageGroup = getAgeGroup(age);
 
-STRICT REQUIREMENTS:
-1. Budget: Each suggestion MUST be priced between $${minBudget} and $${maxBudget}
+    // Enhanced prompt construction with demographic-specific guidance
+    let enhancedPrompt = `As a highly personalized gift curator, suggest 8 thoughtfully curated gift ideas ${prompt}. 
+
+DEMOGRAPHIC CUSTOMIZATION:
+1. Age Group (${ageGroup}):
+   ${age ? `- Target age: ${age} years old` : ''}
+   ${ageGroup === 'child' ? '- Focus on educational and developmental value\n   - Ensure age-appropriate safety standards\n   - Include interactive and engaging elements' : ''}
+   ${ageGroup === 'teen' ? '- Consider current trends and social factors\n   - Focus on identity expression and peer acceptance\n   - Include tech-savvy and social media relevant items' : ''}
+   ${ageGroup === 'young adult' ? '- Focus on lifestyle enhancement and practical value\n   - Consider career and personal development\n   - Include trendy and innovative products' : ''}
+   ${ageGroup === 'senior' ? '- Prioritize ease of use and practicality\n   - Consider comfort and quality of life\n   - Include items that promote activity and engagement' : ''}
+
+2. Budget Requirements:
+   - Price range: $${minBudget} to $${maxBudget}
    - Spread suggestions across the entire price range
-   - NO items outside this range
-   - Mix of price points within the range
+   - Ensure value proposition matches price point
 
-2. Diversity & Creativity Requirements:
-   - Each suggestion MUST be from a different product category
-   - Include a mix of mainstream and unique, lesser-known items
-   - Focus on innovative, conversation-starting gifts
-   - Consider emerging brands and unique artisanal products
-   - Include experiential gifts when appropriate
-   - Think beyond conventional gift categories
+3. Interest-Based Customization:${interests ? `
+   - Primary interests: ${interests}
+   - Suggest items that combine multiple interests
+   - Include complementary activities and accessories
+   - Consider skill level and experience` : ''}
 
-3. Quality Standards:
-   - Suggest specific products from both well-known and emerging brands
-   - Include model numbers or specific editions when relevant
+4. Gender-Specific Considerations:${
+  isMale ? `
+   - Focus on masculine aesthetics while avoiding stereotypes
+   - Consider modern male interests and lifestyle
+   - Include innovative takes on traditional male-oriented gifts` :
+  isFemale ? `
+   - Focus on feminine aesthetics while avoiding stereotypes
+   - Consider modern female interests and lifestyle
+   - Include innovative takes on traditional female-oriented gifts` : ''
+}
+
+5. Quality and Relevance:
+   - Suggest specific products from reputable brands
+   - Include model numbers and key features
    - Focus on latest and innovative products
+   - Consider durability and long-term value
 
-4. Interest Alignment:${interests ? `
-   - Use ${interests} as inspiration but think creatively beyond obvious choices
-   - Consider unique interpretations of these interests
-   - Include surprising but relevant crossover items` : ''}
-
-5. Uniqueness Guidelines:
-   - NO generic suggestions
-   - NO repetitive items
-   - Each item should serve a distinct purpose
-   - Include at least 2 unexpected or surprising suggestions
-   - Consider items that combine multiple interests in creative ways
+6. Personalization Factors:
+   - Match gift sophistication to age group
+   - Consider lifestyle and daily routines
+   - Include items that encourage personal growth
+   - Focus on creating meaningful experiences
 
 Format each suggestion as:
-"Brand Model/Edition with Key Feature"
-
-Example of diverse suggestions:
-["MasterClass Annual Subscription with Gordon Ramsay Cooking Course",
- "Ember Temperature Control Smart Mug 2 with 3-hour Battery Life",
- "Uncommon Goods Molecular Gastronomy Kit with Recipe Book",
- "Polaroid Hi-Print 2x3 Pocket Photo Printer with Bluetooth"]`;
-
-    if (isMale) {
-      enhancedPrompt += "\n\nCRITICAL: Only suggest gifts appropriate for men/boys. Focus on masculine aesthetics while avoiding stereotypes. Think creatively about modern masculine interests.";
-    } else if (isFemale) {
-      enhancedPrompt += "\n\nCRITICAL: Only suggest gifts appropriate for women/girls. Focus on feminine aesthetics while avoiding stereotypes. Think creatively about modern feminine interests.";
-    }
+"Brand Model/Edition with Key Feature"`;
 
     if (isRateLimited()) {
       console.log('Rate limit exceeded, returning 429');
