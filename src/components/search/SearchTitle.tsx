@@ -9,7 +9,7 @@ export const SearchTitle = () => {
         </h1>
       </Link>
       <p className="text-xs sm:text-sm md:text-base text-muted-foreground animate-in fade-in slide-in-from-top-4 duration-700 delay-150 px-2">
-        Find the perfect gift with the power of AI: describe the person or occasion below
+        Find the perfect gift with the power of AI. Describe the person or occasion below, and internet magic will find the absolute top ideas:
       </p>
     </div>
   );
