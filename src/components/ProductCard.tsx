@@ -19,7 +19,9 @@ interface ProductCardProps extends Product {
   onMoreLikeThis?: (title: string) => void;
 }
 
-const simplifyTitle = (title: string): string => {
+const simplifyTitle = (title: string | undefined): string => {
+  if (!title) return 'Product Title Unavailable';
+  
   return title
     .replace(/\s*\([^)]*\)/g, '')
     .replace(/,.*$/, '')
@@ -30,7 +32,7 @@ const simplifyTitle = (title: string): string => {
 };
 
 const ProductCardComponent = ({ 
-  title, 
+  title = 'Product Title Unavailable', // Add default value
   description, 
   price, 
   rating,
