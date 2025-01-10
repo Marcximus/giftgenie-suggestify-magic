@@ -32,7 +32,21 @@ serve(async (req) => {
       );
     }
 
-    // Enhanced interest and context extraction
+    // Enhanced gender and context extraction
+    const isMale = prompt.toLowerCase().includes('brother') || 
+                  prompt.toLowerCase().includes('father') || 
+                  prompt.toLowerCase().includes('husband') || 
+                  prompt.toLowerCase().includes('boyfriend') || 
+                  prompt.toLowerCase().includes('son') || 
+                  prompt.toLowerCase().includes('grandpa');
+
+    const isFemale = prompt.toLowerCase().includes('sister') || 
+                    prompt.toLowerCase().includes('mother') || 
+                    prompt.toLowerCase().includes('wife') || 
+                    prompt.toLowerCase().includes('girlfriend') || 
+                    prompt.toLowerCase().includes('daughter') || 
+                    prompt.toLowerCase().includes('grandma');
+
     const interests = prompt.match(/(?:loves?|enjoys?|likes?)\s+([^,.]+)/gi)?.map(match => 
       match.replace(/(?:loves?|enjoys?|likes?)\s+/i, '').trim()
     ) || [];
@@ -41,22 +55,26 @@ serve(async (req) => {
     const ageMatch = prompt.match(/(\d+)(?:\s*-\s*\d+)?\s*years?\s*old/i);
     const age = ageMatch ? ageMatch[1] : '';
     
-    // Enhanced budget extraction
     const budgetMatch = prompt.match(/(?:budget|USD|price)[^\d]*(\d+)(?:\s*-\s*(\d+))?/i);
     const minBudget = budgetMatch ? parseInt(budgetMatch[1]) : 25;
     const maxBudget = budgetMatch && budgetMatch[2] ? parseInt(budgetMatch[2]) : minBudget * 1.2;
 
-    // Construct a more focused and interest-specific prompt
+    // Gender-specific prompt construction
+    const genderContext = isMale ? 'male' : isFemale ? 'female' : 'gender-neutral';
+    const genderInstruction = `CRITICAL: Only suggest gifts appropriate for ${genderContext} recipients. ${isMale ? 'DO NOT suggest any women\'s clothing, accessories, or feminine products.' : isFemale ? 'DO NOT suggest any men\'s clothing, accessories, or masculine products.' : ''}`;
+
     const enhancedPrompt = `As a gift expert specializing in ${interests.join(', ')}, suggest 8 highly specific and personalized gift ideas for a ${age ? `${age}-year-old ` : ''}${relationship} who is passionate about ${interests.join(' and ')}. 
 
 Key Requirements:
 1. Budget: STRICTLY between $${minBudget} and $${maxBudget}
-2. Interest Focus:
+2. Gender Appropriateness:
+   ${genderInstruction}
+3. Interest Focus:
    ${interests.map(interest => `- Suggest items that directly relate to ${interest}`).join('\n   ')}
    - Each suggestion must clearly connect to at least one of their interests
    - Include specialty or premium versions of items within their interest areas
 
-3. Gift Categories (focus on their interests):
+4. Gift Categories (focus on their interests):
    - High-quality equipment or gear for their hobbies
    - Premium accessories related to their interests
    - Learning resources or courses in their areas of interest
@@ -64,7 +82,7 @@ Key Requirements:
    - Experiential gifts related to their passions
    - Specialty or collector's items in their interest areas
 
-4. Quality Guidelines:
+5. Quality Guidelines:
    - Suggest only specific products from reputable brands
    - Include model numbers or specific editions
    - Focus on items that enhance their existing interests
@@ -75,6 +93,7 @@ Format each suggestion as:
 "Brand Name Specific Product (Premium/Special Edition) - [Interest] Version"
 
 IMPORTANT: Each suggestion must be:
+- Gender-appropriate for the recipient
 - Directly related to at least one of their stated interests
 - Actually available for purchase
 - Within the specified budget range
