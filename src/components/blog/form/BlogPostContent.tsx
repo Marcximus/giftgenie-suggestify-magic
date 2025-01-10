@@ -38,11 +38,13 @@ export const BlogPostContent = ({ form, handleAIGenerate }: BlogPostContentProps
       if (error) throw error;
 
       if (data?.content) {
-        form.setValue('content', data.content);
+        form.setValue('content', data.content, { shouldDirty: true });
         toast({
           title: "Success",
           description: "Blog post generated successfully!",
         });
+      } else {
+        throw new Error('No content received from AI');
       }
     } catch (error) {
       console.error('Error generating blog post:', error);

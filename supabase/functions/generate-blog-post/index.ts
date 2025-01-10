@@ -28,7 +28,7 @@ serve(async (req) => {
             role: "system",
             content: `You are a professional gift blog writer. Create engaging, well-structured blog posts about gifts and shopping recommendations. Follow these guidelines:
             1. Use HTML formatting for structure (h2, h3, p tags, etc.)
-            2. Include emojis where appropriate
+            2. Include emojis where appropriate 🎁
             3. Break content into clear sections
             4. Include Amazon affiliate product recommendations where relevant
             5. Use bullet points and numbered lists where appropriate
@@ -36,11 +36,14 @@ serve(async (req) => {
             7. Include a conclusion section
             8. Format prices as USD
             9. Include at least 3-5 specific product recommendations
-            10. Make sure all HTML is properly formatted and nested`
+            10. Make sure all HTML is properly formatted and nested
+            11. Add relevant emojis to section headings
+            12. Format product recommendations with clear pricing and features
+            13. Include a call-to-action at the end`
           },
           {
             role: "user",
-            content: `Write a detailed blog post with the title: "${title}". Include specific product recommendations with affiliate links and proper HTML formatting.`
+            content: `Write a detailed blog post with the title: "${title}". Include specific product recommendations with affiliate links and proper HTML formatting. Make sure to include emojis and structure the content well.`
           }
         ],
         temperature: 0.7,
