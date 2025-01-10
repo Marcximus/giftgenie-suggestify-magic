@@ -11,12 +11,6 @@ export const useAmazonProducts = () => {
 
   const getAmazonProduct = async (searchTerm: string, priceRange: string): Promise<AmazonProduct | null> => {
     try {
-      // Validate search term
-      if (!searchTerm?.trim()) {
-        console.log('Search term is empty or undefined:', searchTerm);
-        return null;
-      }
-
       const cacheKey = `${searchTerm}-${priceRange}`;
       
       // Check cache first
@@ -26,11 +20,10 @@ export const useAmazonProducts = () => {
       }
 
       console.log(`Attempting Amazon product request for: ${searchTerm} with price range: ${priceRange}`);
-      setIsLoading(true);
       
       // Use withRetry for the product search
       const product = await withRetry(
-        () => searchWithFallback(searchTerm.trim(), priceRange),
+        () => searchWithFallback(searchTerm, priceRange),
         AMAZON_CONFIG.MAX_RETRIES
       );
       
@@ -53,8 +46,6 @@ export const useAmazonProducts = () => {
       }
       
       return null;
-    } finally {
-      setIsLoading(false);
     }
   };
 
