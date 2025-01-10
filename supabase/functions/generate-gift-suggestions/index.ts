@@ -64,26 +64,62 @@ serve(async (req) => {
     const genderInstruction = isMale ? 
       `CRITICAL GENDER RESTRICTIONS:
        - ONLY suggest products specifically designed for or marketed to men/boys
-       - DO NOT suggest ANY women's products, including:
-         * Women's clothing or shoes
-         * Women's accessories
-         * Products marketed specifically to women
+       - DO NOT suggest ANY women's products
        - For clothing/accessories, explicitly specify "Men's" in the product name
        - For unisex items, ensure they are appropriate for male users` 
       : isFemale ? 
       `CRITICAL GENDER RESTRICTIONS:
        - ONLY suggest products specifically designed for or marketed to women/girls
-       - DO NOT suggest ANY men's products, including:
-         * Men's clothing or shoes
-         * Men's accessories
-         * Products marketed specifically to men
+       - DO NOT suggest ANY men's products
        - For clothing/accessories, explicitly specify "Women's" in the product name
        - For unisex items, ensure they are appropriate for female users`
       : 'Consider suggesting gender-neutral items appropriate for anyone';
 
+    // Age-specific popular products suggestions
+    const ageBasedSuggestions = age ? `
+    If the specific interests don't yield enough great options, consider these popular items for ${age}-year-olds:
+    ${age < 12 ? `
+    - Age-appropriate educational toys and games
+    - Popular character merchandise
+    - Creative arts and crafts kits
+    - Interactive learning tools` 
+    : age < 20 ? `
+    - Popular tech gadgets and accessories
+    - Trending fashion items
+    - Gaming related items
+    - Popular entertainment merchandise` 
+    : age < 35 ? `
+    - Smart home devices
+    - Premium lifestyle accessories
+    - Fitness and wellness products
+    - Professional development tools` 
+    : age < 60 ? `
+    - Health and wellness products
+    - Premium home and garden items
+    - Hobby-specific premium tools
+    - Luxury lifestyle accessories`
+    : `
+    - Comfort and convenience items
+    - Health and wellness products
+    - Easy-to-use technology
+    - Premium leisure items`}` : '';
+
+    // Book recommendation instruction
+    const bookRecommendation = `
+    IMPORTANT: If reading or books are mentioned in interests, include at least one book suggestion that matches these criteria:
+    - Must be a specific, currently available book (include author name)
+    - Match the recipient's interests and age group
+    - Consider bestsellers and highly-rated books in their interest areas
+    - For fiction, match genre preferences
+    - For non-fiction, focus on their specific interests or hobbies`;
+
     const enhancedPrompt = `As a gift expert specializing in ${interests.join(', ')}, suggest 8 highly specific and personalized gift ideas for a ${age ? `${age}-year-old ` : ''}${relationship} who is passionate about ${interests.join(' and ')}. 
 
 ${genderInstruction}
+
+${ageBasedSuggestions}
+
+${bookRecommendation}
 
 Key Requirements:
 1. Budget: STRICTLY between $${minBudget} and $${maxBudget}
