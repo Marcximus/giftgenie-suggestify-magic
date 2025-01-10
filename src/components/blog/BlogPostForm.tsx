@@ -24,6 +24,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { BlogImageUpload } from "./BlogImageUpload";
 import { BlogPostPreview } from "./BlogPostPreview";
+import { BlogEditor } from "./BlogEditor";
 
 interface BlogPostFormData {
   title: string;
@@ -205,10 +206,9 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
                 <FormItem>
                   <FormLabel>Content</FormLabel>
                   <FormControl>
-                    <Textarea 
-                      className="min-h-[300px]" 
-                      {...field}
-                      placeholder="Write your blog post content here..."
+                    <BlogEditor 
+                      value={field.value} 
+                      onChange={field.onChange}
                     />
                   </FormControl>
                   <FormMessage />
