@@ -47,18 +47,18 @@ const ProductCardComponent = ({
       return;
     }
 
+    // Only open product page if we have an ASIN
     if (asin) {
-      window.open(
-        `https://www.amazon.com/dp/${asin}/ref=nosim?tag=${import.meta.env.VITE_AMAZON_ASSOCIATE_ID}`,
-        '_blank',
-        'noopener,noreferrer'
-      );
+      const productUrl = `https://www.amazon.com/dp/${asin}/ref=nosim?tag=${import.meta.env.VITE_AMAZON_ASSOCIATE_ID}`;
+      window.open(productUrl, '_blank', 'noopener,noreferrer');
+    } else {
+      console.warn('No ASIN available for product:', simplifiedTitle);
     }
   };
 
   return (
     <Card 
-      className="group h-full flex flex-col overflow-hidden hover:shadow-lg transition-all duration-300 border-accent/20 backdrop-blur-sm bg-white/80 hover:bg-white/90 cursor-pointer"
+      className={`group h-full flex flex-col overflow-hidden hover:shadow-lg transition-all duration-300 border-accent/20 backdrop-blur-sm bg-white/80 hover:bg-white/90 ${asin ? 'cursor-pointer' : 'cursor-not-allowed opacity-70'}`}
       role="article"
       aria-label={`Product: ${simplifiedTitle}`}
       onClick={handleCardClick}

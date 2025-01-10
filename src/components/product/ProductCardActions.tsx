@@ -16,7 +16,10 @@ export const ProductCardActions = ({ title, asin, onMoreLikeThis }: ProductCardA
         variant="outline" 
         size="default"
         className="w-full text-xs sm:text-sm opacity-70 hover:opacity-100 min-h-[2.75rem] touch-manipulation"
-        onClick={() => onMoreLikeThis?.(title)}
+        onClick={(e) => {
+          e.stopPropagation(); // Prevent card click
+          onMoreLikeThis?.(title);
+        }}
         aria-label={`Find more products similar to ${title}`}
       >
         <Wand2 className="w-3.5 h-3.5 mr-2" aria-hidden="true" />
