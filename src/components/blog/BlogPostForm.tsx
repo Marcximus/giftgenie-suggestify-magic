@@ -45,7 +45,8 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
   const onSubmit = async (data: BlogPostFormData) => {
     setIsSubmitting(true);
     try {
-      if (initialData) {
+      if (initialData?.id) {
+        // Update existing post
         const { error } = await supabase
           .from("blog_posts")
           .update({
@@ -60,7 +61,15 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
           description: "Blog post updated successfully",
         });
       } else {
-        const { error } = await supabase.from("blog_posts").insert([data]);
+        // Create new post
+        const { error } = await supabase
+          .from("blog_posts")
+          .insert([{
+            ...data,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          }]);
+
         if (error) throw error;
         toast({
           title: "Success",
@@ -68,10 +77,11 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
         });
       }
       navigate("/blog/admin");
-    } catch (error) {
+    } catch (error: any) {
+      console.error("Error saving blog post:", error);
       toast({
         title: "Error",
-        description: "Failed to save blog post",
+        description: error.message || "Failed to save blog post",
         variant: "destructive",
       });
     } finally {
