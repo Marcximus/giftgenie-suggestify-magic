@@ -1,6 +1,5 @@
 import { useState, useCallback } from 'react';
 import { DynamicGiftSelector } from './DynamicGiftSelector';
-import { debounce } from '@/utils/debounce';
 import { useToast } from '@/components/ui/use-toast';
 import { SearchTitle } from './search/SearchTitle';
 import { SearchInput } from './search/SearchInput';
@@ -14,16 +13,6 @@ export const SearchBox = ({ onSearch, isLoading }: SearchBoxProps) => {
   const [query, setQuery] = useState('');
   const [showSelector, setShowSelector] = useState(true);
   const { toast } = useToast();
-
-  const debouncedSearch = useCallback(
-    debounce((searchQuery: string) => {
-      if (searchQuery.trim()) {
-        onSearch(searchQuery);
-        setShowSelector(false);
-      }
-    }, 500),
-    [onSearch]
-  );
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -57,9 +46,6 @@ export const SearchBox = ({ onSearch, isLoading }: SearchBoxProps) => {
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const newQuery = e.target.value;
     setQuery(newQuery);
-    if (newQuery.length >= 3) {
-      debouncedSearch(newQuery);
-    }
   };
 
   return (
