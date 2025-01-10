@@ -2,6 +2,7 @@ import { lazy, Suspense } from 'react';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { useSuggestions } from '@/hooks/useSuggestions';
 import { SuggestionSkeleton } from '@/components/SuggestionSkeleton';
+import { FloatingNav } from '@/components/FloatingNav';
 
 const SearchHeader = lazy(() => import('@/components/SearchHeader').then(module => ({ default: module.SearchHeader })));
 const SuggestionsGrid = lazy(() => import('@/components/SuggestionsGrid').then(module => ({ default: module.SuggestionsGrid })));
@@ -47,6 +48,7 @@ const Index = () => {
             )}
           </section>
         </div>
+        <FloatingNav />
       </main>
     </ErrorBoundary>
   );
