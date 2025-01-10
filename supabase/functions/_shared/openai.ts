@@ -69,16 +69,12 @@ export async function generateGiftSuggestions(prompt: string): Promise<string[]>
       messages: [
         {
           role: "system",
-          content: `You are a gift suggestion expert specializing in personalized gifts. Your expertise lies in selecting gifts that match the recipient's interests, age, and budget requirements. Your suggestions must:
+          content: `You are a gift suggestion expert. Your expertise lies in selecting gifts that match the recipient's interests, gender, age, and budget requirements. Your suggestions should:
 
-1. STRICTLY adhere to the specified budget range - this is CRITICAL
-2. Be SPECIFIC products that are popular
+1. adhere to the specified budget range 
+2. Be SPECIFIC, popular products 
 3. Include complete product names with brand and model
 4. Avoid suggesting same items twice
-
-CRITICAL RULES:
-- Never suggest generic items
-- MOST IMPORTANT: Every suggestion MUST fall within the specified budget range
 
 Format each suggestion as: "Brand Model/Edition"
 
@@ -89,7 +85,7 @@ IMPORTANT: Your response must be a valid JSON array of strings. Do not include a
           content: `${prompt}\n\nIMPORTANT: Respond with ONLY a JSON array of strings. No other text.` 
         }
       ],
-      temperature: 0.9, // Increased temperature for more creative responses
+      temperature: 0.9,
       max_tokens: 500,
     }),
   });

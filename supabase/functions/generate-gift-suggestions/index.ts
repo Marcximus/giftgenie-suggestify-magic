@@ -71,40 +71,32 @@ serve(async (req) => {
       'CRITICAL: Only suggest gifts that are appropriate and appealing for female recipients. Avoid items typically marketed to men.' :
       'Suggest gender-neutral gifts that would appeal to any recipient.';
 
-    const enhancedPrompt = `As a premium gift curator, suggest 8 highly specific and personalized gift ideas that STRICTLY match these criteria:
+    const enhancedPrompt = `As a premium gift curator, suggest 8 gift ideas that match these criteria:
 
 ${ageMatch ? `Age Range: ${ageMatch[1]}${ageMatch[2] ? `-${ageMatch[2]}` : ''} years old
-- Focus on age-appropriate items
+- Consider age-appropriate items
 - Consider generational preferences and trends` : ''}
 
 Recipient Gender: ${genderContext}
 ${genderInstruction}
-- Ensure all suggestions align with ${genderContext} preferences
-- Consider gender-specific trends and interests
+- Ensure all suggestions align with ${genderContext} preferences (ex. no suggestion for female shoes if the recipients gender is male)
 
 ${interestsMatch ? `Key Interests: ${interestsMatch[1]}
-- Prioritize items directly related to ${interestsMatch[1]}
-- Include complementary items that enhance the ${interestsMatch[1]} experience
-- Consider both equipment and accessories related to ${interestsMatch[1]}` : ''}
+- Prioritize items related to ${interestsMatch[1]}
+- Consider stuff related to ${interestsMatch[1]}` : ''}
+- There could be multiple intrests, consider them all
 
 Budget Constraints: $${minBudget} - $${maxBudget}
-- Every suggestion MUST fall within this exact price range
-- Prioritize best value items within the range
-- Include a mix of price points within the range
+- Every suggestion should fall within this exact price range
 
 Additional Requirements:
-1. Each suggestion must be a specific product (brand name, model number)
-2. Focus on currently trending and highly-rated items
-3. Include a mix of:
-   - Premium versions of everyday items
-   - Unique, specialized products
-   - Popular, well-reviewed items
-   - Innovative new releases
-4. Avoid generic suggestions
-5. Ensure each item has strong relevance to the recipient's profile
+1. Each suggestion must be a specific product
+2. Focus on currently trending items
+3. Avoid generic suggestions
+4. Ensure items has relevance to the recipient's profile
 
 Format each suggestion as:
-"Brand Name Specific Product Model/Version (with key feature)"`;
+"Brand Name Specific Product Model/Version"`;
 
     console.log('Enhanced prompt:', enhancedPrompt);
 
