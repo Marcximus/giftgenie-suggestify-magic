@@ -22,36 +22,16 @@ const formatPrice = (price: string | number): string => {
 };
 
 const formatDescription = (description: string): string => {
-  // If it's already a GPT-generated description (they typically end with a period),
-  // just clean up any HTML and return it
-  if (description.trim().endsWith('.')) {
-    return description.replace(/<[^>]*>/g, '').trim();
-  }
-
-  // Otherwise, it's an Amazon description that needs formatting
-  // Remove any HTML tags that might come from Amazon
-  const cleanDescription = description.replace(/<[^>]*>/g, '');
-  
-  // Remove multiple spaces and normalize whitespace
-  const normalizedDescription = cleanDescription
+  // Clean up any HTML and normalize whitespace
+  const cleanDescription = description
+    .replace(/<[^>]*>/g, '')
     .replace(/\s+/g, ' ')
     .trim();
 
-  // Remove product title repetitions that often appear at the start
-  const withoutTitleRepetition = normalizedDescription
-    .replace(/^(.+?)[-–:]/, '')
-    .trim();
-
-  // Capitalize first letter if it's not already
-  const capitalizedDescription = withoutTitleRepetition.charAt(0).toUpperCase() + 
-    withoutTitleRepetition.slice(1);
-
   // Ensure description ends with a period
-  const finalDescription = capitalizedDescription.endsWith('.') ? 
-    capitalizedDescription : 
-    `${capitalizedDescription}.`;
-
-  return finalDescription;
+  return cleanDescription.endsWith('.') ? 
+    cleanDescription : 
+    `${cleanDescription}.`;
 };
 
 export const ProductCardContent = ({ 
