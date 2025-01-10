@@ -4,6 +4,8 @@ import Link from '@tiptap/extension-link';
 import TextStyle from '@tiptap/extension-text-style';
 import { Color } from '@tiptap/extension-color';
 import ListItem from '@tiptap/extension-list-item';
+import TextAlign from '@tiptap/extension-text-align';
+import Image from '@tiptap/extension-image';
 import { Button } from "@/components/ui/button";
 import {
   Bold,
@@ -46,6 +48,10 @@ export const BlogEditor = ({ value, onChange }: BlogEditorProps) => {
       TextStyle,
       Color,
       ListItem,
+      TextAlign.configure({
+        types: ['heading', 'paragraph'],
+      }),
+      Image,
     ],
     content: value,
     onUpdate: ({ editor }) => {
@@ -72,7 +78,7 @@ export const BlogEditor = ({ value, onChange }: BlogEditorProps) => {
   const handleImageUpload = () => {
     const url = window.prompt('Image URL');
     if (url) {
-      editor.chain().focus().setImage({ src: url }).run();
+      editor.chain().focus().insertContent(`<img src="${url}" />`).run();
     }
   };
 
