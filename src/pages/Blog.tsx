@@ -4,6 +4,7 @@ import { Tables } from "@/integrations/supabase/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Link } from "react-router-dom";
 import { Helmet } from "react-helmet";
+import { Calendar, Clock, User } from "lucide-react";
 
 const Blog = () => {
   const { data: posts, isLoading } = useQuery({
@@ -27,7 +28,7 @@ const Blog = () => {
           <meta name="description" content="Discover gift-giving tips, ideas, and inspiration on our blog. Learn about the latest trends and get expert advice on finding the perfect gift." />
         </Helmet>
         <div className="container mx-auto px-4 py-8">
-          <h1 className="text-3xl font-bold mb-8">Blog</h1>
+          <h1 className="text-3xl font-bold mb-8 text-center animate-fade-in">Blog</h1>
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {[...Array(6)].map((_, i) => (
               <Card key={i} className="animate-pulse">
@@ -58,28 +59,43 @@ const Blog = () => {
         )}
       </Helmet>
       <div className="container mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold mb-8">Blog</h1>
+        <h1 className="text-3xl md:text-4xl font-bold mb-8 text-center bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/60 animate-fade-in">
+          Latest Articles
+        </h1>
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {posts?.map((post) => (
             <Link to={`/blog/${post.slug}`} key={post.id}>
-              <article>
-                <Card className="h-full hover:shadow-lg transition-shadow">
+              <article className="group">
+                <Card className="h-full transform transition-all duration-300 hover:scale-[1.02] hover:shadow-xl">
                   {post.image_url && (
                     <div className="aspect-video relative overflow-hidden rounded-t-lg">
                       <img 
                         src={post.image_url} 
                         alt={post.title}
-                        className="object-cover w-full h-full"
+                        className="object-cover w-full h-full transform transition-transform duration-300 group-hover:scale-105"
                       />
                     </div>
                   )}
                   <CardHeader>
-                    <CardTitle>{post.title}</CardTitle>
+                    <CardTitle className="line-clamp-2 group-hover:text-primary transition-colors">
+                      {post.title}
+                    </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-muted-foreground">{post.excerpt}</p>
-                    <div className="mt-4 text-sm text-muted-foreground">
-                      {new Date(post.published_at || "").toLocaleDateString()}
+                    <p className="text-muted-foreground line-clamp-3 mb-4">
+                      {post.excerpt}
+                    </p>
+                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                      <div className="flex items-center gap-1">
+                        <User className="w-4 h-4" />
+                        <span>{post.author}</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Calendar className="w-4 h-4" />
+                        <span>
+                          {new Date(post.published_at || "").toLocaleDateString()}
+                        </span>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>

@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, Calendar, User, Clock } from "lucide-react";
 import { Helmet } from "react-helmet";
 
 const BlogPost = () => {
@@ -30,12 +30,10 @@ const BlogPost = () => {
         <Helmet>
           <title>Loading... - Get The Gift Blog</title>
         </Helmet>
-        <div className="container mx-auto px-4 py-8 max-w-4xl">
-          <div className="animate-pulse">
-            <div className="h-8 bg-gray-200 rounded w-3/4 mb-4"></div>
-            <div className="h-4 bg-gray-200 rounded w-full mb-2"></div>
-            <div className="h-4 bg-gray-200 rounded w-2/3"></div>
-          </div>
+        <div className="container mx-auto px-4 py-8 max-w-4xl animate-pulse">
+          <div className="h-8 bg-gray-200 rounded w-3/4 mb-4"></div>
+          <div className="h-4 bg-gray-200 rounded w-full mb-2"></div>
+          <div className="h-4 bg-gray-200 rounded w-2/3"></div>
         </div>
       </>
     );
@@ -50,7 +48,7 @@ const BlogPost = () => {
         </Helmet>
         <div className="container mx-auto px-4 py-8 max-w-4xl">
           <h1 className="text-2xl font-bold mb-4">Post not found</h1>
-          <Button onClick={() => navigate("/blog")}>
+          <Button onClick={() => navigate("/blog")} variant="default">
             <ChevronLeft className="mr-2 h-4 w-4" />
             Back to Blog
           </Button>
@@ -72,32 +70,51 @@ const BlogPost = () => {
         <meta name="author" content={post.author} />
         <meta property="article:published_time" content={post.published_at || ""} />
       </Helmet>
-      <article className="container mx-auto px-4 py-8 max-w-4xl">
-        <Button onClick={() => navigate("/blog")} variant="ghost" className="mb-8">
-          <ChevronLeft className="mr-2 h-4 w-4" />
-          Back to Blog
-        </Button>
-        
-        {post.image_url && (
-          <div className="aspect-video relative overflow-hidden rounded-lg mb-8">
-            <img 
-              src={post.image_url} 
-              alt={post.title}
-              className="object-cover w-full h-full"
-            />
+      <article className="min-h-screen bg-gradient-to-b from-background to-muted/20">
+        <div className="container mx-auto px-4 py-8 max-w-4xl">
+          <Button 
+            onClick={() => navigate("/blog")} 
+            variant="ghost" 
+            className="mb-8 hover:bg-primary/10"
+          >
+            <ChevronLeft className="mr-2 h-4 w-4" />
+            Back to Blog
+          </Button>
+          
+          {post.image_url && (
+            <div className="aspect-[21/9] relative overflow-hidden rounded-lg mb-8 shadow-xl animate-fade-in">
+              <img 
+                src={post.image_url} 
+                alt={post.title}
+                className="object-cover w-full h-full"
+              />
+            </div>
+          )}
+          
+          <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-6 animate-fade-in">
+            {post.title}
+          </h1>
+          
+          <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground mb-8 animate-fade-in">
+            <div className="flex items-center gap-1">
+              <User className="w-4 h-4" />
+              <span>{post.author}</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <Calendar className="w-4 h-4" />
+              <span>{new Date(post.published_at || "").toLocaleDateString()}</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <Clock className="w-4 h-4" />
+              <span>{new Date(post.published_at || "").toLocaleTimeString()}</span>
+            </div>
           </div>
-        )}
-        
-        <h1 className="text-4xl font-bold mb-4">{post.title}</h1>
-        
-        <div className="flex items-center gap-4 text-sm text-muted-foreground mb-8">
-          <span>{post.author}</span>
-          <span>•</span>
-          <span>{new Date(post.published_at || "").toLocaleDateString()}</span>
-        </div>
-        
-        <div className="prose prose-lg max-w-none">
-          {post.content}
+          
+          <div className="prose prose-lg max-w-none animate-fade-in">
+            <div className="bg-card rounded-lg p-6 shadow-sm">
+              {post.content}
+            </div>
+          </div>
         </div>
       </article>
     </>
