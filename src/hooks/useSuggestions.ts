@@ -1,41 +1,40 @@
 import { useState } from 'react';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import { useOpenAISuggestions } from './useOpenAISuggestions';
 import { useAmazonProductProcessing } from './useAmazonProductProcessing';
 import { GiftSuggestion } from '@/types/suggestions';
+import { debounce } from '@/utils/debounce';
 
 export const useSuggestions = () => {
-  const [isLoading, setIsLoading] = useState(false);
-  const [suggestions, setSuggestions] = useState<GiftSuggestion[]>([]);
   const [lastQuery, setLastQuery] = useState('');
-  
   const { generateSuggestions } = useOpenAISuggestions();
   const { processSuggestions } = useAmazonProductProcessing();
 
-  const generateGiftSuggestions = async (query: string, append: boolean = false) => {
-    if (!query.trim()) return;
-    
-    setIsLoading(true);
-
-    try {
+  // Use React Query for caching suggestions
+  const { data: suggestions = [], isLoading, mutate: fetchSuggestions } = useMutation({
+    mutationFn: async (query: string) => {
       const newSuggestions = await generateSuggestions(query);
-      
       if (newSuggestions) {
-        const processedSuggestions = await processSuggestions(newSuggestions);
-        setSuggestions(prev => append ? [...prev, ...processedSuggestions] : processedSuggestions);
+        return processSuggestions(newSuggestions);
       }
-    } finally {
-      setIsLoading(false);
+      return [];
     }
-  };
+  });
+
+  // Debounce the search to prevent too many API calls
+  const debouncedSearch = debounce(async (query: string) => {
+    setLastQuery(query);
+    await fetchSuggestions(query);
+  }, 500, { leading: true, trailing: true });
 
   const handleSearch = async (query: string) => {
     setLastQuery(query);
-    await generateGiftSuggestions(query, false);
+    await debouncedSearch(query);
   };
 
   const handleGenerateMore = async () => {
     if (lastQuery) {
-      await generateGiftSuggestions(lastQuery, true);
+      await fetchSuggestions(lastQuery);
     }
   };
 
@@ -76,12 +75,10 @@ export const useSuggestions = () => {
     const contextualPrompt = `Find me 8 gift suggestions similar to "${cleanTitle}" ${ageContext} ${budgetContext} ${interestContext}. ${genderInstruction}`;
     
     setLastQuery(contextualPrompt);
-    await generateGiftSuggestions(contextualPrompt);
+    await fetchSuggestions(contextualPrompt);
   };
 
   const handleStartOver = () => {
-    setSuggestions([]);
-    setLastQuery('');
     window.location.reload();
   };
 
