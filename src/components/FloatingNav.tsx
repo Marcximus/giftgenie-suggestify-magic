@@ -11,26 +11,38 @@ import { Link } from "react-router-dom";
 
 export const FloatingNav = () => {
   return (
-    <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 bg-white/80 backdrop-blur-sm rounded-full shadow-lg border border-border/50 px-4 py-2">
+    <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 bg-white shadow-xl border border-border/50 px-6 py-3 rounded-full">
       <NavigationMenu>
-        <NavigationMenuList>
+        <NavigationMenuList className="space-x-2">
           <NavigationMenuItem>
-            <Link to="/" className={navigationMenuTriggerStyle()}>
+            <Link 
+              to="/" 
+              className={navigationMenuTriggerStyle() + " bg-white hover:bg-accent"}
+            >
               Home
             </Link>
           </NavigationMenuItem>
           <NavigationMenuItem>
-            <Link to="/blog" className={navigationMenuTriggerStyle()}>
+            <Link 
+              to="/blog" 
+              className={navigationMenuTriggerStyle() + " bg-white hover:bg-accent"}
+            >
               Gift Ideas
             </Link>
           </NavigationMenuItem>
           <NavigationMenuItem>
-            <Link to="/about" className={navigationMenuTriggerStyle()}>
+            <Link 
+              to="/about" 
+              className={navigationMenuTriggerStyle() + " bg-white hover:bg-accent"}
+            >
               About
             </Link>
           </NavigationMenuItem>
           <NavigationMenuItem>
-            <Link to="/auth" className={navigationMenuTriggerStyle()}>
+            <Link 
+              to="/auth" 
+              className={navigationMenuTriggerStyle() + " bg-white hover:bg-accent"}
+            >
               Login
             </Link>
           </NavigationMenuItem>
