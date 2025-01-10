@@ -55,9 +55,6 @@ export const useSuggestions = () => {
     if (!query.trim()) return;
     
     setIsLoading(true);
-    if (!append) {
-      setSuggestions([]);
-    }
 
     try {
       console.log('Generating suggestions for query:', query);
@@ -98,12 +95,12 @@ export const useSuggestions = () => {
 
   const handleSearch = async (query: string) => {
     setLastQuery(query);
-    await generateSuggestions(query);
+    await generateSuggestions(query, false); // false means replace existing suggestions
   };
 
   const handleGenerateMore = async () => {
     if (lastQuery) {
-      await generateSuggestions(lastQuery, true);
+      await generateSuggestions(lastQuery, true); // true means append new suggestions
     }
   };
 
