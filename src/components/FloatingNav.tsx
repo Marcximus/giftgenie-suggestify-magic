@@ -33,7 +33,8 @@ export const FloatingNav = () => {
                 "focus:outline-none focus:ring-2 focus:ring-primary/20",
                 location.pathname === item.path 
                   ? "text-primary bg-white/20" 
-                  : "text-foreground/70"
+                  : "text-foreground/70",
+                item.name === "Ideas" && "animate-pulse-text"
               )}
             >
               {item.name}
