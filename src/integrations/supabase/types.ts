@@ -9,6 +9,44 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      blog_post_images: {
+        Row: {
+          alt_text: string | null
+          blog_post_id: string | null
+          created_at: string | null
+          id: string
+          image_url: string
+          is_featured: boolean | null
+          updated_at: string | null
+        }
+        Insert: {
+          alt_text?: string | null
+          blog_post_id?: string | null
+          created_at?: string | null
+          id?: string
+          image_url: string
+          is_featured?: boolean | null
+          updated_at?: string | null
+        }
+        Update: {
+          alt_text?: string | null
+          blog_post_id?: string | null
+          created_at?: string | null
+          id?: string
+          image_url?: string
+          is_featured?: boolean | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "blog_post_images_blog_post_id_fkey"
+            columns: ["blog_post_id"]
+            isOneToOne: false
+            referencedRelation: "blog_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       blog_posts: {
         Row: {
           author: string
@@ -17,6 +55,10 @@ export type Database = {
           excerpt: string | null
           id: string
           image_url: string | null
+          images: Json | null
+          meta_description: string | null
+          meta_keywords: string | null
+          meta_title: string | null
           published_at: string | null
           slug: string
           title: string
@@ -29,6 +71,10 @@ export type Database = {
           excerpt?: string | null
           id?: string
           image_url?: string | null
+          images?: Json | null
+          meta_description?: string | null
+          meta_keywords?: string | null
+          meta_title?: string | null
           published_at?: string | null
           slug: string
           title: string
@@ -41,6 +87,10 @@ export type Database = {
           excerpt?: string | null
           id?: string
           image_url?: string | null
+          images?: Json | null
+          meta_description?: string | null
+          meta_keywords?: string | null
+          meta_title?: string | null
           published_at?: string | null
           slug?: string
           title?: string
