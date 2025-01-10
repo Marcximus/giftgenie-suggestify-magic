@@ -17,7 +17,20 @@ const BlogEdit = () => {
         .single();
       
       if (error) throw error;
-      return data as Tables<"blog_posts">;
+
+      // Convert the database response to match BlogPostFormData structure
+      const formattedPost = {
+        ...data,
+        images: Array.isArray(data.images) ? data.images : [],
+        excerpt: data.excerpt || null,
+        image_url: data.image_url || null,
+        published_at: data.published_at || null,
+        meta_title: data.meta_title || null,
+        meta_description: data.meta_description || null,
+        meta_keywords: data.meta_keywords || null,
+      };
+      
+      return formattedPost;
     },
   });
 
