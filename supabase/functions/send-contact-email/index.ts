@@ -42,7 +42,7 @@ const handler = async (req: Request): Promise<Response> => {
       <p>${message}</p>
     `;
 
-    // Using Resend's default testing email address
+    // In testing mode, we can only send to the verified email
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: {
@@ -51,7 +51,7 @@ const handler = async (req: Request): Promise<Response> => {
       },
       body: JSON.stringify({
         from: "onboarding@resend.dev",
-        to: ["ms@corporateconsulting.dk"],
+        to: ["marcusasvendsen@gmail.com"], // Temporary: sending to verified email
         subject: `New Contact Form Message from ${name}`,
         html: emailContent,
         reply_to: email
