@@ -25,6 +25,8 @@ import { useToast } from "@/components/ui/use-toast";
 import { BlogImageUpload } from "./BlogImageUpload";
 import { BlogPostPreview } from "./BlogPostPreview";
 import { BlogEditor } from "./BlogEditor";
+import { useAIContent } from "@/hooks/useAIContent";
+import { Wand2 } from "lucide-react";
 
 interface BlogPostFormData {
   title: string;
@@ -49,6 +51,7 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
   const [activeTab, setActiveTab] = useState("edit");
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { generateContent } = useAIContent();
 
   const form = useForm<BlogPostFormData>({
     defaultValues: initialData || {
@@ -108,6 +111,34 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/(^-|-$)+/g, "");
+  };
+
+  const handleAIGenerate = async (field: string) => {
+    const currentTitle = form.getValues('title');
+    const currentContent = form.getValues('content');
+    
+    if (!currentTitle && !currentContent) {
+      toast({
+        title: "Error",
+        description: "Please provide some content or a title first.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const generatedContent = await generateContent(
+      field as any,
+      currentContent,
+      currentTitle
+    );
+
+    if (generatedContent) {
+      form.setValue(field, generatedContent, { shouldDirty: true });
+      toast({
+        title: "Success",
+        description: "Content generated successfully!",
+      });
+    }
   };
 
   return (
@@ -183,13 +214,20 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
               name="excerpt"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Excerpt</FormLabel>
+                  <FormLabel className="flex items-center justify-between">
+                    Excerpt
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleAIGenerate('excerpt')}
+                    >
+                      <Wand2 className="w-4 h-4 mr-2" />
+                      Generate Excerpt
+                    </Button>
+                  </FormLabel>
                   <FormControl>
-                    <Textarea 
-                      {...field} 
-                      value={field.value || ''}
-                      placeholder="Write a brief summary of your post..."
-                    />
+                    <Textarea {...field} value={field.value || ''} />
                   </FormControl>
                   <FormDescription>
                     A short summary that appears in blog listings
@@ -278,20 +316,43 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
             <Separator />
 
             <div className="space-y-4">
-              <h3 className="text-lg font-medium">SEO Settings</h3>
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-medium">SEO Settings</h3>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={async () => {
+                    await handleAIGenerate('seo-title');
+                    await handleAIGenerate('seo-description');
+                    await handleAIGenerate('seo-keywords');
+                  }}
+                >
+                  <Wand2 className="w-4 h-4 mr-2" />
+                  Generate All SEO
+                </Button>
+              </div>
+              
               <div className="grid gap-4">
                 <FormField
                   control={form.control}
                   name="meta_title"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Meta Title</FormLabel>
+                      <FormLabel className="flex items-center justify-between">
+                        Meta Title
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleAIGenerate('seo-title')}
+                        >
+                          <Wand2 className="w-4 h-4 mr-2" />
+                          Generate
+                        </Button>
+                      </FormLabel>
                       <FormControl>
-                        <Input 
-                          {...field} 
-                          value={field.value || ''}
-                          placeholder="SEO optimized title"
-                        />
+                        <Input {...field} value={field.value || ''} />
                       </FormControl>
                       <FormDescription>
                         Appears in search engine results (50-60 characters recommended)
@@ -306,13 +367,20 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
                   name="meta_description"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Meta Description</FormLabel>
+                      <FormLabel className="flex items-center justify-between">
+                        Meta Description
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleAIGenerate('seo-description')}
+                        >
+                          <Wand2 className="w-4 h-4 mr-2" />
+                          Generate
+                        </Button>
+                      </FormLabel>
                       <FormControl>
-                        <Textarea 
-                          {...field} 
-                          value={field.value || ''}
-                          placeholder="Brief description for search engines"
-                        />
+                        <Textarea {...field} value={field.value || ''} />
                       </FormControl>
                       <FormDescription>
                         Appears in search engine results (150-160 characters recommended)
@@ -327,13 +395,20 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
                   name="meta_keywords"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Meta Keywords</FormLabel>
+                      <FormLabel className="flex items-center justify-between">
+                        Meta Keywords
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleAIGenerate('seo-keywords')}
+                        >
+                          <Wand2 className="w-4 h-4 mr-2" />
+                          Generate
+                        </Button>
+                      </FormLabel>
                       <FormControl>
-                        <Input 
-                          {...field} 
-                          value={field.value || ''}
-                          placeholder="keyword1, keyword2, keyword3"
-                        />
+                        <Input {...field} value={field.value || ''} />
                       </FormControl>
                       <FormDescription>
                         Comma-separated keywords for SEO
