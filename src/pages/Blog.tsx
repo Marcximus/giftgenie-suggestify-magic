@@ -1,10 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Link } from "react-router-dom";
 import { Helmet } from "react-helmet";
-import { Calendar, Clock, User } from "lucide-react";
 
 const Blog = () => {
   const { data: posts, isLoading } = useQuery({
@@ -24,11 +23,18 @@ const Blog = () => {
     return (
       <>
         <Helmet>
-          <title>Blog - Get The Gift</title>
+          <title>Gift Ideas - Get The Gift</title>
           <meta name="description" content="Discover gift-giving tips, ideas, and inspiration on our blog. Learn about the latest trends and get expert advice on finding the perfect gift." />
         </Helmet>
         <div className="container mx-auto px-4 py-6">
-          <h1 className="text-2xl font-bold mb-6 text-center animate-fade-in">Blog</h1>
+          <div className="text-center mb-8">
+            <h1 className="text-2xl md:text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/60 mb-4">
+              Gift Ideas
+            </h1>
+            <p className="text-sm text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+              Our suggestions feel tailor-made because they practically are. We use AI and internet magic to find the absolute best gift ideas and popular presents. Thanks to us, you can spend less time gift hunting and more time celebrating (or binge-watching your favorite show—we won't judge).
+            </p>
+          </div>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {[...Array(6)].map((_, i) => (
               <Card key={i} className="animate-pulse h-[60px] flex overflow-hidden">
@@ -47,18 +53,23 @@ const Blog = () => {
   return (
     <>
       <Helmet>
-        <title>Blog - Get The Gift</title>
+        <title>Gift Ideas - Get The Gift</title>
         <meta name="description" content="Discover gift-giving tips, ideas, and inspiration on our blog. Learn about the latest trends and get expert advice on finding the perfect gift." />
-        <meta property="og:title" content="Blog - Get The Gift" />
+        <meta property="og:title" content="Gift Ideas - Get The Gift" />
         <meta property="og:description" content="Discover gift-giving tips, ideas, and inspiration on our blog. Learn about the latest trends and get expert advice on finding the perfect gift." />
         {posts?.[0]?.image_url && (
           <meta property="og:image" content={posts[0].image_url} />
         )}
       </Helmet>
       <div className="container mx-auto px-4 py-6">
-        <h1 className="text-2xl md:text-3xl font-bold mb-6 text-center bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/60">
-          Latest Articles
-        </h1>
+        <div className="text-center mb-8">
+          <h1 className="text-2xl md:text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/60 mb-4">
+            Gift Ideas
+          </h1>
+          <p className="text-sm text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+            Our suggestions feel tailor-made because they practically are. We use AI and internet magic to find the absolute best gift ideas and popular presents. Thanks to us, you can spend less time gift hunting and more time celebrating (or binge-watching your favorite show—we won't judge).
+          </p>
+        </div>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {posts?.map((post) => (
             <Link to={`/blog/${post.slug}`} key={post.id}>
@@ -74,7 +85,7 @@ const Blog = () => {
                     </div>
                   )}
                   <div className="flex-1 p-3 flex items-center">
-                    <h3 className="text-base font-semibold truncate group-hover:text-primary transition-colors">
+                    <h3 className="text-sm font-medium truncate group-hover:text-primary transition-colors">
                       {post.title}
                     </h3>
                   </div>
