@@ -1,7 +1,7 @@
 import { AmazonProduct } from './types';
 
 const MAX_CACHE_SIZE = 500; // Increased from 100
-const CACHE_DURATION = 24 * 60 * 60 * 1000; // Increased to 24 hours
+const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours
 const RETRY_ATTEMPTS = 2;
 const RETRY_DELAY = 500;
 
