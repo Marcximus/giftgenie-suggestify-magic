@@ -40,7 +40,6 @@ const About = () => {
         description: "Your message has been sent successfully!",
       });
 
-      // Clear form
       setName("");
       setEmail("");
       setMessage("");
@@ -66,21 +65,21 @@ const About = () => {
           </Link>
           <span className="text-base text-gray-600 block">🎁 The Only Gift-Giving Sidekick You'll Ever Need!</span>
         </div>
-        
+
         <div className="space-y-8">
           <p className="text-sm sm:text-base text-justify leading-relaxed text-[#403E43]">
-            🤔 Are you tired of giving the same ol' scented candle or novelty mug every year? We thought so. That's why Get The Gift was created: to help you discover the perfect present for everyone on your list without the stress, guesswork, or frantic 3 A.M. Google searches for "best birthday gift ideas."
+            🤔 Are you tired of giving the same ol' scented candle or novelty mug every year? We thought so. That's why Get The Gift was created: to help you discover the perfect present for everyone on your list without the stress, guesswork, or frantic 3 A.M. Google searches for "best birthday gift ideas." We'll be the wise (and sometimes witty) friend at your side, guiding you through the vast universe of gift-giving, one brilliant recommendation at a time.
           </p>
-          
+
           <div className="bg-white rounded-lg p-6 shadow-sm">
             <h2 className="text-xl font-bold mb-4 text-[#9b87f5] flex items-center gap-2">
               🎯 Our Mission: No More Meh Presents
             </h2>
             <p className="text-sm text-justify leading-relaxed text-[#403E43]">
-              We're on a mission to banish boring gifts from planet Earth. With our smart gift selection tool, you can wow your recipient with a unique, thoughtful item that actually fits their personality.
+              We're on a mission to banish boring gifts from planet Earth. With our smart gift selection tool, you can wow your recipient with a unique, thoughtful item that actually fits their personality. Whether you're shopping for birthdays, holidays, anniversaries, or the "just because" moments, we're here to ensure every gift is worthy of a "Wow, how did you know?!" reaction.
             </p>
           </div>
-          
+
           <div className="bg-white rounded-lg p-6 shadow-sm">
             <h2 className="text-xl font-bold mb-4 text-[#9b87f5]">✨ How We Work Our Gift-Giving Magic</h2>
             
@@ -88,32 +87,32 @@ const About = () => {
               <div>
                 <h3 className="text-lg font-semibold text-[#7E69AB] mb-2">🤖 AI-Powered Gift Suggestions</h3>
                 <p className="text-sm text-justify leading-relaxed text-[#403E43]">
-                  Our advanced algorithms evaluate your recipient's likes, dislikes, and that time they couldn't stop talking about alpaca socks (hey, it happens).
+                  Our advanced algorithms evaluate your recipient's likes, dislikes, and that time they couldn't stop talking about alpaca socks (hey, it happens). Then, we conjure up a personalized list of options that'll make their eyes sparkle brighter than tinsel.
                 </p>
               </div>
               
               <div>
                 <h3 className="text-lg font-semibold text-[#7E69AB] mb-2">🔍 Handpicked from Top Retailers</h3>
                 <p className="text-sm text-justify leading-relaxed text-[#403E43]">
-                  We scour all corners of the web—like ninjas in slippers—to bring you the best deals and delivery choices.
+                  We scour all corners of the web—like ninjas in slippers—to bring you the best deals and delivery choices. Thanks to our partnerships with major retailers, you can snag the perfect gift while enjoying a wallet-friendly price and reliable shipping.
                 </p>
               </div>
               
               <div>
                 <h3 className="text-lg font-semibold text-[#7E69AB] mb-2">📚 Expertly Curated Gift Guides</h3>
                 <p className="text-sm text-justify leading-relaxed text-[#403E43]">
-                  From "Unicorn-Loving Teens" to "World-Traveler Grandmas," we've got themed gift guides to inspire your creative side.
+                  From "Unicorn-Loving Teens" to "World-Traveler Grandmas," we've got themed gift guides to inspire your creative side. We keep track of the latest trends, so you don't have to.
                 </p>
               </div>
             </div>
           </div>
-          
+
           <div className="bg-white rounded-lg p-6 shadow-sm">
             <h2 className="text-xl font-bold mb-4 text-[#9b87f5]">💫 Why Get The Gift?</h2>
             <ul className="list-none space-y-3 pl-0">
               <li className="text-sm text-justify leading-relaxed text-[#403E43] flex items-start gap-2">
                 <span className="text-[#9b87f5] mt-1">✓</span>
-                <span>Stress-Free Experience: No more aimless online browsing.</span>
+                <span>Stress-Free Experience: No more aimless online browsing or settling for random last-minute purchases.</span>
               </li>
               <li className="text-sm text-justify leading-relaxed text-[#403E43] flex items-start gap-2">
                 <span className="text-[#9b87f5] mt-1">✓</span>
@@ -121,58 +120,76 @@ const About = () => {
               </li>
               <li className="text-sm text-justify leading-relaxed text-[#403E43] flex items-start gap-2">
                 <span className="text-[#9b87f5] mt-1">✓</span>
-                <span>Time-Saving: Spend less time hunting and more time celebrating.</span>
+                <span>Time-Saving: Spend less time hunting and more time celebrating (or binge-watching your favorite show—we won't judge).</span>
+              </li>
+              <li className="text-sm text-justify leading-relaxed text-[#403E43] flex items-start gap-2">
+                <span className="text-[#9b87f5] mt-1">✓</span>
+                <span>Ridiculously Fun: Because searching for awesome gifts should be an adventure, not a chore.</span>
               </li>
             </ul>
           </div>
 
-          <form onSubmit={handleSubmit} className="bg-gray-50 p-4 sm:p-6 rounded-lg shadow-sm mb-8 sm:mb-12 space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="name" className="text-sm sm:text-base">Name</Label>
-              <Input
-                id="name"
-                placeholder="Your name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                required
-                className="h-10 sm:h-12 text-base"
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="email" className="text-sm sm:text-base">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="Your email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                className="h-10 sm:h-12 text-base"
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="message" className="text-sm sm:text-base">Message</Label>
-              <Textarea
-                id="message"
-                placeholder="Type your message here..."
-                className="min-h-[100px] sm:min-h-[120px] text-base"
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                required
-              />
-            </div>
-            
-            <Button 
-              type="submit" 
-              className="w-full h-10 sm:h-12 text-base"
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? "Sending..." : "Send Message"}
-            </Button>
-          </form>
-          
+          <div className="bg-white rounded-lg p-6 shadow-sm">
+            <h2 className="text-xl font-bold mb-4 text-[#9b87f5]">👋 Meet the Gift Gurus</h2>
+            <p className="text-sm text-justify leading-relaxed text-[#403E43]">
+              We're a small (yet mighty) team of innovators, data nerds, and hopeless romantics who believe in the power of a perfect gift. Whether you're celebrating your dog's "gotcha day" or your best friend's milestone birthday, we're obsessed with finding a present that hits all the right notes.
+            </p>
+          </div>
+
+          <div className="bg-white rounded-lg p-6 shadow-sm">
+            <h2 className="text-xl font-bold mb-4 text-[#9b87f5]">✉️ Have Questions or Need a Gift Rescue?</h2>
+            <p className="text-sm text-justify leading-relaxed text-[#403E43] mb-6">
+              We're always here to help. Drop us a message below, and we'll do everything but wrap your presents (though we're working on that, too).
+            </p>
+
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="name" className="text-sm sm:text-base">Name</Label>
+                <Input
+                  id="name"
+                  placeholder="Your name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  required
+                  className="h-10 sm:h-12 text-base"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="email" className="text-sm sm:text-base">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="Your email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  className="h-10 sm:h-12 text-base"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="message" className="text-sm sm:text-base">Message</Label>
+                <Textarea
+                  id="message"
+                  placeholder="Type your message here..."
+                  className="min-h-[100px] sm:min-h-[120px] text-base"
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  required
+                />
+              </div>
+              
+              <Button 
+                type="submit" 
+                className="w-full h-10 sm:h-12 text-base"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? "Sending..." : "Send Message"}
+              </Button>
+            </form>
+          </div>
+
           <h2 className="text-xl sm:text-2xl font-bold mt-8 sm:mt-12 mb-3 sm:mb-4 text-primary">Get The Gift: Your Ticket to Gift-Giving Greatness</h2>
           <p className="text-base sm:text-lg mb-8">
             No more fruitcakes, mismatched socks, or re-gifted fiascos. At Get The Gift, we aim to transform every celebration into a story worth telling—complete with gasps of delight, big smiles, and maybe even happy tears. After all, the perfect gift is the key to anyone's heart (or at least their fridge magnets).
