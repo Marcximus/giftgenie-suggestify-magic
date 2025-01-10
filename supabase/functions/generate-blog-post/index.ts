@@ -40,7 +40,7 @@ serve(async (req) => {
     const topicMatch = title.match(/top\s+(\d+)/i);
     const numProducts = topicMatch ? parseInt(topicMatch[1]) : 5;
 
-    // Extract the main subject (e.g., "boyfriend gifts" from "Top 5 Boyfriend Gifts Under $50")
+    // Extract the main subject
     const subject = title
       .toLowerCase()
       .replace(/top\s+\d+\s+/i, '')
@@ -58,36 +58,52 @@ serve(async (req) => {
         messages: [
           {
             role: "system",
-            content: `You are a professional gift blog writer. Create engaging, well-structured blog posts about gifts and shopping recommendations. Follow these guidelines:
-            1. Use HTML formatting for structure (h2, h3, p tags, etc.)
-            2. Include emojis where appropriate 🎁
-            3. Break content into clear sections
-            4. Include specific product recommendations that match the title's criteria
-            5. Use bullet points and numbered lists where appropriate
-            6. Keep the tone friendly and informative
-            7. Include a conclusion section
-            8. Format prices as USD
-            9. Make sure all HTML is properly formatted and nested
-            10. Add relevant emojis to section headings
-            11. STRICTLY adhere to any price limits or criteria mentioned in the title
-            12. Include a call-to-action at the end`
+            content: `You are a professional gift blog writer specializing in creating engaging, detailed content. Follow these guidelines:
+
+1. Write in a fun, conversational tone with personality
+2. Use HTML formatting (h2, h3, p tags)
+3. Include relevant emojis in ALL section headings
+4. Create detailed sections:
+   - Engaging introduction (2-3 paragraphs)
+   - Why these gifts are perfect (2-3 paragraphs)
+   - Each product recommendation (3-4 paragraphs per item)
+   - Tips for choosing the right gift
+   - Conclusion with call-to-action
+5. For each product recommendation:
+   - Explain why it's a great gift
+   - Describe key features and benefits
+   - Share potential scenarios where it would be perfect
+   - Include personal anecdotes or examples
+6. Use bullet points and numbered lists where appropriate
+7. Format prices as USD
+8. Ensure proper HTML formatting
+9. STRICTLY follow price limits mentioned in title
+10. Make content fun and engaging with:
+    - Personal stories
+    - Humor and wit
+    - Practical examples
+    - Relatable scenarios
+11. Minimum length: 1500 words
+12. Include placeholder tags for product images: [PRODUCT_IMAGE_PLACEHOLDER]`
           },
           {
             role: "user",
             content: `Write a detailed blog post with the title: "${title}". 
-            Important requirements:
-            1. The post must STRICTLY follow the criteria in the title (price range, number of items, etc.)
+            Requirements:
+            1. STRICTLY follow the criteria in the title (price range, number of items)
             2. Each product recommendation should be specific and detailed
-            3. Include placeholders for product images and affiliate links that I will replace
-            4. Format the content with proper HTML tags
-            5. Include emojis in section headings
-            6. Make sure all recommendations stay under $${maxPrice}
+            3. Include [PRODUCT_IMAGE_PLACEHOLDER] tags for product images
+            4. Format with proper HTML tags
+            5. Include emojis in ALL section headings
+            6. Keep all recommendations under $${maxPrice}
             7. Include exactly ${numProducts} product recommendations
-            8. Focus specifically on ${subject}`
+            8. Focus specifically on ${subject}
+            9. Make it fun and engaging
+            10. Minimum 1500 words`
           }
         ],
         temperature: 0.7,
-        max_tokens: 2000,
+        max_tokens: 4000,
       }),
     })
 
@@ -119,17 +135,58 @@ serve(async (req) => {
         
         // Replace the product mention with a linked version and image
         content = content.replace(
+          '[PRODUCT_IMAGE_PLACEHOLDER]',
+          imageHtml
+        );
+        
+        // Add affiliate link to product title
+        content = content.replace(
           new RegExp(`<h[23]>${productName}</h[23]>`),
           `<h3>${product.title} 
            <a href="${affiliateLink}" target="_blank" rel="noopener noreferrer" 
               class="text-primary hover:text-primary/80">
              View on Amazon
            </a>
-          </h3>
-          ${imageHtml}`
+          </h3>`
         );
       }
     }
+
+    // If any [PRODUCT_IMAGE_PLACEHOLDER] tags remain, try to get images from Google
+    if (content.includes('[PRODUCT_IMAGE_PLACEHOLDER]')) {
+      const GOOGLE_API_KEY = Deno.env.get('GOOGLE_SEARCH_API_KEY');
+      const SEARCH_ENGINE_ID = Deno.env.get('GOOGLE_SEARCH_ENGINE_ID');
+
+      if (GOOGLE_API_KEY && SEARCH_ENGINE_ID) {
+        const remainingPlaceholders = content.match(/\[PRODUCT_IMAGE_PLACEHOLDER\]/g) || [];
+        for (const placeholder of remainingPlaceholders) {
+          try {
+            const searchTerm = `${subject} gift product`;
+            const response = await fetch(
+              `https://www.googleapis.com/customsearch/v1?key=${GOOGLE_API_KEY}&cx=${SEARCH_ENGINE_ID}&searchType=image&q=${searchTerm}&num=1`
+            );
+            
+            if (response.ok) {
+              const data = await response.json();
+              const imageUrl = data.items?.[0]?.link;
+              
+              if (imageUrl) {
+                const imageHtml = `<div class="my-4">
+                  <img src="${imageUrl}" alt="Gift suggestion" class="rounded-lg shadow-md mx-auto" />
+                </div>`;
+                content = content.replace('[PRODUCT_IMAGE_PLACEHOLDER]', imageHtml);
+              }
+            }
+          } catch (error) {
+            console.error('Error fetching Google image:', error);
+            content = content.replace('[PRODUCT_IMAGE_PLACEHOLDER]', '');
+          }
+        }
+      }
+    }
+
+    // Remove any remaining placeholders
+    content = content.replace(/\[PRODUCT_IMAGE_PLACEHOLDER\]/g, '');
 
     return new Response(
       JSON.stringify({ content }),
