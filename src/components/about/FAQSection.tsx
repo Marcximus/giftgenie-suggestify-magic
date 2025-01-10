@@ -9,17 +9,17 @@ export const FAQSection = () => {
   return (
     <div className="bg-white rounded-lg p-6 shadow-sm mb-12">
       <h2 className="text-xl font-bold mb-4 text-[#9b87f5]">❓ FAQ</h2>
-      <p className="text-sm text-[#403E43] mb-6 leading-relaxed">
+      <p className="text-xs text-[#403E43] mb-6 leading-relaxed">
         Find the Perfect Gift, Best Gift Ideas, and Present Inspiration
       </p>
       
-      <p className="text-sm text-[#403E43] mb-8 leading-relaxed">
+      <p className="text-xs text-[#403E43] mb-8 leading-relaxed">
         Below you'll find answers to some of the most common questions about Get The Gift, covering everything from how we help you uncover the best gift ideas to where our gift inspiration comes from. If you're looking for that perfect gift or a thoughtful present, we've got you covered.
       </p>
 
       <Accordion type="single" collapsible className="space-y-4">
         <AccordionItem value="item-1" className="border rounded-lg px-4 hover:bg-slate-50 transition-colors">
-          <AccordionTrigger className="text-[#7E69AB] hover:no-underline">
+          <AccordionTrigger className="text-[#7E69AB] hover:no-underline text-sm">
             <span className="flex items-center gap-2">
               🎁 What is Get The Gift, and how does it help me find the perfect gift?
             </span>
@@ -30,7 +30,7 @@ export const FAQSection = () => {
         </AccordionItem>
 
         <AccordionItem value="item-2" className="border rounded-lg px-4 hover:bg-slate-50 transition-colors">
-          <AccordionTrigger className="text-[#7E69AB] hover:no-underline">
+          <AccordionTrigger className="text-[#7E69AB] hover:no-underline text-sm">
             <span className="flex items-center gap-2">
               🎂 Do you offer gift inspiration for birthdays, anniversaries, and other occasions?
             </span>
@@ -41,7 +41,7 @@ export const FAQSection = () => {
         </AccordionItem>
 
         <AccordionItem value="item-3" className="border rounded-lg px-4 hover:bg-slate-50 transition-colors">
-          <AccordionTrigger className="text-[#7E69AB] hover:no-underline">
+          <AccordionTrigger className="text-[#7E69AB] hover:no-underline text-sm">
             <span className="flex items-center gap-2">
               🤖 How does your recommendation process work?
             </span>
@@ -52,7 +52,7 @@ export const FAQSection = () => {
         </AccordionItem>
 
         <AccordionItem value="item-4" className="border rounded-lg px-4 hover:bg-slate-50 transition-colors">
-          <AccordionTrigger className="text-[#7E69AB] hover:no-underline">
+          <AccordionTrigger className="text-[#7E69AB] hover:no-underline text-sm">
             <span className="flex items-center gap-2">
               👥 Are your gift ideas suitable for all age groups and interests?
             </span>
@@ -63,7 +63,7 @@ export const FAQSection = () => {
         </AccordionItem>
 
         <AccordionItem value="item-5" className="border rounded-lg px-4 hover:bg-slate-50 transition-colors">
-          <AccordionTrigger className="text-[#7E69AB] hover:no-underline">
+          <AccordionTrigger className="text-[#7E69AB] hover:no-underline text-sm">
             <span className="flex items-center gap-2">
               💰 Can I filter gift suggestions by price or category?
             </span>
@@ -74,7 +74,7 @@ export const FAQSection = () => {
         </AccordionItem>
 
         <AccordionItem value="item-6" className="border rounded-lg px-4 hover:bg-slate-50 transition-colors">
-          <AccordionTrigger className="text-[#7E69AB] hover:no-underline">
+          <AccordionTrigger className="text-[#7E69AB] hover:no-underline text-sm">
             <span className="flex items-center gap-2">
               ⏰ How up-to-date are your gift recommendations and prices?
             </span>
@@ -85,7 +85,7 @@ export const FAQSection = () => {
         </AccordionItem>
 
         <AccordionItem value="item-7" className="border rounded-lg px-4 hover:bg-slate-50 transition-colors">
-          <AccordionTrigger className="text-[#7E69AB] hover:no-underline">
+          <AccordionTrigger className="text-[#7E69AB] hover:no-underline text-sm">
             <span className="flex items-center gap-2">
               💎 Do you earn commissions from the gifts you suggest?
             </span>
@@ -96,7 +96,7 @@ export const FAQSection = () => {
         </AccordionItem>
 
         <AccordionItem value="item-8" className="border rounded-lg px-4 hover:bg-slate-50 transition-colors">
-          <AccordionTrigger className="text-[#7E69AB] hover:no-underline">
+          <AccordionTrigger className="text-[#7E69AB] hover:no-underline text-sm">
             <span className="flex items-center gap-2">
               🎯 What if the gift suggestions are too quirky or don't match my needs?
             </span>
@@ -107,7 +107,7 @@ export const FAQSection = () => {
         </AccordionItem>
 
         <AccordionItem value="item-9" className="border rounded-lg px-4 hover:bg-slate-50 transition-colors">
-          <AccordionTrigger className="text-[#7E69AB] hover:no-underline">
+          <AccordionTrigger className="text-[#7E69AB] hover:no-underline text-sm">
             <span className="flex items-center gap-2">
               ✨ Do you guarantee a perfect gift every time?
             </span>
@@ -118,7 +118,7 @@ export const FAQSection = () => {
         </AccordionItem>
 
         <AccordionItem value="item-10" className="border rounded-lg px-4 hover:bg-slate-50 transition-colors">
-          <AccordionTrigger className="text-[#7E69AB] hover:no-underline">
+          <AccordionTrigger className="text-[#7E69AB] hover:no-underline text-sm">
             <span className="flex items-center gap-2">
               💡 How can I get more help finding the best gift ideas?
             </span>
@@ -129,7 +129,7 @@ export const FAQSection = () => {
         </AccordionItem>
       </Accordion>
 
-      <p className="text-sm text-[#403E43] mt-8 leading-relaxed italic text-center">
+      <p className="text-xs text-[#403E43] mt-8 leading-relaxed italic text-center">
         We hope this FAQ clarifies how Get The Gift can simplify your hunt for the perfect present. From quirky treasures to timeless classics, we'll keep the gift ideas flowing so you can make every occasion unforgettable. ✨
       </p>
     </div>
