@@ -42,7 +42,7 @@ const handler = async (req: Request): Promise<Response> => {
       <p>${message}</p>
     `;
 
-    // Using the verified email address as the 'from' address
+    // Using Resend's default testing email address
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: {
@@ -50,7 +50,7 @@ const handler = async (req: Request): Promise<Response> => {
         Authorization: `Bearer ${RESEND_API_KEY}`,
       },
       body: JSON.stringify({
-        from: "marcusasvendsen@gmail.com", // Using your verified email
+        from: "onboarding@resend.dev",
         to: ["ms@corporateconsulting.dk"],
         subject: `New Contact Form Message from ${name}`,
         html: emailContent,
