@@ -19,7 +19,7 @@ const Navigation = () => (
     <div className="bg-white/10 backdrop-blur-lg rounded-full px-6 sm:px-12 py-3 sm:py-4 shadow-xl flex items-center justify-center gap-8 sm:gap-16 border border-white/20 hover:bg-white/15 transition-all duration-300 group">
       <Link 
         to="/" 
-        className="text-sm sm:text-base text-[#1EAEDB] hover:text-[#0FA0CE] transition-all duration-300 relative whitespace-nowrap flex items-center justify-center group-hover:scale-105 font-medium"
+        className="text-sm sm:text-base text-[#1EAEDB] font-medium relative whitespace-nowrap flex items-center justify-center group-hover:scale-105"
       >
         Get The Gift
         <div className="absolute -bottom-1 left-0 w-0 h-0.5 bg-[#1EAEDB] group-hover:w-full transition-all duration-300"></div>
