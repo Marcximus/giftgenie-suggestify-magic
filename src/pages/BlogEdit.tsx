@@ -6,12 +6,21 @@ import BlogPostForm from "@/components/blog/BlogPostForm";
 import { useToast } from "@/hooks/use-toast";
 
 const BlogEdit = () => {
-  const { slug } = useParams();
+  const { slug } = useParams<{ slug: string }>();
   const { toast } = useToast();
 
   const { data: post, isLoading } = useQuery({
     queryKey: ["blog-post-edit", slug],
     queryFn: async () => {
+      if (!slug) {
+        toast({
+          title: "Error",
+          description: "No slug provided",
+          variant: "destructive",
+        });
+        return null;
+      }
+
       const { data, error } = await supabase
         .from("blog_posts")
         .select("*")
