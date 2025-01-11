@@ -9,7 +9,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { BlogImageUpload } from "./BlogImageUpload";
 import { BlogPostPreview } from "./BlogPostPreview";
-import { useAIContent } from "@/hooks/useAIContent";
 import { BlogPostBasicInfo } from "./form/BlogPostBasicInfo";
 import { BlogPostContent } from "./form/BlogPostContent";
 import { BlogPostSEO } from "./form/BlogPostSEO";
@@ -24,7 +23,6 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
   const [activeTab, setActiveTab] = useState("edit");
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { generateContent, getFormFieldFromType } = useAIContent();
 
   const form = useForm<BlogPostFormData>({
     defaultValues: initialData || {
@@ -39,7 +37,7 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
       meta_description: "",
       meta_keywords: "",
       images: [],
-      affiliate_links: [], // Added this line
+      affiliate_links: [],
     },
   });
 
@@ -102,35 +100,6 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
       .replace(/(^-|-$)+/g, "");
   };
 
-  const handleAIGenerate = async (type: 'excerpt' | 'seo-title' | 'seo-description' | 'seo-keywords' | 'improve-content') => {
-    const currentTitle = form.getValues('title');
-    const currentContent = form.getValues('content');
-    
-    if (!currentTitle && !currentContent) {
-      toast({
-        title: "Error",
-        description: "Please provide some content or a title first.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    const generatedContent = await generateContent(
-      type,
-      currentContent,
-      currentTitle
-    );
-
-    if (generatedContent) {
-      const formField = getFormFieldFromType(type);
-      form.setValue(formField, generatedContent, { shouldDirty: true });
-      toast({
-        title: "Success",
-        description: "Content generated successfully!",
-      });
-    }
-  };
-
   return (
     <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
       <TabsList className="grid w-full grid-cols-2">
@@ -162,17 +131,11 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
               )}
             />
 
-            <BlogPostContent 
-              form={form}
-              handleAIGenerate={handleAIGenerate}
-            />
+            <BlogPostContent form={form} />
 
             <Separator />
 
-            <BlogPostSEO 
-              form={form}
-              handleAIGenerate={handleAIGenerate}
-            />
+            <BlogPostSEO form={form} />
 
             <div className="flex gap-4">
               <Button type="submit" disabled={isSubmitting}>
