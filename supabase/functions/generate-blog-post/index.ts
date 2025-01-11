@@ -38,7 +38,7 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: "gpt-4o",
+        model: "gpt-4",
         messages: [
           {
             role: "system",
@@ -120,7 +120,10 @@ IMPORTANT:
         if (product?.asin) {
           console.log('Found Amazon product:', {
             title: product.title,
-            asin: product.asin
+            asin: product.asin,
+            price: product.price,
+            rating: product.rating,
+            totalRatings: product.totalRatings
           });
 
           const affiliateLink = `https://www.amazon.com/dp/${product.asin}/ref=nosim?tag=${associateId}`;
@@ -141,13 +144,18 @@ IMPORTANT:
                    loading="lazy" />
             </div>` : '';
 
-          // Replace product title and add affiliate link with price and reviews
-          const priceInfo = product.price ? 
+          // Format price with currency
+          const priceDisplay = product.price ? 
             `<p class="text-left text-sm text-muted-foreground mb-2">💰 Current price: ${product.currency} ${product.price}</p>` : '';
           
+          // Format rating and review count
           const reviewInfo = product.rating ? 
-            `<p class="text-left text-sm text-muted-foreground mb-4">⭐ Rating: ${product.rating.toFixed(1)} out of 5 stars (${product.totalRatings?.toLocaleString()} reviews)</p>` : '';
+            `<p class="text-left text-sm text-muted-foreground mb-4">
+              ⭐ Rating: ${product.rating.toFixed(1)} out of 5 stars 
+              ${product.totalRatings ? `(${product.totalRatings.toLocaleString()} reviews)` : ''}
+            </p>` : '';
 
+          // Replace product title and add affiliate link with price and reviews
           const titleReplacement = `
             <h3 class="text-left text-lg md:text-xl font-semibold mt-6 mb-3">
               ${product.title}
@@ -161,7 +169,7 @@ IMPORTANT:
               </div>
             </h3>
             ${imageHtml}
-            ${priceInfo}
+            ${priceDisplay}
             ${reviewInfo}`;
 
           content = content.replace(productMatch, titleReplacement);
