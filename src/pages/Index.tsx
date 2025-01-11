@@ -18,7 +18,7 @@ const Index = () => {
 
   return (
     <ErrorBoundary>
-      <main className="min-h-screen bg-gradient-to-br from-background via-secondary/30 to-primary/5">
+      <main className="min-h-screen bg-gradient-to-br from-background via-secondary/30 to-primary/5 pb-20">
         <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-8 md:py-12 max-w-7xl">
           <header>
             <h1 className="sr-only">GiftGenie - AI-Powered Gift Suggestions</h1>
