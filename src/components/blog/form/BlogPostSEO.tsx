@@ -4,33 +4,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Wand2 } from "lucide-react";
 import { UseFormReturn } from "react-hook-form";
-import { BlogPostFormData, AIGenerateFunction } from "../types/BlogPostTypes";
+import { BlogPostFormData } from "../types/BlogPostTypes";
 
 interface BlogPostSEOProps {
   form: UseFormReturn<BlogPostFormData>;
-  handleAIGenerate: AIGenerateFunction;
+  handleAIGenerate: (type: 'excerpt' | 'seo-title' | 'seo-description' | 'seo-keywords' | 'improve-content') => Promise<void>;
 }
 
 export const BlogPostSEO = ({ form, handleAIGenerate }: BlogPostSEOProps) => {
-  const generateSEOField = async (type: 'seo-title' | 'seo-description' | 'seo-keywords') => {
-    const title = form.getValues('title');
-    const content = form.getValues('content');
-    const generatedText = await handleAIGenerate(type, title, content);
-    if (generatedText) {
-      switch (type) {
-        case 'seo-title':
-          form.setValue('meta_title', generatedText);
-          break;
-        case 'seo-description':
-          form.setValue('meta_description', generatedText);
-          break;
-        case 'seo-keywords':
-          form.setValue('meta_keywords', generatedText);
-          break;
-      }
-    }
-  };
-
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -40,9 +21,9 @@ export const BlogPostSEO = ({ form, handleAIGenerate }: BlogPostSEOProps) => {
           variant="outline"
           size="sm"
           onClick={async () => {
-            await generateSEOField('seo-title');
-            await generateSEOField('seo-description');
-            await generateSEOField('seo-keywords');
+            await handleAIGenerate('seo-title');
+            await handleAIGenerate('seo-description');
+            await handleAIGenerate('seo-keywords');
           }}
         >
           <Wand2 className="w-4 h-4 mr-2" />
@@ -62,7 +43,7 @@ export const BlogPostSEO = ({ form, handleAIGenerate }: BlogPostSEOProps) => {
                   type="button"
                   variant="outline"
                   size="sm"
-                  onClick={() => generateSEOField('seo-title')}
+                  onClick={() => handleAIGenerate('seo-title')}
                 >
                   <Wand2 className="w-4 h-4 mr-2" />
                   Generate
@@ -90,7 +71,7 @@ export const BlogPostSEO = ({ form, handleAIGenerate }: BlogPostSEOProps) => {
                   type="button"
                   variant="outline"
                   size="sm"
-                  onClick={() => generateSEOField('seo-description')}
+                  onClick={() => handleAIGenerate('seo-description')}
                 >
                   <Wand2 className="w-4 h-4 mr-2" />
                   Generate
@@ -118,7 +99,7 @@ export const BlogPostSEO = ({ form, handleAIGenerate }: BlogPostSEOProps) => {
                   type="button"
                   variant="outline"
                   size="sm"
-                  onClick={() => generateSEOField('seo-keywords')}
+                  onClick={() => handleAIGenerate('seo-keywords')}
                 >
                   <Wand2 className="w-4 h-4 mr-2" />
                   Generate

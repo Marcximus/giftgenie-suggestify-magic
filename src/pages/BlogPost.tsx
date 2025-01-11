@@ -57,50 +57,6 @@ const BlogPost = () => {
     );
   }
 
-  // Process affiliate links if they exist
-  const affiliateLinks = post.affiliate_links as Array<{
-    productTitle: string;
-    affiliateLink: string;
-    imageUrl?: string;
-  }> || [];
-
-  // Function to replace product placeholders with actual affiliate content
-  const processContent = (content: string) => {
-    let processedContent = content;
-    
-    affiliateLinks.forEach((link, index) => {
-      const placeholder = `[PRODUCT_PLACEHOLDER]`;
-      const productSection = `
-        <div class="product-section my-8 p-6 bg-white rounded-lg shadow-md">
-          <h3 class="text-xl font-bold mb-4">No. ${index + 1}: ${link.productTitle}</h3>
-          ${link.imageUrl ? `
-            <div class="flex justify-center mb-4">
-              <img 
-                src="${link.imageUrl}" 
-                alt="${link.productTitle}"
-                class="w-36 h-36 object-contain rounded-lg"
-              />
-            </div>
-          ` : ''}
-          <div class="mt-4">
-            <a 
-              href="${link.affiliateLink}"
-              target="_blank"
-              rel="noopener noreferrer"
-              class="inline-block bg-[#F97316] hover:bg-[#F97316]/90 text-white px-4 py-2 rounded-md transition-colors duration-200"
-            >
-              View on Amazon
-            </a>
-          </div>
-        </div>
-      `;
-      
-      processedContent = processedContent.replace(placeholder, productSection);
-    });
-    
-    return processedContent;
-  };
-
   return (
     <>
       <Helmet>
@@ -108,11 +64,12 @@ const BlogPost = () => {
         <meta name="description" content={post.excerpt || `Read ${post.title} on Get The Gift Blog`} />
         <meta property="og:title" content={`${post.title} - Get The Gift Blog`} />
         <meta property="og:description" content={post.excerpt || `Read ${post.title} on Get The Gift Blog`} />
-        {post.image_url && <meta property="og:image" content={post.image_url} />}
+        {post.image_url && (
+          <meta property="og:image" content={post.image_url} />
+        )}
         <meta name="author" content={post.author} />
         <meta property="article:published_time" content={post.published_at || ""} />
       </Helmet>
-
       <article className="min-h-screen bg-gradient-to-b from-background to-muted/20">
         <div className="container mx-auto px-4 py-8 max-w-4xl">
           <Button 
@@ -125,7 +82,7 @@ const BlogPost = () => {
           </Button>
           
           {post.image_url && (
-            <div className="aspect-[21/9] relative overflow-hidden rounded-lg mb-8 shadow-xl">
+            <div className="aspect-[21/9] relative overflow-hidden rounded-lg mb-8 shadow-xl animate-fade-in">
               <img 
                 src={post.image_url} 
                 alt={post.title}
@@ -134,41 +91,29 @@ const BlogPost = () => {
             </div>
           )}
           
-          <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-6">
+          <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-6 animate-fade-in">
             {post.title}
           </h1>
           
-          <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground mb-8">
-            {post.author && (
-              <div className="flex items-center gap-1">
-                <User className="w-4 h-4" />
-                <span>{post.author}</span>
-              </div>
-            )}
-            {post.published_at && (
-              <>
-                <div className="flex items-center gap-1">
-                  <Calendar className="w-4 h-4" />
-                  <span>{new Date(post.published_at).toLocaleDateString()}</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <Clock className="w-4 h-4" />
-                  <span>{new Date(post.published_at).toLocaleTimeString()}</span>
-                </div>
-              </>
-            )}
+          <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground mb-8 animate-fade-in">
+            <div className="flex items-center gap-1">
+              <User className="w-4 h-4" />
+              <span>{post.author}</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <Calendar className="w-4 h-4" />
+              <span>{new Date(post.published_at || "").toLocaleDateString()}</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <Clock className="w-4 h-4" />
+              <span>{new Date(post.published_at || "").toLocaleTimeString()}</span>
+            </div>
           </div>
           
-          <div className="prose prose-lg max-w-none">
+          <div className="prose prose-lg max-w-none animate-fade-in">
             <div 
-              className="space-y-6 text-left [&>h2]:text-2xl [&>h2]:font-bold [&>h2]:mt-8 [&>h2]:mb-4
-                         [&>h3]:text-xl [&>h3]:font-semibold [&>h3]:mt-6 [&>h3]:mb-3
-                         [&>p]:text-base [&>p]:leading-relaxed [&>p]:mb-4
-                         [&>ul]:list-disc [&>ul]:pl-6 [&>ul]:mb-4 [&>ul]:space-y-2
-                         [&>ol]:list-decimal [&>ol]:pl-6 [&>ol]:mb-4 [&>ol]:space-y-2"
-              dangerouslySetInnerHTML={{ 
-                __html: processContent(post.content)
-              }}
+              className="bg-card rounded-lg p-6 shadow-sm"
+              dangerouslySetInnerHTML={{ __html: post.content }}
             />
           </div>
         </div>
