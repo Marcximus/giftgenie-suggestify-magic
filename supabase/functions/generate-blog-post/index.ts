@@ -25,6 +25,30 @@ const searchAmazonProduct = async (searchTerm: string) => {
   }
 }
 
+const getGoogleImage = async (searchTerm: string) => {
+  const GOOGLE_API_KEY = Deno.env.get('GOOGLE_SEARCH_API_KEY');
+  const SEARCH_ENGINE_ID = Deno.env.get('GOOGLE_SEARCH_ENGINE_ID');
+
+  if (!GOOGLE_API_KEY || !SEARCH_ENGINE_ID) {
+    console.error('Google Search API configuration missing');
+    return null;
+  }
+
+  try {
+    const response = await fetch(
+      `https://www.googleapis.com/customsearch/v1?key=${GOOGLE_API_KEY}&cx=${SEARCH_ENGINE_ID}&searchType=image&q=${encodeURIComponent(searchTerm)}&num=1`
+    );
+    
+    if (response.ok) {
+      const data = await response.json();
+      return data.items?.[0]?.link;
+    }
+  } catch (error) {
+    console.error('Error fetching Google image:', error);
+  }
+  return null;
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
@@ -84,7 +108,7 @@ serve(async (req) => {
     - Practical examples
     - Relatable scenarios
 11. Minimum length: 1500 words
-12. Include [PRODUCT_IMAGE_PLACEHOLDER] tag BEFORE each product heading`
+12. Include [PRODUCT_PLACEHOLDER] tag BEFORE each product heading`
           },
           {
             role: "user",
@@ -92,7 +116,7 @@ serve(async (req) => {
             Requirements:
             1. STRICTLY follow the criteria in the title (price range, number of items)
             2. Each product recommendation should be specific and detailed
-            3. Include [PRODUCT_IMAGE_PLACEHOLDER] tag BEFORE each product heading
+            3. Include [PRODUCT_PLACEHOLDER] tag BEFORE each product heading
             4. Format with proper HTML tags
             5. Include emojis in ALL section headings
             6. Keep all recommendations under $${maxPrice}
@@ -125,75 +149,62 @@ serve(async (req) => {
     
     // Process each product suggestion
     for (const productName of productMatches) {
+      console.log('Processing product:', productName);
+      
+      // Get Amazon product details
       const product = await searchAmazonProduct(productName);
+      let imageUrl = null;
+      
       if (product && product.asin) {
+        // Use Amazon product image if available
+        imageUrl = product.imageUrl;
         const affiliateLink = `https://www.amazon.com/dp/${product.asin}/ref=nosim?tag=${associateId}`;
-        const imageHtml = product.imageUrl ? 
-          `<div class="flex justify-center my-4">
-            <img src="${product.imageUrl}" alt="${product.title}" class="rounded-lg shadow-md w-64 md:w-72" />
-           </div>` : '';
         
-        // Replace the product mention with a linked version and image
+        // Replace the product placeholder with image and affiliate link
         content = content.replace(
-          '[PRODUCT_IMAGE_PLACEHOLDER]',
-          imageHtml
+          '[PRODUCT_PLACEHOLDER]',
+          `<div class="flex justify-center my-4">
+            <img src="${imageUrl}" alt="${product.title}" class="rounded-lg shadow-md w-48 md:w-56 object-contain" />
+           </div>`
         );
         
         // Add affiliate link to product title
         content = content.replace(
           new RegExp(`<h[23]>${productName}</h[23]>`),
-          `<h3 class="text-left">${product.title} 
+          `<h3 class="text-left text-lg md:text-xl font-semibold mt-6 mb-3">${product.title} 
            <div class="mt-2">
              <a href="${affiliateLink}" 
                 target="_blank" 
                 rel="noopener noreferrer" 
-                class="inline-block px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors">
+                class="inline-block px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors text-sm">
                View on Amazon
              </a>
            </div>
           </h3>`
         );
-      }
-    }
-
-    // If any [PRODUCT_IMAGE_PLACEHOLDER] tags remain, try to get images from Google
-    if (content.includes('[PRODUCT_IMAGE_PLACEHOLDER]')) {
-      const GOOGLE_API_KEY = Deno.env.get('GOOGLE_SEARCH_API_KEY');
-      const SEARCH_ENGINE_ID = Deno.env.get('GOOGLE_SEARCH_ENGINE_ID');
-
-      if (GOOGLE_API_KEY && SEARCH_ENGINE_ID) {
-        const remainingPlaceholders = content.match(/\[PRODUCT_IMAGE_PLACEHOLDER\]/g) || [];
-        for (const placeholder of remainingPlaceholders) {
-          try {
-            const searchTerm = `${subject} gift product`;
-            const response = await fetch(
-              `https://www.googleapis.com/customsearch/v1?key=${GOOGLE_API_KEY}&cx=${SEARCH_ENGINE_ID}&searchType=image&q=${searchTerm}&num=1`
-            );
-            
-            if (response.ok) {
-              const data = await response.json();
-              const imageUrl = data.items?.[0]?.link;
-              
-              if (imageUrl) {
-                const imageHtml = `<div class="flex justify-center my-4">
-                  <img src="${imageUrl}" alt="Gift suggestion" class="rounded-lg shadow-md w-64 md:w-72" />
-                </div>`;
-                content = content.replace('[PRODUCT_IMAGE_PLACEHOLDER]', imageHtml);
-              }
-            }
-          } catch (error) {
-            console.error('Error fetching Google image:', error);
-            content = content.replace('[PRODUCT_IMAGE_PLACEHOLDER]', '');
-          }
+      } else {
+        // If no Amazon product found, try Google image search
+        imageUrl = await getGoogleImage(`${productName} product image`);
+        
+        if (imageUrl) {
+          content = content.replace(
+            '[PRODUCT_PLACEHOLDER]',
+            `<div class="flex justify-center my-4">
+              <img src="${imageUrl}" alt="${productName}" class="rounded-lg shadow-md w-48 md:w-56 object-contain" />
+             </div>`
+          );
+        } else {
+          // Remove placeholder if no image found
+          content = content.replace('[PRODUCT_PLACEHOLDER]', '');
         }
       }
     }
 
     // Remove any remaining placeholders
-    content = content.replace(/\[PRODUCT_IMAGE_PLACEHOLDER\]/g, '');
+    content = content.replace(/\[PRODUCT_PLACEHOLDER\]/g, '');
 
     // Add responsive text classes
-    content = content.replace(/<p>/g, '<p class="text-left text-sm md:text-base">');
+    content = content.replace(/<p>/g, '<p class="text-left text-sm md:text-base mb-4">');
     content = content.replace(/<h2>/g, '<h2 class="text-left text-xl md:text-2xl font-bold mt-8 mb-4">');
     content = content.replace(/<h3>/g, '<h3 class="text-left text-lg md:text-xl font-semibold mt-6 mb-3">');
     content = content.replace(/<ul>/g, '<ul class="text-left list-disc pl-6 space-y-2 text-sm md:text-base">');
