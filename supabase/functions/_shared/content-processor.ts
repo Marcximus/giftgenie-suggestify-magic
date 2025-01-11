@@ -1,4 +1,4 @@
-import { searchAmazonProduct } from './amazon-product-handler.ts';
+import { searchAmazonProduct } from './amazon-api.ts';
 import { AmazonProduct } from './types.ts';
 
 export async function processContent(
@@ -31,19 +31,13 @@ export async function processContent(
           imageUrl: product.imageUrl
         });
 
-        // Add product image with specific dimensions
-        const imageReplacement = `<div class="flex justify-center my-4">
-          <img src="${product.imageUrl}" 
-               alt="${product.title}" 
-               class="rounded-lg shadow-md w-[150px] h-[150px] object-contain" 
-               loading="lazy" />
-         </div>`;
+        // Find the entire product section including the title and following paragraph
+        const productSectionRegex = new RegExp(
+          `<h[23]>${productName}</h[23]>\\s*<p>[^<]*</p>`
+        );
         
-        content = content.replace('[PRODUCT_PLACEHOLDER]', imageReplacement);
-        
-        // Replace product title and add affiliate link with clear CTA
-        const titlePattern = new RegExp(`<h[23]>${productName}</h[23]>`);
-        const titleReplacement = `<h3 class="text-left text-lg md:text-xl font-semibold mt-6 mb-3">
+        // Create the new product section with Amazon info
+        const newProductSection = `<h3 class="text-left text-lg md:text-xl font-semibold mt-6 mb-3">
            ${product.title}
            <div class="mt-2">
              <a href="${affiliateLink}" 
@@ -53,18 +47,18 @@ export async function processContent(
                View on Amazon
              </a>
            </div>
-         </h3>`;
-        
-        content = content.replace(titlePattern, titleReplacement);
+         </h3>
+         <div class="flex justify-center my-4">
+           <img src="${product.imageUrl}" 
+                alt="${product.title}" 
+                class="rounded-lg shadow-md w-[150px] h-[150px] object-contain" 
+                loading="lazy" />
+         </div>
+         ${product.price ? `<p class="text-left text-sm text-muted-foreground mb-4">Current price: ${product.currency} ${product.price}</p>` : ''}`;
 
-        // Add price information if available
-        if (product.price) {
-          const priceInfo = `<p class="text-left text-sm text-muted-foreground mb-4">Current price: ${product.currency} ${product.price}</p>`;
-          content = content.replace(
-            new RegExp(`(${product.title}.*?</h3>)`),
-            `$1\n${priceInfo}`
-          );
-        }
+        // Replace only the h3 tag, keeping the following paragraph
+        content = content.replace(/<h[23]>[^<]*<\/h[23]>/, newProductSection);
+
       } else {
         console.warn('No Amazon product found for:', productName);
       }
@@ -74,48 +68,4 @@ export async function processContent(
   }
 
   return { content, affiliateLinks };
-}
-
-async function updateContentWithProduct(
-  content: string,
-  product: AmazonProduct,
-  affiliateLink: string,
-  originalTitle: string
-): Promise<string> {
-  // Add product image with specific dimensions
-  const imageReplacement = `<div class="flex justify-center my-4">
-    <img src="${product.imageUrl}" 
-         alt="${product.title}" 
-         class="rounded-lg shadow-md w-[150px] h-[150px] object-contain" 
-         loading="lazy" />
-   </div>`;
-  
-  content = content.replace('[PRODUCT_PLACEHOLDER]', imageReplacement);
-  
-  // Replace product title and add affiliate link with clear CTA
-  const titlePattern = new RegExp(`<h[23]>${originalTitle}</h[23]>`);
-  const titleReplacement = `<h3 class="text-left text-lg md:text-xl font-semibold mt-6 mb-3">
-     ${product.title}
-     <div class="mt-2">
-       <a href="${affiliateLink}" 
-          target="_blank" 
-          rel="noopener noreferrer" 
-          class="inline-block px-4 py-2 bg-[#F97316] hover:bg-[#F97316]/90 text-white rounded-md transition-colors text-sm">
-         View on Amazon
-       </a>
-     </div>
-   </h3>`;
-  
-  content = content.replace(titlePattern, titleReplacement);
-
-  // Add price information if available
-  if (product.price) {
-    const priceInfo = `<p class="text-left text-sm text-muted-foreground mb-4">Current price: ${product.currency} ${product.price}</p>`;
-    content = content.replace(
-      new RegExp(`(${product.title}.*?</h3>)`),
-      `$1\n${priceInfo}`
-    );
-  }
-
-  return content;
 }
