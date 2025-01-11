@@ -1,13 +1,14 @@
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { useState } from "react";
+import { AIGenerateType } from "../types/BlogPostTypes";
 
 export const useAIGenerate = () => {
   const [isGenerating, setIsGenerating] = useState(false);
   const { toast } = useToast();
 
   const handleAIGenerate = async (
-    type: 'excerpt' | 'seo-title' | 'seo-description' | 'seo-keywords',
+    type: AIGenerateType,
     title: string,
     content?: string
   ): Promise<string | null> => {

@@ -1,6 +1,5 @@
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
-import { BlogPostFormData } from "../types/BlogPostTypes";
 
 interface BlogPostActionsProps {
   isSubmitting: boolean;

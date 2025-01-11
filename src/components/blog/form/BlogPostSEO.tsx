@@ -4,11 +4,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Wand2 } from "lucide-react";
 import { UseFormReturn } from "react-hook-form";
-import { BlogPostFormData } from "../types/BlogPostTypes";
+import { BlogPostFormData, AIGenerateFunction } from "../types/BlogPostTypes";
 
 interface BlogPostSEOProps {
   form: UseFormReturn<BlogPostFormData>;
-  handleAIGenerate: (type: 'excerpt' | 'seo-title' | 'seo-description' | 'seo-keywords', title: string, content?: string) => Promise<string | null>;
+  handleAIGenerate: AIGenerateFunction;
 }
 
 export const BlogPostSEO = ({ form, handleAIGenerate }: BlogPostSEOProps) => {

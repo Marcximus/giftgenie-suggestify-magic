@@ -122,10 +122,12 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Featured Image</FormLabel>
-                <BlogImageUpload 
-                  value={field.value || ''} 
-                  setValue={form.setValue}
-                />
+                <FormControl>
+                  <BlogImageUpload 
+                    value={field.value || ''} 
+                    setValue={form.setValue}
+                  />
+                </FormControl>
                 <FormMessage />
               </FormItem>
             )}

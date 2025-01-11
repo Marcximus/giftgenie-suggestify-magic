@@ -18,3 +18,9 @@ export interface BlogPostData extends BlogPostFormData {
   created_at: string;
   updated_at: string;
 }
+
+export type AIGenerateType = 'excerpt' | 'seo-title' | 'seo-description' | 'seo-keywords';
+
+export interface AIGenerateFunction {
+  (type: AIGenerateType, title: string, content?: string): Promise<string | null>;
+}
