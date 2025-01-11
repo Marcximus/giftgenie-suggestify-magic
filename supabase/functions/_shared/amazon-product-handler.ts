@@ -8,7 +8,11 @@ export async function searchAmazonProduct(searchTerm: string): Promise<AmazonPro
         'Authorization': `Bearer ${Deno.env.get('SUPABASE_ANON_KEY')}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ searchTerm }),
+      body: JSON.stringify({ 
+        searchTerm,
+        requireImage: true, // Ensure we get products with images
+        preferHighRes: true // Prefer high-resolution product images
+      }),
     }).then(res => res.json());
 
     if (error) {

@@ -55,17 +55,17 @@ async function updateContentWithProduct(
   affiliateLink: string,
   originalTitle: string
 ): Promise<string> {
-  // Add product image
+  // Add product image with specific dimensions
   const imageReplacement = `<div class="flex justify-center my-4">
     <img src="${product.imageUrl}" 
          alt="${product.title}" 
-         class="rounded-lg shadow-md w-36 h-36 object-contain" 
+         class="rounded-lg shadow-md w-[150px] h-[150px] object-contain" 
          loading="lazy" />
    </div>`;
   
   content = content.replace('[PRODUCT_PLACEHOLDER]', imageReplacement);
   
-  // Replace product title and add affiliate link
+  // Replace product title and add affiliate link with clear CTA
   const titlePattern = new RegExp(`<h[23]>${originalTitle}</h[23]>`);
   const titleReplacement = `<h3 class="text-left text-lg md:text-xl font-semibold mt-6 mb-3">
      ${product.title}
@@ -73,7 +73,7 @@ async function updateContentWithProduct(
        <a href="${affiliateLink}" 
           target="_blank" 
           rel="noopener noreferrer" 
-          class="inline-block px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors text-sm">
+          class="inline-block px-4 py-2 bg-[#F97316] hover:bg-[#F97316]/90 text-white rounded-md transition-colors text-sm">
          View on Amazon
        </a>
      </div>
@@ -83,7 +83,7 @@ async function updateContentWithProduct(
 
   // Add price information if available
   if (product.price) {
-    const priceInfo = `<p class="text-left text-sm text-muted-foreground mb-4">Current price: $${product.price}</p>`;
+    const priceInfo = `<p class="text-left text-sm text-muted-foreground mb-4">Current price: ${product.currency} ${product.price}</p>`;
     content = content.replace(
       new RegExp(`(${product.title}.*?</h3>)`),
       `$1\n${priceInfo}`

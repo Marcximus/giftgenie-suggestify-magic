@@ -8,7 +8,7 @@ export async function generateBlogContent(title: string, maxPrice: number, numPr
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      model: "gpt-4",
+      model: "gpt-4o",
       messages: [
         {
           role: "system",
@@ -24,6 +24,8 @@ export async function generateBlogContent(title: string, maxPrice: number, numPr
    - Tips for choosing the right gift
    - Conclusion with call-to-action
 5. For each product recommendation:
+   - Use [PRODUCT_PLACEHOLDER] tag BEFORE each product heading
+   - Make product titles VERY specific with brand names and models
    - Explain why it's a great gift
    - Describe key features and benefits
    - Share potential scenarios where it would be perfect
@@ -38,8 +40,7 @@ export async function generateBlogContent(title: string, maxPrice: number, numPr
     - Practical examples
     - Relatable scenarios
 11. Minimum length: 1500 words
-12. Include [PRODUCT_PLACEHOLDER] tag BEFORE each product heading
-13. Make product titles VERY specific with brand names and models`
+12. Make product titles VERY specific with brand names and models for accurate Amazon matching`
         },
         {
           role: "user",
