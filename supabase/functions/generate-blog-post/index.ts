@@ -34,7 +34,7 @@ serve(async (req) => {
     const { title } = await req.json()
     console.log('Generating blog post for:', title)
 
-    // Extract price range and topic from title if present
+    // Extract price range and topic from title
     const priceMatch = title.match(/under\s+\$(\d+)/i);
     const maxPrice = priceMatch ? parseInt(priceMatch[1]) : 100;
     const topicMatch = title.match(/top\s+(\d+)/i);
@@ -84,7 +84,7 @@ serve(async (req) => {
     - Practical examples
     - Relatable scenarios
 11. Minimum length: 1500 words
-12. Include placeholder tags for product images: [PRODUCT_IMAGE_PLACEHOLDER]`
+12. Include [PRODUCT_IMAGE_PLACEHOLDER] tag BEFORE each product heading`
           },
           {
             role: "user",
@@ -92,7 +92,7 @@ serve(async (req) => {
             Requirements:
             1. STRICTLY follow the criteria in the title (price range, number of items)
             2. Each product recommendation should be specific and detailed
-            3. Include [PRODUCT_IMAGE_PLACEHOLDER] tags for product images
+            3. Include [PRODUCT_IMAGE_PLACEHOLDER] tag BEFORE each product heading
             4. Format with proper HTML tags
             5. Include emojis in ALL section headings
             6. Keep all recommendations under $${maxPrice}
@@ -129,8 +129,8 @@ serve(async (req) => {
       if (product && product.asin) {
         const affiliateLink = `https://www.amazon.com/dp/${product.asin}/ref=nosim?tag=${associateId}`;
         const imageHtml = product.imageUrl ? 
-          `<div class="my-4">
-            <img src="${product.imageUrl}" alt="${product.title}" class="rounded-lg shadow-md mx-auto" />
+          `<div class="flex justify-center my-4">
+            <img src="${product.imageUrl}" alt="${product.title}" class="rounded-lg shadow-md w-64 md:w-72" />
            </div>` : '';
         
         // Replace the product mention with a linked version and image
@@ -142,11 +142,15 @@ serve(async (req) => {
         // Add affiliate link to product title
         content = content.replace(
           new RegExp(`<h[23]>${productName}</h[23]>`),
-          `<h3>${product.title} 
-           <a href="${affiliateLink}" target="_blank" rel="noopener noreferrer" 
-              class="text-primary hover:text-primary/80">
-             View on Amazon
-           </a>
+          `<h3 class="text-left">${product.title} 
+           <div class="mt-2">
+             <a href="${affiliateLink}" 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                class="inline-block px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors">
+               View on Amazon
+             </a>
+           </div>
           </h3>`
         );
       }
@@ -171,8 +175,8 @@ serve(async (req) => {
               const imageUrl = data.items?.[0]?.link;
               
               if (imageUrl) {
-                const imageHtml = `<div class="my-4">
-                  <img src="${imageUrl}" alt="Gift suggestion" class="rounded-lg shadow-md mx-auto" />
+                const imageHtml = `<div class="flex justify-center my-4">
+                  <img src="${imageUrl}" alt="Gift suggestion" class="rounded-lg shadow-md w-64 md:w-72" />
                 </div>`;
                 content = content.replace('[PRODUCT_IMAGE_PLACEHOLDER]', imageHtml);
               }
@@ -187,6 +191,13 @@ serve(async (req) => {
 
     // Remove any remaining placeholders
     content = content.replace(/\[PRODUCT_IMAGE_PLACEHOLDER\]/g, '');
+
+    // Add responsive text classes
+    content = content.replace(/<p>/g, '<p class="text-left text-sm md:text-base">');
+    content = content.replace(/<h2>/g, '<h2 class="text-left text-xl md:text-2xl font-bold mt-8 mb-4">');
+    content = content.replace(/<h3>/g, '<h3 class="text-left text-lg md:text-xl font-semibold mt-6 mb-3">');
+    content = content.replace(/<ul>/g, '<ul class="text-left list-disc pl-6 space-y-2 text-sm md:text-base">');
+    content = content.replace(/<ol>/g, '<ol class="text-left list-decimal pl-6 space-y-2 text-sm md:text-base">');
 
     return new Response(
       JSON.stringify({ content }),

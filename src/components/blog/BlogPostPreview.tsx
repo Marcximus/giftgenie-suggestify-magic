@@ -8,26 +8,28 @@ interface BlogPostPreviewProps {
 
 export const BlogPostPreview = ({ data }: BlogPostPreviewProps) => {
   return (
-    <article className="prose prose-sm md:prose-base lg:prose-lg max-w-none text-left">
-      <h1 className="text-left">{data.title}</h1>
+    <article className="prose prose-sm md:prose-base max-w-none">
+      <h1 className="text-left text-2xl md:text-3xl lg:text-4xl">{data.title}</h1>
       {data.image_url && (
-        <img
-          src={data.image_url}
-          alt={data.title}
-          className="rounded-lg w-full h-auto object-cover"
-        />
+        <div className="flex justify-center my-4">
+          <img
+            src={data.image_url}
+            alt={data.title}
+            className="rounded-lg shadow-md w-64 md:w-72 object-cover"
+          />
+        </div>
       )}
       {data.excerpt && (
-        <p className="lead text-muted-foreground text-left">{data.excerpt}</p>
+        <p className="text-left text-sm md:text-base text-muted-foreground">{data.excerpt}</p>
       )}
       <div 
-        className="mt-8 text-left"
+        className="mt-8"
         dangerouslySetInnerHTML={{ 
           __html: data.content.replace(/```html\n?|\n?```/g, '') 
         }}
       />
       {data.author && (
-        <div className="mt-8 text-muted-foreground text-left">
+        <div className="mt-8 text-left text-sm md:text-base text-muted-foreground">
           Written by {data.author}
           {data.published_at && (
             <span> · {new Date(data.published_at).toLocaleDateString()}</span>
