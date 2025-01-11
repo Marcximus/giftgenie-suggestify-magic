@@ -38,7 +38,7 @@ export const BlogPostPreview = ({ data }: BlogPostPreviewProps) => {
                    [&_.product-section_img]:w-36 [&_.product-section_img]:h-36 [&_.product-section_img]:object-contain [&_.product-section_img]:mx-auto [&_.product-section_img]:my-4
                    [&_a.amazon-button]:inline-block [&_a.amazon-button]:bg-[#F97316] [&_a.amazon-button]:hover:bg-[#F97316]/90 [&_a.amazon-button]:text-white [&_a.amazon-button]:px-4 [&_a.amazon-button]:py-2 [&_a.amazon-button]:rounded-md [&_a.amazon-button]:transition-colors [&_a.amazon-button]:duration-200"
         dangerouslySetInnerHTML={{ 
-          __html: processContent(data.content, data.affiliate_links) 
+          __html: processContent(data.content, Array.isArray(data.affiliate_links) ? data.affiliate_links : []) 
         }}
       />
 
