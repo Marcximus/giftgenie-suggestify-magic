@@ -28,8 +28,8 @@ export const BlogPostPreview = ({ data }: BlogPostPreviewProps) => {
                    [&>p]:text-sm [&>p]:md:text-base [&>p]:leading-relaxed [&>p]:mb-4
                    [&>ul]:list-disc [&>ul]:pl-6 [&>ul]:mb-4 [&>ul]:space-y-2
                    [&>ol]:list-decimal [&>ol]:pl-6 [&>ol]:mb-4 [&>ol]:space-y-2
-                   [&_img]:w-36 [&_img]:h-36 [&_img]:object-contain [&_img]:mx-auto [&_img]:my-4
-                   [&_a]:text-primary [&_a]:hover:underline"
+                   [&_img]:w-10 [&_img]:h-10 [&_img]:object-contain [&_img]:mx-auto [&_img]:my-4
+                   [&_a]:block [&_a]:mt-4 [&_a]:text-primary [&_a]:hover:underline"
         dangerouslySetInnerHTML={{ 
           __html: data.content.replace(/```html\n?|\n?```/g, '') 
         }}
