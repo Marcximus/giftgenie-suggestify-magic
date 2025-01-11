@@ -29,9 +29,10 @@ export const BlogPostPreview = ({ data }: BlogPostPreviewProps) => {
                    [&>ul]:list-disc [&>ul]:pl-6 [&>ul]:mb-4 [&>ul]:space-y-2
                    [&>ol]:list-decimal [&>ol]:pl-6 [&>ol]:mb-4 [&>ol]:space-y-2
                    [&_img]:w-24 [&_img]:h-24 [&_img]:object-contain [&_img]:mx-auto [&_img]:my-4
-                   [&_a]:text-primary [&_a]:hover:underline"
+                   [&_a]:text-primary [&_a]:hover:underline
+                   [&_div.flex]:justify-center [&_div.flex]:my-4"
         dangerouslySetInnerHTML={{ 
-          __html: data.content.replace(/```html\n?|\n?```/g, '') 
+          __html: data.content 
         }}
       />
       {data.author && (
