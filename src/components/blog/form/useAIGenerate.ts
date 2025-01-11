@@ -6,7 +6,11 @@ export const useAIGenerate = () => {
   const [isGenerating, setIsGenerating] = useState(false);
   const { toast } = useToast();
 
-  const handleAIGenerate = async (type: 'excerpt' | 'seo-title' | 'seo-description' | 'seo-keywords', title: string, content?: string) => {
+  const handleAIGenerate = async (
+    type: 'excerpt' | 'seo-title' | 'seo-description' | 'seo-keywords',
+    title: string,
+    content?: string
+  ): Promise<string | null> => {
     setIsGenerating(true);
     try {
       if (!title) {
@@ -23,13 +27,14 @@ export const useAIGenerate = () => {
 
       if (error) throw error;
 
-      if (data) {
+      if (data?.text) {
         toast({
           title: "Success",
           description: `Generated ${type} successfully`,
         });
         return data.text;
       }
+      return null;
     } catch (error: any) {
       console.error('Generation error:', error);
       toast({

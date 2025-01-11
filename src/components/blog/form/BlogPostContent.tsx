@@ -8,7 +8,7 @@ import { BlogEditor } from "../editor/BlogEditor";
 
 interface BlogPostContentProps {
   form: UseFormReturn<BlogPostFormData>;
-  handleAIGenerate: (type: 'excerpt') => Promise<void>;
+  handleAIGenerate: (type: 'excerpt' | 'seo-title' | 'seo-description' | 'seo-keywords', title: string, content?: string) => Promise<string | null>;
 }
 
 export const BlogPostContent = ({ form, handleAIGenerate }: BlogPostContentProps) => {
@@ -25,7 +25,14 @@ export const BlogPostContent = ({ form, handleAIGenerate }: BlogPostContentProps
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={() => handleAIGenerate('excerpt')}
+                onClick={async () => {
+                  const title = form.getValues('title');
+                  const content = form.getValues('content');
+                  const generatedExcerpt = await handleAIGenerate('excerpt', title, content);
+                  if (generatedExcerpt) {
+                    field.onChange(generatedExcerpt);
+                  }
+                }}
               >
                 <Wand2 className="w-4 h-4 mr-2" />
                 Generate
