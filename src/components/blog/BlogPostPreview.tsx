@@ -9,7 +9,7 @@ interface BlogPostPreviewProps {
 export const BlogPostPreview = ({ data }: BlogPostPreviewProps) => {
   return (
     <article className="prose prose-sm md:prose-base max-w-none">
-      <h1 className="text-left text-2xl md:text-3xl lg:text-4xl">{data.title}</h1>
+      <h1 className="text-left text-2xl md:text-3xl lg:text-4xl font-bold mb-8">{data.title}</h1>
       {data.image_url && (
         <div className="flex justify-center my-4">
           <img
@@ -20,7 +20,7 @@ export const BlogPostPreview = ({ data }: BlogPostPreviewProps) => {
         </div>
       )}
       {data.excerpt && (
-        <p className="text-left text-sm md:text-base text-muted-foreground">{data.excerpt}</p>
+        <p className="text-left text-sm md:text-base text-muted-foreground mb-8">{data.excerpt}</p>
       )}
       <div 
         className="mt-8"
