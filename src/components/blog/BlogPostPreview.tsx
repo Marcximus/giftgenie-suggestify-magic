@@ -15,7 +15,7 @@ export const BlogPostPreview = ({ data }: BlogPostPreviewProps) => {
           <img
             src={data.image_url}
             alt={data.title}
-            className="rounded-lg shadow-md w-32 md:w-40 object-cover"
+            className="rounded-lg shadow-md w-48 md:w-56 object-cover"
           />
         </div>
       )}
@@ -28,11 +28,10 @@ export const BlogPostPreview = ({ data }: BlogPostPreviewProps) => {
                    [&>p]:text-sm [&>p]:md:text-base [&>p]:leading-relaxed [&>p]:mb-4
                    [&>ul]:list-disc [&>ul]:pl-6 [&>ul]:mb-4 [&>ul]:space-y-2
                    [&>ol]:list-decimal [&>ol]:pl-6 [&>ol]:mb-4 [&>ol]:space-y-2
-                   [&_img]:w-24 [&_img]:h-24 [&_img]:object-contain [&_img]:mx-auto [&_img]:my-4
-                   [&_a]:text-primary [&_a]:hover:underline
-                   [&_div.flex]:justify-center [&_div.flex]:my-4"
+                   [&_img]:w-36 [&_img]:h-36 [&_img]:object-contain [&_img]:mx-auto [&_img]:my-4
+                   [&_a]:text-primary [&_a]:hover:underline"
         dangerouslySetInnerHTML={{ 
-          __html: data.content 
+          __html: data.content.replace(/```html\n?|\n?```/g, '') 
         }}
       />
       {data.author && (
