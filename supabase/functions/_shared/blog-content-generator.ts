@@ -1,5 +1,3 @@
-import { OpenAI } from "https://deno.land/x/openai@v4.24.0/mod.ts";
-
 export async function generateBlogContent(title: string, maxPrice: number, numProducts: number, subject: string): Promise<string> {
   try {
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -22,25 +20,25 @@ export async function generateBlogContent(title: string, maxPrice: number, numPr
    - Tips for choosing the right gift
    - Product recommendations (${numProducts} items under $${maxPrice})
    - Conclusion with call-to-action
-5. For each product recommendation:
+4. For each product recommendation:
    - Use [PRODUCT_PLACEHOLDER] tag BEFORE each product heading
    - Make product titles VERY specific with brand names and models
    - Explain why it's a great gift
    - Describe key features and benefits
    - Share potential scenarios where it would be perfect
-6. Format content with:
+5. Format content with:
    - Clear headings (H2, H3)
    - Short, readable paragraphs
    - Bullet points where appropriate
-7. Use emojis sparingly for visual appeal
-8. Maintain a friendly, conversational tone
-9. Include relevant keywords naturally
-10. Add depth with:
+6. Use emojis sparingly for visual appeal
+7. Maintain a friendly, conversational tone
+8. Include relevant keywords naturally
+9. Add depth with:
     - Expert insights
     - Practical examples
     - Relatable scenarios
-11. Minimum length: 1500 words
-12. Make product titles VERY specific with brand names and models for accurate Amazon matching`
+10. Minimum length: 1500 words
+11. Make product titles VERY specific with brand names and models for accurate Amazon matching`
           },
           {
             role: "user",
