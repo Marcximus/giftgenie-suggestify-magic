@@ -18,10 +18,15 @@ const searchAmazonProduct = async (searchTerm: string) => {
       body: JSON.stringify({ searchTerm }),
     }).then(res => res.json());
 
-    if (error) throw error;
+    if (error) {
+      console.error('Error fetching Amazon product:', error);
+      throw error;
+    }
+    
+    console.log('Amazon product data:', data);
     return data;
   } catch (error) {
-    console.error('Error fetching Amazon product:', error);
+    console.error('Error in searchAmazonProduct:', error);
     return null;
   }
 }
@@ -34,6 +39,14 @@ serve(async (req) => {
   try {
     const { title } = await req.json()
     console.log('Generating blog post for:', title)
+
+    // Get Amazon Associate ID and verify it exists
+    const associateId = Deno.env.get('AMAZON_ASSOCIATE_ID');
+    if (!associateId) {
+      console.error('Amazon Associate ID not configured');
+      throw new Error('Amazon Associate ID not configured');
+    }
+    console.log('Using Amazon Associate ID:', associateId);
 
     // Extract price range and topic from title
     const priceMatch = title.match(/under\s+\$(\d+)/i);
@@ -117,12 +130,6 @@ serve(async (req) => {
     const data = await response.json()
     let content = data.choices[0].message.content
 
-    // Get Amazon Associate ID
-    const associateId = Deno.env.get('AMAZON_ASSOCIATE_ID')
-    if (!associateId) {
-      throw new Error('Amazon Associate ID not configured')
-    }
-
     // Extract product suggestions from the content
     const productMatches = content.match(/(?<=<h[23]>)[^<]+(?=<\/h[23]>)/g) || [];
     
@@ -134,8 +141,15 @@ serve(async (req) => {
       const product = await searchAmazonProduct(productName);
       
       if (product && product.asin) {
-        // Create affiliate link
+        console.log('Found Amazon product:', {
+          asin: product.asin,
+          title: product.title,
+          imageUrl: product.imageUrl
+        });
+
+        // Create affiliate link with associate ID
         const affiliateLink = `https://www.amazon.com/dp/${product.asin}/ref=nosim?tag=${associateId}`;
+        console.log('Generated affiliate link:', affiliateLink);
         
         // Add product image and affiliate link
         content = content.replace(
@@ -172,6 +186,7 @@ serve(async (req) => {
           );
         }
       } else {
+        console.warn('No Amazon product found for:', productName);
         // Remove placeholder if no product found
         content = content.replace('[PRODUCT_PLACEHOLDER]', '');
       }
