@@ -31,19 +31,31 @@ export const BlogPostContent = ({ form, handleAIGenerate }: BlogPostContentProps
 
     setIsGenerating(true);
     try {
+      console.log('Generating blog post for title:', title);
       const { data, error } = await supabase.functions.invoke('generate-blog-post', {
         body: { title }
       });
 
       if (error) throw error;
 
+      console.log('Received generated content:', data);
+
       if (data?.content) {
-        // Explicitly trigger form update with the new content
+        // Update the form's content field
         form.setValue('content', data.content, { 
           shouldDirty: true,
           shouldTouch: true,
           shouldValidate: true 
         });
+
+        // If there are affiliate links, update those too
+        if (data.affiliateLinks) {
+          form.setValue('affiliate_links', data.affiliateLinks, {
+            shouldDirty: true,
+            shouldTouch: true,
+            shouldValidate: true
+          });
+        }
         
         toast({
           title: "Success",
@@ -127,8 +139,9 @@ export const BlogPostContent = ({ form, handleAIGenerate }: BlogPostContentProps
               <BlogEditor 
                 value={field.value} 
                 onChange={(value) => {
+                  console.log('Editor content updated:', value);
                   field.onChange(value);
-                  form.trigger('content'); // Trigger validation
+                  form.trigger('content');
                 }}
               />
             </FormControl>
