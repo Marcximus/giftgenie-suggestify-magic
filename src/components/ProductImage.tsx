@@ -13,7 +13,7 @@ export const ProductImage = ({ title, imageUrl }: ProductImageProps) => {
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
   
-  // Generic fallback image for when all else fails
+  // Generic fallback image that's guaranteed to work
   const genericFallback = 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=300&q=80';
 
   // Generate a tiny placeholder version of the image
@@ -46,13 +46,14 @@ export const ProductImage = ({ title, imageUrl }: ProductImageProps) => {
 
   const handleImageError = async () => {
     setHasError(true);
-    const target = event?.target as HTMLImageElement;
     
     // If we're not already showing the fallback and we have a title
-    if (target.src !== genericFallback && title) {
+    if (currentImageUrl !== genericFallback && title) {
+      console.log('Image failed to load, fetching fallback for:', title);
       await fetchGoogleImage(title);
     } else {
       // If Google image also fails or we have no title, use generic fallback
+      console.log('Using generic fallback image');
       setCurrentImageUrl(genericFallback);
     }
   };
@@ -63,9 +64,12 @@ export const ProductImage = ({ title, imageUrl }: ProductImageProps) => {
       const img = new Image();
       img.src = currentImageUrl;
       img.onload = () => {
+        console.log('Image loaded successfully:', currentImageUrl);
         setIsLoading(false);
+        setHasError(false);
       };
       img.onerror = () => {
+        console.error('Image failed to load:', currentImageUrl);
         handleImageError();
       };
     }
