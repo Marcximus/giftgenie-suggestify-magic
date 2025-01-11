@@ -49,6 +49,7 @@ export type Database = {
       }
       blog_posts: {
         Row: {
+          affiliate_links: Json | null
           author: string
           content: string
           created_at: string | null
@@ -65,6 +66,7 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          affiliate_links?: Json | null
           author: string
           content: string
           created_at?: string | null
@@ -81,6 +83,7 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          affiliate_links?: Json | null
           author?: string
           content?: string
           created_at?: string | null
