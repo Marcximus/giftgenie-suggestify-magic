@@ -37,37 +37,28 @@ serve(async (req) => {
         messages: [
           {
             role: "system",
-            content: `You are a witty, entertaining blog writer specializing in gift recommendations. Create engaging, detailed content (2000-3000 words) that follows this structure:
+            content: `You are a professional blog content writer specializing in gift recommendations. Create engaging, SEO-optimized content that follows this structure:
 
-1. Start with an attention-grabbing introduction using humor and emojis
-2. Include these sections with emojis in headings:
-   - "Why These Gifts Are Perfect 🎯"
-   - "How to Choose the Right Gift 🤔"
-   - "Our Top Picks 🎁"
-3. For product recommendations:
-   - Create H3 headings with VERY specific product names (include brand names and models)
-   - Use witty descriptions with light sarcasm where appropriate
-   - Include practical scenarios with humor
-   - Add emojis throughout the content naturally
-4. End with a funny conclusion and call-to-action
+1. Start with an engaging introduction (2-3 paragraphs)
+2. Include a "Why These Gifts Are Perfect" section
+3. Include a "How to Choose the Right Gift" section
+4. For product recommendations:
+   - Create an H3 heading for each product
+   - Make product titles VERY specific (include brand names and models)
+   - Explain why it's a great gift
+   - Describe key features and benefits
+5. End with a conclusion and call-to-action
+6. Format with proper HTML tags
+7. Use emojis sparingly for visual appeal
+8. Keep paragraphs short and readable
+9. Include relevant keywords naturally
 
-IMPORTANT FORMATTING RULES:
-- Format product titles exactly as: <h3>[EXACT PRODUCT NAME WITH BRAND]</h3>
+IMPORTANT: 
+- Format product titles as: <h3>[EXACT PRODUCT NAME WITH BRAND]</h3>
 - Make product names VERY specific for accurate Amazon matching
 - Write 300-400 words per product
-- Include 6-8 product recommendations
-- Focus on premium/high-quality items
-- Use humor and sarcasm tastefully
-- Add relevant emojis to enhance readability
-- Keep paragraphs short and mobile-friendly
-
-TONE GUIDELINES:
-- Be conversational and entertaining
-- Use witty observations
-- Include playful pop culture references
-- Add humorous "what not to buy" examples
-- Share funny gift-giving scenarios
-- Keep sarcasm light and good-natured`
+- Include 5-8 product recommendations
+- Focus on premium/high-quality items`
           },
           {
             role: "user",
@@ -75,7 +66,7 @@ TONE GUIDELINES:
           }
         ],
         temperature: 0.7,
-        max_tokens: 3500,
+        max_tokens: 2500,
       }),
     });
 
@@ -106,10 +97,7 @@ TONE GUIDELINES:
         if (product?.asin) {
           console.log('Found Amazon product:', {
             title: product.title,
-            asin: product.asin,
-            price: product.price,
-            rating: product.rating,
-            totalRatings: product.totalRatings
+            asin: product.asin
           });
 
           const affiliateLink = `https://www.amazon.com/dp/${product.asin}/ref=nosim?tag=${associateId}`;
@@ -121,7 +109,7 @@ TONE GUIDELINES:
             imageUrl: product.imageUrl
           });
 
-          // Add product image with mobile-optimized dimensions
+          // Add product image
           const imageHtml = product.imageUrl ? `
             <div class="flex justify-center my-4">
               <img src="${product.imageUrl}" 
@@ -130,14 +118,7 @@ TONE GUIDELINES:
                    loading="lazy" />
             </div>` : '';
 
-          // Add price and rating information
-          const ratingStars = '⭐'.repeat(Math.round(product.rating || 0));
-          const priceInfo = product.price ? 
-            `<p class="text-left text-sm text-muted-foreground mb-2">💰 Current price: ${product.currency} ${product.price}</p>` : '';
-          const ratingInfo = product.rating ? 
-            `<p class="text-left text-sm text-muted-foreground mb-4">${ratingStars} ${product.rating}/5 (${product.totalRatings?.toLocaleString()} reviews)</p>` : '';
-
-          // Replace product title and add affiliate link with all info
+          // Replace product title and add affiliate link
           const titleReplacement = `
             <h3 class="text-left text-lg md:text-xl font-semibold mt-6 mb-3">
               ${product.title}
@@ -150,12 +131,18 @@ TONE GUIDELINES:
                 </a>
               </div>
             </h3>
-            ${imageHtml}
-            ${priceInfo}
-            ${ratingInfo}`;
+            ${imageHtml}`;
 
           content = content.replace(productMatch, titleReplacement);
 
+          // Add price information if available
+          if (product.price) {
+            const priceInfo = `<p class="text-left text-sm text-muted-foreground mb-4">Current price: ${product.currency} ${product.price}</p>`;
+            content = content.replace(
+              new RegExp(`(${product.title}.*?</h3>)`),
+              `$1\n${priceInfo}`
+            );
+          }
         } else {
           console.warn('No Amazon product found for:', productName);
         }
