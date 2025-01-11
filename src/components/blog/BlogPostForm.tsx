@@ -14,6 +14,7 @@ import { BlogPostFormData, BlogPostData } from "./types/BlogPostTypes";
 import { BlogPostActions } from "./form/BlogPostActions";
 import { BlogPostFormWrapper } from "./form/BlogPostFormWrapper";
 import { useAIGenerate } from "./form/useAIGenerate";
+import { useAIBlogGeneration } from "@/hooks/useAIBlogGeneration";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 
 interface BlogPostFormProps {
@@ -25,7 +26,8 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
   const [activeTab, setActiveTab] = useState("edit");
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { handleAIGenerate, isGenerating } = useAIGenerate();
+  const { handleAIGenerate, isGenerating: isGeneratingFields } = useAIGenerate();
+  const { generateBlogContent, isGenerating: isGeneratingBlog } = useAIBlogGeneration();
 
   const form = useForm<BlogPostFormData>({
     defaultValues: initialData || {
@@ -94,6 +96,25 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
     }
   };
 
+  const handleGenerateContent = async () => {
+    const title = form.getValues('title');
+    if (!title) {
+      toast({
+        title: "Error",
+        description: "Please enter a title first",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const data = await generateBlogContent(title, "any occasion");
+    if (data) {
+      form.setValue('content', data.content);
+      form.setValue('affiliate_links', data.affiliateLinks);
+      setActiveTab('preview');
+    }
+  };
+
   const generateSlug = (title: string) => {
     return title
       .toLowerCase()
@@ -147,8 +168,9 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
 
           <BlogPostActions 
             isSubmitting={isSubmitting}
-            isGenerating={isGenerating}
+            isGenerating={isGeneratingFields || isGeneratingBlog}
             onSubmit={(isDraft) => onSubmit(form.getValues(), isDraft)}
+            onGenerate={handleGenerateContent}
           />
         </BlogPostFormWrapper>
       </TabsContent>
