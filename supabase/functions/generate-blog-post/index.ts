@@ -8,22 +8,39 @@ const corsHeaders = {
 
 const searchAmazonProduct = async (searchTerm: string) => {
   try {
-    console.log('Searching Amazon for:', searchTerm);
+    console.log('Starting Amazon product search for:', searchTerm);
+    
+    // Call the get-amazon-products function
     const { data, error } = await fetch('http://localhost:54321/functions/v1/get-amazon-products', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${Deno.env.get('SUPABASE_ANON_KEY')}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ searchTerm }),
+      body: JSON.stringify({ 
+        searchTerm,
+        debug: true // Add debug flag to get more detailed logs
+      }),
     }).then(res => res.json());
 
     if (error) {
-      console.error('Error fetching Amazon product:', error);
+      console.error('Error from get-amazon-products:', error);
       throw error;
     }
+
+    if (!data) {
+      console.warn('No data returned from get-amazon-products for term:', searchTerm);
+      return null;
+    }
     
-    console.log('Amazon product data:', data);
+    console.log('Amazon product search results:', {
+      searchTerm,
+      foundProduct: !!data,
+      asin: data?.asin,
+      title: data?.title,
+      imageUrl: data?.imageUrl
+    });
+
     return data;
   } catch (error) {
     console.error('Error in searchAmazonProduct:', error);
@@ -132,6 +149,7 @@ serve(async (req) => {
 
     // Extract product suggestions from the content
     const productMatches = content.match(/(?<=<h[23]>)[^<]+(?=<\/h[23]>)/g) || [];
+    console.log('Found product matches:', productMatches);
     
     // Process each product suggestion
     for (const productName of productMatches) {
@@ -141,7 +159,8 @@ serve(async (req) => {
       const product = await searchAmazonProduct(productName);
       
       if (product && product.asin) {
-        console.log('Found Amazon product:', {
+        console.log('Successfully found Amazon product:', {
+          productName,
           asin: product.asin,
           title: product.title,
           imageUrl: product.imageUrl
@@ -152,20 +171,19 @@ serve(async (req) => {
         console.log('Generated affiliate link:', affiliateLink);
         
         // Add product image and affiliate link
-        content = content.replace(
-          '[PRODUCT_PLACEHOLDER]',
-          `<div class="flex justify-center my-4">
+        const imageReplacement = `<div class="flex justify-center my-4">
             <img src="${product.imageUrl}" 
                  alt="${product.title}" 
                  class="rounded-lg shadow-md w-36 h-36 object-contain" 
                  loading="lazy" />
-           </div>`
-        );
+           </div>`;
+        
+        console.log('Replacing [PRODUCT_PLACEHOLDER] with image');
+        content = content.replace('[PRODUCT_PLACEHOLDER]', imageReplacement);
         
         // Replace product title with actual Amazon product title and add affiliate link
-        content = content.replace(
-          new RegExp(`<h[23]>${productName}</h[23]>`),
-          `<h3 class="text-left text-lg md:text-xl font-semibold mt-6 mb-3">
+        const titlePattern = new RegExp(`<h[23]>${productName}</h[23]>`);
+        const titleReplacement = `<h3 class="text-left text-lg md:text-xl font-semibold mt-6 mb-3">
              ${product.title}
              <div class="mt-2">
                <a href="${affiliateLink}" 
@@ -175,15 +193,19 @@ serve(async (req) => {
                  View on Amazon
                </a>
              </div>
-           </h3>`
-        );
+           </h3>`;
+        
+        console.log('Replacing product title with affiliate link');
+        content = content.replace(titlePattern, titleReplacement);
 
         // Add price information if available
         if (product.price) {
+          const priceInfo = `<p class="text-left text-sm text-muted-foreground mb-4">Current price: $${product.price}</p>`;
           content = content.replace(
             new RegExp(`(${product.title}.*?</h3>)`),
-            `$1\n<p class="text-left text-sm text-muted-foreground mb-4">Current price: $${product.price}</p>`
+            `$1\n${priceInfo}`
           );
+          console.log('Added price information');
         }
       } else {
         console.warn('No Amazon product found for:', productName);
