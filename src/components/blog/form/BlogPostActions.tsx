@@ -16,18 +16,16 @@ export const BlogPostActions = ({
 }: BlogPostActionsProps) => {
   return (
     <div className="flex flex-col sm:flex-row gap-4 justify-end mt-8">
-      {onGenerate && (
-        <Button
-          type="button"
-          variant="outline"
-          onClick={onGenerate}
-          disabled={isGenerating || isSubmitting}
-          className="w-full sm:w-auto"
-        >
-          <Wand2 className="w-4 h-4 mr-2" />
-          {isGenerating ? "Generating..." : "Generate with AI"}
-        </Button>
-      )}
+      <Button
+        type="button"
+        variant="outline"
+        onClick={onGenerate}
+        disabled={isGenerating || isSubmitting}
+        className="w-full sm:w-auto"
+      >
+        <Wand2 className="w-4 h-4 mr-2" />
+        {isGenerating ? "Generating..." : "Generate with AI"}
+      </Button>
       
       <Button
         type="button"
