@@ -38,7 +38,7 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: "gpt-4",
+        model: "gpt-4o",
         messages: [
           {
             role: "system",
@@ -57,8 +57,14 @@ serve(async (req) => {
 3. For product recommendations:
    - Create EXACTLY ${numItems} recommendations (no more, no less)
    - Number each recommendation clearly (1. Product Name, 2. Product Name, etc.)
-   - Write 300-400 words per product
-   - Include witty observations and humorous scenarios
+   - Write 400-500 words per product
+   - Include these elements for each product:
+     * Detailed features and benefits
+     * Real-world usage scenarios
+     * Why it makes a great gift
+     * Personal anecdotes or humorous observations
+     * Who would love this gift and why
+     * Creative ways to present or gift wrap it
    - Add 2-3 emojis per product section
    - Make product titles VERY specific with brand names
 
@@ -79,7 +85,7 @@ IMPORTANT:
 - Format product titles as: <h3>[EXACT PRODUCT NAME WITH BRAND]</h3>
 - Make product names VERY specific for accurate Amazon matching
 - Focus on premium/high-quality items
-- Write at least 2500 words total
+- Write at least 3000 words total
 - Maintain humor throughout
 - Use emojis effectively but don't overdo it`
           },
@@ -135,6 +141,10 @@ IMPORTANT:
             imageUrl: product.imageUrl
           });
 
+          // Generate a custom product description
+          const customDescription = await generateCustomDescription(product.title, product.description);
+          console.log('Generated custom description:', customDescription);
+
           // Add product image with specific dimensions
           const imageHtml = product.imageUrl ? `
             <div class="flex justify-center my-4">
@@ -155,7 +165,11 @@ IMPORTANT:
               ${product.totalRatings ? `(${product.totalRatings.toLocaleString()} reviews)` : ''}
             </p>` : '';
 
-          // Replace product title and add affiliate link with price and reviews
+          // Add the custom description
+          const descriptionHtml = customDescription ? 
+            `<p class="text-left text-sm md:text-base mb-4">${customDescription}</p>` : '';
+
+          // Replace product title and add affiliate link with price, reviews, and description
           const titleReplacement = `
             <h3 class="text-left text-lg md:text-xl font-semibold mt-6 mb-3">
               ${product.title}
@@ -170,7 +184,8 @@ IMPORTANT:
             </h3>
             ${imageHtml}
             ${priceDisplay}
-            ${reviewInfo}`;
+            ${reviewInfo}
+            ${descriptionHtml}`;
 
           content = content.replace(productMatch, titleReplacement);
         } else {
