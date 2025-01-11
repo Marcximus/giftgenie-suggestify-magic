@@ -12,12 +12,12 @@ export const formatProductHtml = (
   product: ProductInfo,
   affiliateLink: string
 ) => {
-  // Add product image with specific dimensions
+  // Add product image with updated dimensions (140x140px)
   const imageHtml = product.imageUrl ? `
     <div class="flex justify-center my-4">
       <img src="${product.imageUrl}" 
            alt="${product.title}" 
-           class="rounded-lg shadow-md w-[40px] h-[40px] object-contain"
+           class="rounded-lg shadow-md w-[140px] h-[140px] object-contain"
            loading="lazy" />
     </div>` : '';
 
