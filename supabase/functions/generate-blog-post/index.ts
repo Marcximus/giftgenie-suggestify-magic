@@ -56,19 +56,9 @@ serve(async (req) => {
 
 3. For product recommendations:
    - Create EXACTLY ${numItems} recommendations
-   - Format each recommendation as a countdown:
-     * Start with "No. ${numItems}:" for the first item
-     * Count down to "No. 1:" for the final item
-   - Write 400-500 words per product
-   - Include these elements for each product:
-     * Detailed features and benefits
-     * Real-world usage scenarios
-     * Why it makes a great gift
-     * Personal anecdotes or humorous observations
-     * Who would love this gift and why
-     * Creative ways to present or gift wrap it
+    - Write 200-300 words per product
    - Add 2-3 emojis per product section
-   - Make product titles VERY specific with brand names
+   - Make product titles specific 
 
 4. End with:
    - A funny conclusion
@@ -84,10 +74,9 @@ Style Guidelines:
 - Keep paragraphs short and punchy
 
 IMPORTANT: 
-- Format product titles as: <h3>No. [NUMBER]: [EXACT PRODUCT NAME WITH BRAND]</h3>
-- Make product names VERY specific for accurate Amazon matching
+- Format product titles as: <h3>No. [NUMBER]: [PRODUCT NAME]</h3>
+- Make product names specific for accurate Amazon matching
 - Focus on premium/high-quality items
-- Write at least 3000 words total
 - Maintain humor throughout
 - Use emojis effectively but don't overdo it
 - Remember to COUNT DOWN from ${numItems} to 1`
@@ -133,7 +122,6 @@ IMPORTANT:
 
           const affiliateLink = `https://www.amazon.com/dp/${product.asin}/ref=nosim?tag=${associateId}`;
           
-          // Store affiliate link info
           affiliateLinks.push({
             productTitle: product.title,
             affiliateLink,
@@ -149,7 +137,7 @@ IMPORTANT:
             <div class="flex justify-center my-4">
               <img src="${product.imageUrl}" 
                    alt="${product.title}" 
-                   class="rounded-lg shadow-md w-[150px] h-[150px] object-contain"
+                   class="rounded-lg shadow-md w-[40px] h-[40px] object-contain"
                    loading="lazy" />
             </div>` : '';
 
@@ -172,19 +160,19 @@ IMPORTANT:
           const titleReplacement = `
             <h3 class="text-left text-lg md:text-xl font-semibold mt-6 mb-3">
               ${product.title}
-              <div class="mt-2">
-                <a href="${affiliateLink}" 
-                   target="_blank" 
-                   rel="noopener noreferrer" 
-                   class="inline-block px-4 py-2 bg-[#F97316] hover:bg-[#F97316]/90 text-white rounded-md transition-colors text-sm">
-                  View on Amazon
-                </a>
-              </div>
             </h3>
             ${imageHtml}
             ${priceDisplay}
             ${reviewInfo}
-            ${descriptionHtml}`;
+            ${descriptionHtml}
+            <div class="mt-4">
+              <a href="${affiliateLink}" 
+                 target="_blank" 
+                 rel="noopener noreferrer" 
+                 class="inline-block px-4 py-2 bg-[#F97316] hover:bg-[#F97316]/90 text-white rounded-md transition-colors text-sm">
+                View on Amazon
+              </a>
+            </div>`;
 
           content = content.replace(productMatch, titleReplacement);
         } else {
