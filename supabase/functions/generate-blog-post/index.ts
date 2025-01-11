@@ -19,6 +19,11 @@ serve(async (req) => {
     const { title } = await req.json();
     console.log('Generating blog post for:', title);
 
+    // Extract number of items from title (e.g., "Top 10" -> 10)
+    const numItemsMatch = title.match(/\b(\d+)\b/);
+    const numItems = numItemsMatch ? parseInt(numItemsMatch[1]) : 5;
+    console.log('Number of items to generate:', numItems);
+
     // Get Amazon Associate ID
     const associateId = Deno.env.get('AMAZON_ASSOCIATE_ID');
     if (!associateId) {
@@ -37,28 +42,29 @@ serve(async (req) => {
         messages: [
           {
             role: "system",
-            content: `You are a professional blog content writer specializing in gift recommendations. Create engaging, SEO-optimized content that follows this structure:
+            content: `You are a professional blog content writer specializing in gift recommendations. Create engaging, SEO-optimized content that follows these guidelines:
 
 1. Start with an engaging introduction (2-3 paragraphs)
 2. Include a "Why These Gifts Are Perfect" section
 3. Include a "How to Choose the Right Gift" section
 4. For product recommendations:
-   - Create an H3 heading for each product
+   - Create EXACTLY ${numItems} product recommendations (no more, no less)
+   - Number each recommendation (1. Product Name, 2. Product Name, etc.)
    - Make product titles VERY specific (include brand names and models)
-   - Explain why it's a great gift
-   - Describe key features and benefits
+   - Use humor and light sarcasm where appropriate
+   - Include emojis for visual appeal (1-2 per section)
+   - Write 200-300 words per product
 5. End with a conclusion and call-to-action
 6. Format with proper HTML tags
-7. Use emojis sparingly for visual appeal
-8. Keep paragraphs short and readable
-9. Include relevant keywords naturally
+7. Keep paragraphs short and readable
+8. Include relevant keywords naturally
 
 IMPORTANT: 
 - Format product titles as: <h3>[EXACT PRODUCT NAME WITH BRAND]</h3>
 - Make product names VERY specific for accurate Amazon matching
-- Write 300-400 words per product
-- Include 5-8 product recommendations
-- Focus on premium/high-quality items`
+- Focus on premium/high-quality items
+- Use emojis sparingly but effectively
+- Maintain a fun, engaging tone throughout`
           },
           {
             role: "user",
@@ -66,7 +72,7 @@ IMPORTANT:
           }
         ],
         temperature: 0.7,
-        max_tokens: 2500,
+        max_tokens: 3500,
       }),
     });
 
@@ -109,16 +115,22 @@ IMPORTANT:
             imageUrl: product.imageUrl
           });
 
-          // Add product image
+          // Add product image with specific dimensions
           const imageHtml = product.imageUrl ? `
             <div class="flex justify-center my-4">
               <img src="${product.imageUrl}" 
                    alt="${product.title}" 
-                   class="rounded-lg shadow-md w-[150px] h-[150px] object-contain"
+                   class="rounded-lg shadow-md w-36 h-36 object-contain"
                    loading="lazy" />
             </div>` : '';
 
-          // Replace product title and add affiliate link
+          // Replace product title and add affiliate link with price and reviews
+          const priceInfo = product.price ? 
+            `<p class="text-left text-sm text-muted-foreground mb-2">💰 Current price: ${product.currency} ${product.price}</p>` : '';
+          
+          const reviewInfo = product.rating ? 
+            `<p class="text-left text-sm text-muted-foreground mb-4">⭐ Rating: ${product.rating.toFixed(1)} out of 5 stars (${product.totalRatings?.toLocaleString()} reviews)</p>` : '';
+
           const titleReplacement = `
             <h3 class="text-left text-lg md:text-xl font-semibold mt-6 mb-3">
               ${product.title}
@@ -131,18 +143,11 @@ IMPORTANT:
                 </a>
               </div>
             </h3>
-            ${imageHtml}`;
+            ${imageHtml}
+            ${priceInfo}
+            ${reviewInfo}`;
 
           content = content.replace(productMatch, titleReplacement);
-
-          // Add price information if available
-          if (product.price) {
-            const priceInfo = `<p class="text-left text-sm text-muted-foreground mb-4">Current price: ${product.currency} ${product.price}</p>`;
-            content = content.replace(
-              new RegExp(`(${product.title}.*?</h3>)`),
-              `$1\n${priceInfo}`
-            );
-          }
         } else {
           console.warn('No Amazon product found for:', productName);
         }
