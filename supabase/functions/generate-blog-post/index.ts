@@ -140,7 +140,7 @@ IMPORTANT:
             <div class="flex justify-center my-4">
               <img src="${product.imageUrl}" 
                    alt="${product.title}" 
-                   class="rounded-lg shadow-md w-36 h-36 object-contain"
+                   class="rounded-lg shadow-md w-[150px] h-[150px] object-contain"
                    loading="lazy" />
             </div>` : '';
 
