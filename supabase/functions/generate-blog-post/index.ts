@@ -9,6 +9,7 @@ const corsHeaders = {
 
 const RAPIDAPI_KEY = Deno.env.get('RAPIDAPI_KEY');
 const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
+const AMAZON_ASSOCIATE_ID = Deno.env.get('AMAZON_ASSOCIATE_ID');
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -24,12 +25,6 @@ serve(async (req) => {
     const numItems = numItemsMatch ? parseInt(numItemsMatch[1]) : 5;
     console.log('Number of items to generate:', numItems);
 
-    // Get Amazon Associate ID
-    const associateId = Deno.env.get('AMAZON_ASSOCIATE_ID');
-    if (!associateId) {
-      throw new Error('Amazon Associate ID not configured');
-    }
-
     // Generate initial blog post structure using OpenAI
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -44,10 +39,10 @@ serve(async (req) => {
             role: "system",
             content: `You are a witty, entertaining blog writer specializing in gift recommendations. Create engaging, humorous content that follows these guidelines:
 
-1. Start with an engaging introduction (3-4 paragraphs)
-   - Use humor and light sarcasm
-   - Include relevant emojis (1-2 per paragraph)
-   - Make it relatable and fun to read
+1. Start with an engaging introduction (2-3 paragraphs)
+   - Use humor and relatable scenarios
+   - Include 1-2 relevant emojis per paragraph
+   - Make it fun and engaging to read
 
 2. Include these sections with emojis:
    - "Why These Gifts Will Make Their Day 🎁"
@@ -57,48 +52,37 @@ serve(async (req) => {
 3. For product recommendations:
    - Create EXACTLY ${numItems} recommendations
    - Format each recommendation as a countdown:
-     * Start with "No. ${numItems}:" for the first item
+     * Start with "[PRODUCT_PLACEHOLDER]\\nNo. ${numItems}:" for the first item
      * Count down to "No. 1:" for the final item
-   - Write 400-500 words per product
+   - Write 150-200 words per product
    - Include these elements for each product:
-     * Detailed features and benefits
+     * Key features and benefits
      * Real-world usage scenarios
      * Why it makes a great gift
-     * Personal anecdotes or humorous observations
      * Who would love this gift and why
-     * Creative ways to present or gift wrap it
-   - Add 2-3 emojis per product section
+   - Add 1-2 emojis per product section
    - Make product titles VERY specific with brand names
 
 4. End with:
-   - A funny conclusion
-   - A humorous call-to-action
-   - Final emoji-filled sign-off
+   - A brief conclusion
+   - A call-to-action
+   - Final emoji
 
 Style Guidelines:
 - Use a conversational, friendly tone
-- Include pop culture references when relevant
-- Add playful commentary about each product
-- Use emojis naturally, not forced
-- Make sarcastic (but kind) observations
 - Keep paragraphs short and punchy
-
-IMPORTANT: 
-- Format product titles as: <h3>No. [NUMBER]: [EXACT PRODUCT NAME WITH BRAND]</h3>
+- Use emojis naturally, not forced
 - Make product names VERY specific for accurate Amazon matching
 - Focus on premium/high-quality items
-- Write at least 3000 words total
-- Maintain humor throughout
-- Use emojis effectively but don't overdo it
-- Remember to COUNT DOWN from ${numItems} to 1`
+- Write at least 1500 words total`
           },
           {
             role: "user",
             content: `Create a fun, engaging blog post about: ${title}`
           }
         ],
-        temperature: 0.8,
-        max_tokens: 4000,
+        temperature: 0.7,
+        max_tokens: 2500,
       }),
     });
 
@@ -106,34 +90,26 @@ IMPORTANT:
     let content = data.choices[0].message.content;
     const affiliateLinks = [];
 
-    // Extract product titles from H3 tags
-    const productMatches = content.match(/<h3>([^<]+)<\/h3>/g) || [];
+    // Extract product titles from the content
+    const productMatches = content.match(/No\. \d+: ([^\n]+)/g) || [];
     console.log('Found product matches:', productMatches.length);
 
     // Process each product
     for (const productMatch of productMatches) {
-      const productName = productMatch.replace(/<\/?h3>/g, '');
+      const productName = productMatch.replace(/No\. \d+: /, '');
       console.log('Processing product:', productName);
 
       try {
-        if (!RAPIDAPI_KEY) {
-          throw new Error('RAPIDAPI_KEY not configured');
-        }
-
         const product = await searchAmazonProduct(productName, RAPIDAPI_KEY);
         
         if (product?.asin) {
           console.log('Found Amazon product:', {
             title: product.title,
-            asin: product.asin,
-            price: product.price,
-            rating: product.rating,
-            totalRatings: product.totalRatings
+            asin: product.asin
           });
 
-          const affiliateLink = `https://www.amazon.com/dp/${product.asin}/ref=nosim?tag=${associateId}`;
+          const affiliateLink = `https://www.amazon.com/dp/${product.asin}/ref=nosim?tag=${AMAZON_ASSOCIATE_ID}`;
           
-          // Store affiliate link info
           affiliateLinks.push({
             productTitle: product.title,
             affiliateLink,
@@ -141,54 +117,52 @@ IMPORTANT:
           });
 
           // Generate a custom product description
-          const customDescription = await generateCustomDescription(product.title, product.description);
-          console.log('Generated custom description:', customDescription);
+          const customDescription = await generateCustomDescription(
+            product.title,
+            product.description || ''
+          );
 
-          // Add product image with specific dimensions
-          const imageHtml = product.imageUrl ? `
-            <div class="flex justify-center my-4">
-              <img src="${product.imageUrl}" 
-                   alt="${product.title}" 
-                   class="rounded-lg shadow-md w-[150px] h-[150px] object-contain"
-                   loading="lazy" />
-            </div>` : '';
+          // Add product image and details
+          const productHtml = `
+            <div class="product-section mb-8">
+              <h3 class="text-left text-lg md:text-xl font-semibold mt-6 mb-3">
+                ${productMatch}
+                <div class="mt-2">
+                  <a href="${affiliateLink}" 
+                     target="_blank" 
+                     rel="noopener noreferrer" 
+                     class="inline-block px-4 py-2 bg-[#F97316] hover:bg-[#F97316]/90 text-white rounded-md transition-colors text-sm">
+                    View on Amazon
+                  </a>
+                </div>
+              </h3>
+              ${product.imageUrl ? `
+                <div class="flex justify-center my-4">
+                  <img src="${product.imageUrl}" 
+                       alt="${product.title}" 
+                       class="rounded-lg shadow-md w-[150px] h-[150px] object-contain"
+                       loading="lazy" />
+                </div>
+              ` : ''}
+              ${product.price ? `
+                <p class="text-left text-sm text-muted-foreground mb-2">
+                  💰 Current price: ${product.currency} ${product.price}
+                </p>
+              ` : ''}
+              ${product.rating ? `
+                <p class="text-left text-sm text-muted-foreground mb-4">
+                  ⭐ Rating: ${product.rating.toFixed(1)} out of 5 stars 
+                  ${product.totalRatings ? `(${product.totalRatings.toLocaleString()} reviews)` : ''}
+                </p>
+              ` : ''}
+              <p class="text-left text-sm md:text-base mb-4">${customDescription}</p>
+            </div>`;
 
-          // Format price with currency
-          const priceDisplay = product.price ? 
-            `<p class="text-left text-sm text-muted-foreground mb-2">💰 Current price: ${product.currency} ${product.price}</p>` : '';
-          
-          // Format rating and review count
-          const reviewInfo = product.rating ? 
-            `<p class="text-left text-sm text-muted-foreground mb-4">
-              ⭐ Rating: ${product.rating.toFixed(1)} out of 5 stars 
-              ${product.totalRatings ? `(${product.totalRatings.toLocaleString()} reviews)` : ''}
-            </p>` : '';
-
-          // Add the custom description
-          const descriptionHtml = customDescription ? 
-            `<p class="text-left text-sm md:text-base mb-4">${customDescription}</p>` : '';
-
-          // Replace product title and add affiliate link with price, reviews, and description
-          const titleReplacement = `
-            <h3 class="text-left text-lg md:text-xl font-semibold mt-6 mb-3">
-              ${product.title}
-              <div class="mt-2">
-                <a href="${affiliateLink}" 
-                   target="_blank" 
-                   rel="noopener noreferrer" 
-                   class="inline-block px-4 py-2 bg-[#F97316] hover:bg-[#F97316]/90 text-white rounded-md transition-colors text-sm">
-                  View on Amazon
-                </a>
-              </div>
-            </h3>
-            ${imageHtml}
-            ${priceDisplay}
-            ${reviewInfo}
-            ${descriptionHtml}`;
-
-          content = content.replace(productMatch, titleReplacement);
-        } else {
-          console.warn('No Amazon product found for:', productName);
+          // Replace the original product section with the enhanced version
+          content = content.replace(
+            `[PRODUCT_PLACEHOLDER]\n${productMatch}`,
+            productHtml
+          );
         }
       } catch (error) {
         console.error('Error processing product:', productName, error);
@@ -199,15 +173,11 @@ IMPORTANT:
     content = content
       .replace(/<p>/g, '<p class="text-left text-sm md:text-base mb-4">')
       .replace(/<h2>/g, '<h2 class="text-left text-xl md:text-2xl font-bold mt-8 mb-4">')
-      .replace(/<h3>/g, '<h3 class="text-left text-lg md:text-xl font-semibold mt-6 mb-3">')
       .replace(/<ul>/g, '<ul class="text-left list-disc pl-6 space-y-2 text-sm md:text-base">')
       .replace(/<ol>/g, '<ol class="text-left list-decimal pl-6 space-y-2 text-sm md:text-base">');
 
     return new Response(
-      JSON.stringify({ 
-        content,
-        affiliateLinks 
-      }),
+      JSON.stringify({ content, affiliateLinks }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
