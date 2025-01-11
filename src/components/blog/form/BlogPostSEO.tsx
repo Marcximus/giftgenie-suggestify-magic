@@ -1,17 +1,35 @@
 import { FormField, FormItem, FormLabel, FormControl, FormDescription, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
+import { Wand2 } from "lucide-react";
 import { UseFormReturn } from "react-hook-form";
 import { BlogPostFormData } from "../types/BlogPostTypes";
 
 interface BlogPostSEOProps {
   form: UseFormReturn<BlogPostFormData>;
+  handleAIGenerate: (type: 'excerpt' | 'seo-title' | 'seo-description' | 'seo-keywords') => Promise<void>;
 }
 
-export const BlogPostSEO = ({ form }: BlogPostSEOProps) => {
+export const BlogPostSEO = ({ form, handleAIGenerate }: BlogPostSEOProps) => {
   return (
     <div className="space-y-4">
-      <h3 className="text-lg font-medium">SEO Settings</h3>
+      <div className="flex items-center justify-between">
+        <h3 className="text-lg font-medium">SEO Settings</h3>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={async () => {
+            await handleAIGenerate('seo-title');
+            await handleAIGenerate('seo-description');
+            await handleAIGenerate('seo-keywords');
+          }}
+        >
+          <Wand2 className="w-4 h-4 mr-2" />
+          Generate All SEO
+        </Button>
+      </div>
       
       <div className="grid gap-4">
         <FormField
@@ -19,7 +37,18 @@ export const BlogPostSEO = ({ form }: BlogPostSEOProps) => {
           name="meta_title"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Meta Title</FormLabel>
+              <FormLabel className="flex items-center justify-between">
+                Meta Title
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleAIGenerate('seo-title')}
+                >
+                  <Wand2 className="w-4 h-4 mr-2" />
+                  Generate
+                </Button>
+              </FormLabel>
               <FormControl>
                 <Input {...field} value={field.value || ''} />
               </FormControl>
@@ -36,7 +65,18 @@ export const BlogPostSEO = ({ form }: BlogPostSEOProps) => {
           name="meta_description"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Meta Description</FormLabel>
+              <FormLabel className="flex items-center justify-between">
+                Meta Description
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleAIGenerate('seo-description')}
+                >
+                  <Wand2 className="w-4 h-4 mr-2" />
+                  Generate
+                </Button>
+              </FormLabel>
               <FormControl>
                 <Textarea {...field} value={field.value || ''} />
               </FormControl>
@@ -53,7 +93,18 @@ export const BlogPostSEO = ({ form }: BlogPostSEOProps) => {
           name="meta_keywords"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Meta Keywords</FormLabel>
+              <FormLabel className="flex items-center justify-between">
+                Meta Keywords
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleAIGenerate('seo-keywords')}
+                >
+                  <Wand2 className="w-4 h-4 mr-2" />
+                  Generate
+                </Button>
+              </FormLabel>
               <FormControl>
                 <Input {...field} value={field.value || ''} />
               </FormControl>

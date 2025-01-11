@@ -20,6 +20,7 @@ interface BlogPostFormProps {
 
 const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
   const [activeTab, setActiveTab] = useState("edit");
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -40,6 +41,59 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
       affiliate_links: [],
     },
   });
+
+  const handleAIGenerate = async (type: 'excerpt' | 'seo-title' | 'seo-description' | 'seo-keywords') => {
+    setIsGenerating(true);
+    try {
+      const title = form.getValues('title');
+      const content = form.getValues('content');
+      
+      if (!title) {
+        throw new Error('Please provide a title first');
+      }
+
+      const { data, error } = await supabase.functions.invoke('generate-blog-metadata', {
+        body: { 
+          type,
+          title,
+          content
+        }
+      });
+
+      if (error) throw error;
+
+      if (data) {
+        switch (type) {
+          case 'excerpt':
+            form.setValue('excerpt', data.text);
+            break;
+          case 'seo-title':
+            form.setValue('meta_title', data.text);
+            break;
+          case 'seo-description':
+            form.setValue('meta_description', data.text);
+            break;
+          case 'seo-keywords':
+            form.setValue('meta_keywords', data.text);
+            break;
+        }
+
+        toast({
+          title: "Success",
+          description: `Generated ${type} successfully`,
+        });
+      }
+    } catch (error: any) {
+      console.error('Generation error:', error);
+      toast({
+        title: "Error",
+        description: error.message || `Failed to generate ${type}`,
+        variant: "destructive",
+      });
+    } finally {
+      setIsGenerating(false);
+    }
+  };
 
   const onSubmit = async (data: BlogPostFormData, isDraft: boolean = false) => {
     setIsSubmitting(true);
@@ -131,20 +185,26 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
               )}
             />
 
-            <BlogPostContent form={form} />
+            <BlogPostContent 
+              form={form}
+              handleAIGenerate={handleAIGenerate}
+            />
 
             <Separator />
 
-            <BlogPostSEO form={form} />
+            <BlogPostSEO 
+              form={form}
+              handleAIGenerate={handleAIGenerate}
+            />
 
             <div className="flex gap-4">
-              <Button type="submit" disabled={isSubmitting}>
+              <Button type="submit" disabled={isSubmitting || isGenerating}>
                 {isSubmitting ? "Saving..." : initialData ? "Update Post" : "Publish Post"}
               </Button>
               <Button
                 type="button"
                 variant="outline"
-                disabled={isSubmitting}
+                disabled={isSubmitting || isGenerating}
                 onClick={() => onSubmit(form.getValues(), true)}
               >
                 Save as Draft
