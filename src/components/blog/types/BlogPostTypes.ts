@@ -10,6 +10,7 @@ export interface BlogPostFormData {
   meta_description: string | null;
   meta_keywords: string | null;
   images: any[] | null;
+  affiliate_links: any[] | null;
 }
 
 export interface BlogPostData extends BlogPostFormData {

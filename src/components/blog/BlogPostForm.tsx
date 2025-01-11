@@ -39,6 +39,7 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
       meta_description: "",
       meta_keywords: "",
       images: [],
+      affiliate_links: [], // Added this line
     },
   });
 
