@@ -8,6 +8,7 @@ const corsHeaders = {
 
 const searchAmazonProduct = async (searchTerm: string) => {
   try {
+    console.log('Searching Amazon for:', searchTerm);
     const { data, error } = await fetch('http://localhost:54321/functions/v1/get-amazon-products', {
       method: 'POST',
       headers: {
@@ -23,30 +24,6 @@ const searchAmazonProduct = async (searchTerm: string) => {
     console.error('Error fetching Amazon product:', error);
     return null;
   }
-}
-
-const getGoogleImage = async (searchTerm: string) => {
-  const GOOGLE_API_KEY = Deno.env.get('GOOGLE_SEARCH_API_KEY');
-  const SEARCH_ENGINE_ID = Deno.env.get('GOOGLE_SEARCH_ENGINE_ID');
-
-  if (!GOOGLE_API_KEY || !SEARCH_ENGINE_ID) {
-    console.error('Google Search API configuration missing');
-    return null;
-  }
-
-  try {
-    const response = await fetch(
-      `https://www.googleapis.com/customsearch/v1?key=${GOOGLE_API_KEY}&cx=${SEARCH_ENGINE_ID}&searchType=image&q=${encodeURIComponent(searchTerm)}&num=1`
-    );
-    
-    if (response.ok) {
-      const data = await response.json();
-      return data.items?.[0]?.link;
-    }
-  } catch (error) {
-    console.error('Error fetching Google image:', error);
-  }
-  return null;
 }
 
 serve(async (req) => {
@@ -108,7 +85,8 @@ serve(async (req) => {
     - Practical examples
     - Relatable scenarios
 11. Minimum length: 1500 words
-12. Include [PRODUCT_PLACEHOLDER] tag BEFORE each product heading`
+12. Include [PRODUCT_PLACEHOLDER] tag BEFORE each product heading
+13. Make product titles VERY specific with brand names and models`
           },
           {
             role: "user",
@@ -123,7 +101,8 @@ serve(async (req) => {
             7. Include exactly ${numProducts} product recommendations
             8. Focus specifically on ${subject}
             9. Make it fun and engaging
-            10. Minimum 1500 words`
+            10. Minimum 1500 words
+            11. Include specific brand names and model numbers in product titles`
           }
         ],
         temperature: 0.7,
@@ -153,50 +132,48 @@ serve(async (req) => {
       
       // Get Amazon product details
       const product = await searchAmazonProduct(productName);
-      let imageUrl = null;
       
       if (product && product.asin) {
-        // Use Amazon product image if available
-        imageUrl = product.imageUrl;
+        // Create affiliate link
         const affiliateLink = `https://www.amazon.com/dp/${product.asin}/ref=nosim?tag=${associateId}`;
         
-        // Replace the product placeholder with image and affiliate link
+        // Add product image and affiliate link
         content = content.replace(
           '[PRODUCT_PLACEHOLDER]',
           `<div class="flex justify-center my-4">
-            <img src="${imageUrl}" alt="${product.title}" class="rounded-lg shadow-md w-48 md:w-56 object-contain" />
+            <img src="${product.imageUrl}" 
+                 alt="${product.title}" 
+                 class="rounded-lg shadow-md w-36 h-36 object-contain" 
+                 loading="lazy" />
            </div>`
         );
         
-        // Add affiliate link to product title
+        // Replace product title with actual Amazon product title and add affiliate link
         content = content.replace(
           new RegExp(`<h[23]>${productName}</h[23]>`),
-          `<h3 class="text-left text-lg md:text-xl font-semibold mt-6 mb-3">${product.title} 
-           <div class="mt-2">
-             <a href="${affiliateLink}" 
-                target="_blank" 
-                rel="noopener noreferrer" 
-                class="inline-block px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors text-sm">
-               View on Amazon
-             </a>
-           </div>
-          </h3>`
+          `<h3 class="text-left text-lg md:text-xl font-semibold mt-6 mb-3">
+             ${product.title}
+             <div class="mt-2">
+               <a href="${affiliateLink}" 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  class="inline-block px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors text-sm">
+                 View on Amazon
+               </a>
+             </div>
+           </h3>`
         );
-      } else {
-        // If no Amazon product found, try Google image search
-        imageUrl = await getGoogleImage(`${productName} product image`);
-        
-        if (imageUrl) {
+
+        // Add price information if available
+        if (product.price) {
           content = content.replace(
-            '[PRODUCT_PLACEHOLDER]',
-            `<div class="flex justify-center my-4">
-              <img src="${imageUrl}" alt="${productName}" class="rounded-lg shadow-md w-48 md:w-56 object-contain" />
-             </div>`
+            new RegExp(`(${product.title}.*?</h3>)`),
+            `$1\n<p class="text-left text-sm text-muted-foreground mb-4">Current price: $${product.price}</p>`
           );
-        } else {
-          // Remove placeholder if no image found
-          content = content.replace('[PRODUCT_PLACEHOLDER]', '');
         }
+      } else {
+        // Remove placeholder if no product found
+        content = content.replace('[PRODUCT_PLACEHOLDER]', '');
       }
     }
 
