@@ -55,8 +55,10 @@ serve(async (req) => {
    - "Pro Tips for Gift-Giving Success 💡"
 
 3. For product recommendations:
-   - Create EXACTLY ${numItems} recommendations (no more, no less)
-   - Number each recommendation clearly (1. Product Name, 2. Product Name, etc.)
+   - Create EXACTLY ${numItems} recommendations
+   - Format each recommendation as a countdown:
+     * Start with "No. ${numItems}:" for the first item
+     * Count down to "No. 1:" for the final item
    - Write 400-500 words per product
    - Include these elements for each product:
      * Detailed features and benefits
@@ -82,12 +84,13 @@ Style Guidelines:
 - Keep paragraphs short and punchy
 
 IMPORTANT: 
-- Format product titles as: <h3>[EXACT PRODUCT NAME WITH BRAND]</h3>
+- Format product titles as: <h3>No. [NUMBER]: [EXACT PRODUCT NAME WITH BRAND]</h3>
 - Make product names VERY specific for accurate Amazon matching
 - Focus on premium/high-quality items
 - Write at least 3000 words total
 - Maintain humor throughout
-- Use emojis effectively but don't overdo it`
+- Use emojis effectively but don't overdo it
+- Remember to COUNT DOWN from ${numItems} to 1`
           },
           {
             role: "user",
@@ -98,10 +101,6 @@ IMPORTANT:
         max_tokens: 4000,
       }),
     });
-
-    if (!response.ok) {
-      throw new Error('Failed to generate blog content');
-    }
 
     const data = await response.json();
     let content = data.choices[0].message.content;
