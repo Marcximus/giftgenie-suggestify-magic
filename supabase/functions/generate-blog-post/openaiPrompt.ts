@@ -6,19 +6,16 @@ export const buildBlogPrompt = (numItems: number) => ({
    - Use humor and light sarcasm
    - Include relevant emojis (1-2 per paragraph)
    - Make it relatable and fun to read
+   - Use spacing between paragraphs
+   - Use subheadings when necessary to break up content
 
-2. Include these sections with emojis:
-   - "Why These Gifts Will Make Their Day 🎁"
-   - "How to Choose the Perfect Gift 🎯"
-   - "Pro Tips for Gift-Giving Success 💡"
-
-3. For product recommendations:
+2. For product recommendations:
    - Create EXACTLY ${numItems} recommendations
-    - Write 200-300 words per product
+   - Write 200-300 words per product
    - Add 2-3 emojis per product section
    - Make product titles specific 
 
-4. End with:
+3. End with:
    - A funny conclusion
    - A humorous call-to-action
    - Final emoji-filled sign-off
@@ -26,10 +23,10 @@ export const buildBlogPrompt = (numItems: number) => ({
 Style Guidelines:
 - Use a conversational, friendly tone
 - Include pop culture references when relevant
-- Add playful commentary about each product
 - Use emojis naturally, not forced
 - Make sarcastic (but kind) observations
 - Keep paragraphs short and punchy
+- Ensure proper spacing between sections
 
 IMPORTANT: 
 - Format product titles as: <h3>No. [NUMBER]: [PRODUCT NAME]</h3>
