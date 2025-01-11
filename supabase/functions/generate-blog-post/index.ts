@@ -1,6 +1,8 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { searchAmazonProduct } from "../_shared/amazon-api.ts";
 import { generateCustomDescription } from "../_shared/openai.ts";
+import { buildBlogPrompt } from "./openaiPrompt.ts";
+import { formatProductHtml } from "./productFormatter.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -40,47 +42,7 @@ serve(async (req) => {
       body: JSON.stringify({
         model: "gpt-4o",
         messages: [
-          {
-            role: "system",
-            content: `You are a witty, entertaining blog writer specializing in gift recommendations. Create engaging, humorous content that follows these guidelines:
-
-1. Start with an engaging introduction (3-4 paragraphs)
-   - Use humor and light sarcasm
-   - Include relevant emojis (1-2 per paragraph)
-   - Make it relatable and fun to read
-
-2. Include these sections with emojis:
-   - "Why These Gifts Will Make Their Day 🎁"
-   - "How to Choose the Perfect Gift 🎯"
-   - "Pro Tips for Gift-Giving Success 💡"
-
-3. For product recommendations:
-   - Create EXACTLY ${numItems} recommendations
-    - Write 200-300 words per product
-   - Add 2-3 emojis per product section
-   - Make product titles specific 
-
-4. End with:
-   - A funny conclusion
-   - A humorous call-to-action
-   - Final emoji-filled sign-off
-
-Style Guidelines:
-- Use a conversational, friendly tone
-- Include pop culture references when relevant
-- Add playful commentary about each product
-- Use emojis naturally, not forced
-- Make sarcastic (but kind) observations
-- Keep paragraphs short and punchy
-
-IMPORTANT: 
-- Format product titles as: <h3>No. [NUMBER]: [PRODUCT NAME]</h3>
-- Make product names specific for accurate Amazon matching
-- Focus on premium/high-quality items
-- Maintain humor throughout
-- Use emojis effectively but don't overdo it
-- Remember to COUNT DOWN from ${numItems} to 1`
-          },
+          buildBlogPrompt(numItems),
           {
             role: "user",
             content: `Create a fun, engaging blog post about: ${title}`
@@ -132,49 +94,20 @@ IMPORTANT:
           const customDescription = await generateCustomDescription(product.title, product.description);
           console.log('Generated custom description:', customDescription);
 
-          // Add product image with specific dimensions
-          const imageHtml = product.imageUrl ? `
-            <div class="flex justify-center my-4">
-              <img src="${product.imageUrl}" 
-                   alt="${product.title}" 
-                   class="rounded-lg shadow-md w-[40px] h-[40px] object-contain"
-                   loading="lazy" />
-            </div>` : '';
+          const formattedHtml = formatProductHtml(
+            {
+              title: product.title,
+              imageUrl: product.imageUrl,
+              price: product.price,
+              currency: product.currency,
+              rating: product.rating,
+              totalRatings: product.totalRatings,
+              description: customDescription
+            },
+            affiliateLink
+          );
 
-          // Format price with currency
-          const priceDisplay = product.price ? 
-            `<p class="text-left text-sm text-muted-foreground mb-2">💰 Current price: ${product.currency} ${product.price}</p>` : '';
-          
-          // Format rating and review count
-          const reviewInfo = product.rating ? 
-            `<p class="text-left text-sm text-muted-foreground mb-4">
-              ⭐ Rating: ${product.rating.toFixed(1)} out of 5 stars 
-              ${product.totalRatings ? `(${product.totalRatings.toLocaleString()} reviews)` : ''}
-            </p>` : '';
-
-          // Add the custom description
-          const descriptionHtml = customDescription ? 
-            `<p class="text-left text-sm md:text-base mb-4">${customDescription}</p>` : '';
-
-          // Replace product title and add affiliate link with price, reviews, and description
-          const titleReplacement = `
-            <h3 class="text-left text-lg md:text-xl font-semibold mt-6 mb-3">
-              ${product.title}
-            </h3>
-            ${imageHtml}
-            ${priceDisplay}
-            ${reviewInfo}
-            ${descriptionHtml}
-            <div class="mt-4">
-              <a href="${affiliateLink}" 
-                 target="_blank" 
-                 rel="noopener noreferrer" 
-                 class="inline-block px-4 py-2 bg-[#F97316] hover:bg-[#F97316]/90 text-white rounded-md transition-colors text-sm">
-                View on Amazon
-              </a>
-            </div>`;
-
-          content = content.replace(productMatch, titleReplacement);
+          content = content.replace(productMatch, formattedHtml);
         } else {
           console.warn('No Amazon product found for:', productName);
         }
