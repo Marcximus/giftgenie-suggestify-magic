@@ -48,7 +48,7 @@ const BlogPost = () => {
         <Helmet>
           <title>Loading... - Get The Gift Blog</title>
         </Helmet>
-        <div className="container mx-auto px-4 py-8 max-w-4xl animate-pulse">
+        <div className="w-full px-2 sm:px-4 py-8 animate-pulse">
           <div className="h-8 bg-gray-200 rounded w-3/4 mb-4"></div>
           <div className="h-4 bg-gray-200 rounded w-full mb-2"></div>
           <div className="h-4 bg-gray-200 rounded w-2/3"></div>
@@ -64,7 +64,7 @@ const BlogPost = () => {
           <title>Post Not Found - Get The Gift Blog</title>
           <meta name="description" content="The blog post you're looking for could not be found." />
         </Helmet>
-        <div className="container mx-auto px-4 py-8 max-w-4xl">
+        <div className="w-full px-2 sm:px-4 py-8">
           <h1 className="text-2xl font-bold mb-4">Post not found</h1>
           <Button onClick={() => navigate("/blog")} variant="default">
             <ChevronLeft className="mr-2 h-4 w-4" />
@@ -89,28 +89,28 @@ const BlogPost = () => {
         <meta property="article:published_time" content={post.published_at || ""} />
       </Helmet>
       <article className="min-h-screen bg-gradient-to-b from-background to-muted/20">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-16">
+        <div className="w-full px-2 sm:px-4 md:px-6 py-8">
           {/* Back button */}
           <Button 
             onClick={() => navigate("/blog")} 
             variant="ghost" 
-            className="mb-8 sm:mb-12 lg:mb-16 hover:bg-primary/10"
+            className="mb-8 hover:bg-primary/10"
           >
             <ChevronLeft className="mr-2 h-4 w-4" />
             More Ideas
           </Button>
           
           {post.image_url && (
-            <div className="aspect-[21/9] relative overflow-hidden rounded-lg mb-8 sm:mb-12 lg:mb-16 shadow-xl animate-fade-in">
+            <div className="w-full relative overflow-hidden rounded-lg mb-8 shadow-xl animate-fade-in">
               <img 
                 src={post.image_url} 
                 alt={post.title}
-                className="object-cover w-full h-full"
+                className="w-full h-auto object-cover"
               />
             </div>
           )}
           
-          <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground mb-8 sm:mb-12 lg:mb-16 animate-fade-in">
+          <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground mb-8 animate-fade-in">
             <div className="flex items-center gap-1">
               <User className="w-4 h-4" />
               <span>{post.author}</span>
@@ -125,21 +125,9 @@ const BlogPost = () => {
             </div>
           </div>
           
-          <div className="prose prose-lg w-full max-w-none animate-fade-in">
+          <div className="w-full animate-fade-in">
             <div 
-              className="bg-card rounded-lg p-6 sm:p-8 lg:p-12 shadow-sm
-                         [&>h1]:text-xl [&>h1]:sm:text-2xl [&>h1]:lg:text-4xl [&>h1]:font-bold [&>h1]:mb-8 
-                         [&>h2]:text-lg [&>h2]:sm:text-xl [&>h2]:lg:text-3xl [&>h2]:font-semibold [&>h2]:mt-12 [&>h2]:mb-6
-                         [&>p]:text-base [&>p]:leading-relaxed [&>p]:mb-6
-                         [&>ul]:list-disc [&>ul]:pl-6 [&>ul]:mb-6 [&>ul]:space-y-3
-                         [&>ol]:list-decimal [&>ol]:pl-6 [&>ol]:mb-6 [&>ol]:space-y-3
-                         [&_img]:w-full [&_img]:max-w-[400px] [&_img]:sm:max-w-[500px] [&_img]:lg:max-w-[600px] 
-                         [&_img]:h-auto [&_img]:aspect-square
-                         [&_img]:!object-contain [&_img]:!rounded-lg [&_img]:!shadow-md
-                         [&_img]:!mx-auto [&_img]:!my-8 [&_img]:sm:!my-12
-                         [&_a.amazon-button]:!text-white [&_a.amazon-button]:no-underline
-                         [&_h3]:mt-12 [&_h3]:mb-6
-                         [&_div.flex]:mt-8 [&_div.flex]:mb-8"
+              className="bg-card rounded-lg p-4 sm:p-6 md:p-8 shadow-sm w-full"
               dangerouslySetInnerHTML={{ __html: post.content }}
             />
           </div>
