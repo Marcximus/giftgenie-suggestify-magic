@@ -32,10 +32,6 @@ export const formatProductHtml = (
       ${product.totalRatings ? `(${product.totalRatings.toLocaleString()} reviews)` : ''}
     </p>` : '';
 
-  // Add the custom description
-  const descriptionHtml = product.description ? 
-    `<p class="text-left text-sm md:text-base mb-4">${product.description}</p>` : '';
-
   return `
     <h3 class="text-left text-lg md:text-xl font-semibold mt-6 mb-3">
       ${product.title}
@@ -43,7 +39,6 @@ export const formatProductHtml = (
     ${imageHtml}
     ${priceDisplay}
     ${reviewInfo}
-    ${descriptionHtml}
     <div class="mt-4">
       <a href="${affiliateLink}" 
          target="_blank" 
