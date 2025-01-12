@@ -1,10 +1,10 @@
 interface ProductInfo {
   title: string;
   imageUrl?: string;
-  price?: number;
+  price?: string;
   currency?: string;
-  rating?: number;
-  totalRatings?: number;
+  rating?: string;
+  totalRatings?: string;
   description?: string;
 }
 
@@ -12,29 +12,35 @@ export const formatProductHtml = (
   product: ProductInfo,
   affiliateLink: string
 ) => {
-  // Add product image with updated dimensions (140x140px)
+  // Simplify title to first 7 words
+  const simplifiedTitle = product.title
+    .split(' ')
+    .slice(0, 7)
+    .join(' ')
+    .trim();
+
+  // Add product image with updated dimensions (80x80px)
   const imageHtml = product.imageUrl ? `
     <div class="flex justify-center my-4">
       <img src="${product.imageUrl}" 
-           alt="${product.title}" 
-           class="rounded-lg shadow-md w-[140px] h-[140px] object-contain"
+           alt="${simplifiedTitle}" 
+           class="w-20 h-20 object-contain rounded-lg shadow-md" 
            loading="lazy" />
     </div>` : '';
 
-  // Format price with currency
+  // Format price (always in USD)
   const priceDisplay = product.price ? 
-    `<p class="text-left text-sm text-muted-foreground mb-2">💰 Current price: ${product.currency} ${product.price}</p>` : '';
+    `<p class="text-left text-sm text-muted-foreground mb-2">💰 Current price: USD ${product.price}</p>` : '';
   
-  // Format rating and review count
+  // Format rating and review count similar to main gift generator
   const reviewInfo = product.rating ? 
     `<p class="text-left text-sm text-muted-foreground mb-4">
-      ⭐ Rating: ${product.rating.toFixed(1)} out of 5 stars 
-      ${product.totalRatings ? `(${product.totalRatings.toLocaleString()} reviews)` : ''}
+      ⭐ ${product.rating} stars${product.totalRatings ? ` • ${product.totalRatings} reviews` : ''}
     </p>` : '';
 
   return `
     <h3 class="text-left text-lg md:text-xl font-semibold mt-6 mb-3">
-      ${product.title}
+      ${simplifiedTitle}
     </h3>
     ${imageHtml}
     ${priceDisplay}

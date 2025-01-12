@@ -1,19 +1,6 @@
 import { searchAmazonProduct } from './amazon-api.ts';
 import { AmazonProduct } from './types.ts';
 
-const simplifyTitle = (title: string): string => {
-  return title
-    .replace(/\s*\([^)]*\)/g, '') // Remove text in parentheses
-    .replace(/,.*$/, '') // Remove everything after comma
-    .replace(/\s*-.*$/, '') // Remove everything after dash
-    .replace(/\s*\|.*$/, '') // Remove everything after pipe
-    .replace(/\s{2,}/g, ' ') // Remove extra spaces
-    .split(' ') // Split into words
-    .slice(0, 6) // Take first 6 words
-    .join(' ') // Join back together
-    .trim();
-};
-
 export async function processContent(
   content: string,
   associateId: string
@@ -49,8 +36,8 @@ export async function processContent(
           `<h[23]>${productName}</h[23]>\\s*<p>[^<]*</p>`
         );
         
-        // Create the new product section with Amazon info and simplified title
-        const simplifiedTitle = simplifyTitle(product.title);
+        // Create the new product section with Amazon info
+        const simplifiedTitle = product.title.split(' ').slice(0, 7).join(' ').trim();
         const newProductSection = `<h3 class="text-left text-lg md:text-xl font-semibold mt-6 mb-3">
            ${simplifiedTitle}
            <div class="mt-2">
@@ -65,10 +52,10 @@ export async function processContent(
          <div class="flex justify-center my-4">
            <img src="${product.imageUrl}" 
                 alt="${simplifiedTitle}" 
-                class="w-32 sm:w-28 md:w-24 h-32 sm:h-28 md:h-24 object-contain rounded-lg shadow-md" 
+                class="w-20 h-20 object-contain rounded-lg shadow-md" 
                 loading="lazy" />
          </div>
-         ${product.price ? `<p class="text-left text-sm text-muted-foreground mb-4">Current price: ${product.currency} ${product.price}</p>` : ''}`;
+         ${product.price ? `<p class="text-left text-sm text-muted-foreground mb-4">Current price: USD ${product.price}</p>` : ''}`;
 
         // Replace only the h3 tag, keeping the following paragraph
         content = content.replace(/<h[23]>[^<]*<\/h[23]>/, newProductSection);
