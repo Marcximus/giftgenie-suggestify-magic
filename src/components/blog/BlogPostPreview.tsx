@@ -22,19 +22,19 @@ export const BlogPostPreview = ({ data }: BlogPostPreviewProps) => {
         <p className="text-left text-sm sm:text-base text-muted-foreground mb-4">{data.excerpt}</p>
       )}
       <div 
-        className="mt-4 space-y-3 sm:space-y-4 text-left w-full prose prose-lg
-                   [&>h1]:text-2xl [&>h1]:sm:text-3xl [&>h1]:lg:text-4xl [&>h1]:font-bold [&>h1]:mb-4 
-                   [&>h2]:text-xl [&>h2]:sm:text-2xl [&>h2]:lg:text-3xl [&>h2]:font-semibold [&>h2]:mt-6 [&>h2]:mb-3
-                   [&>p]:text-base [&>p]:sm:text-lg [&>p]:leading-relaxed [&>p]:mb-4
+        className="mt-4 space-y-3 sm:space-y-4 text-left w-full
+                   [&>h2]:text-lg [&>h2]:sm:text-xl [&>h2]:md:text-2xl [&>h2]:font-bold [&>h2]:mt-4 [&>h2]:mb-2 
+                   [&>h3]:text-base [&>h3]:sm:text-lg [&>h3]:md:text-xl [&>h3]:font-semibold [&>h3]:mt-3 [&>h3]:mb-2
+                   [&>p]:text-sm [&>p]:sm:text-base [&>p]:leading-relaxed [&>p]:mb-2
                    [&>ul]:list-disc [&>ul]:pl-4 [&>ul]:sm:pl-6 [&>ul]:mb-2 [&>ul]:space-y-1
                    [&>ol]:list-decimal [&>ol]:pl-4 [&>ol]:sm:pl-6 [&>ol]:mb-2 [&>ol]:space-y-1
-                   [&>img]:w-full [&>img]:max-w-[400px] [&>img]:sm:max-w-[500px] [&>img]:lg:max-w-[600px]
-                   [&>img]:h-auto [&>img]:aspect-square
-                   [&>img]:object-contain [&>img]:mx-auto [&>img]:my-2 [&>img]:sm:my-3
-                   [&>img]:rounded-lg [&>img]:shadow-md
-                   [&>a]:block [&>a]:mt-2 [&>a]:sm:mt-3 [&>a]:text-primary [&>a]:hover:underline"
+                   [&_img]:w-full [&_img]:max-w-[400px] [&_img]:sm:max-w-[500px] [&_img]:lg:max-w-[600px]
+                   [&_img]:h-auto [&_img]:aspect-square
+                   [&_img]:object-contain [&_img]:mx-auto [&_img]:my-2 [&_img]:sm:my-3
+                   [&_img]:rounded-lg [&_img]:shadow-md
+                   [&_a]:block [&_a]:mt-2 [&_a]:sm:mt-3 [&_a]:text-primary [&_a]:hover:underline"
         dangerouslySetInnerHTML={{ 
-          __html: data.content
+          __html: data.content.replace(/```html\n?|\n?```/g, '') 
         }}
       />
       {data.author && (
