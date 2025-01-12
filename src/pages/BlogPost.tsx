@@ -89,19 +89,19 @@ const BlogPost = () => {
         <meta property="article:published_time" content={post.published_at || ""} />
       </Helmet>
       <article className="min-h-screen bg-gradient-to-b from-background to-muted/20">
-        <div className="container mx-auto px-4 py-12 max-w-4xl">
-          {/* Back button with increased bottom margin */}
+        <div className="container mx-auto px-4 py-16 max-w-4xl">
+          {/* Back button */}
           <Button 
             onClick={() => navigate("/blog")} 
             variant="ghost" 
-            className="mb-12 hover:bg-primary/10"
+            className="mb-16 hover:bg-primary/10"
           >
             <ChevronLeft className="mr-2 h-4 w-4" />
             More Ideas
           </Button>
           
           {post.image_url && (
-            <div className="aspect-[21/9] relative overflow-hidden rounded-lg mb-12 shadow-xl animate-fade-in">
+            <div className="aspect-[21/9] relative overflow-hidden rounded-lg mb-16 shadow-xl animate-fade-in">
               <img 
                 src={post.image_url} 
                 alt={post.title}
@@ -110,7 +110,7 @@ const BlogPost = () => {
             </div>
           )}
           
-          <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground mb-12 animate-fade-in">
+          <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground mb-16 animate-fade-in">
             <div className="flex items-center gap-1">
               <User className="w-4 h-4" />
               <span>{post.author}</span>
@@ -127,17 +127,19 @@ const BlogPost = () => {
           
           <div className="prose prose-lg max-w-none animate-fade-in">
             <div 
-              className="bg-card rounded-lg p-8 shadow-sm
-                         [&>h1]:text-2xl [&>h1]:sm:text-3xl [&>h1]:md:text-4xl [&>h1]:font-bold [&>h1]:mb-8
-                         [&>h2]:text-xl [&>h2]:sm:text-2xl [&>h2]:md:text-3xl [&>h2]:font-semibold [&>h2]:mb-6
-                         [&>p]:text-base [&>p]:leading-relaxed [&>p]:mb-6
-                         [&>ul]:list-disc [&>ul]:pl-6 [&>ul]:mb-6 [&>ul]:space-y-3
-                         [&>ol]:list-decimal [&>ol]:pl-6 [&>ol]:mb-6 [&>ol]:space-y-3
+              className="bg-card rounded-lg p-12 shadow-sm
+                         [&>h1]:text-2xl [&>h1]:sm:text-3xl [&>h1]:md:text-4xl [&>h1]:font-bold [&>h1]:mb-12
+                         [&>h2]:text-xl [&>h2]:sm:text-2xl [&>h2]:md:text-3xl [&>h2]:font-semibold [&>h2]:mt-16 [&>h2]:mb-8
+                         [&>p]:text-base [&>p]:leading-relaxed [&>p]:mb-8
+                         [&>ul]:list-disc [&>ul]:pl-6 [&>ul]:mb-8 [&>ul]:space-y-4
+                         [&>ol]:list-decimal [&>ol]:pl-6 [&>ol]:mb-8 [&>ol]:space-y-4
                          [&_img]:w-72 [&_img]:sm:w-96 [&_img]:md:w-[500px] 
                          [&_img]:h-72 [&_img]:sm:h-96 [&_img]:md:h-[500px] 
                          [&_img]:!object-contain [&_img]:!rounded-lg [&_img]:!shadow-md
-                         [&_img]:!mx-auto [&_img]:!my-8
-                         [&_a.amazon-button]:!text-white [&_a.amazon-button]:no-underline"
+                         [&_img]:!mx-auto [&_img]:!my-12
+                         [&_a.amazon-button]:!text-white [&_a.amazon-button]:no-underline
+                         [&_h3]:mt-16 [&_h3]:mb-8
+                         [&_div.flex]:mt-12 [&_div.flex]:mb-12"
               dangerouslySetInnerHTML={{ __html: post.content }}
             />
           </div>

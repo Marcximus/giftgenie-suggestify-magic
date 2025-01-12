@@ -21,35 +21,35 @@ export const formatProductHtml = (
 
   // Add product image with responsive dimensions
   const imageHtml = product.imageUrl ? `
-    <div class="flex justify-center my-4">
+    <div class="flex justify-center my-12">
       <img src="${product.imageUrl}" 
            alt="${simplifiedTitle}" 
-           class="w-20 sm:w-24 md:w-28 h-20 sm:h-24 md:h-28 object-contain rounded-lg shadow-md" 
+           class="w-72 sm:w-96 md:w-[500px] h-72 sm:h-96 md:h-[500px] object-contain rounded-lg shadow-md" 
            loading="lazy" />
     </div>` : '';
 
   // Format price (always in USD)
   const priceDisplay = product.price ? 
-    `<p class="text-left text-sm text-muted-foreground mb-2">💰 Current price: USD ${product.price}</p>` : '';
+    `<p class="text-left text-sm text-muted-foreground mb-6">💰 Current price: USD ${product.price}</p>` : '';
   
   // Format rating and review count similar to main gift generator
   const reviewInfo = product.rating ? 
-    `<p class="text-left text-sm text-muted-foreground mb-4">
+    `<p class="text-left text-sm text-muted-foreground mb-8">
       ⭐ ${product.rating} stars${product.totalRatings ? ` • ${product.totalRatings} reviews` : ''}
     </p>` : '';
 
   return `
-    <h3 class="text-left text-lg md:text-xl font-semibold mt-6 mb-3">
+    <h3 class="text-left text-lg md:text-xl font-semibold mt-16 mb-8">
       ${simplifiedTitle}
     </h3>
     ${imageHtml}
     ${priceDisplay}
     ${reviewInfo}
-    <div class="mt-4">
+    <div class="mt-8 mb-12">
       <a href="${affiliateLink}" 
          target="_blank" 
          rel="noopener noreferrer" 
-         class="inline-block px-4 py-2 bg-[#F97316] hover:bg-[#F97316]/90 text-white rounded-md transition-colors text-sm">
+         class="amazon-button inline-block px-4 py-2 bg-[#F97316] hover:bg-[#F97316]/90 text-white rounded-md transition-colors text-sm">
         View on Amazon
       </a>
     </div>`;
