@@ -30,12 +30,14 @@ export const formatProductHtml = (
 
   // Format price with currency (always in USD)
   const priceDisplay = product.price ? 
-    `<p class="text-left text-sm text-muted-foreground mb-4">💰 Current price: ${product.currency || 'USD'} ${product.price}</p>` : '';
+    `<p class="text-left text-sm text-muted-foreground mb-4">
+      💰 Current price: ${product.currency || 'USD'} ${product.price.toFixed(2)}
+    </p>` : '';
   
   // Format rating and review count similar to main gift generator
   const reviewInfo = product.rating ? 
     `<p class="text-left text-sm text-muted-foreground mb-6">
-      ⭐ ${product.rating} stars${product.totalRatings ? ` • ${product.totalRatings.toLocaleString()} reviews` : ''}
+      ⭐ ${product.rating.toFixed(1)} stars${product.totalRatings ? ` • ${product.totalRatings.toLocaleString()} reviews` : ''}
     </p>` : '';
 
   return `
