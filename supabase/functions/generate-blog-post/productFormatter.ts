@@ -1,10 +1,10 @@
 interface ProductInfo {
   title: string;
   imageUrl?: string;
-  price?: string;
+  price?: number;
   currency?: string;
-  rating?: string;
-  totalRatings?: string;
+  rating?: number;
+  totalRatings?: number;
   description?: string;
 }
 
@@ -28,14 +28,14 @@ export const formatProductHtml = (
            loading="lazy" />
     </div>` : '';
 
-  // Format price (always in USD)
+  // Format price with currency (always in USD)
   const priceDisplay = product.price ? 
-    `<p class="text-left text-sm text-muted-foreground mb-6">💰 Current price: USD ${product.price}</p>` : '';
+    `<p class="text-left text-sm text-muted-foreground mb-4">💰 Current price: ${product.currency || 'USD'} ${product.price}</p>` : '';
   
   // Format rating and review count similar to main gift generator
   const reviewInfo = product.rating ? 
-    `<p class="text-left text-sm text-muted-foreground mb-8">
-      ⭐ ${product.rating} stars${product.totalRatings ? ` • ${product.totalRatings} reviews` : ''}
+    `<p class="text-left text-sm text-muted-foreground mb-6">
+      ⭐ ${product.rating} stars${product.totalRatings ? ` • ${product.totalRatings.toLocaleString()} reviews` : ''}
     </p>` : '';
 
   return `
