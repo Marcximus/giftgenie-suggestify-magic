@@ -132,8 +132,8 @@ const BlogPost = () => {
                          [&>p]:text-base [&>p]:leading-relaxed [&>p]:mb-4
                          [&>ul]:list-disc [&>ul]:pl-6 [&>ul]:mb-4 [&>ul]:space-y-2
                          [&>ol]:list-decimal [&>ol]:pl-6 [&>ol]:mb-4 [&>ol]:space-y-2
-                         [&_img]:!w-20 [&_img]:sm:!w-24 [&_img]:md:!w-28 
-                         [&_img]:!h-20 [&_img]:sm:!h-24 [&_img]:md:!h-28 
+                         [&_img]:!w-48 [&_img]:sm:!w-56 [&_img]:md:!w-64 
+                         [&_img]:!h-48 [&_img]:sm:!h-56 [&_img]:md:!h-64 
                          [&_img]:!object-contain [&_img]:!rounded-lg [&_img]:!shadow-md
                          [&_img]:!mx-auto [&_img]:!my-4"
               dangerouslySetInnerHTML={{ __html: post.content }}
