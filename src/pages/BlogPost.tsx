@@ -11,7 +11,7 @@ const BlogPost = () => {
   const { slug } = useParams();
   const navigate = useNavigate();
 
-  const { data: post, isLoading } = useQuery({
+  const { data: post, isLoading, error } = useQuery({
     queryKey: ["blog-post", slug],
     queryFn: async () => {
       console.log("Fetching blog post with slug:", slug);
@@ -57,6 +57,25 @@ const BlogPost = () => {
     );
   }
 
+  if (error) {
+    console.error("Error in blog post component:", error);
+    return (
+      <>
+        <Helmet>
+          <title>Error - Get The Gift Blog</title>
+        </Helmet>
+        <div className="container mx-auto px-4 py-8 max-w-4xl">
+          <h1 className="text-2xl font-bold mb-4">Error loading blog post</h1>
+          <p className="text-red-500 mb-4">There was an error loading this blog post. Please try again later.</p>
+          <Button onClick={() => navigate("/blog")} variant="default">
+            <ChevronLeft className="mr-2 h-4 w-4" />
+            More Ideas
+          </Button>
+        </div>
+      </>
+    );
+  }
+
   if (!post) {
     return (
       <>
@@ -66,6 +85,7 @@ const BlogPost = () => {
         </Helmet>
         <div className="container mx-auto px-4 py-8 max-w-4xl">
           <h1 className="text-2xl font-bold mb-4">Post not found</h1>
+          <p className="mb-4">The blog post you're looking for could not be found.</p>
           <Button onClick={() => navigate("/blog")} variant="default">
             <ChevronLeft className="mr-2 h-4 w-4" />
             More Ideas
