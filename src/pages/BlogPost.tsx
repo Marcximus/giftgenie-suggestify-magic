@@ -147,8 +147,7 @@ const BlogPost = () => {
           
           <div className="prose prose-lg w-full max-w-none animate-fade-in">
             <div 
-              className="bg-card rounded-lg p-3 sm:p-6 lg:p-8 shadow-sm
-                         [&>h1]:text-xl [&>h1]:sm:text-2xl [&>h1]:lg:text-4xl [&>h1]:font-bold [&>h1]:mb-4 
+              className="[&>h1]:text-xl [&>h1]:sm:text-2xl [&>h1]:lg:text-4xl [&>h1]:font-bold [&>h1]:mb-4 
                          [&>h2]:text-lg [&>h2]:sm:text-xl [&>h2]:lg:text-3xl [&>h2]:font-semibold [&>h2]:mt-6 [&>h2]:mb-3
                          [&>p]:text-base [&>p]:leading-relaxed [&>p]:mb-4
                          [&>ul]:list-disc [&>ul]:pl-6 [&>ul]:mb-4 [&>ul]:space-y-2
