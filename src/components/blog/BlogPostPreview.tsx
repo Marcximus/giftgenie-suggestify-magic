@@ -9,7 +9,6 @@ interface BlogPostPreviewProps {
 export const BlogPostPreview = ({ data }: BlogPostPreviewProps) => {
   return (
     <article className="prose prose-sm md:prose-base lg:prose-lg max-w-none">
-      <h1 className="text-left text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold mb-4 sm:mb-8">{data.title}</h1>
       {data.image_url && (
         <div className="flex justify-center my-3 sm:my-4">
           <img
