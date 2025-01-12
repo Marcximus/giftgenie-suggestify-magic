@@ -5,6 +5,7 @@ import { Tables } from "@/integrations/supabase/types";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, Calendar, User, Clock } from "lucide-react";
 import { Helmet } from "react-helmet";
+import { toast } from "@/components/ui/use-toast";
 
 const BlogPost = () => {
   const { slug } = useParams();
@@ -13,13 +14,30 @@ const BlogPost = () => {
   const { data: post, isLoading } = useQuery({
     queryKey: ["blog-post", slug],
     queryFn: async () => {
+      console.log("Fetching blog post with slug:", slug);
+      
       const { data, error } = await supabase
         .from("blog_posts")
         .select("*")
         .eq("slug", slug)
-        .single();
+        .maybeSingle();
       
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching blog post:", error);
+        toast({
+          title: "Error loading blog post",
+          description: "Please try again later",
+          variant: "destructive",
+        });
+        throw error;
+      }
+
+      if (!data) {
+        console.log("No blog post found with slug:", slug);
+        return null;
+      }
+
+      console.log("Found blog post:", data);
       return data as Tables<"blog_posts">;
     },
   });
@@ -113,7 +131,11 @@ const BlogPost = () => {
                          [&>h2]:text-xl [&>h2]:sm:text-2xl [&>h2]:md:text-3xl [&>h2]:font-semibold [&>h2]:mb-4
                          [&>p]:text-base [&>p]:leading-relaxed [&>p]:mb-4
                          [&>ul]:list-disc [&>ul]:pl-6 [&>ul]:mb-4 [&>ul]:space-y-2
-                         [&>ol]:list-decimal [&>ol]:pl-6 [&>ol]:mb-4 [&>ol]:space-y-2"
+                         [&>ol]:list-decimal [&>ol]:pl-6 [&>ol]:mb-4 [&>ol]:space-y-2
+                         [&_img]:!w-20 [&_img]:sm:!w-24 [&_img]:md:!w-28 
+                         [&_img]:!h-20 [&_img]:sm:!h-24 [&_img]:md:!h-28 
+                         [&_img]:!object-contain [&_img]:!rounded-lg [&_img]:!shadow-md
+                         [&_img]:!mx-auto [&_img]:!my-4"
               dangerouslySetInnerHTML={{ __html: post.content }}
             />
           </div>
