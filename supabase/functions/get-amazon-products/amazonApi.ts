@@ -62,17 +62,23 @@ export async function searchAmazonProduct(searchTerm: string, apiKey: string): P
     });
 
     if (detailsData?.data) {
-      // Extract price from various sources
-      const price = getPriceFromMultipleSources(
-        detailsData.data.product_price,
-        detailsData.data.product_original_price,
-        product.price?.current_price
-      );
+      // Extract price from various sources, ensuring we handle string prices
+      const priceStr = detailsData.data.product_price || 
+                      detailsData.data.product_original_price || 
+                      product.product_price;
+      
+      // Convert price string to number
+      const price = priceStr ? parseFloat(priceStr.replace(/[^0-9.]/g, '')) : undefined;
 
-      // Log the extracted values for debugging
+      // Convert rating to number
+      const rating = detailsData.data.product_star_rating ? 
+        parseFloat(detailsData.data.product_star_rating) : 
+        (product.product_star_rating ? parseFloat(product.product_star_rating) : undefined);
+
+      // Log the processed values
       console.log('Processed product details:', {
         price,
-        rating: detailsData.data.product_star_rating,
+        rating,
         totalRatings: detailsData.data.product_num_ratings,
         currency: detailsData.data.currency || 'USD'
       });
@@ -83,35 +89,27 @@ export async function searchAmazonProduct(searchTerm: string, apiKey: string): P
         price: price,
         currency: detailsData.data.currency || 'USD',
         imageUrl: detailsData.data.product_photo || detailsData.data.product_photos?.[0] || product.thumbnail,
-        rating: detailsData.data.product_star_rating ? parseFloat(detailsData.data.product_star_rating) : undefined,
-        totalRatings: detailsData.data.product_num_ratings ? parseInt(detailsData.data.product_num_ratings, 10) : undefined,
+        rating: rating,
+        totalRatings: detailsData.data.product_num_ratings ? 
+          parseInt(detailsData.data.product_num_ratings.toString(), 10) : 
+          (product.product_num_ratings ? parseInt(product.product_num_ratings.toString(), 10) : undefined),
         asin: asin,
       };
     }
 
     // Fallback to search data if details request fails
     console.log('Falling back to search data for product details');
-    const searchPrice = getPriceFromMultipleSources(
-      undefined,
-      undefined,
-      product.price?.current_price
-    );
-
-    // Log the fallback values for debugging
-    console.log('Using fallback product details:', {
-      price: searchPrice,
-      rating: product.product_star_rating,
-      totalRatings: product.product_num_ratings
-    });
+    const searchPrice = product.product_price ? 
+      parseFloat(product.product_price.replace(/[^0-9.]/g, '')) : undefined;
     
     return {
       title: product.title,
       description: product.product_description || product.title,
       price: searchPrice,
-      currency: product.price?.currency || 'USD',
+      currency: product.currency || 'USD',
       imageUrl: product.product_photo || product.thumbnail,
       rating: product.product_star_rating ? parseFloat(product.product_star_rating) : undefined,
-      totalRatings: product.product_num_ratings ? parseInt(product.product_num_ratings, 10) : undefined,
+      totalRatings: product.product_num_ratings ? parseInt(product.product_num_ratings.toString(), 10) : undefined,
       asin: asin,
     };
   } catch (error) {
