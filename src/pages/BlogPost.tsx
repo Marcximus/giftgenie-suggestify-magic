@@ -89,19 +89,19 @@ const BlogPost = () => {
         <meta property="article:published_time" content={post.published_at || ""} />
       </Helmet>
       <article className="min-h-screen bg-gradient-to-b from-background to-muted/20">
-        <div className="w-full max-w-[1400px] mx-auto px-6 sm:px-8 lg:px-12 py-16">
+        <div className="w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-16">
           {/* Back button */}
           <Button 
             onClick={() => navigate("/blog")} 
             variant="ghost" 
-            className="mb-16 hover:bg-primary/10"
+            className="mb-8 sm:mb-12 lg:mb-16 hover:bg-primary/10"
           >
             <ChevronLeft className="mr-2 h-4 w-4" />
             More Ideas
           </Button>
           
           {post.image_url && (
-            <div className="aspect-[21/9] relative overflow-hidden rounded-lg mb-16 shadow-xl animate-fade-in">
+            <div className="aspect-[21/9] relative overflow-hidden rounded-lg mb-8 sm:mb-12 lg:mb-16 shadow-xl animate-fade-in">
               <img 
                 src={post.image_url} 
                 alt={post.title}
@@ -110,7 +110,7 @@ const BlogPost = () => {
             </div>
           )}
           
-          <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground mb-16 animate-fade-in">
+          <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground mb-8 sm:mb-12 lg:mb-16 animate-fade-in">
             <div className="flex items-center gap-1">
               <User className="w-4 h-4" />
               <span>{post.author}</span>
@@ -125,21 +125,21 @@ const BlogPost = () => {
             </div>
           </div>
           
-          <div className="prose prose-lg max-w-none animate-fade-in">
+          <div className="prose prose-lg max-w-none lg:max-w-[65ch] xl:max-w-[75ch] mx-auto animate-fade-in">
             <div 
-              className="bg-card rounded-lg p-12 shadow-sm
-                         [&>h1]:text-2xl [&>h1]:sm:text-3xl [&>h1]:md:text-4xl [&>h1]:font-bold [&>h1]:mb-12
-                         [&>h2]:text-xl [&>h2]:sm:text-2xl [&>h2]:md:text-3xl [&>h2]:font-semibold [&>h2]:mt-16 [&>h2]:mb-8
-                         [&>p]:text-base [&>p]:leading-relaxed [&>p]:mb-8
-                         [&>ul]:list-disc [&>ul]:pl-6 [&>ul]:mb-8 [&>ul]:space-y-4
-                         [&>ol]:list-decimal [&>ol]:pl-6 [&>ol]:mb-8 [&>ol]:space-y-4
-                         [&_img]:w-72 [&_img]:sm:w-96 [&_img]:md:w-[500px] 
-                         [&_img]:h-72 [&_img]:sm:h-96 [&_img]:md:h-[500px] 
+              className="bg-card rounded-lg p-6 sm:p-8 lg:p-12 shadow-sm
+                         [&>h1]:text-xl [&>h1]:sm:text-2xl [&>h1]:lg:text-4xl [&>h1]:font-bold [&>h1]:mb-8 sm:mb-12
+                         [&>h2]:text-lg [&>h2]:sm:text-xl [&>h2]:lg:text-3xl [&>h2]:font-semibold [&>h2]:mt-12 [&>h2]:mb-6
+                         [&>p]:text-base [&>p]:leading-relaxed [&>p]:mb-6
+                         [&>ul]:list-disc [&>ul]:pl-6 [&>ul]:mb-6 [&>ul]:space-y-3
+                         [&>ol]:list-decimal [&>ol]:pl-6 [&>ol]:mb-6 [&>ol]:space-y-3
+                         [&_img]:w-full [&_img]:max-w-[300px] [&_img]:sm:max-w-[400px] [&_img]:lg:max-w-[500px] 
+                         [&_img]:h-auto [&_img]:aspect-square
                          [&_img]:!object-contain [&_img]:!rounded-lg [&_img]:!shadow-md
-                         [&_img]:!mx-auto [&_img]:!my-12
+                         [&_img]:!mx-auto [&_img]:!my-8 [&_img]:sm:!my-12
                          [&_a.amazon-button]:!text-white [&_a.amazon-button]:no-underline
-                         [&_h3]:mt-16 [&_h3]:mb-8
-                         [&_div.flex]:mt-12 [&_div.flex]:mb-12"
+                         [&_h3]:mt-12 [&_h3]:mb-6
+                         [&_div.flex]:mt-8 [&_div.flex]:mb-8"
               dangerouslySetInnerHTML={{ __html: post.content }}
             />
           </div>
