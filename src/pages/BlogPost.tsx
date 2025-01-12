@@ -82,11 +82,11 @@ const BlogPost = () => {
           </Button>
           
           {post.image_url && (
-            <div className="aspect-[21/9] relative overflow-hidden rounded-lg mb-8 shadow-xl animate-fade-in">
+            <div className="relative overflow-hidden rounded-lg mb-8 shadow-xl animate-fade-in">
               <img 
                 src={post.image_url} 
                 alt={post.title}
-                className="object-cover w-full h-full"
+                className="w-full h-auto object-cover aspect-[21/9]"
               />
             </div>
           )}
@@ -113,7 +113,10 @@ const BlogPost = () => {
                          [&>h2]:text-xl [&>h2]:sm:text-2xl [&>h2]:md:text-3xl [&>h2]:font-semibold [&>h2]:mb-4
                          [&>p]:text-base [&>p]:leading-relaxed [&>p]:mb-4
                          [&>ul]:list-disc [&>ul]:pl-6 [&>ul]:mb-4 [&>ul]:space-y-2
-                         [&>ol]:list-decimal [&>ol]:pl-6 [&>ol]:mb-4 [&>ol]:space-y-2"
+                         [&>ol]:list-decimal [&>ol]:pl-6 [&>ol]:mb-4 [&>ol]:space-y-2
+                         [&_img]:!w-20 [&_img]:!sm:w-24 [&_img]:!md:w-28 
+                         [&_img]:!h-20 [&_img]:!sm:h-24 [&_img]:!md:h-28
+                         [&_img]:!object-contain [&_img]:!mx-auto [&_img]:!my-4"
               dangerouslySetInnerHTML={{ __html: post.content }}
             />
           </div>
