@@ -37,13 +37,13 @@ export const formatProductHtml = (
     </div>` : '';
 
   // Format price with currency
-  const priceDisplay = product.price ? 
+  const priceDisplay = typeof product.price === 'number' ? 
     `<p class="text-left text-sm text-muted-foreground mb-2">
       Current price: ${product.currency || 'USD'} ${product.price.toFixed(2)}
     </p>` : '';
   
   // Format rating and review count
-  const reviewInfo = product.rating ? 
+  const reviewInfo = typeof product.rating === 'number' ? 
     `<p class="text-left text-sm text-muted-foreground mb-4">
       Rating: ${product.rating.toFixed(1)} stars${product.totalRatings ? ` • ${product.totalRatings.toLocaleString()} reviews` : ''}
     </p>` : '';
