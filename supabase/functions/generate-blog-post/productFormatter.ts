@@ -21,7 +21,7 @@ export const formatProductHtml = (
 
   // Add product image with responsive dimensions
   const imageHtml = product.imageUrl ? `
-    <div class="flex justify-center my-12">
+    <div class="flex justify-center my-8">
       <img src="${product.imageUrl}" 
            alt="${simplifiedTitle}" 
            class="w-72 sm:w-96 md:w-[500px] h-72 sm:h-96 md:h-[500px] object-contain rounded-lg shadow-md" 
@@ -34,20 +34,20 @@ export const formatProductHtml = (
       💰 Current price: ${product.currency || 'USD'} ${product.price.toFixed(2)}
     </p>` : '';
   
-  // Format rating and review count similar to main gift generator
+  // Format rating and review count
   const reviewInfo = product.rating ? 
     `<p class="text-left text-sm text-muted-foreground mb-6">
       ⭐ ${product.rating.toFixed(1)} stars${product.totalRatings ? ` • ${product.totalRatings.toLocaleString()} reviews` : ''}
     </p>` : '';
 
   return `
-    <h3 class="text-left text-lg md:text-xl font-semibold mt-16 mb-8">
+    <h3 class="text-left text-lg md:text-xl font-semibold mt-16 mb-4">
       ${simplifiedTitle}
     </h3>
     ${imageHtml}
     ${priceDisplay}
     ${reviewInfo}
-    <div class="mt-8 mb-12">
+    <div class="mt-4 mb-8">
       <a href="${affiliateLink}" 
          target="_blank" 
          rel="noopener noreferrer" 

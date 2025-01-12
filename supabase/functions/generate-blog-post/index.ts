@@ -118,11 +118,11 @@ serve(async (req) => {
 
     // Add responsive text classes with improved spacing
     content = content
-      .replace(/<p>/g, '<p class="text-left text-sm md:text-base mb-6">')  // Increased margin-bottom
-      .replace(/<h2>/g, '<h2 class="text-left text-xl md:text-2xl font-bold mt-12 mb-6">')  // Increased margins
-      .replace(/<h3>/g, '<h3 class="text-left text-lg md:text-xl font-semibold mt-8 mb-4">')  // Increased margins
-      .replace(/<ul>/g, '<ul class="text-left list-disc pl-6 space-y-3 mb-6">')  // Added margin-bottom and increased space between items
-      .replace(/<ol>/g, '<ol class="text-left list-decimal pl-6 space-y-3 mb-6">');  // Added margin-bottom and increased space between items
+      .replace(/<p>/g, '<p class="text-left text-sm md:text-base mb-6">')
+      .replace(/<h2>/g, '<h2 class="text-left text-xl md:text-2xl font-bold mt-12 mb-6">')
+      .replace(/<h3>/g, '<h3 class="text-left text-lg md:text-xl font-semibold mt-8 mb-4">')
+      .replace(/<ul>/g, '<ul class="text-left list-disc pl-6 space-y-3 mb-6">')
+      .replace(/<ol>/g, '<ol class="text-left list-decimal pl-6 space-y-3 mb-6">');
 
     return new Response(
       JSON.stringify({ 
