@@ -8,13 +8,13 @@ interface BlogPostPreviewProps {
 
 export const BlogPostPreview = ({ data }: BlogPostPreviewProps) => {
   return (
-    <article className="w-full">
+    <article className="w-full px-2 sm:px-4 md:px-6">
       {data.image_url && (
-        <div className="flex justify-center my-3 sm:my-4">
+        <div className="w-full relative overflow-hidden my-3 sm:my-4">
           <img
             src={data.image_url}
             alt={data.title}
-            className="rounded-lg shadow-md w-full max-w-[400px] sm:max-w-[500px] lg:max-w-[600px] object-cover"
+            className="w-full h-auto object-cover rounded-lg shadow-md"
           />
         </div>
       )}
@@ -28,10 +28,8 @@ export const BlogPostPreview = ({ data }: BlogPostPreviewProps) => {
                    [&>p]:text-sm [&>p]:sm:text-base [&>p]:leading-relaxed [&>p]:mb-3
                    [&>ul]:list-disc [&>ul]:pl-4 [&>ul]:sm:pl-6 [&>ul]:mb-3 [&>ul]:space-y-1 [&>ul]:sm:space-y-2
                    [&>ol]:list-decimal [&>ol]:pl-4 [&>ol]:sm:pl-6 [&>ol]:mb-3 [&>ol]:space-y-1 [&>ol]:sm:space-y-2
-                   [&_img]:w-full [&_img]:max-w-[400px] [&_img]:sm:max-w-[500px] [&_img]:lg:max-w-[600px]
-                   [&_img]:h-auto [&_img]:aspect-square
-                   [&_img]:object-contain [&_img]:mx-auto [&_img]:my-3 [&_img]:sm:my-4
-                   [&_img]:rounded-lg [&_img]:shadow-md
+                   [&_img]:w-full [&_img]:h-auto [&_img]:object-cover
+                   [&_img]:rounded-lg [&_img]:shadow-md [&_img]:my-3 [&_img]:sm:my-4
                    [&_a]:block [&_a]:mt-3 [&_a]:sm:mt-4 [&_a]:text-primary [&_a]:hover:underline"
         dangerouslySetInnerHTML={{ 
           __html: data.content.replace(/```html\n?|\n?```/g, '') 
