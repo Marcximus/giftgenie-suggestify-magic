@@ -48,7 +48,7 @@ const BlogPost = () => {
         <Helmet>
           <title>Loading... - Get The Gift Blog</title>
         </Helmet>
-        <div className="container mx-auto px-4 py-8 max-w-4xl animate-pulse">
+        <div className="container mx-auto px-2 sm:px-4 py-8 max-w-4xl animate-pulse">
           <div className="h-8 bg-gray-200 rounded w-3/4 mb-4"></div>
           <div className="h-4 bg-gray-200 rounded w-full mb-2"></div>
           <div className="h-4 bg-gray-200 rounded w-2/3"></div>
@@ -64,7 +64,7 @@ const BlogPost = () => {
         <Helmet>
           <title>Error - Get The Gift Blog</title>
         </Helmet>
-        <div className="container mx-auto px-4 py-8 max-w-4xl">
+        <div className="container mx-auto px-2 sm:px-4 py-8 max-w-4xl">
           <h1 className="text-2xl font-bold mb-4">Error loading blog post</h1>
           <p className="text-red-500 mb-4">There was an error loading this blog post. Please try again later.</p>
           <Button onClick={() => navigate("/blog")} variant="default">
@@ -83,7 +83,7 @@ const BlogPost = () => {
           <title>Post Not Found - Get The Gift Blog</title>
           <meta name="description" content="The blog post you're looking for could not be found." />
         </Helmet>
-        <div className="container mx-auto px-4 py-8 max-w-4xl">
+        <div className="container mx-auto px-2 sm:px-4 py-8 max-w-4xl">
           <h1 className="text-2xl font-bold mb-4">Post not found</h1>
           <p className="mb-4">The blog post you're looking for could not be found.</p>
           <Button onClick={() => navigate("/blog")} variant="default">
@@ -109,7 +109,7 @@ const BlogPost = () => {
         <meta property="article:published_time" content={post.published_at || ""} />
       </Helmet>
       <article className="min-h-screen bg-gradient-to-b from-background to-muted/20">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-12">
+        <div className="container mx-auto px-2 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-12 max-w-5xl">
           {/* Back button */}
           <Button 
             onClick={() => navigate("/blog")} 
@@ -147,7 +147,7 @@ const BlogPost = () => {
           
           <div className="prose prose-lg w-full max-w-none animate-fade-in">
             <div 
-              className="bg-card rounded-lg p-4 sm:p-6 lg:p-8 shadow-sm
+              className="bg-card rounded-lg p-3 sm:p-6 lg:p-8 shadow-sm
                          [&>h1]:text-xl [&>h1]:sm:text-2xl [&>h1]:lg:text-4xl [&>h1]:font-bold [&>h1]:mb-4 
                          [&>h2]:text-lg [&>h2]:sm:text-xl [&>h2]:lg:text-3xl [&>h2]:font-semibold [&>h2]:mt-6 [&>h2]:mb-3
                          [&>p]:text-base [&>p]:leading-relaxed [&>p]:mb-4
