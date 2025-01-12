@@ -91,10 +91,6 @@ const BlogPost = () => {
             </div>
           )}
           
-          <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-6 animate-fade-in">
-            {post.title}
-          </h1>
-          
           <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground mb-8 animate-fade-in">
             <div className="flex items-center gap-1">
               <User className="w-4 h-4" />
