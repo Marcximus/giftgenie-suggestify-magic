@@ -47,7 +47,7 @@ const BlogPost = () => {
           <meta name="description" content="The blog post you're looking for could not be found." />
         </Helmet>
         <div className="container mx-auto px-4 py-8 max-w-4xl">
-          <h1 className="text-2xl font-bold mb-4">Post not found</h1>
+          <h1 className="text-xl font-bold mb-4">Post not found</h1>
           <Button onClick={() => navigate("/blog")} variant="default">
             <ChevronLeft className="mr-2 h-4 w-4" />
             More Ideas
@@ -106,9 +106,9 @@ const BlogPost = () => {
             </div>
           </div>
           
-          <div className="prose prose-lg max-w-none animate-fade-in">
+          <div className="prose prose-sm sm:prose-base lg:prose-lg max-w-none animate-fade-in">
             <div 
-              className="bg-card rounded-lg p-6 shadow-sm"
+              className="bg-card rounded-lg p-6 shadow-sm [&>h1]:text-lg [&>h1]:sm:text-xl [&>h1]:md:text-2xl [&>h1]:font-bold [&>h1]:mb-6"
               dangerouslySetInnerHTML={{ __html: post.content }}
             />
           </div>
