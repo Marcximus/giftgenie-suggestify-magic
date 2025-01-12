@@ -106,9 +106,9 @@ const BlogPost = () => {
             </div>
           </div>
           
-          <div className="prose prose-base sm:prose-lg lg:prose-xl max-w-none animate-fade-in">
+          <div className="prose prose-lg sm:prose-xl lg:prose-2xl max-w-none animate-fade-in">
             <div 
-              className="bg-card rounded-lg p-6 shadow-sm [&>h1]:text-xl [&>h1]:sm:text-2xl [&>h1]:md:text-3xl [&>h1]:font-bold [&>h1]:mb-6"
+              className="bg-card rounded-lg p-6 shadow-sm [&>h1]:text-2xl [&>h1]:sm:text-3xl [&>h1]:md:text-4xl [&>h1]:font-bold [&>h1]:mb-6"
               dangerouslySetInnerHTML={{ __html: post.content }}
             />
           </div>
