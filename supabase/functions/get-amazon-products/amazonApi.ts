@@ -56,19 +56,17 @@ export async function searchAmazonProduct(searchTerm: string, apiKey: string): P
     console.log('Raw product details:', {
       title: detailsData?.data?.product_title,
       price: detailsData?.data?.product_price,
-      originalPrice: detailsData?.data?.product_original_price,
       rating: detailsData?.data?.product_star_rating,
       totalRatings: detailsData?.data?.product_num_ratings
     });
 
     if (detailsData?.data) {
-      // Extract price from various sources, ensuring we handle string prices
+      // Extract price from search data if details don't have it
       const priceStr = detailsData.data.product_price || 
-                      detailsData.data.product_original_price || 
                       product.product_price;
       
       // Convert price string to number, removing currency symbol and commas
-      const price = priceStr ? parseFloat(priceStr.replace(/[^0-9.]/g, '')) : undefined;
+      const price = priceStr ? parseFloat(priceStr.replace(/[$,]/g, '')) : undefined;
 
       // Convert rating to number, handling string values
       const rating = detailsData.data.product_star_rating ? 
@@ -91,25 +89,36 @@ export async function searchAmazonProduct(searchTerm: string, apiKey: string): P
       return {
         title: detailsData.data.product_title || product.title,
         description: detailsData.data.product_description || product.product_description || product.title,
-        price: price,
+        price,
         currency: detailsData.data.currency || 'USD',
         imageUrl: detailsData.data.product_photo || detailsData.data.product_photos?.[0] || product.thumbnail,
-        rating: rating,
-        totalRatings: totalRatings,
+        rating,
+        totalRatings,
         asin: asin,
       };
     }
 
     // Fallback to search data if details request fails
     console.log('Falling back to search data for product details');
-    const searchPrice = product.product_price ? 
-      parseFloat(product.product_price.replace(/[^0-9.]/g, '')) : undefined;
     
+    // Extract price from search data
+    const searchPrice = product.product_price ? 
+      parseFloat(product.product_price.replace(/[$,]/g, '')) : undefined;
+    
+    // Extract rating from search data
     const searchRating = product.product_star_rating ? 
       parseFloat(product.product_star_rating) : undefined;
 
+    // Extract total ratings from search data
     const searchTotalRatings = product.product_num_ratings ? 
       parseInt(product.product_num_ratings.toString(), 10) : undefined;
+
+    // Log fallback data
+    console.log('Using fallback search data:', {
+      price: searchPrice,
+      rating: searchRating,
+      totalRatings: searchTotalRatings
+    });
 
     return {
       title: product.title,
