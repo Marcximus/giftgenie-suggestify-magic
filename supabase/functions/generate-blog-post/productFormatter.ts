@@ -24,7 +24,7 @@ export const formatProductHtml = (
     <div class="flex justify-center my-4">
       <img src="${product.imageUrl}" 
            alt="${simplifiedTitle}" 
-           class="w-20 sm:w-24 md:w-32 h-20 sm:h-24 md:h-32 object-contain rounded-lg shadow-md" 
+           class="w-20 sm:w-24 md:w-28 h-20 sm:h-24 md:h-28 object-contain rounded-lg shadow-md" 
            loading="lazy" />
     </div>` : '';
 
