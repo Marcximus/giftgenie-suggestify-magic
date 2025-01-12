@@ -82,7 +82,7 @@ const BlogPost = () => {
           </Button>
           
           {post.image_url && (
-            <div className="aspect-[21/9] relative overflow-hidden rounded-lg mb-8 shadow-xl">
+            <div className="aspect-[21/9] relative overflow-hidden rounded-lg mb-8 shadow-xl animate-fade-in">
               <img 
                 src={post.image_url} 
                 alt={post.title}
@@ -91,7 +91,7 @@ const BlogPost = () => {
             </div>
           )}
           
-          <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground mb-8">
+          <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground mb-8 animate-fade-in">
             <div className="flex items-center gap-1">
               <User className="w-4 h-4" />
               <span>{post.author}</span>
@@ -106,19 +106,9 @@ const BlogPost = () => {
             </div>
           </div>
           
-          <div className="prose prose-lg sm:prose-xl lg:prose-2xl max-w-none">
+          <div className="prose prose-lg max-w-none animate-fade-in">
             <div 
-              className="bg-card rounded-lg p-4 sm:p-6 shadow-sm
-                        [&>h1]:text-2xl [&>h1]:sm:text-3xl [&>h1]:md:text-4xl [&>h1]:font-bold [&>h1]:mb-4 [&>h1]:sm:mb-6
-                        [&>h2]:text-xl [&>h2]:sm:text-2xl [&>h2]:md:text-3xl [&>h2]:font-semibold [&>h2]:mb-3 [&>h2]:sm:mb-4
-                        [&>p]:text-base [&>p]:sm:text-lg [&>p]:leading-relaxed [&>p]:mb-4
-                        [&>ul]:list-disc [&>ul]:pl-4 [&>ul]:sm:pl-6 [&>ul]:mb-4 [&>ul]:space-y-2
-                        [&>ol]:list-decimal [&>ol]:pl-4 [&>ol]:sm:pl-6 [&>ol]:mb-4 [&>ol]:space-y-2
-                        [&_img]:mx-auto [&_img]:my-4 [&_img]:sm:my-6 [&_img]:rounded-lg [&_img]:shadow-md
-                        [&_img]:w-32 [&_img]:sm:w-36 [&_img]:md:w-40 [&_img]:h-32 [&_img]:sm:h-36 [&_img]:md:h-40 
-                        [&_img]:object-contain
-                        [&_a]:text-primary [&_a]:hover:underline [&_a]:block [&_a]:mt-2 [&_a]:sm:mt-3
-                        text-left"
+              className="bg-card rounded-lg p-6 shadow-sm"
               dangerouslySetInnerHTML={{ __html: post.content }}
             />
           </div>
