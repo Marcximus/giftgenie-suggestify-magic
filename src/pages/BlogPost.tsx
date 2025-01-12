@@ -82,11 +82,11 @@ const BlogPost = () => {
           </Button>
           
           {post.image_url && (
-            <div className="relative overflow-hidden rounded-lg mb-8 shadow-xl animate-fade-in">
+            <div className="aspect-[21/9] relative overflow-hidden rounded-lg mb-8 shadow-xl animate-fade-in">
               <img 
                 src={post.image_url} 
                 alt={post.title}
-                className="w-full h-auto object-cover aspect-[21/9]"
+                className="object-cover w-full h-full"
               />
             </div>
           )}
@@ -106,17 +106,14 @@ const BlogPost = () => {
             </div>
           </div>
           
-          <div className="prose prose-lg max-w-none animate-fade-in">
+          <div className="prose prose-lg max-w-none animate-fade-in [&_img]:!w-20 [&_img]:sm:!w-24 [&_img]:md:!w-28 [&_img]:!h-20 [&_img]:sm:!h-24 [&_img]:md:!h-28 [&_img]:!object-contain">
             <div 
               className="bg-card rounded-lg p-6 shadow-sm
                          [&>h1]:text-2xl [&>h1]:sm:text-3xl [&>h1]:md:text-4xl [&>h1]:font-bold [&>h1]:mb-6
                          [&>h2]:text-xl [&>h2]:sm:text-2xl [&>h2]:md:text-3xl [&>h2]:font-semibold [&>h2]:mb-4
                          [&>p]:text-base [&>p]:leading-relaxed [&>p]:mb-4
                          [&>ul]:list-disc [&>ul]:pl-6 [&>ul]:mb-4 [&>ul]:space-y-2
-                         [&>ol]:list-decimal [&>ol]:pl-6 [&>ol]:mb-4 [&>ol]:space-y-2
-                         [&_img]:!w-20 [&_img]:!sm:w-24 [&_img]:!md:w-28 
-                         [&_img]:!h-20 [&_img]:!sm:h-24 [&_img]:!md:h-28
-                         [&_img]:!object-contain [&_img]:!mx-auto [&_img]:!my-4"
+                         [&>ol]:list-decimal [&>ol]:pl-6 [&>ol]:mb-4 [&>ol]:space-y-2"
               dangerouslySetInnerHTML={{ __html: post.content }}
             />
           </div>
