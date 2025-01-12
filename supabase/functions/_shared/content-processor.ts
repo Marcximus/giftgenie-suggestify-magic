@@ -65,7 +65,7 @@ export async function processContent(
          <div class="flex justify-center my-4">
            <img src="${product.imageUrl}" 
                 alt="${simplifiedTitle}" 
-                class="rounded-lg shadow-md w-[140px] h-[140px] object-contain" 
+                class="w-32 sm:w-28 md:w-24 h-32 sm:h-28 md:h-24 object-contain rounded-lg shadow-md" 
                 loading="lazy" />
          </div>
          ${product.price ? `<p class="text-left text-sm text-muted-foreground mb-4">Current price: ${product.currency} ${product.price}</p>` : ''}`;
