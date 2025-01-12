@@ -22,10 +22,10 @@ export const BlogPostPreview = ({ data }: BlogPostPreviewProps) => {
         <p className="text-left text-sm sm:text-base text-muted-foreground mb-4">{data.excerpt}</p>
       )}
       <div 
-        className="mt-4 space-y-3 sm:space-y-4 text-left w-full
-                   [&>h1]:text-base [&>h1]:sm:text-lg [&>h1]:lg:text-2xl [&>h1]:font-bold [&>h1]:mb-4 
-                   [&>h2]:text-base [&>h2]:sm:text-lg [&>h2]:lg:text-xl [&>h2]:font-semibold [&>h2]:mt-6 [&>h2]:mb-3
-                   [&>p]:text-sm [&>p]:sm:text-base [&>p]:leading-relaxed [&>p]:mb-2
+        className="mt-4 space-y-3 sm:space-y-4 text-left w-full prose prose-lg
+                   [&>h1]:text-2xl [&>h1]:sm:text-3xl [&>h1]:lg:text-4xl [&>h1]:font-bold [&>h1]:mb-4 
+                   [&>h2]:text-xl [&>h2]:sm:text-2xl [&>h2]:lg:text-3xl [&>h2]:font-semibold [&>h2]:mt-6 [&>h2]:mb-3
+                   [&>p]:text-base [&>p]:sm:text-lg [&>p]:leading-relaxed [&>p]:mb-4
                    [&>ul]:list-disc [&>ul]:pl-4 [&>ul]:sm:pl-6 [&>ul]:mb-2 [&>ul]:space-y-1
                    [&>ol]:list-decimal [&>ol]:pl-4 [&>ol]:sm:pl-6 [&>ol]:mb-2 [&>ol]:space-y-1
                    [&>img]:w-full [&>img]:max-w-[400px] [&>img]:sm:max-w-[500px] [&>img]:lg:max-w-[600px]
@@ -34,7 +34,7 @@ export const BlogPostPreview = ({ data }: BlogPostPreviewProps) => {
                    [&>img]:rounded-lg [&>img]:shadow-md
                    [&>a]:block [&>a]:mt-2 [&>a]:sm:mt-3 [&>a]:text-primary [&>a]:hover:underline"
         dangerouslySetInnerHTML={{ 
-          __html: data.content.replace(/```html\n?|\n?```/g, '') 
+          __html: data.content
         }}
       />
       {data.author && (
