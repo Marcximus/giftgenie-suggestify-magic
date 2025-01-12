@@ -9,21 +9,28 @@ export async function searchAmazonProduct(searchTerm: string, apiKey: string): P
   console.log('Initial search attempt for:', searchTerm);
 
   try {
-    // Get generic search term
-    const genericSearchTerm = simplifySearchTerm(searchTerm);
-    console.log('Attempting search with generic term:', genericSearchTerm);
+    // First try with exact search term
+    console.log('Attempting search with exact term:', searchTerm);
+    let searchData = await performSearch(searchTerm, apiKey, RAPIDAPI_HOST);
     
-    // First attempt with generic search term
-    let searchData = await performSearch(genericSearchTerm, apiKey, RAPIDAPI_HOST);
-    
-    // If no products found, try with fallback search terms
+    // If no products found, try with generic search term
     if (!searchData.data?.products?.length) {
-      const fallbackTerms = getFallbackSearchTerms(genericSearchTerm);
+      const genericSearchTerm = simplifySearchTerm(searchTerm);
+      console.log('Attempting search with generic term:', genericSearchTerm);
+      searchData = await performSearch(genericSearchTerm, apiKey, RAPIDAPI_HOST);
+    }
+    
+    // If still no products found, try with fallback search terms
+    if (!searchData.data?.products?.length) {
+      const fallbackTerms = getFallbackSearchTerms(searchTerm);
       
       for (const term of fallbackTerms) {
         console.log('Attempting fallback search with:', term);
         searchData = await performSearch(term, apiKey, RAPIDAPI_HOST);
-        if (searchData.data?.products?.length) break;
+        if (searchData.data?.products?.length) {
+          console.log('Found product with fallback term:', term);
+          break;
+        }
       }
     }
 
@@ -42,6 +49,7 @@ export async function searchAmazonProduct(searchTerm: string, apiKey: string): P
     }
 
     // Get detailed product information
+    console.log('Getting details for ASIN:', asin);
     const detailsData = await getProductDetails(asin, apiKey, RAPIDAPI_HOST);
 
     if (detailsData?.data) {

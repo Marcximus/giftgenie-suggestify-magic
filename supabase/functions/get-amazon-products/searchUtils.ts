@@ -26,9 +26,14 @@ export const getFallbackSearchTerms = (searchTerm: string): string[] => {
   
   const searchTerms = [];
   
-  // Try with first two main words
-  if (words.length > 1) {
-    searchTerms.push(words.slice(0, 2).join(' '));
+  // Try with first six words
+  if (words.length > 6) {
+    searchTerms.push(words.slice(0, 6).join(' '));
+  }
+  
+  // Try with first three words
+  if (words.length > 3) {
+    searchTerms.push(words.slice(0, 3).join(' '));
   }
   
   // Try with just the first word
@@ -74,7 +79,8 @@ export const performSearch = async (
   const searchData = await searchResponse.json();
   console.log('Search response data:', {
     title: searchData.data?.products?.[0]?.title,
-    price: searchData.data?.products?.[0]?.price
+    price: searchData.data?.products?.[0]?.price,
+    totalResults: searchData.data?.products?.length || 0
   });
   return searchData;
 };
