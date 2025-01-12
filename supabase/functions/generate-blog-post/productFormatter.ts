@@ -8,6 +8,22 @@ interface ProductInfo {
   description?: string;
 }
 
+const simplifyProductTitle = (title: string): string => {
+  // Remove text after hyphen or dash if present
+  let simplified = title.split(/[-–]/)[0].trim();
+  
+  // Remove text in parentheses
+  simplified = simplified.replace(/\s*\([^)]*\)/g, '');
+  
+  // Remove common prefixes
+  simplified = simplified.replace(/^(New |All-new |Latest |The |2024 |2023 )/i, '');
+  
+  // Remove extra spaces
+  simplified = simplified.replace(/\s+/g, ' ').trim();
+  
+  return simplified;
+};
+
 export const formatProductHtml = (
   product: ProductInfo,
   affiliateLink: string
@@ -34,7 +50,7 @@ export const formatProductHtml = (
 
   return `
     <h3 class="text-left text-lg md:text-xl font-semibold mt-6 mb-3">
-      ${product.title}
+      ${simplifyProductTitle(product.title)}
     </h3>
     ${imageHtml}
     ${priceDisplay}
