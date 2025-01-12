@@ -106,7 +106,7 @@ const BlogPost = () => {
             </div>
           </div>
           
-          <div className="prose prose-lg max-w-none animate-fade-in">
+          <div className="prose prose-lg max-w-none animate-fade-in !prose-img:w-auto !prose-img:h-auto">
             <div 
               className="bg-card rounded-lg p-6 shadow-sm
                          [&>h1]:text-2xl [&>h1]:sm:text-3xl [&>h1]:md:text-4xl [&>h1]:font-bold [&>h1]:mb-6
@@ -114,9 +114,9 @@ const BlogPost = () => {
                          [&>p]:text-base [&>p]:leading-relaxed [&>p]:mb-4
                          [&>ul]:list-disc [&>ul]:pl-6 [&>ul]:mb-4 [&>ul]:space-y-2
                          [&>ol]:list-decimal [&>ol]:pl-6 [&>ol]:mb-4 [&>ol]:space-y-2
-                         [&_img]:w-32 [&_img]:sm:w-28 [&_img]:md:w-24 
-                         [&_img]:h-32 [&_img]:sm:h-28 [&_img]:md:h-24 
-                         [&_img]:object-contain [&_img]:mx-auto [&_img]:my-4
+                         [&_img]:!w-32 [&_img]:!sm:w-28 [&_img]:!md:w-24 
+                         [&_img]:!h-32 [&_img]:!sm:h-28 [&_img]:!md:h-24 
+                         [&_img]:!object-contain [&_img]:!mx-auto [&_img]:!my-4
                          [&_a]:text-primary [&_a]:hover:underline"
               dangerouslySetInnerHTML={{ __html: post.content }}
             />
