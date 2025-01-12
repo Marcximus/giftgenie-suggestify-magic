@@ -53,28 +53,24 @@ export async function searchAmazonProduct(searchTerm: string, apiKey: string): P
     const detailsData = await getProductDetails(asin, apiKey, RAPIDAPI_HOST);
 
     if (detailsData?.data) {
+      // Extract price from various sources
       const price = getPriceFromMultipleSources(
         detailsData.data.product_price,
         detailsData.data.product_original_price,
         product.price?.current_price
       );
 
-      if (!price) {
-        console.warn('No valid price found for product:', {
-          asin,
-          title: detailsData.data.product_title,
-          priceAttempts: {
-            productPrice: detailsData.data.product_price,
-            originalPrice: detailsData.data.product_original_price,
-            searchPrice: product.price?.current_price
-          }
-        });
-      }
+      // Log the extracted values for debugging
+      console.log('Extracted product details:', {
+        price,
+        rating: detailsData.data.product_star_rating,
+        totalRatings: detailsData.data.product_num_ratings
+      });
 
       return {
         title: detailsData.data.product_title || product.title,
         description: detailsData.data.product_description || product.product_description || product.title,
-        price,
+        price: price,
         currency: detailsData.data.currency || 'USD',
         imageUrl: detailsData.data.product_photo || detailsData.data.product_photos?.[0] || product.thumbnail,
         rating: detailsData.data.product_star_rating ? parseFloat(detailsData.data.product_star_rating) : undefined,
@@ -84,11 +80,19 @@ export async function searchAmazonProduct(searchTerm: string, apiKey: string): P
     }
 
     // Fallback to search data if details request fails
+    console.log('Falling back to search data for product details');
     const searchPrice = getPriceFromMultipleSources(
       undefined,
       undefined,
       product.price?.current_price
     );
+
+    // Log the fallback values for debugging
+    console.log('Using fallback product details:', {
+      price: searchPrice,
+      rating: product.product_star_rating,
+      totalRatings: product.product_num_ratings
+    });
     
     return {
       title: product.title,
