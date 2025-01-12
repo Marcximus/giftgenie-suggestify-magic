@@ -19,6 +19,14 @@ export const formatProductHtml = (
     .join(' ')
     .trim();
 
+  console.log('Formatting product HTML:', {
+    title: simplifiedTitle,
+    price: product.price,
+    currency: product.currency,
+    rating: product.rating,
+    totalRatings: product.totalRatings
+  });
+
   // Add product image with responsive dimensions
   const imageHtml = product.imageUrl ? `
     <div class="flex justify-center my-8">
@@ -28,7 +36,7 @@ export const formatProductHtml = (
            loading="lazy" />
     </div>` : '';
 
-  // Format price with currency (always in USD)
+  // Format price with currency
   const priceDisplay = product.price ? 
     `<p class="text-left text-sm text-muted-foreground mb-4">
       💰 Current price: ${product.currency || 'USD'} ${product.price.toFixed(2)}

@@ -52,6 +52,15 @@ export async function searchAmazonProduct(searchTerm: string, apiKey: string): P
     console.log('Getting details for ASIN:', asin);
     const detailsData = await getProductDetails(asin, apiKey, RAPIDAPI_HOST);
 
+    // Log raw product details for debugging
+    console.log('Raw product details:', {
+      title: detailsData?.data?.product_title,
+      price: detailsData?.data?.product_price,
+      originalPrice: detailsData?.data?.product_original_price,
+      rating: detailsData?.data?.product_star_rating,
+      totalRatings: detailsData?.data?.product_num_ratings
+    });
+
     if (detailsData?.data) {
       // Extract price from various sources
       const price = getPriceFromMultipleSources(
@@ -61,10 +70,11 @@ export async function searchAmazonProduct(searchTerm: string, apiKey: string): P
       );
 
       // Log the extracted values for debugging
-      console.log('Extracted product details:', {
+      console.log('Processed product details:', {
         price,
         rating: detailsData.data.product_star_rating,
-        totalRatings: detailsData.data.product_num_ratings
+        totalRatings: detailsData.data.product_num_ratings,
+        currency: detailsData.data.currency || 'USD'
       });
 
       return {
