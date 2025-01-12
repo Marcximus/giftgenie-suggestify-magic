@@ -120,7 +120,7 @@ const BlogPost = () => {
           </Button>
           
           {post.image_url && (
-            <div className="aspect-[21/9] relative overflow-hidden rounded-lg mb-6 sm:mb-8 shadow-xl animate-fade-in">
+            <div className="aspect-[21/9] relative overflow-hidden rounded-lg mb-6 sm:mb-8 shadow-xl">
               <img 
                 src={post.image_url} 
                 alt={post.title}
@@ -129,7 +129,7 @@ const BlogPost = () => {
             </div>
           )}
           
-          <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground mb-6 sm:mb-8 animate-fade-in">
+          <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground mb-6 sm:mb-8">
             <div className="flex items-center gap-1">
               <User className="w-4 h-4" />
               <span>{post.author}</span>
@@ -144,10 +144,10 @@ const BlogPost = () => {
             </div>
           </div>
           
-          <div className="prose prose-lg w-full max-w-none animate-fade-in">
+          <div className="prose prose-lg w-full max-w-none">
             <div 
-              className="[&>h1]:text-base [&>h1]:sm:text-lg [&>h1]:lg:text-xl [&>h1]:font-bold [&>h1]:mb-4 
-                         [&>h2]:text-base [&>h2]:sm:text-lg [&>h2]:lg:text-xl [&>h2]:font-semibold [&>h2]:mt-6 [&>h2]:mb-3
+              className="[&>h1]:text-xl [&>h1]:sm:text-2xl [&>h1]:lg:text-3xl [&>h1]:font-bold [&>h1]:mb-4 
+                         [&>h2]:text-lg [&>h2]:sm:text-xl [&>h2]:lg:text-2xl [&>h2]:font-semibold [&>h2]:mt-6 [&>h2]:mb-3
                          [&>p]:text-base [&>p]:leading-relaxed [&>p]:mb-4
                          [&>ul]:list-disc [&>ul]:pl-6 [&>ul]:mb-4 [&>ul]:space-y-2
                          [&>ol]:list-decimal [&>ol]:pl-6 [&>ol]:mb-4 [&>ol]:space-y-2
