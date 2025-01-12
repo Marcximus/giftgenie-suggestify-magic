@@ -28,8 +28,8 @@ export const BlogPostPreview = ({ data }: BlogPostPreviewProps) => {
                    [&>p]:text-sm [&>p]:sm:text-base [&>p]:leading-relaxed [&>p]:mb-3
                    [&>ul]:list-disc [&>ul]:pl-4 [&>ul]:sm:pl-6 [&>ul]:mb-3 [&>ul]:space-y-1 [&>ul]:sm:space-y-2
                    [&>ol]:list-decimal [&>ol]:pl-4 [&>ol]:sm:pl-6 [&>ol]:mb-3 [&>ol]:space-y-1 [&>ol]:sm:space-y-2
-                   [&_img]:w-36 [&_img]:sm:w-48 [&_img]:md:w-56 
-                   [&_img]:h-36 [&_img]:sm:h-48 [&_img]:md:h-56 
+                   [&_img]:w-72 [&_img]:sm:w-96 [&_img]:md:w-[500px] 
+                   [&_img]:h-72 [&_img]:sm:h-96 [&_img]:md:h-[500px] 
                    [&_img]:object-contain [&_img]:mx-auto [&_img]:my-3 [&_img]:sm:my-4
                    [&_a]:block [&_a]:mt-3 [&_a]:sm:mt-4 [&_a]:text-primary [&_a]:hover:underline"
         dangerouslySetInnerHTML={{ 
