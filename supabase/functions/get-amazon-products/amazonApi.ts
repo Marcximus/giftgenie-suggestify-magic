@@ -67,19 +67,24 @@ export async function searchAmazonProduct(searchTerm: string, apiKey: string): P
                       detailsData.data.product_original_price || 
                       product.product_price;
       
-      // Convert price string to number
+      // Convert price string to number, removing currency symbol and commas
       const price = priceStr ? parseFloat(priceStr.replace(/[^0-9.]/g, '')) : undefined;
 
-      // Convert rating to number
+      // Convert rating to number, handling string values
       const rating = detailsData.data.product_star_rating ? 
         parseFloat(detailsData.data.product_star_rating) : 
         (product.product_star_rating ? parseFloat(product.product_star_rating) : undefined);
+
+      // Convert total ratings to number
+      const totalRatings = detailsData.data.product_num_ratings ? 
+        parseInt(detailsData.data.product_num_ratings.toString(), 10) : 
+        (product.product_num_ratings ? parseInt(product.product_num_ratings.toString(), 10) : undefined);
 
       // Log the processed values
       console.log('Processed product details:', {
         price,
         rating,
-        totalRatings: detailsData.data.product_num_ratings,
+        totalRatings,
         currency: detailsData.data.currency || 'USD'
       });
 
@@ -90,9 +95,7 @@ export async function searchAmazonProduct(searchTerm: string, apiKey: string): P
         currency: detailsData.data.currency || 'USD',
         imageUrl: detailsData.data.product_photo || detailsData.data.product_photos?.[0] || product.thumbnail,
         rating: rating,
-        totalRatings: detailsData.data.product_num_ratings ? 
-          parseInt(detailsData.data.product_num_ratings.toString(), 10) : 
-          (product.product_num_ratings ? parseInt(product.product_num_ratings.toString(), 10) : undefined),
+        totalRatings: totalRatings,
         asin: asin,
       };
     }
@@ -102,14 +105,20 @@ export async function searchAmazonProduct(searchTerm: string, apiKey: string): P
     const searchPrice = product.product_price ? 
       parseFloat(product.product_price.replace(/[^0-9.]/g, '')) : undefined;
     
+    const searchRating = product.product_star_rating ? 
+      parseFloat(product.product_star_rating) : undefined;
+
+    const searchTotalRatings = product.product_num_ratings ? 
+      parseInt(product.product_num_ratings.toString(), 10) : undefined;
+
     return {
       title: product.title,
       description: product.product_description || product.title,
       price: searchPrice,
       currency: product.currency || 'USD',
       imageUrl: product.product_photo || product.thumbnail,
-      rating: product.product_star_rating ? parseFloat(product.product_star_rating) : undefined,
-      totalRatings: product.product_num_ratings ? parseInt(product.product_num_ratings.toString(), 10) : undefined,
+      rating: searchRating,
+      totalRatings: searchTotalRatings,
       asin: asin,
     };
   } catch (error) {
