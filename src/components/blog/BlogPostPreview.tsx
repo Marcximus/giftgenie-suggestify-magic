@@ -8,7 +8,7 @@ interface BlogPostPreviewProps {
 
 export const BlogPostPreview = ({ data }: BlogPostPreviewProps) => {
   return (
-    <article className="prose prose-sm md:prose-base lg:prose-lg max-w-none">
+    <article className="prose prose-sm md:prose-base lg:prose-lg max-w-none [&_img]:!w-20 [&_img]:sm:!w-24 [&_img]:md:!w-28 [&_img]:!h-20 [&_img]:sm:!h-24 [&_img]:md:!h-28 [&_img]:!object-contain">
       {data.image_url && (
         <div className="flex justify-center my-3 sm:my-4">
           <img
@@ -27,10 +27,7 @@ export const BlogPostPreview = ({ data }: BlogPostPreviewProps) => {
                    [&>h3]:text-base [&>h3]:sm:text-lg [&>h3]:md:text-xl [&>h3]:font-semibold [&>h3]:mt-4 [&>h3]:mb-2
                    [&>p]:text-sm [&>p]:sm:text-base [&>p]:leading-relaxed [&>p]:mb-3
                    [&>ul]:list-disc [&>ul]:pl-4 [&>ul]:sm:pl-6 [&>ul]:mb-3 [&>ul]:space-y-1 [&>ul]:sm:space-y-2
-                   [&>ol]:list-decimal [&>ol]:pl-4 [&>ol]:sm:pl-6 [&>ol]:mb-3 [&>ol]:space-y-1 [&>ol]:sm:space-y-2
-                   [&_img]:w-20 [&_img]:sm:w-24 [&_img]:md:w-28 [&_img]:h-20 [&_img]:sm:h-24 [&_img]:md:h-28 
-                   [&_img]:object-contain [&_img]:mx-auto [&_img]:my-3 [&_img]:sm:my-4
-                   [&_a]:block [&_a]:mt-3 [&_a]:sm:mt-4 [&_a]:text-primary [&_a]:hover:underline"
+                   [&>ol]:list-decimal [&>ol]:pl-4 [&>ol]:sm:pl-6 [&>ol]:mb-3 [&>ol]:space-y-1 [&>ol]:sm:space-y-2"
         dangerouslySetInnerHTML={{ 
           __html: data.content.replace(/```html\n?|\n?```/g, '') 
         }}
