@@ -1,6 +1,19 @@
 import { searchAmazonProduct } from './amazon-api.ts';
 import { AmazonProduct } from './types.ts';
 
+const simplifyTitle = (title: string): string => {
+  return title
+    .replace(/\s*\([^)]*\)/g, '') // Remove text in parentheses
+    .replace(/,.*$/, '') // Remove everything after comma
+    .replace(/\s*-.*$/, '') // Remove everything after dash
+    .replace(/\s*\|.*$/, '') // Remove everything after pipe
+    .replace(/\s{2,}/g, ' ') // Remove extra spaces
+    .split(' ') // Split into words
+    .slice(0, 6) // Take first 6 words
+    .join(' ') // Join back together
+    .trim();
+};
+
 export async function processContent(
   content: string,
   associateId: string
@@ -36,9 +49,10 @@ export async function processContent(
           `<h[23]>${productName}</h[23]>\\s*<p>[^<]*</p>`
         );
         
-        // Create the new product section with Amazon info
+        // Create the new product section with Amazon info and simplified title
+        const simplifiedTitle = simplifyTitle(product.title);
         const newProductSection = `<h3 class="text-left text-lg md:text-xl font-semibold mt-6 mb-3">
-           ${product.title}
+           ${simplifiedTitle}
            <div class="mt-2">
              <a href="${affiliateLink}" 
                 target="_blank" 
@@ -50,8 +64,8 @@ export async function processContent(
          </h3>
          <div class="flex justify-center my-4">
            <img src="${product.imageUrl}" 
-                alt="${product.title}" 
-                class="rounded-lg shadow-md w-[150px] h-[150px] object-contain" 
+                alt="${simplifiedTitle}" 
+                class="rounded-lg shadow-md w-[140px] h-[140px] object-contain" 
                 loading="lazy" />
          </div>
          ${product.price ? `<p class="text-left text-sm text-muted-foreground mb-4">Current price: ${product.currency} ${product.price}</p>` : ''}`;

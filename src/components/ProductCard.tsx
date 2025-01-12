@@ -19,13 +19,16 @@ interface ProductCardProps extends Product {
   onMoreLikeThis?: (title: string) => void;
 }
 
-const simplifyTitle = (title: string): string => {
+export const simplifyTitle = (title: string): string => {
   return title
-    .replace(/\s*\([^)]*\)/g, '')
-    .replace(/,.*$/, '')
-    .replace(/\s*-.*$/, '')
-    .replace(/\s*\|.*$/, '')
-    .replace(/\s{2,}/g, ' ')
+    .replace(/\s*\([^)]*\)/g, '') // Remove text in parentheses
+    .replace(/,.*$/, '') // Remove everything after comma
+    .replace(/\s*-.*$/, '') // Remove everything after dash
+    .replace(/\s*\|.*$/, '') // Remove everything after pipe
+    .replace(/\s{2,}/g, ' ') // Remove extra spaces
+    .split(' ') // Split into words
+    .slice(0, 6) // Take first 6 words
+    .join(' ') // Join back together
     .trim();
 };
 
