@@ -89,7 +89,7 @@ const BlogPost = () => {
         <meta property="article:published_time" content={post.published_at || ""} />
       </Helmet>
       <article className="min-h-screen bg-gradient-to-b from-background to-muted/20">
-        <div className="container mx-auto px-4 py-16 max-w-4xl">
+        <div className="container mx-auto px-6 sm:px-8 md:px-12 py-16 max-w-6xl">
           {/* Back button */}
           <Button 
             onClick={() => navigate("/blog")} 
