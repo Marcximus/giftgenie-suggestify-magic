@@ -135,7 +135,8 @@ const BlogPost = () => {
                          [&_img]:w-72 [&_img]:sm:w-96 [&_img]:md:w-[500px] 
                          [&_img]:h-72 [&_img]:sm:h-96 [&_img]:md:h-[500px] 
                          [&_img]:!object-contain [&_img]:!rounded-lg [&_img]:!shadow-md
-                         [&_img]:!mx-auto [&_img]:!my-4"
+                         [&_img]:!mx-auto [&_img]:!my-4
+                         [&_a.amazon-button]:!text-white [&_a.amazon-button]:no-underline"
               dangerouslySetInnerHTML={{ __html: post.content }}
             />
           </div>

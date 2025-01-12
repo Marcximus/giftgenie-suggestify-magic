@@ -44,7 +44,7 @@ export async function processContent(
              <a href="${affiliateLink}" 
                 target="_blank" 
                 rel="noopener noreferrer" 
-                class="inline-block px-4 py-2 bg-[#F97316] hover:bg-[#F97316]/90 text-white rounded-md transition-colors text-sm">
+                class="amazon-button inline-block px-4 py-2 bg-[#F97316] hover:bg-[#F97316]/90 text-white rounded-md transition-colors text-sm">
                View on Amazon
              </a>
            </div>
