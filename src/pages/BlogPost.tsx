@@ -89,18 +89,18 @@ const BlogPost = () => {
         <meta property="article:published_time" content={post.published_at || ""} />
       </Helmet>
       <article className="min-h-screen bg-gradient-to-b from-background to-muted/20">
-        <div className="container mx-auto px-4 py-8 max-w-4xl">
+        <div className="container mx-auto px-4 py-12 max-w-4xl">  {/* Increased vertical padding */}
           <Button 
             onClick={() => navigate("/blog")} 
             variant="ghost" 
-            className="mb-8 hover:bg-primary/10"
+            className="mb-12 hover:bg-primary/10"  {/* Increased bottom margin */}
           >
             <ChevronLeft className="mr-2 h-4 w-4" />
             More Ideas
           </Button>
           
           {post.image_url && (
-            <div className="aspect-[21/9] relative overflow-hidden rounded-lg mb-8 shadow-xl animate-fade-in">
+            <div className="aspect-[21/9] relative overflow-hidden rounded-lg mb-12 shadow-xl animate-fade-in">  {/* Increased bottom margin */}
               <img 
                 src={post.image_url} 
                 alt={post.title}
@@ -109,7 +109,7 @@ const BlogPost = () => {
             </div>
           )}
           
-          <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground mb-8 animate-fade-in">
+          <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground mb-12 animate-fade-in">  {/* Increased bottom margin */}
             <div className="flex items-center gap-1">
               <User className="w-4 h-4" />
               <span>{post.author}</span>
@@ -126,16 +126,16 @@ const BlogPost = () => {
           
           <div className="prose prose-lg max-w-none animate-fade-in">
             <div 
-              className="bg-card rounded-lg p-6 shadow-sm
-                         [&>h1]:text-2xl [&>h1]:sm:text-3xl [&>h1]:md:text-4xl [&>h1]:font-bold [&>h1]:mb-6
-                         [&>h2]:text-xl [&>h2]:sm:text-2xl [&>h2]:md:text-3xl [&>h2]:font-semibold [&>h2]:mb-4
-                         [&>p]:text-base [&>p]:leading-relaxed [&>p]:mb-4
-                         [&>ul]:list-disc [&>ul]:pl-6 [&>ul]:mb-4 [&>ul]:space-y-2
-                         [&>ol]:list-decimal [&>ol]:pl-6 [&>ol]:mb-4 [&>ol]:space-y-2
+              className="bg-card rounded-lg p-8 shadow-sm  {/* Increased padding */}
+                         [&>h1]:text-2xl [&>h1]:sm:text-3xl [&>h1]:md:text-4xl [&>h1]:font-bold [&>h1]:mb-8
+                         [&>h2]:text-xl [&>h2]:sm:text-2xl [&>h2]:md:text-3xl [&>h2]:font-semibold [&>h2]:mb-6
+                         [&>p]:text-base [&>p]:leading-relaxed [&>p]:mb-6
+                         [&>ul]:list-disc [&>ul]:pl-6 [&>ul]:mb-6 [&>ul]:space-y-3
+                         [&>ol]:list-decimal [&>ol]:pl-6 [&>ol]:mb-6 [&>ol]:space-y-3
                          [&_img]:w-72 [&_img]:sm:w-96 [&_img]:md:w-[500px] 
                          [&_img]:h-72 [&_img]:sm:h-96 [&_img]:md:h-[500px] 
                          [&_img]:!object-contain [&_img]:!rounded-lg [&_img]:!shadow-md
-                         [&_img]:!mx-auto [&_img]:!my-4
+                         [&_img]:!mx-auto [&_img]:!my-8  {/* Increased image margins */}
                          [&_a.amazon-button]:!text-white [&_a.amazon-button]:no-underline"
               dangerouslySetInnerHTML={{ __html: post.content }}
             />
