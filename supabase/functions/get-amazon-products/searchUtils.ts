@@ -19,49 +19,88 @@ export const simplifySearchTerm = (searchTerm: string): string => {
   return genericSearchTerm;
 };
 
-export const getFallbackSearchTerms = (searchTerm: string, ageCategory?: string): string[] => {
+const detectGender = (searchTerm: string): string | null => {
+  const maleTerms = ['male', 'man', 'boy', 'husband', 'boyfriend', 'father', 'dad', 'brother', 'uncle', 'grandfather', 'grandpa', 'his'];
+  const femaleTerms = ['female', 'woman', 'girl', 'wife', 'girlfriend', 'mother', 'mom', 'sister', 'aunt', 'grandmother', 'grandma', 'her'];
+  
+  const words = searchTerm.toLowerCase().split(/\s+/);
+  if (maleTerms.some(term => words.includes(term))) return 'male';
+  if (femaleTerms.some(term => words.includes(term))) return 'female';
+  return null;
+};
+
+const detectAgeGroup = (searchTerm: string): string => {
+  if (searchTerm.match(/\b(?:15|16|17|18|19)\s*(?:-\s*\d+)?\s*years?\s*old\b/) || 
+      searchTerm.includes('teen') || 
+      searchTerm.includes('teenager')) {
+    return 'teen';
+  }
+  if (searchTerm.match(/\b(?:0|1|2)\s*(?:-\s*\d+)?\s*years?\s*old\b/) || 
+      searchTerm.includes('baby') || 
+      searchTerm.includes('infant')) {
+    return 'infant';
+  }
+  if (searchTerm.match(/\b(?:3|4|5|6|7|8|9|10|11|12|13|14)\s*(?:-\s*\d+)?\s*years?\s*old\b/) || 
+      searchTerm.includes('child') || 
+      searchTerm.includes('kid')) {
+    return 'child';
+  }
+  return 'adult';
+};
+
+export const getFallbackSearchTerms = (searchTerm: string): string[] => {
   const words = searchTerm.split(' ')
     .filter(word => !['with', 'and', 'in', 'for', 'by', 'the', 'a', 'an'].includes(word.toLowerCase()))
     .filter(word => word.length > 2);
   
+  const gender = detectGender(searchTerm);
+  const ageGroup = detectAgeGroup(searchTerm);
   const searchTerms = [];
   
-  // Add age-appropriate qualifiers based on category
-  const ageQualifier = ageCategory === 'teen' ? 'teen ' : 
-                      ageCategory === 'child' ? 'kids ' :
-                      ageCategory === 'infant' ? 'baby ' : '';
+  // Add gender and age-specific qualifiers
+  const genderPrefix = gender === 'male' ? 'mens ' : gender === 'female' ? 'womens ' : '';
+  const agePrefix = ageGroup === 'teen' ? 'teen ' : 
+                   ageGroup === 'child' ? 'kids ' :
+                   ageGroup === 'infant' ? 'baby ' : '';
   
   // Try with first six words
   if (words.length > 6) {
-    searchTerms.push(ageQualifier + words.slice(0, 6).join(' '));
+    searchTerms.push(genderPrefix + agePrefix + words.slice(0, 6).join(' '));
   }
   
   // Try with first three words
   if (words.length > 3) {
-    searchTerms.push(ageQualifier + words.slice(0, 3).join(' '));
+    searchTerms.push(genderPrefix + agePrefix + words.slice(0, 3).join(' '));
   }
   
-  // Try with just the first word but maintain age context
+  // Try with just the first word but maintain gender and age context
   if (words.length > 0) {
-    searchTerms.push(ageQualifier + words[0]);
+    const interests = ['gaming', 'sports', 'music', 'art', 'technology'];
+    const interestWord = words.find(word => interests.includes(word.toLowerCase()));
+    if (interestWord) {
+      searchTerms.push(genderPrefix + agePrefix + interestWord);
+    } else {
+      searchTerms.push(genderPrefix + agePrefix + words[0]);
+    }
   }
   
+  console.log('Generated fallback search terms:', searchTerms);
   return searchTerms;
 };
 
 export const performSearch = async (
   term: string,
   apiKey: string,
-  rapidApiHost: string,
-  ageCategory?: string
+  rapidApiHost: string
 ) => {
   const cleanedTerm = cleanSearchTerm(term);
-  console.log('Searching with cleaned term:', cleanedTerm, 'Age category:', ageCategory);
+  const ageGroup = detectAgeGroup(term);
+  console.log('Searching with cleaned term:', cleanedTerm, 'Age group:', ageGroup);
 
   // Add age-specific category to search
-  const categoryId = ageCategory === 'teen' ? 'teen-gaming' : 
-                    ageCategory === 'child' ? 'toys-games' :
-                    ageCategory === 'infant' ? 'baby-products' : 'aps';
+  const categoryId = ageGroup === 'teen' ? 'teen-gaming' : 
+                    ageGroup === 'child' ? 'toys-games' :
+                    ageGroup === 'infant' ? 'baby-products' : 'aps';
 
   const searchParams = new URLSearchParams({
     query: cleanedTerm,
@@ -92,7 +131,7 @@ export const performSearch = async (
     title: searchData.data?.products?.[0]?.title,
     price: searchData.data?.products?.[0]?.price,
     totalResults: searchData.data?.products?.length || 0,
-    ageCategory,
+    ageGroup,
     categoryId
   });
   return searchData;
