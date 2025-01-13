@@ -18,6 +18,45 @@ export function analyzePrompt(prompt: string) {
     'gal', 'chick', 'fiancee', 'mistress', 'dame', 'female'
   ];
 
+  const ageDescriptors = {
+    infant: [
+      'baby', 'infant', 'newborn', 'nursery', 'crib', 'diaper', 'pacifier',
+      'stroller', 'teething', 'crawling', 'toddling'
+    ],
+    child: [
+      'young child', 'kid', 'child', 'preteen', 'tween', 'elementary-aged',
+      'playtime', 'school-aged', 'toys', 'backpack', 'school supplies',
+      'storytime', 'playground', 'bus stop', 'kindergarten', 'grade school',
+      'childhood', 'nursery', 'school', 'toddler'
+    ],
+    teen: [
+      'teenager', 'teen', 'adolescent', 'high schooler', 'young teen',
+      'pubescent', 'youth', 'minor', 'juvenile', 'middle schooler',
+      'teen spirit', 'prom', 'homecoming', 'student council', 'slumber party',
+      'teen idol', 'graduation', 'locker', 'gamer', 'influencer', 'high-school'
+    ],
+    youngAdult: [
+      'young adult', 'twentysomething', 'early adult', 'emerging adult',
+      'college-aged', 'millennial', 'gen z', 'post-graduate', 'recent graduate',
+      'entry-level', 'dating', 'career start', 'first apartment', 'roommate',
+      'young professional', 'urban living', 'gym', 'social', 'hobbies', 'college'
+    ],
+    adult: [
+      'adult', 'middle-aged', 'mature adult', 'established', 'gen x', 'gen y',
+      'professional', 'prime of life', 'adulthood', 'midlife', 'parenthood',
+      'career', 'homeownership', 'stability', 'family', 'career focus',
+      'management', 'executive', 'mentor', 'community', 'home', 'investment',
+      'health'
+    ],
+    senior: [
+      'senior', 'elderly', 'older', 'senior citizen', 'golden ager', 'retiree',
+      'silver aged', 'senior years', 'veteran', 'aged', 'senior member',
+      'geriatric', 'super senior', 'elder', 'retirement', 'pensioner',
+      'grandparent', 'walking cane', 'hearing aid', 'nursing home',
+      'retirement community', 'senior center', 'active aging', 'age-related'
+    ]
+  };
+
   // Split the prompt into words and clean them
   const words = lowerPrompt
     .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, ' ')
@@ -36,14 +75,57 @@ export function analyzePrompt(prompt: string) {
     words.includes(keyword) || 
     lowerPrompt.includes(keyword)
   );
-  
+
+  // Detect numerical age
+  const agePatterns = [
+    /(\d+)(?:\s*-\s*\d+)?\s*years?\s*old/i,
+    /age[sd]?\s*:?\s*(\d+)/i,
+    /(\d+)\s*y\.?o\.?/i
+  ];
+
+  let numericalAge = null;
+  for (const pattern of agePatterns) {
+    const match = prompt.match(pattern);
+    if (match) {
+      numericalAge = parseInt(match[1]);
+      break;
+    }
+  }
+
+  // Detect age category from descriptive words
+  let ageCategory = null;
+  for (const [category, descriptors] of Object.entries(ageDescriptors)) {
+    if (descriptors.some(descriptor => 
+      words.includes(descriptor) || 
+      lowerPrompt.includes(descriptor)
+    )) {
+      ageCategory = category;
+      break;
+    }
+  }
+
+  // Determine final age category based on both numerical age and descriptive words
+  const determineAgeCategory = (age: number | null, wordCategory: string | null) => {
+    if (age !== null) {
+      if (age <= 2) return 'infant';
+      if (age <= 12) return 'child';
+      if (age <= 19) return 'teen';
+      if (age <= 29) return 'youngAdult';
+      if (age <= 64) return 'adult';
+      return 'senior';
+    }
+    return wordCategory;
+  };
+
+  const finalAgeCategory = determineAgeCategory(numericalAge, ageCategory);
+
   return {
     hasGender: isMale || isFemale,
-    hasAge: /\d+/.test(prompt),
-    hasInterests: lowerPrompt.includes('likes') || lowerPrompt.includes('loves') || 
-                  lowerPrompt.includes('enjoys') || lowerPrompt.includes('interested'),
+    hasAge: numericalAge !== null || ageCategory !== null,
     isMale,
     isFemale,
+    age: numericalAge,
+    ageCategory: finalAgeCategory,
     hasEverything: lowerPrompt.includes('has everything') || 
                    lowerPrompt.includes('hard to shop for') || 
                    lowerPrompt.includes('difficult to buy for'),
