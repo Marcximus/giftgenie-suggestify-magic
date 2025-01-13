@@ -22,7 +22,7 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({
           error: 'Rate limit exceeded',
-          details: `Please try again in ${RATE_LIMIT.RETRY_AFTER} seconds`,
+          details: `Please wait ${RATE_LIMIT.RETRY_AFTER} seconds before trying again`,
           retryAfter: RATE_LIMIT.RETRY_AFTER
         }),
         { 
@@ -89,11 +89,16 @@ serve(async (req) => {
         return new Response(
           JSON.stringify({
             error: 'Rate limit exceeded',
-            details: 'Please try again in a few moments'
+            details: `Please wait ${RATE_LIMIT.RETRY_AFTER} seconds before trying again`,
+            retryAfter: RATE_LIMIT.RETRY_AFTER
           }),
           { 
             status: 429,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+            headers: { 
+              ...corsHeaders, 
+              'Content-Type': 'application/json',
+              'Retry-After': RATE_LIMIT.RETRY_AFTER.toString()
+            }
           }
         );
       }
