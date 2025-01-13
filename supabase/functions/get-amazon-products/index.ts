@@ -42,8 +42,8 @@ serve(async (req) => {
       throw new Error('RAPIDAPI_KEY not configured');
     }
 
-    const { searchTerm, priceRange } = await req.json();
-    console.log('Received request for:', searchTerm, 'with price range:', priceRange);
+    const { searchTerm } = await req.json();
+    console.log('Received request for:', searchTerm);
 
     if (!searchTerm) {
       throw new Error('Search term is required');
@@ -54,6 +54,19 @@ serve(async (req) => {
 
     const product = await searchAmazonProduct(searchTerm, apiKey);
     console.log('Product found:', product ? 'yes' : 'no');
+
+    if (!product) {
+      return new Response(
+        JSON.stringify({ error: 'Product not found' }),
+        { 
+          status: 404,
+          headers: {
+            ...corsHeaders,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+    }
 
     return new Response(
       JSON.stringify(product),
