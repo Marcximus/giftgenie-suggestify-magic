@@ -1,22 +1,12 @@
 export function analyzePrompt(prompt: string) {
   const lowerPrompt = prompt.toLowerCase();
   
-  const maleKeywords = [
-    'man', 'boy', 'father', 'husband', 'boyfriend', 'brother', 'grandpa', 'uncle',
-    'mr', 'sir', 'he', 'him', 'his', 'himself',
-    'son', 'nephew', 'king', 'prince', 'duke', 'lord', 'gentleman',
-    'coach', 'captain', 'ceo', 'father-in-law', 'grandfather',
-    'guy', 'dude', 'fella', 'bloke', 'mate',
-    'fiance', 'beau', 'bachelor', 'male', 'mister', 'gent'
-  ];
-
-  const femaleKeywords = [
-    'woman', 'girl', 'mother', 'wife', 'girlfriend', 'sister', 'grandma', 'aunt',
-    'mrs', 'ms', 'miss', 'madam', "ma'am", 'she', 'her', 'herself',
-    'daughter', 'niece', 'queen', 'princess', 'duchess', 'lady',
-    'mother-in-law', 'grandmother',
-    'gal', 'chick', 'fiancee', 'mistress', 'dame', 'female'
-  ];
+  // Split the prompt into words and clean them
+  const words = lowerPrompt
+    .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, ' ')
+    .split(' ')
+    .map(word => word.trim())
+    .filter(word => word.length > 0);
 
   const ageDescriptors = {
     infant: [
@@ -57,37 +47,32 @@ export function analyzePrompt(prompt: string) {
     ]
   };
 
-  // Split the prompt into words and clean them
-  const words = lowerPrompt
-    .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, ' ')
-    .split(' ')
-    .map(word => word.trim())
-    .filter(word => word.length > 0);
-
-  // Check for male indicators
-  const isMale = maleKeywords.some(keyword => 
-    words.includes(keyword) || 
-    lowerPrompt.includes(keyword)
-  );
-
-  // Check for female indicators
-  const isFemale = femaleKeywords.some(keyword => 
-    words.includes(keyword) || 
-    lowerPrompt.includes(keyword)
-  );
-
-  // Detect numerical age
+  // Detect numerical age - now including months
   const agePatterns = [
+    // Years patterns
     /(\d+)(?:\s*-\s*\d+)?\s*years?\s*old/i,
     /age[sd]?\s*:?\s*(\d+)/i,
-    /(\d+)\s*y\.?o\.?/i
+    /(\d+)\s*y\.?o\.?/i,
+    // Months patterns
+    /(\d+)\s*months?\s*old/i,
+    /(\d+)\s*m\.?o\.?/i
   ];
 
   let numericalAge = null;
+  let isMonths = false;
+  
   for (const pattern of agePatterns) {
     const match = prompt.match(pattern);
     if (match) {
-      numericalAge = parseInt(match[1]);
+      const value = parseInt(match[1]);
+      // Check if the matched pattern includes "month"
+      if (pattern.toString().includes('month')) {
+        isMonths = true;
+        // Convert months to years (rounded to 2 decimal places)
+        numericalAge = Math.round((value / 12) * 100) / 100;
+      } else {
+        numericalAge = value;
+      }
       break;
     }
   }
@@ -105,30 +90,36 @@ export function analyzePrompt(prompt: string) {
   }
 
   // Determine final age category based on both numerical age and descriptive words
-  const determineAgeCategory = (age: number | null, wordCategory: string | null) => {
+  const determineAgeCategory = (age: number | null, wordCategory: string | null, monthsAge: boolean) => {
+    // If age is in months or very young, prioritize infant category
+    if (monthsAge || (age !== null && age <= 2)) {
+      return 'infant';
+    }
+    
     if (age !== null) {
-      if (age <= 2) return 'infant';
       if (age <= 12) return 'child';
       if (age <= 19) return 'teen';
       if (age <= 29) return 'youngAdult';
       if (age <= 64) return 'adult';
-      return 'senior';
+      if (age >= 65) return 'senior';  // More explicit senior age check
     }
-    return wordCategory;
+    
+    // If no numerical age but we have a word category, use that
+    if (wordCategory) {
+      return wordCategory;
+    }
+    
+    // If no age information at all, return null
+    return null;
   };
 
-  const finalAgeCategory = determineAgeCategory(numericalAge, ageCategory);
+  const finalAgeCategory = determineAgeCategory(numericalAge, ageCategory, isMonths);
 
   return {
-    hasGender: isMale || isFemale,
     hasAge: numericalAge !== null || ageCategory !== null,
-    isMale,
-    isFemale,
     age: numericalAge,
+    isAgeInMonths: isMonths,
     ageCategory: finalAgeCategory,
-    hasEverything: lowerPrompt.includes('has everything') || 
-                   lowerPrompt.includes('hard to shop for') || 
-                   lowerPrompt.includes('difficult to buy for'),
-    budgetMatch: prompt.match(/(?:budget|USD|price)[^\d]*(\d+)(?:\s*-\s*(\d+))?/i)
+    originalAgeCategory: ageCategory // useful for debugging
   };
 }
