@@ -3,7 +3,8 @@ import { AmazonProduct } from '@/utils/amazon/types';
 import { calculateBackoffDelay, sleep } from '@/utils/amazon/rateLimiter';
 import { AMAZON_CONFIG } from '@/utils/amazon/config';
 import { searchWithFallback } from '@/utils/amazon/searchUtils';
-import { getCachedProduct, cacheProduct, withRetry } from '@/utils/amazon/cacheUtils';
+import { getCachedProduct, cacheProduct } from '@/utils/amazon/cacheUtils';
+import { withRetry } from '@/utils/amazon/retryUtils';
 import { toast } from "@/components/ui/use-toast";
 
 export const useAmazonProducts = () => {
@@ -14,7 +15,7 @@ export const useAmazonProducts = () => {
       const cacheKey = `${searchTerm}-${priceRange}`;
       
       // Check cache first
-      const cached = getCachedProduct(cacheKey);
+      const cached = getCachedProduct<AmazonProduct>(cacheKey);
       if (cached) {
         return cached;
       }
@@ -24,7 +25,8 @@ export const useAmazonProducts = () => {
       // Use withRetry for the product search
       const product = await withRetry(
         () => searchWithFallback(searchTerm, priceRange),
-        AMAZON_CONFIG.MAX_RETRIES
+        AMAZON_CONFIG.MAX_RETRIES,
+        AMAZON_CONFIG.BASE_DELAY
       );
       
       if (product) {
