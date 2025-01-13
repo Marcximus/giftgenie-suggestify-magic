@@ -19,26 +19,31 @@ export const simplifySearchTerm = (searchTerm: string): string => {
   return genericSearchTerm;
 };
 
-export const getFallbackSearchTerms = (searchTerm: string): string[] => {
+export const getFallbackSearchTerms = (searchTerm: string, ageCategory?: string): string[] => {
   const words = searchTerm.split(' ')
     .filter(word => !['with', 'and', 'in', 'for', 'by', 'the', 'a', 'an'].includes(word.toLowerCase()))
     .filter(word => word.length > 2);
   
   const searchTerms = [];
   
+  // Add age-appropriate qualifiers based on category
+  const ageQualifier = ageCategory === 'teen' ? 'teen ' : 
+                      ageCategory === 'child' ? 'kids ' :
+                      ageCategory === 'infant' ? 'baby ' : '';
+  
   // Try with first six words
   if (words.length > 6) {
-    searchTerms.push(words.slice(0, 6).join(' '));
+    searchTerms.push(ageQualifier + words.slice(0, 6).join(' '));
   }
   
   // Try with first three words
   if (words.length > 3) {
-    searchTerms.push(words.slice(0, 3).join(' '));
+    searchTerms.push(ageQualifier + words.slice(0, 3).join(' '));
   }
   
-  // Try with just the first word
+  // Try with just the first word but maintain age context
   if (words.length > 0) {
-    searchTerms.push(words[0]);
+    searchTerms.push(ageQualifier + words[0]);
   }
   
   return searchTerms;
@@ -47,15 +52,21 @@ export const getFallbackSearchTerms = (searchTerm: string): string[] => {
 export const performSearch = async (
   term: string,
   apiKey: string,
-  rapidApiHost: string
+  rapidApiHost: string,
+  ageCategory?: string
 ) => {
   const cleanedTerm = cleanSearchTerm(term);
-  console.log('Searching with cleaned term:', cleanedTerm);
+  console.log('Searching with cleaned term:', cleanedTerm, 'Age category:', ageCategory);
+
+  // Add age-specific category to search
+  const categoryId = ageCategory === 'teen' ? 'teen-gaming' : 
+                    ageCategory === 'child' ? 'toys-games' :
+                    ageCategory === 'infant' ? 'baby-products' : 'aps';
 
   const searchParams = new URLSearchParams({
     query: cleanedTerm,
     country: 'US',
-    category_id: 'aps',
+    category_id: categoryId,
     sort_by: 'RELEVANCE'
   });
 
@@ -80,7 +91,9 @@ export const performSearch = async (
   console.log('Search response data:', {
     title: searchData.data?.products?.[0]?.title,
     price: searchData.data?.products?.[0]?.price,
-    totalResults: searchData.data?.products?.length || 0
+    totalResults: searchData.data?.products?.length || 0,
+    ageCategory,
+    categoryId
   });
   return searchData;
 };

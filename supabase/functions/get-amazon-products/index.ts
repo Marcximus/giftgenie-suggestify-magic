@@ -36,7 +36,7 @@ serve(async (req) => {
       );
     }
 
-    const { searchTerm, priceRange } = await req.json();
+    const { searchTerm, priceRange, ageCategory } = await req.json();
     
     if (!searchTerm?.trim()) {
       return new Response(
@@ -48,13 +48,13 @@ serve(async (req) => {
       );
     }
 
-    console.log('Processing request:', { searchTerm, priceRange });
+    console.log('Processing request:', { searchTerm, priceRange, ageCategory });
     
     try {
       // Log this request for rate limiting
       logRequest();
       
-      const product = await searchAmazonProduct(searchTerm, RAPIDAPI_KEY);
+      const product = await searchAmazonProduct(searchTerm, RAPIDAPI_KEY, ageCategory);
       
       if (!product) {
         return new Response(
@@ -68,14 +68,6 @@ serve(async (req) => {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' }
           }
         );
-      }
-
-      // Validate price before returning
-      if (!product.price) {
-        console.warn('Product found but price is missing:', {
-          asin: product.asin,
-          title: product.title
-        });
       }
 
       return new Response(
