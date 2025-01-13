@@ -9,12 +9,22 @@ interface AmazonButtonProps {
 }
 
 let cachedAssociateId: string | null = null;
+let lastRequestTime = 0;
+const RATE_LIMIT_DELAY = 1000; // 1 second between requests
 
 export const AmazonButton = ({ title, asin }: AmazonButtonProps) => {
   const [isLoading, setIsLoading] = useState(false);
 
   const getAmazonUrl = async (searchTerm: string, productAsin?: string) => {
     try {
+      // Implement rate limiting
+      const now = Date.now();
+      const timeSinceLastRequest = now - lastRequestTime;
+      if (timeSinceLastRequest < RATE_LIMIT_DELAY) {
+        await new Promise(resolve => setTimeout(resolve, RATE_LIMIT_DELAY - timeSinceLastRequest));
+      }
+      lastRequestTime = Date.now();
+
       if (!cachedAssociateId) {
         setIsLoading(true);
         const { data: { AMAZON_ASSOCIATE_ID } } = await supabase.functions.invoke('get-amazon-associate-id');
@@ -30,8 +40,6 @@ export const AmazonButton = ({ title, asin }: AmazonButtonProps) => {
         return `https://www.amazon.com/dp/${productAsin}/ref=nosim?tag=${cachedAssociateId}`;
       }
       
-      // If no valid ASIN, show a toast and return null
-      console.warn('No valid ASIN available for product:', searchTerm);
       toast({
         title: "Product not found",
         description: "This product is currently unavailable on Amazon.",
@@ -39,9 +47,20 @@ export const AmazonButton = ({ title, asin }: AmazonButtonProps) => {
       });
       return null;
       
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error getting Amazon Associate ID:', error);
       setIsLoading(false);
+
+      if (error.status === 429) {
+        const retryAfter = error.retryAfter || 30;
+        toast({
+          title: "Too many requests",
+          description: `Please wait ${retryAfter} seconds before trying again.`,
+          variant: "destructive",
+        });
+        return null;
+      }
+
       toast({
         title: "Error",
         description: "Unable to generate Amazon link. Please try again.",
@@ -52,10 +71,9 @@ export const AmazonButton = ({ title, asin }: AmazonButtonProps) => {
   };
 
   const handleClick = async (e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent any parent click handlers
+    e.stopPropagation();
     const url = await getAmazonUrl(title, asin);
     if (url) {
-      // Open in new tab with noopener and noreferrer for security
       window.open(url, '_blank', 'noopener,noreferrer');
     }
   };
