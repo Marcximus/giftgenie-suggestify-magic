@@ -82,18 +82,19 @@ serve(async (req) => {
     console.error('Error in get-amazon-products function:', error);
     
     // Handle rate limit errors specifically
-    if (error.message?.includes('429') || error.message?.includes('Rate limit exceeded')) {
+    if (error.message?.includes('Rate limit exceeded')) {
+      const retryAfter = parseInt(error.message.match(/\d+/)?.[0] || '30', 10);
       return new Response(
         JSON.stringify({
           error: 'Rate limit exceeded',
-          retryAfter: RATE_LIMIT.RETRY_AFTER,
+          retryAfter,
         }),
         { 
           status: 429,
           headers: {
             ...corsHeaders,
             'Content-Type': 'application/json',
-            'Retry-After': RATE_LIMIT.RETRY_AFTER.toString(),
+            'Retry-After': retryAfter.toString(),
           },
         }
       );
