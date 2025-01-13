@@ -5,9 +5,10 @@ import { useQueryClient } from '@tanstack/react-query';
 import { updateSearchFrequency, getPopularSearches } from '@/utils/searchFrequencyUtils';
 import { generateCustomDescription } from '@/utils/descriptionUtils';
 import { logApiMetrics } from '@/utils/metricsUtils';
+import { toast } from "@/components/ui/use-toast";
 
-const BATCH_SIZE = 10;
-const STAGGER_DELAY = 50;
+const BATCH_SIZE = 8; // Reduced from 10 to stay within rate limits
+const STAGGER_DELAY = 100; // Increased from 50ms to reduce rate limit issues
 
 export const useAmazonProductProcessing = () => {
   const { getAmazonProduct } = useAmazonProducts();
@@ -76,6 +77,19 @@ export const useAmazonProductProcessing = () => {
       return suggestion;
     } catch (error) {
       console.error('Error processing suggestion:', error);
+      
+      // Handle rate limit errors specifically
+      if (error.status === 429) {
+        const retryAfter = error.retryAfter || 30;
+        toast({
+          title: "Rate limit reached",
+          description: `Please wait ${retryAfter} seconds before trying again`,
+          variant: "destructive",
+        });
+        // Wait for the specified time before continuing
+        await new Promise(resolve => setTimeout(resolve, retryAfter * 1000));
+      }
+      
       await logApiMetrics('amazon-product-processing', startTime, 'error', error.message);
       return suggestion;
     }
@@ -106,8 +120,9 @@ export const useAmazonProductProcessing = () => {
       const batchResults = await Promise.all(batchPromises);
       results.push(...batchResults);
       
+      // Add a longer delay between batches to avoid rate limits
       if (i + BATCH_SIZE < suggestions.length) {
-        await new Promise(r => setTimeout(r, STAGGER_DELAY));
+        await new Promise(r => setTimeout(r, STAGGER_DELAY * 2));
       }
     }
     
