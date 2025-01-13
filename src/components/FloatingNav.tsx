@@ -21,23 +21,23 @@ export const FloatingNav = () => {
         transition={{ duration: 0.6, type: "spring", stiffness: 100 }}
         className="container max-w-sm mx-auto px-4"
       >
-        <nav className="flex items-center justify-around gap-1 px-2 py-0.5 rounded-full backdrop-blur-md bg-blue-500/30 border border-white/20 shadow-lg">
+        <nav className="flex items-center justify-around gap-1 px-4 py-2 rounded-full backdrop-blur-lg bg-gradient-to-r from-purple-500/80 via-blue-500/80 to-purple-500/80 border border-white/20 shadow-[0_8px_32px_rgba(0,0,0,0.12)] hover:shadow-[0_8px_32px_rgba(31,34,245,0.12)]">
           {navItems.map((item) => (
             <Link
               key={item.path}
               to={item.path}
               className={cn(
-                "relative px-2 py-1 rounded-full text-[11px] font-medium transition-colors text-center w-[90px] flex items-center justify-center",
-                "hover:text-white hover:bg-blue-400/40",
+                "relative px-4 py-2 rounded-full text-sm font-medium transition-all duration-300",
+                "hover:text-white hover:bg-white/20 hover:shadow-lg",
                 "active:scale-95",
-                "focus:outline-none focus:ring-2 focus:ring-blue-400/20",
+                "focus:outline-none focus:ring-2 focus:ring-white/40",
                 location.pathname === item.path 
-                  ? "text-white bg-blue-400/40" 
+                  ? "text-white bg-white/20 shadow-lg" 
                   : "text-white/90",
-                item.name === "Ideas" && "animate-pulse-text text-white"
+                item.name === "Ideas" && "animate-pulse-text text-white font-semibold"
               )}
             >
-              {item.name}
+              <span className="relative z-10">{item.name}</span>
             </Link>
           ))}
         </nav>
