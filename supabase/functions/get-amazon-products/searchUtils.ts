@@ -30,21 +30,41 @@ const detectGender = (searchTerm: string): string | null => {
 };
 
 const detectAgeGroup = (searchTerm: string): string => {
-  if (searchTerm.match(/\b(?:15|16|17|18|19)\s*(?:-\s*\d+)?\s*years?\s*old\b/) || 
-      searchTerm.includes('teen') || 
-      searchTerm.includes('teenager')) {
-    return 'teen';
-  }
-  if (searchTerm.match(/\b(?:0|1|2)\s*(?:-\s*\d+)?\s*years?\s*old\b/) || 
-      searchTerm.includes('baby') || 
-      searchTerm.includes('infant')) {
+  // Check for months first
+  if (searchTerm.match(/\b(?:0|1|2|3|4|5|6|7|8|9|10|11|12)\s*months?\s*old\b/)) {
     return 'infant';
   }
-  if (searchTerm.match(/\b(?:3|4|5|6|7|8|9|10|11|12|13|14)\s*(?:-\s*\d+)?\s*years?\s*old\b/) || 
-      searchTerm.includes('child') || 
-      searchTerm.includes('kid')) {
+
+  // Extract age from the search term
+  const ageMatch = searchTerm.match(/\b(\d+)(?:\s*-\s*\d+)?\s*years?\s*old\b/);
+  if (ageMatch) {
+    const age = parseInt(ageMatch[1]);
+    
+    if (age <= 2) return 'infant';
+    if (age <= 12) return 'child';
+    if (age <= 19) return 'teen';
+    if (age <= 29) return 'youngAdult';
+    if (age >= 65) return 'senior';
+    return 'adult';
+  }
+
+  // Check for age-related keywords
+  if (searchTerm.includes('baby') || searchTerm.includes('infant')) {
+    return 'infant';
+  }
+  if (searchTerm.includes('child') || searchTerm.includes('kid')) {
     return 'child';
   }
+  if (searchTerm.includes('teen') || searchTerm.includes('teenager')) {
+    return 'teen';
+  }
+  if (searchTerm.match(/\b(?:college|university|young\s*adult)\b/)) {
+    return 'youngAdult';
+  }
+  if (searchTerm.match(/\b(?:senior|elderly|retired|retirement)\b/)) {
+    return 'senior';
+  }
+
   return 'adult';
 };
 
@@ -59,9 +79,11 @@ export const getFallbackSearchTerms = (searchTerm: string): string[] => {
   
   // Add gender and age-specific qualifiers
   const genderPrefix = gender === 'male' ? 'mens ' : gender === 'female' ? 'womens ' : '';
-  const agePrefix = ageGroup === 'teen' ? 'teen ' : 
+  const agePrefix = ageGroup === 'infant' ? 'baby ' :
                    ageGroup === 'child' ? 'kids ' :
-                   ageGroup === 'infant' ? 'baby ' : '';
+                   ageGroup === 'teen' ? 'teen ' :
+                   ageGroup === 'youngAdult' ? 'young adult ' :
+                   ageGroup === 'senior' ? 'senior ' : '';
   
   // Try with first six words
   if (words.length > 6) {
@@ -75,7 +97,7 @@ export const getFallbackSearchTerms = (searchTerm: string): string[] => {
   
   // Try with just the first word but maintain gender and age context
   if (words.length > 0) {
-    const interests = ['gaming', 'sports', 'music', 'art', 'technology'];
+    const interests = ['gaming', 'sports', 'music', 'art', 'technology', 'reading', 'crafts', 'cooking'];
     const interestWord = words.find(word => interests.includes(word.toLowerCase()));
     if (interestWord) {
       searchTerms.push(genderPrefix + agePrefix + interestWord);
@@ -97,10 +119,12 @@ export const performSearch = async (
   const ageGroup = detectAgeGroup(term);
   console.log('Searching with cleaned term:', cleanedTerm, 'Age group:', ageGroup);
 
-  // Add age-specific category to search
-  const categoryId = ageGroup === 'teen' ? 'teen-gaming' : 
+  // Map age groups to appropriate Amazon categories
+  const categoryId = ageGroup === 'infant' ? 'baby-products' :
                     ageGroup === 'child' ? 'toys-games' :
-                    ageGroup === 'infant' ? 'baby-products' : 'aps';
+                    ageGroup === 'teen' ? 'teen-gaming' :
+                    ageGroup === 'youngAdult' ? 'young-adult' :
+                    ageGroup === 'senior' ? 'health-personal-care' : 'aps';
 
   const searchParams = new URLSearchParams({
     query: cleanedTerm,
