@@ -1,4 +1,7 @@
 project_id = "ckcqttsdpxfbpkzljctl"
 
-[global.env]
-RAPIDAPI_KEY = "env"
+[functions.get-amazon-products]
+verify_jwt = false
+
+[functions.get-amazon-associate-id]
+verify_jwt = false

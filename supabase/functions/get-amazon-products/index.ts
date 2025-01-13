@@ -14,36 +14,46 @@ serve(async (req) => {
   }
 
   try {
-    const { searchTerm, priceRange } = await req.json();
-    const apiKey = Deno.env.get('RAPIDAPI_KEY');
-
-    if (!apiKey) {
-      throw new Error('RapidAPI key not configured');
+    if (req.method !== 'POST') {
+      throw new Error('Method not allowed');
     }
 
-    console.log('Searching Amazon for:', searchTerm, { priceRange });
+    const apiKey = Deno.env.get('RAPIDAPI_KEY');
+    if (!apiKey) {
+      throw new Error('RAPIDAPI_KEY not configured');
+    }
+
+    const { searchTerm, priceRange } = await req.json();
+    console.log('Received request for:', searchTerm, 'with price range:', priceRange);
+
+    if (!searchTerm) {
+      throw new Error('Search term is required');
+    }
+
     const product = await searchAmazonProduct(searchTerm, apiKey);
+    console.log('Product found:', product ? 'yes' : 'no');
 
     return new Response(
       JSON.stringify(product),
       { 
-        headers: { 
+        headers: {
           ...corsHeaders,
           'Content-Type': 'application/json',
         },
       },
     );
+
   } catch (error) {
     console.error('Error in get-amazon-products function:', error);
     
     return new Response(
-      JSON.stringify({ 
+      JSON.stringify({
         error: error.message,
-        details: error.stack
+        details: error.stack,
       }),
       { 
-        status: error.status || 500,
-        headers: { 
+        status: 500,
+        headers: {
           ...corsHeaders,
           'Content-Type': 'application/json',
         },
