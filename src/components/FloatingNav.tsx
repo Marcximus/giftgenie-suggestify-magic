@@ -31,6 +31,7 @@ export const FloatingNav = () => {
                 "hover:text-white hover:bg-white/20 hover:shadow-lg",
                 "active:scale-95",
                 "focus:outline-none focus:ring-2 focus:ring-white/40",
+                "flex items-center justify-center",
                 location.pathname === item.path 
                   ? "text-white bg-white/20 shadow-lg" 
                   : "text-white/90",
