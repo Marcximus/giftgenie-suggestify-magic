@@ -10,22 +10,28 @@ export const useSuggestions = () => {
   const { generateSuggestions } = useOpenAISuggestions();
   const { processSuggestions } = useAmazonProductProcessing();
 
-  // Use React Query for caching suggestions
   const { data: suggestions = [], isPending: isLoading, mutate: fetchSuggestions } = useMutation({
     mutationFn: async (query: string) => {
+      console.log('Fetching suggestions for query:', query);
       const newSuggestions = await generateSuggestions(query);
       if (newSuggestions) {
+        console.log('Processing suggestions in parallel');
         return processSuggestions(newSuggestions);
       }
       return [];
+    },
+    meta: {
+      onError: (error: Error) => {
+        console.error('Error in suggestion mutation:', error);
+      }
     }
   });
 
-  // Debounce the search to prevent too many API calls
+  // Debounce the search with optimized settings
   const debouncedSearch = debounce(async (query: string) => {
     setLastQuery(query);
     await fetchSuggestions(query);
-  }, 500, { leading: true, trailing: true });
+  }, 300, { leading: true, trailing: true });
 
   const handleSearch = async (query: string) => {
     setLastQuery(query);

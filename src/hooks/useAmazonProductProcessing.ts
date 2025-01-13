@@ -4,6 +4,9 @@ import { GiftSuggestion } from '@/types/suggestions';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from "@/integrations/supabase/client";
 
+const BATCH_SIZE = 3; // Process 3 products at a time to avoid rate limits
+const STAGGER_DELAY = 500; // 500ms delay between products in a batch
+
 export const useAmazonProductProcessing = () => {
   const { getAmazonProduct } = useAmazonProducts();
   const { processBatch } = useBatchProcessor<GiftSuggestion, GiftSuggestion>();
@@ -11,6 +14,12 @@ export const useAmazonProductProcessing = () => {
 
   const generateCustomDescription = async (title: string, originalDescription: string): Promise<string> => {
     try {
+      const cacheKey = `description-${title}`;
+      const cached = localStorage.getItem(cacheKey);
+      if (cached) {
+        return cached;
+      }
+
       const { data, error } = await supabase.functions.invoke('generate-custom-description', {
         body: { title, originalDescription }
       });
@@ -20,7 +29,9 @@ export const useAmazonProductProcessing = () => {
         return originalDescription;
       }
 
-      return data.description || originalDescription;
+      const description = data.description || originalDescription;
+      localStorage.setItem(cacheKey, description);
+      return description;
     } catch (error) {
       console.error('Error calling generate-custom-description:', error);
       return originalDescription;
@@ -29,7 +40,6 @@ export const useAmazonProductProcessing = () => {
 
   const processGiftSuggestion = async (suggestion: GiftSuggestion): Promise<GiftSuggestion> => {
     try {
-      // Use queryClient directly for caching
       const cacheKey = ['amazon-product', suggestion.title, suggestion.priceRange];
       const cachedData = queryClient.getQueryData(cacheKey);
       
@@ -43,12 +53,10 @@ export const useAmazonProductProcessing = () => {
       
       if (amazonProduct && amazonProduct.asin) {
         // Generate custom description in parallel with product fetching
-        const [customDescription] = await Promise.all([
-          generateCustomDescription(
-            amazonProduct.title || suggestion.title,
-            suggestion.description
-          )
-        ]);
+        const customDescription = await generateCustomDescription(
+          amazonProduct.title || suggestion.title,
+          suggestion.description
+        );
 
         const processedSuggestion = {
           ...suggestion,
@@ -76,10 +84,34 @@ export const useAmazonProductProcessing = () => {
   };
 
   const processSuggestions = async (suggestions: GiftSuggestion[]) => {
-    // Process suggestions in parallel with a maximum batch size
-    const results = await Promise.all(
-      suggestions.map(suggestion => processGiftSuggestion(suggestion))
-    );
+    console.log('Processing suggestions in parallel batches');
+    const results: GiftSuggestion[] = [];
+    
+    // Process suggestions in parallel batches
+    for (let i = 0; i < suggestions.length; i += BATCH_SIZE) {
+      const batch = suggestions.slice(i, i + BATCH_SIZE);
+      console.log(`Processing batch ${i / BATCH_SIZE + 1}`);
+      
+      const batchPromises = batch.map((suggestion, index) => 
+        new Promise<GiftSuggestion>(async (resolve) => {
+          // Stagger requests within batch to avoid rate limits
+          if (index > 0) {
+            await new Promise(r => setTimeout(r, index * STAGGER_DELAY));
+          }
+          const result = await processGiftSuggestion(suggestion);
+          resolve(result);
+        })
+      );
+      
+      const batchResults = await Promise.all(batchPromises);
+      results.push(...batchResults);
+      
+      // Add delay between batches if not the last batch
+      if (i + BATCH_SIZE < suggestions.length) {
+        await new Promise(r => setTimeout(r, STAGGER_DELAY));
+      }
+    }
+    
     return results;
   };
 

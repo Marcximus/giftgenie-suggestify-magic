@@ -1,17 +1,11 @@
-import { AmazonProduct } from './types';
-
-const MAX_CACHE_SIZE = 500;
-const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours
-const RETRY_ATTEMPTS = 2;
-const RETRY_DELAY = 500;
-
-interface CacheEntry {
-  data: AmazonProduct;
+interface CacheItem<T> {
+  value: T;
   timestamp: number;
 }
 
-// Use both memory and localStorage for caching
-const productCache = new Map<string, CacheEntry>();
+const CACHE_EXPIRY = 24 * 60 * 60 * 1000; // 24 hours
+const MAX_CACHE_SIZE = 500;
+const MEMORY_CACHE = new Map<string, CacheItem<any>>();
 
 // Initialize cache from localStorage
 const initializeCache = () => {
@@ -19,13 +13,13 @@ const initializeCache = () => {
     const localStorageCache = localStorage.getItem('amazonProductCache');
     if (localStorageCache) {
       const entries = JSON.parse(localStorageCache);
-      entries.forEach(([key, value]: [string, CacheEntry]) => {
-        if (Date.now() - value.timestamp <= CACHE_DURATION) {
-          productCache.set(key, value);
+      entries.forEach(([key, value]: [string, CacheItem<any>]) => {
+        if (Date.now() - value.timestamp <= CACHE_EXPIRY) {
+          MEMORY_CACHE.set(key, value);
         }
       });
     }
-    console.log('Cache initialized with', productCache.size, 'entries');
+    console.log('Cache initialized with', MEMORY_CACHE.size, 'entries');
   } catch (error) {
     console.warn('Failed to load cache from storage:', error);
   }
@@ -35,10 +29,11 @@ const initializeCache = () => {
 const saveCacheToStorage = () => {
   try {
     localStorage.setItem('amazonProductCache', 
-      JSON.stringify(Array.from(productCache.entries()))
+      JSON.stringify(Array.from(MEMORY_CACHE.entries()))
     );
   } catch (error) {
     console.warn('Failed to save cache to storage:', error);
+    clearStaleCache(); // Try to free up space
   }
 };
 
@@ -47,23 +42,23 @@ const clearStaleCache = () => {
   const now = Date.now();
   const entriesToDelete: string[] = [];
   
-  for (const [key, value] of productCache.entries()) {
-    if (now - value.timestamp > CACHE_DURATION || productCache.size > MAX_CACHE_SIZE) {
+  for (const [key, value] of MEMORY_CACHE.entries()) {
+    if (now - value.timestamp > CACHE_EXPIRY || MEMORY_CACHE.size > MAX_CACHE_SIZE) {
       entriesToDelete.push(key);
     }
   }
   
   if (entriesToDelete.length > 0) {
-    entriesToDelete.forEach(key => productCache.delete(key));
+    entriesToDelete.forEach(key => MEMORY_CACHE.delete(key));
     saveCacheToStorage();
     console.log(`Cleared ${entriesToDelete.length} stale cache entries`);
   }
 };
 
 // Get cached product with localStorage fallback
-export const getCachedProduct = (cacheKey: string): AmazonProduct | null => {
+export const getCachedProduct = <T>(key: string): T | null => {
   // Initialize cache if needed
-  if (productCache.size === 0) {
+  if (MEMORY_CACHE.size === 0) {
     initializeCache();
   }
   
@@ -71,53 +66,36 @@ export const getCachedProduct = (cacheKey: string): AmazonProduct | null => {
   clearStaleCache();
   
   // Check memory cache first
-  const cached = productCache.get(cacheKey);
-  if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
-    console.log('Memory cache hit for:', cacheKey);
-    return cached.data;
+  const cached = MEMORY_CACHE.get(key);
+  if (cached && Date.now() - cached.timestamp < CACHE_EXPIRY) {
+    console.log('Memory cache hit for:', key);
+    return cached.value;
   }
   
-  console.log('Cache miss for:', cacheKey);
+  console.log('Cache miss for:', key);
   return null;
 };
 
 // Cache product in both memory and localStorage
-export const cacheProduct = (cacheKey: string, product: AmazonProduct) => {
-  if (productCache.size === 0) {
+export const cacheProduct = <T>(key: string, value: T): void => {
+  if (MEMORY_CACHE.size === 0) {
     initializeCache();
   }
   
   clearStaleCache();
   
-  const cacheEntry = { data: product, timestamp: Date.now() };
-  productCache.set(cacheKey, cacheEntry);
+  const cacheEntry: CacheItem<T> = {
+    value,
+    timestamp: Date.now()
+  };
+
+  MEMORY_CACHE.set(key, cacheEntry);
   saveCacheToStorage();
-  console.log('Cached product:', cacheKey);
+  console.log('Cached product:', key);
 };
 
-// Optimized retry mechanism with exponential backoff
-export const withRetry = async <T>(
-  operation: () => Promise<T>,
-  maxAttempts: number = RETRY_ATTEMPTS,
-  initialDelay: number = RETRY_DELAY
-): Promise<T> => {
-  let lastError: Error | null = null;
-  
-  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-    try {
-      return await operation();
-    } catch (error: any) {
-      lastError = error;
-      console.warn(`Attempt ${attempt} failed:`, error.message);
-      
-      if (error.status === 404 || attempt === maxAttempts) {
-        throw error;
-      }
-      
-      const backoffDelay = initialDelay * Math.pow(2, attempt - 1);
-      await new Promise(resolve => setTimeout(resolve, backoffDelay));
-    }
-  }
-  
-  throw lastError || new Error('Operation failed after all retry attempts');
-};
+// Initialize cache when module loads
+initializeCache();
+
+// Clean up expired items periodically
+setInterval(clearStaleCache, 60 * 60 * 1000); // Every hour
