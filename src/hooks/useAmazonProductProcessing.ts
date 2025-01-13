@@ -24,7 +24,7 @@ export const useAmazonProductProcessing = () => {
           },
           {
             onConflict: 'search_term',
-            target: ['search_term']
+            ignoreDuplicates: false
           }
         )
         .select();
