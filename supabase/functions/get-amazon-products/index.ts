@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { searchAmazonProduct } from "./amazonApi.ts";
 import { isRateLimited, logRequest, RATE_LIMIT } from "../_shared/rate-limiter.ts";
+import { cleanSearchTerm, simplifySearchTerm } from './utils/textUtils.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -79,10 +80,53 @@ serve(async (req) => {
           // Log the request for rate limiting
           logRequest();
 
-          console.log('Processing search term:', searchTerm);
-          const product = await searchAmazonProduct(searchTerm, apiKey);
+          // Try different search variations
+          const searchAttempts = [
+            searchTerm,
+            cleanSearchTerm(searchTerm),
+            simplifySearchTerm(searchTerm),
+            // Try with first three words
+            searchTerm.split(' ').slice(0, 3).join(' '),
+            // Try with just the main keyword
+            searchTerm.split(' ')[0]
+          ];
 
-          if (!product) {
+          let product = null;
+          let lastError = null;
+
+          for (const attempt of searchAttempts) {
+            if (!attempt || attempt.length < 3) continue;
+            
+            console.log('Attempting search with term:', attempt);
+            try {
+              product = await searchAmazonProduct(attempt, apiKey);
+              if (product) {
+                console.log('Found product with search term:', attempt);
+                break;
+              }
+            } catch (error) {
+              console.log('Search attempt failed:', error);
+              lastError = error;
+              // Only continue if it's not a rate limit error
+              if (error.message?.includes('Rate limit')) {
+                throw error;
+              }
+              // Wait before next attempt
+              await new Promise(resolve => setTimeout(resolve, 1000));
+            }
+          }
+
+          if (product) {
+            resolve(new Response(
+              JSON.stringify(product),
+              { 
+                headers: {
+                  ...corsHeaders,
+                  'Content-Type': 'application/json',
+                },
+              },
+            ));
+          } else {
             resolve(new Response(
               JSON.stringify({ 
                 error: 'Product not found',
@@ -96,18 +140,7 @@ serve(async (req) => {
                 },
               }
             ));
-            return;
           }
-
-          resolve(new Response(
-            JSON.stringify(product),
-            { 
-              headers: {
-                ...corsHeaders,
-                'Content-Type': 'application/json',
-              },
-            },
-          ));
         } catch (error) {
           console.error('Error processing request:', error);
           
