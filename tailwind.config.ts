@@ -78,11 +78,11 @@ export default {
           to: { height: '0' }
         },
         'pulse-text': {
-          '0%, 20%, 80%, 100%': {
-            textShadow: '0 0 2px rgba(255, 255, 255, 0.1)'
+          '0%, 100%': {
+            opacity: '0.85'
           },
           '50%': {
-            textShadow: '0 0 4px rgba(255, 255, 255, 0.2)'
+            opacity: '1'
           }
         }
       },
