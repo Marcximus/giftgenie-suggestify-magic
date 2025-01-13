@@ -1,15 +1,41 @@
 export function analyzePrompt(prompt: string) {
   const lowerPrompt = prompt.toLowerCase();
   
-  const isMale = lowerPrompt.includes('man') || lowerPrompt.includes('boy') || 
-                 lowerPrompt.includes('father') || lowerPrompt.includes('husband') || 
-                 lowerPrompt.includes('boyfriend') || lowerPrompt.includes('brother') ||
-                 lowerPrompt.includes('grandpa') || lowerPrompt.includes('uncle');
+  const maleKeywords = [
+    'man', 'boy', 'father', 'husband', 'boyfriend', 'brother', 'grandpa', 'uncle',
+    'mr', 'sir', 'he', 'him', 'his', 'himself',
+    'son', 'nephew', 'king', 'prince', 'duke', 'lord', 'gentleman',
+    'coach', 'captain', 'ceo', 'father-in-law', 'grandfather',
+    'guy', 'dude', 'fella', 'bloke', 'mate',
+    'fiance', 'beau', 'bachelor', 'male', 'mister', 'gent'
+  ];
 
-  const isFemale = lowerPrompt.includes('woman') || lowerPrompt.includes('girl') || 
-                   lowerPrompt.includes('mother') || lowerPrompt.includes('wife') || 
-                   lowerPrompt.includes('girlfriend') || lowerPrompt.includes('sister') ||
-                   lowerPrompt.includes('grandma') || lowerPrompt.includes('aunt');
+  const femaleKeywords = [
+    'woman', 'girl', 'mother', 'wife', 'girlfriend', 'sister', 'grandma', 'aunt',
+    'mrs', 'ms', 'miss', 'madam', "ma'am", 'she', 'her', 'herself',
+    'daughter', 'niece', 'queen', 'princess', 'duchess', 'lady',
+    'mother-in-law', 'grandmother',
+    'gal', 'chick', 'fiancee', 'mistress', 'dame', 'female'
+  ];
+
+  // Split the prompt into words and clean them
+  const words = lowerPrompt
+    .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, ' ')
+    .split(' ')
+    .map(word => word.trim())
+    .filter(word => word.length > 0);
+
+  // Check for male indicators
+  const isMale = maleKeywords.some(keyword => 
+    words.includes(keyword) || 
+    lowerPrompt.includes(keyword)
+  );
+
+  // Check for female indicators
+  const isFemale = femaleKeywords.some(keyword => 
+    words.includes(keyword) || 
+    lowerPrompt.includes(keyword)
+  );
   
   return {
     hasGender: isMale || isFemale,
