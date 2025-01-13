@@ -2,7 +2,9 @@ import { useAmazonProducts } from './useAmazonProducts';
 import { useBatchProcessor } from './useBatchProcessor';
 import { GiftSuggestion } from '@/types/suggestions';
 import { useQueryClient } from '@tanstack/react-query';
-import { supabase } from "@/integrations/supabase/client";
+import { updateSearchFrequency, getPopularSearches } from '@/utils/searchFrequencyUtils';
+import { generateCustomDescription } from '@/utils/descriptionUtils';
+import { logApiMetrics } from '@/utils/metricsUtils';
 
 const BATCH_SIZE = 10;
 const STAGGER_DELAY = 50;
@@ -12,41 +14,10 @@ export const useAmazonProductProcessing = () => {
   const { processBatch } = useBatchProcessor<GiftSuggestion, GiftSuggestion>();
   const queryClient = useQueryClient();
 
-  const updateSearchFrequency = async (searchTerm: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('popular_searches')
-        .upsert(
-          { 
-            search_term: searchTerm.toLowerCase().trim(),
-            frequency: 1,
-            last_searched: new Date().toISOString()
-          },
-          {
-            onConflict: 'search_term',
-            ignoreDuplicates: false
-          }
-        )
-        .select();
-
-      if (error) throw error;
-      return data;
-    } catch (error) {
-      console.error('Error updating search frequency:', error);
-    }
-  };
-
   const warmCache = async () => {
     try {
-      const { data: popularSearches } = await supabase
-        .from('popular_searches')
-        .select('search_term')
-        .order('frequency', { ascending: false })
-        .order('last_searched', { ascending: false })
-        .limit(20);
-
+      const popularSearches = await getPopularSearches();
       if (popularSearches) {
-        // Process popular searches in parallel with a smaller batch size
         const warmingPromises = popularSearches.map(({ search_term }) => 
           getAmazonProduct(search_term, '')
         );
@@ -54,32 +25,6 @@ export const useAmazonProductProcessing = () => {
       }
     } catch (error) {
       console.error('Error warming cache:', error);
-    }
-  };
-
-  const generateCustomDescription = async (title: string, originalDescription: string): Promise<string> => {
-    try {
-      const cacheKey = `description-${title.toLowerCase().trim()}`;
-      const cached = localStorage.getItem(cacheKey);
-      if (cached) {
-        return cached;
-      }
-
-      const { data, error } = await supabase.functions.invoke('generate-custom-description', {
-        body: { title, originalDescription }
-      });
-
-      if (error) {
-        console.error('Error generating custom description:', error);
-        return originalDescription;
-      }
-
-      const description = data.description || originalDescription;
-      localStorage.setItem(cacheKey, description);
-      return description;
-    } catch (error) {
-      console.error('Error calling generate-custom-description:', error);
-      return originalDescription;
     }
   };
 
@@ -92,16 +37,10 @@ export const useAmazonProductProcessing = () => {
       
       if (cachedData) {
         console.log('Cache hit for:', suggestion.title);
-        await supabase.from('api_metrics').insert({
-          endpoint: 'amazon-product-processing',
-          duration_ms: Math.round(performance.now() - startTime),
-          status: 'success',
-          cache_hit: true
-        });
+        await logApiMetrics('amazon-product-processing', startTime, 'success', undefined, true);
         return cachedData as GiftSuggestion;
       }
 
-      // Update search frequency for cache warming
       await updateSearchFrequency(suggestion.title);
 
       console.log('Processing suggestion:', suggestion.title);
@@ -130,27 +69,14 @@ export const useAmazonProductProcessing = () => {
         };
 
         queryClient.setQueryData(cacheKey, processedSuggestion);
-
-        await supabase.from('api_metrics').insert({
-          endpoint: 'amazon-product-processing',
-          duration_ms: Math.round(performance.now() - startTime),
-          status: 'success',
-          cache_hit: false
-        });
-
+        await logApiMetrics('amazon-product-processing', startTime, 'success');
         return processedSuggestion;
       }
       
       return suggestion;
     } catch (error) {
       console.error('Error processing suggestion:', error);
-      await supabase.from('api_metrics').insert({
-        endpoint: 'amazon-product-processing',
-        duration_ms: Math.round(performance.now() - startTime),
-        status: 'error',
-        error_message: error.message,
-        cache_hit: false
-      });
+      await logApiMetrics('amazon-product-processing', startTime, 'error', error.message);
       return suggestion;
     }
   };
