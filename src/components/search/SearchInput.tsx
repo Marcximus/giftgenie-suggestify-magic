@@ -33,9 +33,7 @@ export const SearchInput = ({
         <Button 
           type="submit" 
           disabled={isLoading} 
-          className="w-full sm:w-auto text-white/90 bg-white/10 backdrop-blur-sm border border-white/10 shadow-sm
-          hover:text-white hover:bg-white/20 hover:shadow-lg transition-all duration-200
-          active:scale-95 focus:outline-none focus:ring-2 focus:ring-white/40"
+          className="w-full sm:w-auto shadow-sm hover:shadow-md transition-all duration-200 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70"
         >
           {isLoading ? (
             <div className="loading-spinner">⌛</div>
@@ -48,9 +46,7 @@ export const SearchInput = ({
             type="button" 
             variant="outline" 
             onClick={onReset}
-            className="flex items-center gap-2 w-full sm:w-auto whitespace-nowrap text-white/90 bg-white/10 backdrop-blur-sm border border-white/10
-            hover:text-white hover:bg-white/20 hover:shadow-lg transition-all duration-200
-            active:scale-95 focus:outline-none focus:ring-2 focus:ring-white/40"
+            className="flex items-center gap-2 w-full sm:w-auto whitespace-nowrap shadow-sm hover:shadow-md transition-all duration-200 hover:bg-secondary/80"
           >
             <RefreshCw className="h-4 w-4" />
             <span className="text-xs sm:text-sm">New Search</span>
