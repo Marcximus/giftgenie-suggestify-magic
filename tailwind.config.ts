@@ -78,18 +78,18 @@ export default {
           to: { height: '0' }
         },
         'pulse-text': {
-          '0%, 100%': {
-            textShadow: '0 0 4px rgba(255, 255, 255, 0.1), 0 0 8px rgba(255, 255, 255, 0.1)'
+          '0%, 20%, 80%, 100%': {
+            textShadow: '0 0 2px rgba(255, 255, 255, 0.1)'
           },
           '50%': {
-            textShadow: '0 0 8px rgba(255, 255, 255, 0.3), 0 0 16px rgba(255, 255, 255, 0.3)'
+            textShadow: '0 0 4px rgba(255, 255, 255, 0.2)'
           }
         }
       },
       animation: {
         'accordion-down': 'accordion-down 0.2s ease-out',
         'accordion-up': 'accordion-up 0.2s ease-out',
-        'pulse-text': 'pulse-text 6s ease-in-out infinite'
+        'pulse-text': 'pulse-text 8s cubic-bezier(0.4, 0, 0.6, 1) infinite'
       },
       typography: {
         DEFAULT: {
