@@ -33,12 +33,13 @@ export function buildGiftPrompt(prompt: string, config: PromptConfig): string {
   enhancedPrompt += `
   CRITICAL REQUIREMENTS:
   1. Budget: Between $${minBudget} and $${maxBudget}
-  ${specificInterest ? `2. IMPORTANT: At least 3 suggestions must directly relate to their interest in ${specificInterest}` : ''}
+  ${specificInterest ? `2. IMPORTANT: Include 3-4 suggestions that directly relate to their interest in ${specificInterest}, but distribute them randomly throughout the list of suggestions` : ''}
   
   Gift Categories Distribution:
   ${specificInterest ? 
-    `- 3-4 gifts specifically related to ${specificInterest}
-     - 4-5 gifts based on demographic and general appeal` :
+    `- Mix interest-specific gifts (${specificInterest}) randomly with general suggestions
+     - Do not group interest-specific gifts together
+     - Ensure a natural flow between specific and general suggestions` :
     '- Distribute suggestions across various categories'}
 
   Quality Guidelines:

@@ -26,30 +26,42 @@ serve(async (req) => {
         messages: [
           {
             role: "system",
-            content: `You are a premium product copywriter specializing in gift descriptions. Your task is to create compelling, informative descriptions that follow these STRICT guidelines:
+            content: `You are a creative gift copywriter with a fun, engaging style. Your descriptions should be unique and captivating, avoiding clichéd openings like "elevate" or "embark." Follow these guidelines:
 
-1. NEVER repeat the product title verbatim
-2. Focus on emotional appeal and gift-giving context
-3. Highlight 2-3 specific premium features or unique selling points
-4. Include sensory details when relevant (texture, taste, feel, etc.)
-5. Mention the recipient's potential experience
-6. Keep it concise (60-80 words)
-7. Use sophisticated, engaging language
-8. For food/beverages: describe flavors, ingredients, or tasting notes
-9. For clothing/accessories: describe materials, comfort, and style
-10. For home items: describe ambiance and practical benefits
-11. For tech: focus on user experience rather than specs
-12. ALWAYS maintain a premium, gift-focused tone
+1. Start each description differently - be creative and varied
+2. Focus on what makes this gift special and memorable
+3. Include sensory details or emotional appeal
+4. Keep descriptions concise (60-80 words)
+5. Use engaging, conversational language
+6. Highlight unique features or experiences
+7. Consider the gift-giving context
+8. Make each description distinct and fresh
 
-BAD example: "This coffee maker makes coffee and has buttons to control it."
-GOOD example: "Transform morning rituals into moments of pure delight with this elegant brewing system. Its precision temperature control and artisanal craftsmanship extract the perfect balance of flavors, while the sleek design adds a touch of sophistication to any kitchen counter."`
+AVOID these overused openings:
+- "Elevate..."
+- "Embark..."
+- "Transform..."
+- "Discover..."
+- "Experience..."
+- "Introducing..."
+
+Instead, use creative, varied approaches like:
+- Describing a moment of use
+- Starting with an interesting fact
+- Using playful or intriguing questions
+- Beginning with sensory details
+- Opening with emotional appeal
+- Using humor when appropriate
+
+BAD example: "Elevate their coffee experience with this premium machine."
+GOOD example: "Watch their eyes light up as the rich aroma of barista-quality coffee fills their kitchen. This sleek machine brings cafe-worthy brews home, combining Italian craftsmanship with one-touch convenience for their perfect morning cup."`
           },
           {
             role: "user",
-            content: `Product: ${title}\nOriginal Description: ${originalDescription}\n\nCreate a premium gift description that highlights what makes this a special present.`
+            content: `Product: ${title}\nOriginal Description: ${originalDescription}\n\nCreate an engaging, unique gift description that captures what makes this a special present.`
           }
         ],
-        temperature: 0.7,
+        temperature: 0.8,
         max_tokens: 150,
       }),
     });
