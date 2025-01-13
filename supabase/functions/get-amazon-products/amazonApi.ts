@@ -1,6 +1,7 @@
 import { searchProducts } from './api/productSearch.ts';
 import { getProductDetails } from './api/productDetails.ts';
-import { simplifySearchTerm, getFallbackSearchTerms } from './utils/searchUtils.ts';
+import { simplifySearchTerm } from './utils/textUtils.ts';
+import { getFallbackSearchTerms } from './utils/searchTermUtils.ts';
 import { AmazonProduct } from './types.ts';
 
 export async function searchAmazonProduct(

@@ -8,14 +8,3 @@ export interface AmazonProduct {
   totalRatings?: number;
   asin: string;
 }
-
-export class AmazonApiError extends Error {
-  constructor(
-    message: string,
-    public status?: number,
-    public retryAfter?: string
-  ) {
-    super(message);
-    this.name = 'AmazonApiError';
-  }
-}
