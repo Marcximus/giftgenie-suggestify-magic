@@ -7,15 +7,47 @@ import { generateCustomDescription } from '@/utils/descriptionUtils';
 import { logApiMetrics } from '@/utils/metricsUtils';
 import { toast } from "@/components/ui/use-toast";
 
-const BATCH_SIZE = 4; // Reduced from 8 to lower concurrent requests
-const STAGGER_DELAY = 2000; // Increased from 100ms to 2s between requests
+const BATCH_SIZE = 4;
+const STAGGER_DELAY = 2000;
+
+const simplifySearchTerm = (title: string): string => {
+  return title
+    .replace(/\([^)]*\)/g, '') // Remove anything in parentheses
+    .replace(/\s*-\s*.*$/, '') // Remove everything after a dash
+    .replace(/(?:version|edition|model|type|style|color).*$/i, '') // Remove version/edition info
+    .replace(/\b(?:with|featuring|includes?|plus)\b.*$/i, '') // Remove additional features
+    .replace(/\s+/g, ' ') // Replace multiple spaces
+    .trim();
+};
+
+const generateSearchVariations = (title: string): string[] => {
+  const simplified = simplifySearchTerm(title);
+  const words = simplified.split(' ').filter(word => word.length > 2);
+  const variations = [simplified];
+  
+  // Add first 3 words if we have enough
+  if (words.length >= 3) {
+    variations.push(words.slice(0, 3).join(' '));
+  }
+  
+  // Add first and last word if different
+  if (words.length >= 2) {
+    variations.push(`${words[0]} ${words[words.length - 1]}`);
+  }
+  
+  // Add just the first word if it's meaningful
+  if (words[0]?.length > 3) {
+    variations.push(words[0]);
+  }
+  
+  return [...new Set(variations)]; // Remove duplicates
+};
 
 export const useAmazonProductProcessing = () => {
   const { getAmazonProduct } = useAmazonProducts();
   const { processBatch } = useBatchProcessor<GiftSuggestion, GiftSuggestion>();
   const queryClient = useQueryClient();
 
-  // Process suggestions one at a time to avoid rate limits
   const processGiftSuggestion = async (suggestion: GiftSuggestion): Promise<GiftSuggestion> => {
     const startTime = performance.now();
     try {
@@ -30,21 +62,35 @@ export const useAmazonProductProcessing = () => {
       }
 
       await updateSearchFrequency(suggestion.title);
-
       console.log('Processing suggestion:', suggestion.title);
       
-      // Process product data and custom description sequentially
       const customDescription = await generateCustomDescription(
         suggestion.title,
         suggestion.description
       );
 
-      // Add delay before Amazon API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Try different search variations until we find a product
+      const searchVariations = generateSearchVariations(suggestion.title);
+      let amazonProduct = null;
       
-      const amazonProduct = await getAmazonProduct(suggestion.title, suggestion.priceRange);
+      for (const searchTerm of searchVariations) {
+        console.log('Trying search variation:', searchTerm);
+        try {
+          // Add delay between attempts
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          amazonProduct = await getAmazonProduct(searchTerm, suggestion.priceRange);
+          if (amazonProduct?.asin) {
+            console.log('Found product with search term:', searchTerm);
+            break;
+          }
+        } catch (error) {
+          console.log('Search failed for variation:', searchTerm, error);
+          if (error.status === 429) throw error; // Re-throw rate limit errors
+          // Continue to next variation for other errors
+        }
+      }
       
-      if (amazonProduct && amazonProduct.asin) {
+      if (amazonProduct?.asin) {
         const processedSuggestion = {
           ...suggestion,
           title: amazonProduct.title || suggestion.title,
@@ -63,7 +109,10 @@ export const useAmazonProductProcessing = () => {
         return processedSuggestion;
       }
       
+      // If no product found after all variations, return original suggestion
+      console.log('No product found for any variation of:', suggestion.title);
       return suggestion;
+      
     } catch (error: any) {
       console.error('Error processing suggestion:', error);
       
@@ -74,7 +123,6 @@ export const useAmazonProductProcessing = () => {
           description: `Please wait ${retryAfter} seconds before trying again`,
           variant: "destructive",
         });
-        // Wait for the specified time before continuing
         await new Promise(resolve => setTimeout(resolve, retryAfter * 1000));
       }
       
@@ -87,13 +135,10 @@ export const useAmazonProductProcessing = () => {
     console.log('Processing suggestions sequentially');
     const results: GiftSuggestion[] = [];
     
-    // Process suggestions sequentially with proper delays
     for (const suggestion of suggestions) {
       try {
         const result = await processGiftSuggestion(suggestion);
         results.push(result);
-        
-        // Add a longer delay between processing each suggestion
         await new Promise(r => setTimeout(r, STAGGER_DELAY));
       } catch (error) {
         console.error('Error processing suggestion:', error);
