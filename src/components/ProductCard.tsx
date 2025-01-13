@@ -20,16 +20,29 @@ interface ProductCardProps extends Product {
 }
 
 export const simplifyTitle = (title: string): string => {
-  return title
-    .replace(/\s*\([^)]*\)/g, '') // Remove text in parentheses
-    .replace(/,.*$/, '') // Remove everything after comma
-    .replace(/\s*-.*$/, '') // Remove everything after dash
-    .replace(/\s*\|.*$/, '') // Remove everything after pipe
+  // First, clean up any HTML and extra spaces
+  const cleanTitle = title
+    .replace(/<[^>]*>/g, '') // Remove HTML tags
     .replace(/\s{2,}/g, ' ') // Remove extra spaces
-    .split(' ') // Split into words
-    .slice(0, 6) // Take first 6 words
-    .join(' ') // Join back together
     .trim();
+
+  // Extract the main part of the title
+  const mainTitle = cleanTitle
+    .split(/[,|\-\(\)]/) // Split on common separators
+    .map(part => part.trim()) // Trim each part
+    .filter(part => part.length > 0) // Remove empty parts
+    .reduce((longest, current) => {
+      // Keep the longest meaningful part
+      return (current.length > longest.length && current.split(' ').length >= 2) 
+        ? current 
+        : longest;
+    }, cleanTitle.split(/[,|\-\(\)]/)[0].trim());
+
+  // Take up to 8 words, but ensure we have at least 2
+  const words = mainTitle.split(' ');
+  const titleWords = words.length <= 2 ? words : words.slice(0, 8);
+  
+  return titleWords.join(' ').trim();
 };
 
 const ProductCardComponent = ({ 

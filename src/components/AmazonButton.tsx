@@ -22,14 +22,16 @@ export const AmazonButton = ({ title, asin }: AmazonButtonProps) => {
         setIsLoading(false);
       }
       
-      // Only create a product link if we have a valid ASIN
-      if (productAsin) {
+      // Validate ASIN format (10 characters alphanumeric)
+      const isValidAsin = productAsin && /^[A-Z0-9]{10}$/.test(productAsin);
+      
+      if (isValidAsin) {
         console.log('Creating direct product link for ASIN:', productAsin);
         return `https://www.amazon.com/dp/${productAsin}/ref=nosim?tag=${cachedAssociateId}`;
       }
       
-      // If no ASIN, show a toast and return null
-      console.warn('No ASIN available for product:', searchTerm);
+      // If no valid ASIN, show a toast and return null
+      console.warn('No valid ASIN available for product:', searchTerm);
       toast({
         title: "Product not found",
         description: "This product is currently unavailable on Amazon.",

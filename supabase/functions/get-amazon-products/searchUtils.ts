@@ -90,29 +90,27 @@ export const getFallbackSearchTerms = (searchTerm: string): string[] => {
                    ageGroup === 'youngAdult' ? 'young adult ' :
                    ageGroup === 'senior' ? 'senior ' : '';
   
-  // Try with first six words
-  if (words.length > 6) {
-    searchTerms.push(genderPrefix + agePrefix + words.slice(0, 6).join(' '));
-  }
-  
-  // Try with first three words
-  if (words.length > 3) {
+  // Generate varied search combinations
+  if (words.length > 2) {
+    // Use different word combinations
     searchTerms.push(genderPrefix + agePrefix + words.slice(0, 3).join(' '));
+    searchTerms.push(genderPrefix + agePrefix + words.slice(-3).join(' '));
+    searchTerms.push(genderPrefix + agePrefix + [words[0], words[words.length - 1]].join(' '));
   }
   
-  // Try with just the first word but maintain gender and age context
-  if (words.length > 0) {
-    const interests = ['gaming', 'sports', 'music', 'art', 'technology', 'reading', 'crafts', 'cooking'];
-    const interestWord = words.find(word => interests.includes(word.toLowerCase()));
-    if (interestWord) {
-      searchTerms.push(genderPrefix + agePrefix + interestWord);
-    } else {
-      searchTerms.push(genderPrefix + agePrefix + words[0]);
-    }
+  // Add interest-based variations
+  const interests = ['gaming', 'sports', 'music', 'art', 'technology', 'reading', 'crafts', 'cooking'];
+  const interestWord = words.find(word => interests.includes(word.toLowerCase()));
+  if (interestWord) {
+    searchTerms.push(genderPrefix + agePrefix + interestWord);
   }
+  
+  // Add random variation to prevent repetitive results
+  const randomIndex = Math.floor(Math.random() * words.length);
+  searchTerms.push(genderPrefix + agePrefix + words[randomIndex]);
   
   console.log('Generated fallback search terms:', searchTerms);
-  return searchTerms;
+  return [...new Set(searchTerms)]; // Remove duplicates
 };
 
 export const performSearch = async (
@@ -132,11 +130,15 @@ export const performSearch = async (
                     ageGroup === 'youngAdult' ? 'young-adult' :
                     ageGroup === 'senior' ? 'health-personal-care' : 'aps';
 
+  // Add randomization to search results
+  const page = Math.floor(Math.random() * 3) + 1; // Random page between 1-3
+
   const searchParams = new URLSearchParams({
     query: cleanedTerm,
     country: 'US',
     category_id: categoryId,
-    sort_by: 'RELEVANCE'
+    sort_by: 'RELEVANCE',
+    page: page.toString()
   });
 
   const searchResponse = await fetch(
