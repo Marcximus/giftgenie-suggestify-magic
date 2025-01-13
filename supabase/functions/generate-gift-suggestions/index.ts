@@ -37,17 +37,16 @@ serve(async (req) => {
     }
 
     const analysis = analyzePrompt(prompt);
-    
+    console.log('Prompt analysis:', analysis);
+
     // Default budget range for general queries
-    const minBudget = analysis.budgetMatch ? parseInt(analysis.budgetMatch[1]) : 50;
-    const maxBudget = analysis.budgetMatch && analysis.budgetMatch[2] 
-      ? parseInt(analysis.budgetMatch[2]) 
-      : minBudget * 3;
+    const minBudget = 50;
+    const maxBudget = 200;
 
     const enhancedPrompt = buildGiftPrompt(prompt, {
-      hasEverything: analysis.hasEverything,
-      isMale: analysis.isMale,
-      isFemale: analysis.isFemale,
+      hasEverything: false, // We'll implement this detection later
+      isMale: false,  // We'll implement this detection later
+      isFemale: false, // We'll implement this detection later
       minBudget,
       maxBudget
     });
