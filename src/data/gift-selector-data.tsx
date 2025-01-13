@@ -16,15 +16,15 @@ export const people: Person[] = [
 ];
 
 export const ageRanges: AgeRange[] = [
-  { label: '0-4 Years', range: '0-4' },
-  { label: '5-9 Years', range: '5-9' },
-  { label: '10-14 Years', range: '10-14' },
-  { label: '15-19 Years', range: '15-19' },
-  { label: '20-30 Years', range: '20-30' },
+  { label: '0-2 Years', range: '0-2' },
+  { label: '3-7 Years', range: '3-7' },
+  { label: '8-12 Years', range: '8-12' },
+  { label: '13-20 Years', range: '13-20' },
+  { label: '21-30 Years', range: '21-30' },
   { label: '30-40 Years', range: '30-40' },
   { label: '40-50 Years', range: '40-50' },
-  { label: '50-60 Years', range: '50-60' },
-  { label: '60-80 Years', range: '60-80' },
+  { label: '50-64 Years', range: '50-64' },
+  { label: '65-80 Years', range: '65-80' },
   { label: '80+ Years', range: '80+' },
 ];
 

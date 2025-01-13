@@ -41,24 +41,28 @@ const detectAgeGroup = (searchTerm: string): string => {
     const age = parseInt(ageMatch[1]);
     
     if (age <= 2) return 'infant';
-    if (age <= 12) return 'child';
-    if (age <= 19) return 'teen';
-    if (age <= 29) return 'youngAdult';
-    if (age >= 65) return 'senior';
-    return 'adult';
+    if (age <= 7) return 'child';
+    if (age <= 12) return 'preteen';
+    if (age <= 20) return 'teen';
+    if (age <= 30) return 'youngAdult';
+    if (age <= 64) return 'adult';
+    return 'senior';
   }
 
   // Check for age-related keywords
-  if (searchTerm.includes('baby') || searchTerm.includes('infant')) {
+  if (searchTerm.includes('baby') || searchTerm.includes('infant') || searchTerm.includes('toddler')) {
     return 'infant';
   }
-  if (searchTerm.includes('child') || searchTerm.includes('kid')) {
+  if (searchTerm.match(/\b(?:kid|child|elementary)\b/)) {
     return 'child';
   }
-  if (searchTerm.includes('teen') || searchTerm.includes('teenager')) {
+  if (searchTerm.match(/\b(?:tween|preteen)\b/)) {
+    return 'preteen';
+  }
+  if (searchTerm.match(/\b(?:teen|teenager|adolescent)\b/)) {
     return 'teen';
   }
-  if (searchTerm.match(/\b(?:college|university|young\s*adult)\b/)) {
+  if (searchTerm.match(/\b(?:college|university|young\s*adult|twenties)\b/)) {
     return 'youngAdult';
   }
   if (searchTerm.match(/\b(?:senior|elderly|retired|retirement)\b/)) {
@@ -81,6 +85,7 @@ export const getFallbackSearchTerms = (searchTerm: string): string[] => {
   const genderPrefix = gender === 'male' ? 'mens ' : gender === 'female' ? 'womens ' : '';
   const agePrefix = ageGroup === 'infant' ? 'baby ' :
                    ageGroup === 'child' ? 'kids ' :
+                   ageGroup === 'preteen' ? 'tween ' :
                    ageGroup === 'teen' ? 'teen ' :
                    ageGroup === 'youngAdult' ? 'young adult ' :
                    ageGroup === 'senior' ? 'senior ' : '';
@@ -122,6 +127,7 @@ export const performSearch = async (
   // Map age groups to appropriate Amazon categories
   const categoryId = ageGroup === 'infant' ? 'baby-products' :
                     ageGroup === 'child' ? 'toys-games' :
+                    ageGroup === 'preteen' ? 'toys-games' :
                     ageGroup === 'teen' ? 'teen-gaming' :
                     ageGroup === 'youngAdult' ? 'young-adult' :
                     ageGroup === 'senior' ? 'health-personal-care' : 'aps';
