@@ -26,26 +26,28 @@ export function buildGiftPrompt(prompt: string, config: PromptConfig): string {
     enhancedPrompt += `CRITICAL: Ensure all suggestions are specifically appropriate for male recipients.\n`;
   }
 
-  enhancedPrompt += `
-  Key Requirements:
-  1. Budget: Between $${minBudget} and $${maxBudget}
-  2. Gift Categories:
-     - Premium quality items from reputable brands
-     - Unique or limited edition products
-     - Experience-based gifts
-     - Luxury accessories or gadgets
-     - High-end hobby equipment
-     - Collector's items
-     - Innovative tech products
-     - Personalized luxury items
+  // Extract any specific interests from the prompt
+  const interestMatch = prompt.toLowerCase().match(/(?:likes?|loves?|enjoys?|into)\s+([^.,!?]+)/i);
+  const specificInterest = interestMatch ? interestMatch[1].trim() : null;
 
-  3. Quality Guidelines:
-     - Focus on premium brands and materials
-     - Include specific model numbers or editions
-     - Emphasize uniqueness and exclusivity
-     - Consider items that enhance lifestyle
-     - Include at least one experience-based gift
-     - Suggest items that show thoughtfulness
+  enhancedPrompt += `
+  CRITICAL REQUIREMENTS:
+  1. Budget: Between $${minBudget} and $${maxBudget}
+  ${specificInterest ? `2. IMPORTANT: At least 3 suggestions must directly relate to their interest in ${specificInterest}` : ''}
+  
+  Gift Categories Distribution:
+  ${specificInterest ? 
+    `- 3-4 gifts specifically related to ${specificInterest}
+     - 4-5 gifts based on demographic and general appeal` :
+    '- Distribute suggestions across various categories'}
+
+  Quality Guidelines:
+  - Focus on premium brands and materials
+  - Include specific model numbers or editions
+  - Emphasize uniqueness and exclusivity
+  - Consider items that enhance lifestyle
+  - Include at least one experience-based gift
+  - Suggest items that show thoughtfulness
 
   Format each suggestion as:
   "Brand Name Specific Product (Premium/Special Edition) - [Category] Version"
