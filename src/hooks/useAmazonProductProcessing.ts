@@ -79,7 +79,7 @@ export const useAmazonProductProcessing = () => {
         };
 
         queryClient.setQueryData(cacheKey, processedSuggestion, {
-          meta: { staleTime: 1000 * 60 * 60 } // 1 hour stale time
+          updatedAt: Date.now(),
         });
 
         await supabase.from('api_metrics').insert({
