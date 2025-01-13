@@ -10,12 +10,19 @@ const examples = [
   'Annoying little brother, 8 years who likes gaming and picking his nose',
   'Gift for my handsome boyfriend <3 gym, food, 25 yrs. Budget around USD 100',
   'Something for my cat. She loves fish',
-  'Looking for the perfect gift for my mum. Likes plants and baking. $50'
+  'Looking for the perfect gift for my mum. Likes plants and baking. $50',
+  'Something for a wife, 48 that says "Sorry I forgot our anniversary"',
+  'Gift for coworker who talks during meetings, budget 5 USD',
+  'Aunt 54 who loves knitting and talking non-stop ($40)',
+  'I have no idea, just give me some ideas PLEASE',
+  'Funny gift for my lazy teenage nephew, 16 (about $70)'
 ];
 
 export const useTypingAnimation = () => {
   const [text, setText] = useState('');
-  const [currentIndex, setCurrentIndex] = useState(0);
+  const [currentIndex, setCurrentIndex] = useState(
+    Math.floor(Math.random() * examples.length)
+  );
   const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
@@ -42,9 +49,13 @@ export const useTypingAnimation = () => {
           setText(text.slice(0, -1));
           timeout = setTimeout(animateText, DELETING_SPEED);
         } else {
-          // Finished deleting, move to next example
+          // Finished deleting, move to next random example
           setIsDeleting(false);
-          setCurrentIndex((current) => (current + 1) % examples.length);
+          let nextIndex;
+          do {
+            nextIndex = Math.floor(Math.random() * examples.length);
+          } while (nextIndex === currentIndex); // Ensure we don't repeat the same example
+          setCurrentIndex(nextIndex);
           timeout = setTimeout(animateText, TYPING_SPEED);
         }
       }
