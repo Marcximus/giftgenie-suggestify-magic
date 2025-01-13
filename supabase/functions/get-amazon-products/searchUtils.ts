@@ -1,134 +1,12 @@
-const cleanSearchTerm = (searchTerm: string): string => {
-  return searchTerm
-    .replace(/\([^)]*\)/g, '') // Remove anything in parentheses
-    .replace(/&/g, 'and') // Replace & with 'and'
-    .replace(/[^\w\s-]/g, ' ') // Remove special characters except hyphens
-    .replace(/\s+/g, ' ') // Replace multiple spaces with single space
-    .trim();
-};
+import { cleanSearchTerm, simplifySearchTerm } from './utils/textUtils.ts';
+import { isLikelyAccessory, sortProductsByRelevance } from './utils/productUtils.ts';
+import { detectAgeGroup, getCategoryId } from './utils/demographicUtils.ts';
+import { getFallbackSearchTerms } from './utils/searchTermUtils.ts';
 
-// New function to detect accessory keywords
-const isLikelyAccessory = (title: string): boolean => {
-  const accessoryKeywords = [
-    'case', 'cover', 'screen protector', 'charger', 'cable',
-    'adapter', 'mount', 'stand', 'holder', 'bag', 'pouch',
-    'accessories', 'kit', 'replacement', 'spare', 'extra',
-    'carrying case', 'protective', 'skin', 'shield'
-  ];
-
-  const lowerTitle = title.toLowerCase();
-  return accessoryKeywords.some(keyword => 
-    lowerTitle.includes(keyword) && 
-    !lowerTitle.startsWith(keyword) // Allow if the keyword is the main product
-  );
-};
-
-export const simplifySearchTerm = (searchTerm: string): string => {
-  // Remove specific model numbers, sizes, and colors from search term
-  const genericSearchTerm = searchTerm
-    .replace(/\([^)]*\)/g, '') // Remove anything in parentheses
-    .replace(/\b(?:edition|version|series)\b/gi, '') // Remove common suffixes
-    .replace(/-.*$/, '') // Remove anything after a hyphen
-    .replace(/\d+(?:\s*-\s*\d+)?\s*(?:gb|tb|inch|"|cm|mm)/gi, '') // Remove sizes
-    .replace(/\b(?:with|including|plus)\b.*$/i, '') // Remove additional items
-    .trim();
-
-  // Add "main" or "primary" to help focus on main products
-  return `${genericSearchTerm}`;
-};
-
-const detectGender = (searchTerm: string): string | null => {
-  const maleTerms = ['male', 'man', 'boy', 'husband', 'boyfriend', 'father', 'dad', 'brother', 'uncle', 'grandfather', 'grandpa', 'his'];
-  const femaleTerms = ['female', 'woman', 'girl', 'wife', 'girlfriend', 'mother', 'mom', 'sister', 'aunt', 'grandmother', 'grandma', 'her'];
-  
-  const words = searchTerm.toLowerCase().split(/\s+/);
-  if (maleTerms.some(term => words.includes(term))) return 'male';
-  if (femaleTerms.some(term => words.includes(term))) return 'female';
-  return null;
-};
-
-const detectAgeGroup = (searchTerm: string): string => {
-  // Check for months first
-  if (searchTerm.match(/\b(?:0|1|2|3|4|5|6|7|8|9|10|11|12)\s*months?\s*old\b/)) {
-    return 'infant';
-  }
-
-  // Extract age from the search term
-  const ageMatch = searchTerm.match(/\b(\d+)(?:\s*-\s*\d+)?\s*years?\s*old\b/);
-  if (ageMatch) {
-    const age = parseInt(ageMatch[1]);
-    
-    if (age <= 2) return 'infant';
-    if (age <= 7) return 'child';
-    if (age <= 12) return 'preteen';
-    if (age <= 20) return 'teen';
-    if (age <= 30) return 'youngAdult';
-    if (age <= 64) return 'adult';
-    return 'senior';
-  }
-
-  // Check for age-related keywords
-  if (searchTerm.includes('baby') || searchTerm.includes('infant') || searchTerm.includes('toddler')) {
-    return 'infant';
-  }
-  if (searchTerm.match(/\b(?:kid|child|elementary)\b/)) {
-    return 'child';
-  }
-  if (searchTerm.match(/\b(?:tween|preteen)\b/)) {
-    return 'preteen';
-  }
-  if (searchTerm.match(/\b(?:teen|teenager|adolescent)\b/)) {
-    return 'teen';
-  }
-  if (searchTerm.match(/\b(?:college|university|young\s*adult|twenties)\b/)) {
-    return 'youngAdult';
-  }
-  if (searchTerm.match(/\b(?:senior|elderly|retired|retirement)\b/)) {
-    return 'senior';
-  }
-
-  return 'adult';
-};
-
-export const getFallbackSearchTerms = (searchTerm: string, ageCategory?: string): string[] => {
-  const words = searchTerm.split(' ')
-    .filter(word => !['with', 'and', 'in', 'for', 'by', 'the', 'a', 'an'].includes(word.toLowerCase()))
-    .filter(word => word.length > 2);
-  
-  const gender = detectGender(searchTerm);
-  const ageGroup = ageCategory || detectAgeGroup(searchTerm);
-  const searchTerms = [];
-  
-  // Add gender and age-specific qualifiers
-  const genderPrefix = gender === 'male' ? 'mens ' : gender === 'female' ? 'womens ' : '';
-  const agePrefix = ageGroup === 'infant' ? 'baby ' :
-                   ageGroup === 'child' ? 'kids ' :
-                   ageGroup === 'preteen' ? 'tween ' :
-                   ageGroup === 'teen' ? 'teen ' :
-                   ageGroup === 'youngAdult' ? 'young adult ' :
-                   ageGroup === 'senior' ? 'senior ' : '';
-  
-  // Generate varied search combinations
-  if (words.length > 2) {
-    // Use different word combinations
-    searchTerms.push(genderPrefix + agePrefix + words.slice(0, 3).join(' '));
-    searchTerms.push(genderPrefix + agePrefix + words.slice(-3).join(' '));
-    searchTerms.push(genderPrefix + agePrefix + [words[0], words[words.length - 1]].join(' '));
-  }
-  
-  // Add interest-based variations
-  const interests = ['gaming', 'sports', 'music', 'art', 'technology', 'reading', 'crafts', 'cooking'];
-  const interestWord = words.find(word => interests.includes(word.toLowerCase()));
-  if (interestWord) {
-    searchTerms.push(genderPrefix + agePrefix + interestWord);
-  }
-  
-  // Add random variation to prevent repetitive results
-  const randomIndex = Math.floor(Math.random() * words.length);
-  searchTerms.push(genderPrefix + agePrefix + words[randomIndex]);
-  
-  console.log('Generated fallback search terms:', searchTerms);
-  return [...new Set(searchTerms)]; // Remove duplicates
+export { 
+  cleanSearchTerm,
+  simplifySearchTerm,
+  getFallbackSearchTerms
 };
 
 export const performSearch = async (
@@ -141,21 +19,12 @@ export const performSearch = async (
   const ageGroup = ageCategory || detectAgeGroup(term);
   console.log('Searching with cleaned term:', cleanedTerm, 'Age group:', ageGroup);
 
-  // Map age groups to appropriate Amazon categories
-  const categoryId = ageGroup === 'infant' ? 'baby-products' :
-                    ageGroup === 'child' ? 'toys-games' :
-                    ageGroup === 'preteen' ? 'toys-games' :
-                    ageGroup === 'teen' ? 'teen-gaming' :
-                    ageGroup === 'youngAdult' ? 'young-adult' :
-                    ageGroup === 'senior' ? 'health-personal-care' : 'aps';
-
-  // Add randomization to search results
-  const page = Math.floor(Math.random() * 3) + 1; // Random page between 1-3
+  const page = Math.floor(Math.random() * 3) + 1;
 
   const searchParams = new URLSearchParams({
     query: cleanedTerm,
     country: 'US',
-    category_id: categoryId,
+    category_id: getCategoryId(ageGroup),
     sort_by: 'RELEVANCE',
     page: page.toString()
   });
@@ -179,16 +48,10 @@ export const performSearch = async (
 
   const searchData = await searchResponse.json();
   
-  // Filter out likely accessories and related items
   if (searchData.data?.products) {
     searchData.data.products = searchData.data.products
-      .filter(product => !isLikelyAccessory(product.title))
-      .sort((a, b) => {
-        // Prioritize products with higher ratings and more reviews
-        const aScore = (a.rating || 0) * Math.log(a.ratings_total || 1);
-        const bScore = (b.rating || 0) * Math.log(b.ratings_total || 1);
-        return bScore - aScore;
-      });
+      .filter(product => !isLikelyAccessory(product.title));
+    searchData.data.products = sortProductsByRelevance(searchData.data.products);
   }
 
   console.log('Search response data:', {
@@ -196,7 +59,7 @@ export const performSearch = async (
     price: searchData.data?.products?.[0]?.price,
     totalResults: searchData.data?.products?.length || 0,
     ageGroup,
-    categoryId
+    categoryId: getCategoryId(ageGroup)
   });
   
   return searchData;
