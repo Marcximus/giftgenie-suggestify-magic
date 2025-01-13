@@ -4,11 +4,11 @@ interface PromptConfig {
   isFemale: boolean;
   minBudget: number;
   maxBudget: number;
+  ageCategory?: string | null;
 }
 
 export function buildGiftPrompt(prompt: string, config: PromptConfig): string {
-  const { hasEverything, isMale, isFemale, minBudget, maxBudget } = config;
-  const analysis = analyzePrompt(prompt);
+  const { hasEverything, isMale, isFemale, minBudget, maxBudget, ageCategory } = config;
 
   let enhancedPrompt = `As a luxury gift expert, suggest 8 thoughtful and unique gift ideas `;
   
@@ -25,7 +25,7 @@ export function buildGiftPrompt(prompt: string, config: PromptConfig): string {
   }
 
   // Add age-specific instructions based on category
-  switch (analysis.ageCategory) {
+  switch (ageCategory) {
     case 'infant':
       enhancedPrompt += `
       CRITICAL: These suggestions are for an infant (0-2 years). Ensure all items are:

@@ -1,125 +1,65 @@
 export function analyzePrompt(prompt: string) {
-  const lowerPrompt = prompt.toLowerCase();
-  
-  // Split the prompt into words and clean them
-  const words = lowerPrompt
-    .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, ' ')
-    .split(' ')
-    .map(word => word.trim())
-    .filter(word => word.length > 0);
-
-  const ageDescriptors = {
-    infant: [
-      'baby', 'infant', 'newborn', 'nursery', 'crib', 'diaper', 'pacifier',
-      'stroller', 'teething', 'crawling', 'toddling'
-    ],
-    child: [
-      'young child', 'kid', 'child', 'preteen', 'tween', 'elementary-aged',
-      'playtime', 'school-aged', 'toys', 'backpack', 'school supplies',
-      'storytime', 'playground', 'bus stop', 'kindergarten', 'grade school',
-      'childhood', 'nursery', 'school', 'toddler'
-    ],
-    teen: [
-      'teenager', 'teen', 'adolescent', 'high schooler', 'young teen',
-      'pubescent', 'youth', 'minor', 'juvenile', 'middle schooler',
-      'teen spirit', 'prom', 'homecoming', 'student council', 'slumber party',
-      'teen idol', 'graduation', 'locker', 'gamer', 'influencer', 'high-school'
-    ],
-    youngAdult: [
-      'young adult', 'twentysomething', 'early adult', 'emerging adult',
-      'college-aged', 'millennial', 'gen z', 'post-graduate', 'recent graduate',
-      'entry-level', 'dating', 'career start', 'first apartment', 'roommate',
-      'young professional', 'urban living', 'gym', 'social', 'hobbies', 'college'
-    ],
-    adult: [
-      'adult', 'middle-aged', 'mature adult', 'established', 'gen x', 'gen y',
-      'professional', 'prime of life', 'adulthood', 'midlife', 'parenthood',
-      'career', 'homeownership', 'stability', 'family', 'career focus',
-      'management', 'executive', 'mentor', 'community', 'home', 'investment',
-      'health'
-    ],
-    senior: [
-      'senior', 'elderly', 'older', 'senior citizen', 'golden ager', 'retiree',
-      'silver aged', 'senior years', 'veteran', 'aged', 'senior member',
-      'geriatric', 'super senior', 'elder', 'retirement', 'pensioner',
-      'grandparent', 'walking cane', 'hearing aid', 'nursing home',
-      'retirement community', 'senior center', 'active aging', 'age-related'
-    ]
+  const analysis = {
+    hasAge: false,
+    age: null as number | null,
+    ageCategory: null as string | null,
+    gender: null as string | null,
+    interests: [] as string[],
+    budget: {
+      min: null as number | null,
+      max: null as number | null
+    }
   };
 
-  // Detect numerical age - now including months
-  const agePatterns = [
-    // Years patterns
-    /(\d+)(?:\s*-\s*\d+)?\s*years?\s*old/i,
-    /age[sd]?\s*:?\s*(\d+)/i,
-    /(\d+)\s*y\.?o\.?/i,
-    // Months patterns
-    /(\d+)\s*months?\s*old/i,
-    /(\d+)\s*m\.?o\.?/i
-  ];
+  // Age detection
+  const ageMatch = prompt.match(/\b(\d+)\s*(year|years|yr|yrs|month|months|mo|mos)?\s*(old)?\b/i);
+  if (ageMatch) {
+    analysis.hasAge = true;
+    const age = parseInt(ageMatch[1]);
+    analysis.age = age;
 
-  let numericalAge = null;
-  let isMonths = false;
-  
-  for (const pattern of agePatterns) {
-    const match = prompt.match(pattern);
-    if (match) {
-      const value = parseInt(match[1]);
-      // Check if the matched pattern includes "month"
-      if (pattern.toString().includes('month')) {
-        isMonths = true;
-        // Convert months to years (rounded to 2 decimal places)
-        numericalAge = Math.round((value / 12) * 100) / 100;
-      } else {
-        numericalAge = value;
-      }
-      break;
+    // Determine age category
+    if (ageMatch[2]?.toLowerCase().includes('month')) {
+      analysis.ageCategory = 'infant';
+    } else if (age <= 2) {
+      analysis.ageCategory = 'infant';
+    } else if (age <= 12) {
+      analysis.ageCategory = 'child';
+    } else if (age <= 19) {
+      analysis.ageCategory = 'teen';
+    } else if (age <= 29) {
+      analysis.ageCategory = 'youngAdult';
+    } else if (age >= 65) {
+      analysis.ageCategory = 'senior';
+    } else {
+      analysis.ageCategory = 'adult';
     }
   }
 
-  // Detect age category from descriptive words
-  let ageCategory = null;
-  for (const [category, descriptors] of Object.entries(ageDescriptors)) {
-    if (descriptors.some(descriptor => 
-      words.includes(descriptor) || 
-      lowerPrompt.includes(descriptor)
-    )) {
-      ageCategory = category;
-      break;
-    }
+  // Gender detection
+  const maleTerms = ['male', 'man', 'boy', 'husband', 'boyfriend', 'father', 'dad', 'brother', 'uncle', 'grandfather', 'grandpa'];
+  const femaleTerms = ['female', 'woman', 'girl', 'wife', 'girlfriend', 'mother', 'mom', 'sister', 'aunt', 'grandmother', 'grandma'];
+
+  const words = prompt.toLowerCase().split(/\s+/);
+  if (maleTerms.some(term => words.includes(term))) {
+    analysis.gender = 'male';
+  } else if (femaleTerms.some(term => words.includes(term))) {
+    analysis.gender = 'female';
   }
 
-  // Determine final age category based on both numerical age and descriptive words
-  const determineAgeCategory = (age: number | null, wordCategory: string | null, monthsAge: boolean) => {
-    // If age is in months or very young, prioritize infant category
-    if (monthsAge || (age !== null && age <= 2)) {
-      return 'infant';
-    }
-    
-    if (age !== null) {
-      if (age <= 12) return 'child';
-      if (age <= 19) return 'teen';
-      if (age <= 29) return 'youngAdult';
-      if (age <= 64) return 'adult';
-      if (age >= 65) return 'senior';  // More explicit senior age check
-    }
-    
-    // If no numerical age but we have a word category, use that
-    if (wordCategory) {
-      return wordCategory;
-    }
-    
-    // If no age information at all, return null
-    return null;
-  };
+  // Budget detection
+  const budgetMatch = prompt.match(/\$?(\d+)(?:\s*-\s*\$?(\d+))?/);
+  if (budgetMatch) {
+    analysis.budget.min = parseInt(budgetMatch[1]);
+    analysis.budget.max = budgetMatch[2] ? parseInt(budgetMatch[2]) : analysis.budget.min * 1.5;
+  }
 
-  const finalAgeCategory = determineAgeCategory(numericalAge, ageCategory, isMonths);
+  // Interest detection
+  const interestMatch = prompt.match(/(?:likes?|loves?|enjoys?|into)\s+([^.,!?]+)/i);
+  if (interestMatch) {
+    analysis.interests = interestMatch[1].trim().split(/\s*(?:,|and)\s*/);
+  }
 
-  return {
-    hasAge: numericalAge !== null || ageCategory !== null,
-    age: numericalAge,
-    isAgeInMonths: isMonths,
-    ageCategory: finalAgeCategory,
-    originalAgeCategory: ageCategory // useful for debugging
-  };
+  console.log('Prompt analysis result:', analysis);
+  return analysis;
 }
