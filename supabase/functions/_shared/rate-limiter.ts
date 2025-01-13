@@ -6,7 +6,7 @@ const requestLog: RequestLog[] = [];
 
 export const RATE_LIMIT = {
   WINDOW_MS: 60000, // 60 seconds
-  MAX_REQUESTS: 20, // Reduced from 30 to be more conservative
+  MAX_REQUESTS: 15, // Reduced from 20 to be more conservative
   RETRY_AFTER: 30, // Seconds to wait before retrying
   BACKOFF_MS: 1000, // Base backoff delay in milliseconds
 };
