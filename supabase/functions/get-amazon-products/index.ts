@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { searchAmazonProduct } from "./amazonApi.ts";
-import { isRateLimited, logRequest } from "../_shared/rate-limiter.ts";
+import { isRateLimited, logRequest, RATE_LIMIT } from "../_shared/rate-limiter.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -24,14 +24,14 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({
           error: 'Rate limit exceeded',
-          retryAfter: 30,
+          retryAfter: RATE_LIMIT.RETRY_AFTER,
         }),
         { 
           status: 429,
           headers: {
             ...corsHeaders,
             'Content-Type': 'application/json',
-            'Retry-After': '30',
+            'Retry-After': RATE_LIMIT.RETRY_AFTER.toString(),
           },
         }
       );
@@ -69,18 +69,18 @@ serve(async (req) => {
     console.error('Error in get-amazon-products function:', error);
     
     // Handle rate limit errors specifically
-    if (error.message?.includes('429')) {
+    if (error.message?.includes('429') || error.message?.includes('Rate limit exceeded')) {
       return new Response(
         JSON.stringify({
           error: 'Rate limit exceeded',
-          retryAfter: 30,
+          retryAfter: RATE_LIMIT.RETRY_AFTER,
         }),
         { 
           status: 429,
           headers: {
             ...corsHeaders,
             'Content-Type': 'application/json',
-            'Retry-After': '30',
+            'Retry-After': RATE_LIMIT.RETRY_AFTER.toString(),
           },
         }
       );

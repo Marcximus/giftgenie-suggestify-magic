@@ -36,7 +36,7 @@ export async function searchAmazonProduct(
 
       if (!searchResponse.ok) {
         if (searchResponse.status === 429) {
-          const retryAfter = searchResponse.headers.get('retry-after') || '30';
+          const retryAfter = parseInt(searchResponse.headers.get('retry-after') || '30', 10);
           throw new Error(`Rate limit exceeded. Retry after ${retryAfter} seconds`);
         }
         throw new Error(`Amazon Search API error: ${searchResponse.status}`);
