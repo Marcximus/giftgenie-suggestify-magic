@@ -31,14 +31,13 @@ export const FloatingNav = () => {
                 "hover:text-white hover:bg-white/20 hover:shadow-lg",
                 "active:scale-95",
                 "focus:outline-none focus:ring-2 focus:ring-white/40",
-                "flex items-center justify-center",
+                "flex items-center justify-center min-w-[80px] sm:min-w-[100px]", // Added min-width to ensure consistent button sizes
                 location.pathname === item.path 
                   ? "text-white bg-white/20 shadow-lg" 
-                  : "text-white/90",
-                item.name === "Ideas" && "text-white/90"
+                  : "text-white/90"
               )}
             >
-              <span className="relative z-10">{item.name}</span>
+              <span className="relative z-10 text-center w-full">{item.name}</span>
             </Link>
           ))}
         </nav>
