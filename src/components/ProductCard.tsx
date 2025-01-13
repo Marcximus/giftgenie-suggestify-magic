@@ -26,22 +26,39 @@ export const simplifyTitle = (title: string): string => {
     .replace(/\s{2,}/g, ' ') // Remove extra spaces
     .trim();
 
-  // Extract the main part of the title
-  const mainTitle = cleanTitle
-    .split(/[,|\-\(\)]/) // Split on common separators
-    .map(part => part.trim()) // Trim each part
-    .filter(part => part.length > 0) // Remove empty parts
-    .reduce((longest, current) => {
-      // Keep the longest meaningful part
-      return (current.length > longest.length && current.split(' ').length >= 2) 
-        ? current 
-        : longest;
-    }, cleanTitle.split(/[,|\-\(\)]/)[0].trim());
+  // Split the title into parts using common separators
+  const parts = cleanTitle.split(/[,|\-–—]/).map(part => part.trim());
 
-  // Take up to 8 words, but ensure we have at least 2
-  const words = mainTitle.split(' ');
-  const titleWords = words.length <= 2 ? words : words.slice(0, 8);
+  // Find the most meaningful part (prioritize longer parts with multiple words)
+  let bestPart = parts[0]; // Default to first part
+  let bestScore = 0;
+
+  for (const part of parts) {
+    const words = part.split(' ').filter(word => word.length > 1);
+    const score = words.length * 2 + part.length;
+    
+    // Prefer parts that look like actual product names
+    // (more than one word and not just specifications)
+    if (
+      score > bestScore && 
+      words.length >= 2 &&
+      !part.match(/^\d+(?:gb|tb|inch|"|cm|mm)/i) // Avoid parts that start with specifications
+    ) {
+      bestPart = part;
+      bestScore = score;
+    }
+  }
+
+  // If the best part is too short or seems incomplete, use the original first part
+  if (bestPart.length < 10 || bestPart.split(' ').length < 2) {
+    bestPart = parts[0];
+  }
+
+  // Take up to 10 words, ensuring we have at least 2
+  const words = bestPart.split(' ');
+  const titleWords = words.length <= 2 ? words : words.slice(0, 10);
   
+  // Ensure the title ends with a complete word
   return titleWords.join(' ').trim();
 };
 
