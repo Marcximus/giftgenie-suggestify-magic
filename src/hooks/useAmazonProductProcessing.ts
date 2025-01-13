@@ -4,8 +4,8 @@ import { GiftSuggestion } from '@/types/suggestions';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from "@/integrations/supabase/client";
 
-const BATCH_SIZE = 3; // Process 3 products at a time to avoid rate limits
-const STAGGER_DELAY = 500; // 500ms delay between products in a batch
+const BATCH_SIZE = 5; // Increased from 3 to 5 for better parallelization
+const STAGGER_DELAY = 100; // Reduced from 500ms to 100ms
 
 export const useAmazonProductProcessing = () => {
   const { getAmazonProduct } = useAmazonProducts();
@@ -14,7 +14,7 @@ export const useAmazonProductProcessing = () => {
 
   const generateCustomDescription = async (title: string, originalDescription: string): Promise<string> => {
     try {
-      const cacheKey = `description-${title}`;
+      const cacheKey = `description-${title.toLowerCase().trim()}`;
       const cached = localStorage.getItem(cacheKey);
       if (cached) {
         return cached;
@@ -39,12 +39,22 @@ export const useAmazonProductProcessing = () => {
   };
 
   const processGiftSuggestion = async (suggestion: GiftSuggestion): Promise<GiftSuggestion> => {
+    const startTime = performance.now();
     try {
-      const cacheKey = ['amazon-product', suggestion.title, suggestion.priceRange];
+      // Normalize the cache key to improve hit rate
+      const normalizedTitle = suggestion.title.toLowerCase().trim();
+      const cacheKey = ['amazon-product', normalizedTitle];
       const cachedData = queryClient.getQueryData(cacheKey);
       
       if (cachedData) {
         console.log('Cache hit for:', suggestion.title);
+        // Log metrics for cache hit
+        await supabase.from('api_metrics').insert({
+          endpoint: 'amazon-product-processing',
+          duration_ms: Math.round(performance.now() - startTime),
+          status: 'success',
+          cache_hit: true
+        });
         return cachedData as GiftSuggestion;
       }
 
@@ -71,14 +81,33 @@ export const useAmazonProductProcessing = () => {
           amazon_total_ratings: amazonProduct.totalRatings
         };
 
-        // Cache the processed suggestion
-        queryClient.setQueryData(cacheKey, processedSuggestion);
+        // Cache the processed suggestion with a longer stale time
+        queryClient.setQueryData(cacheKey, processedSuggestion, {
+          staleTime: 1000 * 60 * 60 // 1 hour
+        });
+
+        // Log metrics for successful processing
+        await supabase.from('api_metrics').insert({
+          endpoint: 'amazon-product-processing',
+          duration_ms: Math.round(performance.now() - startTime),
+          status: 'success',
+          cache_hit: false
+        });
+
         return processedSuggestion;
       }
       
       return suggestion;
     } catch (error) {
       console.error('Error processing suggestion:', error);
+      // Log metrics for failed processing
+      await supabase.from('api_metrics').insert({
+        endpoint: 'amazon-product-processing',
+        duration_ms: Math.round(performance.now() - startTime),
+        status: 'error',
+        error_message: error.message,
+        cache_hit: false
+      });
       return suggestion;
     }
   };
@@ -87,14 +116,14 @@ export const useAmazonProductProcessing = () => {
     console.log('Processing suggestions in parallel batches');
     const results: GiftSuggestion[] = [];
     
-    // Process suggestions in parallel batches
+    // Process suggestions in parallel batches with reduced delays
     for (let i = 0; i < suggestions.length; i += BATCH_SIZE) {
       const batch = suggestions.slice(i, i + BATCH_SIZE);
       console.log(`Processing batch ${i / BATCH_SIZE + 1}`);
       
       const batchPromises = batch.map((suggestion, index) => 
         new Promise<GiftSuggestion>(async (resolve) => {
-          // Stagger requests within batch to avoid rate limits
+          // Minimal stagger delay between requests
           if (index > 0) {
             await new Promise(r => setTimeout(r, index * STAGGER_DELAY));
           }
@@ -106,7 +135,7 @@ export const useAmazonProductProcessing = () => {
       const batchResults = await Promise.all(batchPromises);
       results.push(...batchResults);
       
-      // Add delay between batches if not the last batch
+      // Minimal delay between batches
       if (i + BATCH_SIZE < suggestions.length) {
         await new Promise(r => setTimeout(r, STAGGER_DELAY));
       }

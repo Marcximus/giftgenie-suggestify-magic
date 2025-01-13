@@ -8,12 +8,20 @@ import { processGiftSuggestion } from '../_shared/product-processor.ts';
 import { buildGiftPrompt } from '../_shared/prompt-builder.ts';
 import { filterProducts } from '../_shared/product-filter.ts';
 import { analyzePrompt } from '../_shared/prompt-analyzer.ts';
+import { createClient } from '@supabase/supabase-js';
 
 serve(async (req) => {
+  const startTime = performance.now();
+  
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
+
+  const supabase = createClient(
+    Deno.env.get('SUPABASE_URL') ?? '',
+    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+  );
 
   try {
     if (!Deno.env.get('OPENAI_API_KEY')) {
@@ -24,6 +32,14 @@ serve(async (req) => {
     console.log('Processing request with prompt:', prompt);
 
     if (!prompt || typeof prompt !== 'string' || prompt.trim().length < 3) {
+      await supabase.from('api_metrics').insert({
+        endpoint: 'generate-gift-suggestions',
+        duration_ms: Math.round(performance.now() - startTime),
+        status: 'error',
+        error_message: 'Invalid prompt',
+        cache_hit: false
+      });
+
       return new Response(
         JSON.stringify({ 
           error: 'Invalid prompt',
@@ -73,6 +89,7 @@ serve(async (req) => {
     logRequest();
 
     console.log('Enhanced prompt:', enhancedPrompt);
+
     const suggestions = await generateGiftSuggestions(enhancedPrompt);
     
     if (!Array.isArray(suggestions)) {
@@ -83,7 +100,7 @@ serve(async (req) => {
 
     const productPromises = suggestions.map((suggestion, index) => 
       new Promise<GiftSuggestion>(async (resolve) => {
-        await new Promise(r => setTimeout(r, index * 1000));
+        await new Promise(r => setTimeout(r, index * 100)); // Reduced delay
         const product = await processGiftSuggestion(suggestion);
         resolve(product);
       })
@@ -95,6 +112,14 @@ serve(async (req) => {
     const filteredProducts = filterProducts(products, minBudget, maxBudget);
     console.log('Filtered products:', filteredProducts);
 
+    // Log successful processing
+    await supabase.from('api_metrics').insert({
+      endpoint: 'generate-gift-suggestions',
+      duration_ms: Math.round(performance.now() - startTime),
+      status: 'success',
+      cache_hit: false
+    });
+
     return new Response(
       JSON.stringify({ suggestions: filteredProducts.length > 0 ? filteredProducts : products }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -102,6 +127,15 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Error in generate-gift-suggestions function:', error);
+    
+    // Log error metrics
+    await supabase.from('api_metrics').insert({
+      endpoint: 'generate-gift-suggestions',
+      duration_ms: Math.round(performance.now() - startTime),
+      status: 'error',
+      error_message: error.message,
+      cache_hit: false
+    });
     
     return new Response(
       JSON.stringify({ 

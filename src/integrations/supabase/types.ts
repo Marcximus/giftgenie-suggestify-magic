@@ -9,6 +9,36 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      api_metrics: {
+        Row: {
+          cache_hit: boolean | null
+          created_at: string | null
+          duration_ms: number
+          endpoint: string
+          error_message: string | null
+          id: string
+          status: string
+        }
+        Insert: {
+          cache_hit?: boolean | null
+          created_at?: string | null
+          duration_ms: number
+          endpoint: string
+          error_message?: string | null
+          id?: string
+          status: string
+        }
+        Update: {
+          cache_hit?: boolean | null
+          created_at?: string | null
+          duration_ms?: number
+          endpoint?: string
+          error_message?: string | null
+          id?: string
+          status?: string
+        }
+        Relationships: []
+      }
       blog_post_images: {
         Row: {
           alt_text: string | null

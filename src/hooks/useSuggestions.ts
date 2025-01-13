@@ -4,6 +4,7 @@ import { useOpenAISuggestions } from './useOpenAISuggestions';
 import { useAmazonProductProcessing } from './useAmazonProductProcessing';
 import { GiftSuggestion } from '@/types/suggestions';
 import { debounce } from '@/utils/debounce';
+import { supabase } from "@/integrations/supabase/client";
 
 export const useSuggestions = () => {
   const [lastQuery, setLastQuery] = useState('');
@@ -12,14 +13,42 @@ export const useSuggestions = () => {
 
   const { data: suggestions = [], isPending: isLoading, mutate: fetchSuggestions } = useMutation({
     mutationFn: async (query: string) => {
-      console.log('Fetching suggestions for query:', query);
-      const newSuggestions = await generateSuggestions(query);
-      if (newSuggestions) {
-        console.log('Processing suggestions in parallel');
-        return processSuggestions(newSuggestions);
+      const startTime = performance.now();
+      try {
+        console.log('Fetching suggestions for query:', query);
+        const newSuggestions = await generateSuggestions(query);
+        
+        if (newSuggestions) {
+          console.log('Processing suggestions in parallel');
+          const results = await processSuggestions(newSuggestions);
+          
+          // Log metrics for successful processing
+          await supabase.from('api_metrics').insert({
+            endpoint: 'generate-suggestions',
+            duration_ms: Math.round(performance.now() - startTime),
+            status: 'success',
+            cache_hit: false
+          });
+          
+          return results;
+        }
+        return [];
+      } catch (error) {
+        console.error('Error in suggestion mutation:', error);
+        
+        // Log metrics for failed processing
+        await supabase.from('api_metrics').insert({
+          endpoint: 'generate-suggestions',
+          duration_ms: Math.round(performance.now() - startTime),
+          status: 'error',
+          error_message: error.message,
+          cache_hit: false
+        });
+        
+        throw error;
       }
-      return [];
     },
+    retry: 1, // Limit retries to reduce user waiting time
     meta: {
       onError: (error: Error) => {
         console.error('Error in suggestion mutation:', error);
@@ -27,7 +56,7 @@ export const useSuggestions = () => {
     }
   });
 
-  // Debounce the search with optimized settings
+  // Optimized debounce settings
   const debouncedSearch = debounce(async (query: string) => {
     setLastQuery(query);
     await fetchSuggestions(query);
@@ -91,7 +120,7 @@ export const useSuggestions = () => {
   return {
     isLoading,
     suggestions,
-    handleSearch,
+    handleSearch: debouncedSearch,
     handleGenerateMore,
     handleMoreLikeThis,
     handleStartOver
