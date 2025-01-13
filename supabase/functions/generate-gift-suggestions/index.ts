@@ -36,17 +36,18 @@ serve(async (req) => {
       );
     }
 
-    const analysis = analyzePrompt(prompt);
-    console.log('Prompt analysis:', analysis);
+    // Analyze the prompt first
+    const promptAnalysis = analyzePrompt(prompt);
+    console.log('Prompt analysis:', promptAnalysis);
 
     // Default budget range for general queries
     const minBudget = 50;
     const maxBudget = 200;
 
     const enhancedPrompt = buildGiftPrompt(prompt, {
-      hasEverything: false, // We'll implement this detection later
-      isMale: false,  // We'll implement this detection later
-      isFemale: false, // We'll implement this detection later
+      hasEverything: prompt.toLowerCase().includes('has everything') || prompt.toLowerCase().includes('owns everything'),
+      isMale: prompt.toLowerCase().includes('male') || prompt.toLowerCase().includes('man') || prompt.toLowerCase().includes('boy') || prompt.toLowerCase().includes('husband') || prompt.toLowerCase().includes('boyfriend'),
+      isFemale: prompt.toLowerCase().includes('female') || prompt.toLowerCase().includes('woman') || prompt.toLowerCase().includes('girl') || prompt.toLowerCase().includes('wife') || prompt.toLowerCase().includes('girlfriend'),
       minBudget,
       maxBudget
     });
@@ -70,11 +71,14 @@ serve(async (req) => {
 
     logRequest();
 
+    console.log('Enhanced prompt:', enhancedPrompt);
     const suggestions = await generateGiftSuggestions(enhancedPrompt);
     
     if (!Array.isArray(suggestions)) {
       throw new Error('Invalid suggestions format');
     }
+
+    console.log('Raw suggestions:', suggestions);
 
     const productPromises = suggestions.map((suggestion, index) => 
       new Promise<GiftSuggestion>(async (resolve) => {
@@ -85,7 +89,10 @@ serve(async (req) => {
     );
 
     const products = await Promise.all(productPromises);
+    console.log('Processed products:', products);
+
     const filteredProducts = filterProducts(products, minBudget, maxBudget);
+    console.log('Filtered products:', filteredProducts);
 
     return new Response(
       JSON.stringify({ suggestions: filteredProducts.length > 0 ? filteredProducts : products }),
