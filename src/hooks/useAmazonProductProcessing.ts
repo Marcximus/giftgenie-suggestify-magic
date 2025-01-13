@@ -7,46 +7,27 @@ import { generateCustomDescription } from '@/utils/descriptionUtils';
 import { logApiMetrics } from '@/utils/metricsUtils';
 import { toast } from "@/components/ui/use-toast";
 
-const BATCH_SIZE = 4;
-const STAGGER_DELAY = 2000;
-
-const simplifySearchTerm = (title: string): string => {
-  return title
-    .replace(/\([^)]*\)/g, '') // Remove anything in parentheses
-    .replace(/\s*-\s*.*$/, '') // Remove everything after a dash
-    .replace(/(?:version|edition|model|type|style|color).*$/i, '') // Remove version/edition info
-    .replace(/\b(?:with|featuring|includes?|plus)\b.*$/i, '') // Remove additional features
-    .replace(/\s+/g, ' ') // Replace multiple spaces
-    .trim();
-};
-
-const generateSearchVariations = (title: string): string[] => {
-  const simplified = simplifySearchTerm(title);
-  const words = simplified.split(' ').filter(word => word.length > 2);
-  const variations = [simplified];
-  
-  // Add first 3 words if we have enough
-  if (words.length >= 3) {
-    variations.push(words.slice(0, 3).join(' '));
-  }
-  
-  // Add first and last word if different
-  if (words.length >= 2) {
-    variations.push(`${words[0]} ${words[words.length - 1]}`);
-  }
-  
-  // Add just the first word if it's meaningful
-  if (words[0]?.length > 3) {
-    variations.push(words[0]);
-  }
-  
-  return [...new Set(variations)]; // Remove duplicates
-};
+const BATCH_SIZE = 8; // Reduced from 10 to stay within rate limits
+const STAGGER_DELAY = 100; // Increased from 50ms to reduce rate limit issues
 
 export const useAmazonProductProcessing = () => {
   const { getAmazonProduct } = useAmazonProducts();
   const { processBatch } = useBatchProcessor<GiftSuggestion, GiftSuggestion>();
   const queryClient = useQueryClient();
+
+  const warmCache = async () => {
+    try {
+      const popularSearches = await getPopularSearches();
+      if (popularSearches) {
+        const warmingPromises = popularSearches.map(({ search_term }) => 
+          getAmazonProduct(search_term, '')
+        );
+        await Promise.allSettled(warmingPromises);
+      }
+    } catch (error) {
+      console.error('Error warming cache:', error);
+    }
+  };
 
   const processGiftSuggestion = async (suggestion: GiftSuggestion): Promise<GiftSuggestion> => {
     const startTime = performance.now();
@@ -62,35 +43,19 @@ export const useAmazonProductProcessing = () => {
       }
 
       await updateSearchFrequency(suggestion.title);
+
       console.log('Processing suggestion:', suggestion.title);
       
-      const customDescription = await generateCustomDescription(
-        suggestion.title,
-        suggestion.description
-      );
-
-      // Try different search variations until we find a product
-      const searchVariations = generateSearchVariations(suggestion.title);
-      let amazonProduct = null;
+      // Parallel processing of product data and custom description
+      const [amazonProduct, customDescription] = await Promise.all([
+        getAmazonProduct(suggestion.title, suggestion.priceRange),
+        generateCustomDescription(
+          suggestion.title,
+          suggestion.description
+        )
+      ]);
       
-      for (const searchTerm of searchVariations) {
-        console.log('Trying search variation:', searchTerm);
-        try {
-          // Add delay between attempts
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          amazonProduct = await getAmazonProduct(searchTerm, suggestion.priceRange);
-          if (amazonProduct?.asin) {
-            console.log('Found product with search term:', searchTerm);
-            break;
-          }
-        } catch (error) {
-          console.log('Search failed for variation:', searchTerm, error);
-          if (error.status === 429) throw error; // Re-throw rate limit errors
-          // Continue to next variation for other errors
-        }
-      }
-      
-      if (amazonProduct?.asin) {
+      if (amazonProduct && amazonProduct.asin) {
         const processedSuggestion = {
           ...suggestion,
           title: amazonProduct.title || suggestion.title,
@@ -109,13 +74,11 @@ export const useAmazonProductProcessing = () => {
         return processedSuggestion;
       }
       
-      // If no product found after all variations, return original suggestion
-      console.log('No product found for any variation of:', suggestion.title);
       return suggestion;
-      
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error processing suggestion:', error);
       
+      // Handle rate limit errors specifically
       if (error.status === 429) {
         const retryAfter = error.retryAfter || 30;
         toast({
@@ -123,6 +86,7 @@ export const useAmazonProductProcessing = () => {
           description: `Please wait ${retryAfter} seconds before trying again`,
           variant: "destructive",
         });
+        // Wait for the specified time before continuing
         await new Promise(resolve => setTimeout(resolve, retryAfter * 1000));
       }
       
@@ -132,17 +96,33 @@ export const useAmazonProductProcessing = () => {
   };
 
   const processSuggestions = async (suggestions: GiftSuggestion[]) => {
-    console.log('Processing suggestions sequentially');
+    console.log('Processing suggestions in parallel batches');
+    
+    // Start cache warming in the background
+    warmCache().catch(console.error);
+    
     const results: GiftSuggestion[] = [];
     
-    for (const suggestion of suggestions) {
-      try {
-        const result = await processGiftSuggestion(suggestion);
-        results.push(result);
-        await new Promise(r => setTimeout(r, STAGGER_DELAY));
-      } catch (error) {
-        console.error('Error processing suggestion:', error);
-        results.push(suggestion);
+    for (let i = 0; i < suggestions.length; i += BATCH_SIZE) {
+      const batch = suggestions.slice(i, i + BATCH_SIZE);
+      console.log(`Processing batch ${i / BATCH_SIZE + 1}`);
+      
+      const batchPromises = batch.map((suggestion, index) => 
+        new Promise<GiftSuggestion>(async (resolve) => {
+          if (index > 0) {
+            await new Promise(r => setTimeout(r, index * STAGGER_DELAY));
+          }
+          const result = await processGiftSuggestion(suggestion);
+          resolve(result);
+        })
+      );
+      
+      const batchResults = await Promise.all(batchPromises);
+      results.push(...batchResults);
+      
+      // Add a longer delay between batches to avoid rate limits
+      if (i + BATCH_SIZE < suggestions.length) {
+        await new Promise(r => setTimeout(r, STAGGER_DELAY * 2));
       }
     }
     
