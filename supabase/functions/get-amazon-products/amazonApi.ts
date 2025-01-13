@@ -1,5 +1,6 @@
 import { performSearch, simplifySearchTerm, getFallbackSearchTerms } from './searchUtils.ts';
 import { getProductDetails } from './productDetails.ts';
+import { getPriceFromMultipleSources } from './priceUtils.ts';
 import { AmazonProduct } from './types.ts';
 
 const RAPIDAPI_HOST = 'real-time-amazon-data.p.rapidapi.com';
@@ -16,7 +17,7 @@ export async function searchAmazonProduct(
     console.log('Attempting search with exact term:', searchTerm);
     let searchData = await performSearch(searchTerm, apiKey, RAPIDAPI_HOST, ageCategory);
     
-    // If no products found or all results are accessories, try with generic search term
+    // If no products found, try with generic search term
     if (!searchData.data?.products?.length) {
       const genericSearchTerm = simplifySearchTerm(searchTerm);
       console.log('Attempting search with generic term:', genericSearchTerm);
@@ -43,7 +44,6 @@ export async function searchAmazonProduct(
       return null;
     }
 
-    // Get the first non-accessory product
     const product = searchData.data.products[0];
     const asin = product.asin;
 

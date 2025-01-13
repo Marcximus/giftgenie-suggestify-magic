@@ -9,15 +9,10 @@ export const calculateBackoffDelay = (
     BACKOFF_FACTOR: AMAZON_CONFIG.BACKOFF_FACTOR
   }
 ) => {
-  const delay = Math.min(
+  return Math.min(
     config.BASE_DELAY * Math.pow(config.BACKOFF_FACTOR, retryCount),
     AMAZON_CONFIG.MAX_BACKOFF_DELAY
   );
-  console.log(`Calculated backoff delay: ${delay}ms for retry ${retryCount}`);
-  return delay;
 };
 
-export const sleep = async (ms: number) => {
-  console.log(`Sleeping for ${ms}ms`);
-  return new Promise(resolve => setTimeout(resolve, ms));
-};
+export const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
