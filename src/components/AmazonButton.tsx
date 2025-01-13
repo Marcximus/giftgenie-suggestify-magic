@@ -24,10 +24,12 @@ export const AmazonButton = ({ title, asin }: AmazonButtonProps) => {
       
       // Only create a product link if we have a valid ASIN
       if (productAsin) {
+        console.log('Creating direct product link for ASIN:', productAsin);
         return `https://www.amazon.com/dp/${productAsin}/ref=nosim?tag=${cachedAssociateId}`;
       }
       
       // If no ASIN, show a toast and return null
+      console.warn('No ASIN available for product:', searchTerm);
       toast({
         title: "Product not found",
         description: "This product is currently unavailable on Amazon.",
@@ -47,7 +49,8 @@ export const AmazonButton = ({ title, asin }: AmazonButtonProps) => {
     }
   };
 
-  const handleClick = async () => {
+  const handleClick = async (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent any parent click handlers
     const url = await getAmazonUrl(title, asin);
     if (url) {
       // Open in new tab with noopener and noreferrer for security

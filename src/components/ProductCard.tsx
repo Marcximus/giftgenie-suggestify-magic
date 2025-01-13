@@ -44,23 +44,11 @@ const ProductCardComponent = ({
 }: ProductCardProps) => {
   const simplifiedTitle = simplifyTitle(title);
 
-  const handleCardClick = (e: React.MouseEvent) => {
-    // Don't trigger if clicking the "More like this" button
-    if ((e.target as HTMLElement).closest('button')) {
-      return;
-    }
-
-    // Always construct a direct product URL using the ASIN
-    const productUrl = `https://www.amazon.com/dp/${asin}/ref=nosim?tag=${import.meta.env.VITE_AMAZON_ASSOCIATE_ID}`;
-    window.open(productUrl, '_blank', 'noopener,noreferrer');
-  };
-
   return (
     <Card 
-      className="group h-full flex flex-col overflow-hidden hover:shadow-lg transition-all duration-300 border-accent/20 backdrop-blur-sm bg-white/80 hover:bg-white/90 cursor-pointer"
+      className="group h-full flex flex-col overflow-hidden hover:shadow-lg transition-all duration-300 border-accent/20 backdrop-blur-sm bg-white/80 hover:bg-white/90"
       role="article"
       aria-label={`Product: ${simplifiedTitle}`}
-      onClick={handleCardClick}
     >
       <CardHeader className="p-0 flex-none">
         <ProductImage 
