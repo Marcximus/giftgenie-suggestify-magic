@@ -79,10 +79,10 @@ export default {
         },
         'pulse-text': {
           '0%, 100%': {
-            textShadow: '0 0 8px rgba(255, 255, 255, 0.2), 0 0 16px rgba(255, 255, 255, 0.2)'
+            textShadow: '0 0 4px rgba(255, 255, 255, 0.1), 0 0 8px rgba(255, 255, 255, 0.1)'
           },
           '50%': {
-            textShadow: '0 0 16px rgba(255, 255, 255, 0.6), 0 0 32px rgba(255, 255, 255, 0.6)'
+            textShadow: '0 0 8px rgba(255, 255, 255, 0.3), 0 0 16px rgba(255, 255, 255, 0.3)'
           }
         }
       },
