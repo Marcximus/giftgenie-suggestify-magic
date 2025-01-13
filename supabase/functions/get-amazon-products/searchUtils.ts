@@ -7,6 +7,22 @@ const cleanSearchTerm = (searchTerm: string): string => {
     .trim();
 };
 
+// New function to detect accessory keywords
+const isLikelyAccessory = (title: string): boolean => {
+  const accessoryKeywords = [
+    'case', 'cover', 'screen protector', 'charger', 'cable',
+    'adapter', 'mount', 'stand', 'holder', 'bag', 'pouch',
+    'accessories', 'kit', 'replacement', 'spare', 'extra',
+    'carrying case', 'protective', 'skin', 'shield'
+  ];
+
+  const lowerTitle = title.toLowerCase();
+  return accessoryKeywords.some(keyword => 
+    lowerTitle.includes(keyword) && 
+    !lowerTitle.startsWith(keyword) // Allow if the keyword is the main product
+  );
+};
+
 export const simplifySearchTerm = (searchTerm: string): string => {
   // Remove specific model numbers, sizes, and colors from search term
   const genericSearchTerm = searchTerm
@@ -14,9 +30,11 @@ export const simplifySearchTerm = (searchTerm: string): string => {
     .replace(/\b(?:edition|version|series)\b/gi, '') // Remove common suffixes
     .replace(/-.*$/, '') // Remove anything after a hyphen
     .replace(/\d+(?:\s*-\s*\d+)?\s*(?:gb|tb|inch|"|cm|mm)/gi, '') // Remove sizes
+    .replace(/\b(?:with|including|plus)\b.*$/i, '') // Remove additional items
     .trim();
 
-  return genericSearchTerm;
+  // Add "main" or "primary" to help focus on main products
+  return `${genericSearchTerm}`;
 };
 
 const detectGender = (searchTerm: string): string | null => {
@@ -72,13 +90,13 @@ const detectAgeGroup = (searchTerm: string): string => {
   return 'adult';
 };
 
-export const getFallbackSearchTerms = (searchTerm: string): string[] => {
+export const getFallbackSearchTerms = (searchTerm: string, ageCategory?: string): string[] => {
   const words = searchTerm.split(' ')
     .filter(word => !['with', 'and', 'in', 'for', 'by', 'the', 'a', 'an'].includes(word.toLowerCase()))
     .filter(word => word.length > 2);
   
   const gender = detectGender(searchTerm);
-  const ageGroup = detectAgeGroup(searchTerm);
+  const ageGroup = ageCategory || detectAgeGroup(searchTerm);
   const searchTerms = [];
   
   // Add gender and age-specific qualifiers
@@ -116,10 +134,11 @@ export const getFallbackSearchTerms = (searchTerm: string): string[] => {
 export const performSearch = async (
   term: string,
   apiKey: string,
-  rapidApiHost: string
+  rapidApiHost: string,
+  ageCategory?: string
 ) => {
   const cleanedTerm = cleanSearchTerm(term);
-  const ageGroup = detectAgeGroup(term);
+  const ageGroup = ageCategory || detectAgeGroup(term);
   console.log('Searching with cleaned term:', cleanedTerm, 'Age group:', ageGroup);
 
   // Map age groups to appropriate Amazon categories
@@ -159,6 +178,19 @@ export const performSearch = async (
   }
 
   const searchData = await searchResponse.json();
+  
+  // Filter out likely accessories and related items
+  if (searchData.data?.products) {
+    searchData.data.products = searchData.data.products
+      .filter(product => !isLikelyAccessory(product.title))
+      .sort((a, b) => {
+        // Prioritize products with higher ratings and more reviews
+        const aScore = (a.rating || 0) * Math.log(a.ratings_total || 1);
+        const bScore = (b.rating || 0) * Math.log(b.ratings_total || 1);
+        return bScore - aScore;
+      });
+  }
+
   console.log('Search response data:', {
     title: searchData.data?.products?.[0]?.title,
     price: searchData.data?.products?.[0]?.price,
@@ -166,5 +198,6 @@ export const performSearch = async (
     ageGroup,
     categoryId
   });
+  
   return searchData;
 };
