@@ -34,7 +34,7 @@ export const FloatingNav = () => {
                 location.pathname === item.path 
                   ? "text-white bg-white/20 shadow-lg" 
                   : "text-white/90",
-                item.name === "Ideas" && "font-semibold text-white animate-pulse-text"
+                item.name === "Ideas" && "text-white/90"
               )}
             >
               <span className="relative z-10">{item.name}</span>
