@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 import { corsHeaders } from '../_shared/cors.ts';
 import { GiftSuggestion } from '../_shared/types.ts';
 import { isRateLimited, logRequest, RATE_LIMIT } from '../_shared/rate-limiter.ts';
@@ -8,7 +9,6 @@ import { processGiftSuggestion } from '../_shared/product-processor.ts';
 import { buildGiftPrompt } from '../_shared/prompt-builder.ts';
 import { filterProducts } from '../_shared/product-filter.ts';
 import { analyzePrompt } from '../_shared/prompt-analyzer.ts';
-import { createClient } from '@supabase/supabase-js';
 
 serve(async (req) => {
   const startTime = performance.now();
