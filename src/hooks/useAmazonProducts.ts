@@ -22,7 +22,7 @@ export const useAmazonProducts = () => {
 
       console.log(`Attempting Amazon product request for: ${searchTerm} with price range: ${priceRange}`);
       
-      // Use withRetry for the product search
+      // Use withRetry for the product search with increased delays
       const product = await withRetry(
         () => searchWithFallback(searchTerm, priceRange),
         AMAZON_CONFIG.MAX_RETRIES,
@@ -34,7 +34,6 @@ export const useAmazonProducts = () => {
         return product;
       }
 
-      // If no product found, show a more user-friendly message
       toast({
         title: "Product not found",
         description: "We'll try to find similar products for you",
@@ -46,13 +45,17 @@ export const useAmazonProducts = () => {
     } catch (error: any) {
       console.error('Error getting Amazon product:', error);
       
-      // Handle different error types
       if (error.status === 429) {
+        // Handle rate limiting with a more informative message
+        const retryAfter = error.retryAfter || 30;
         toast({
           title: "Too many requests",
-          description: "Please wait a moment before trying again",
+          description: `Please wait ${retryAfter} seconds before trying again`,
           variant: "destructive",
         });
+        
+        // Add an artificial delay before retrying
+        await sleep(retryAfter * 1000);
       } else if (error.status !== 404) {
         toast({
           title: "Error fetching product",

@@ -1,8 +1,8 @@
 export const AMAZON_CONFIG = {
-  MAX_CONCURRENT_REQUESTS: 10, // Increased from 8 to 10
-  STAGGER_DELAY: 50, // Reduced from 100ms to 50ms
-  MAX_RETRIES: 1,
-  BASE_RETRY_DELAY: 10, // Reduced from 25ms to 10ms
-  MAX_BACKOFF_DELAY: 100,
-  BACKOFF_FACTOR: 1.01
+  MAX_CONCURRENT_REQUESTS: 5, // Reduced from 10 to 5
+  STAGGER_DELAY: 200, // Increased from 50ms to 200ms
+  MAX_RETRIES: 3, // Increased from 1 to 3
+  BASE_RETRY_DELAY: 1000, // Increased from 10ms to 1000ms
+  MAX_BACKOFF_DELAY: 5000, // Increased from 100ms to 5000ms
+  BACKOFF_FACTOR: 2 // Increased from 1.01 to 2
 };
