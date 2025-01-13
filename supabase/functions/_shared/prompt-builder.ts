@@ -1,12 +1,13 @@
 interface PromptConfig {
   hasEverything: boolean;
   isMale: boolean;
+  isFemale: boolean;
   minBudget: number;
   maxBudget: number;
 }
 
 export function buildGiftPrompt(prompt: string, config: PromptConfig): string {
-  const { hasEverything, isMale, minBudget, maxBudget } = config;
+  const { hasEverything, isMale, isFemale, minBudget, maxBudget } = config;
 
   let enhancedPrompt = `As a luxury gift expert, suggest 8 thoughtful and unique gift ideas `;
   
@@ -22,8 +23,11 @@ export function buildGiftPrompt(prompt: string, config: PromptConfig): string {
     - Items that combine multiple interests\n\n`;
   }
 
+  // Add gender-specific instructions
   if (isMale) {
-    enhancedPrompt += `CRITICAL: Ensure all suggestions are specifically appropriate for male recipients.\n`;
+    enhancedPrompt += `CRITICAL: Ensure all suggestions are specifically appropriate for male recipients. Focus on men's sizes, styles, and preferences.\n`;
+  } else if (isFemale) {
+    enhancedPrompt += `CRITICAL: Ensure all suggestions are specifically appropriate for female recipients. Focus on women's sizes, styles, and preferences.\n`;
   }
 
   // Extract any specific interests from the prompt
@@ -49,6 +53,7 @@ export function buildGiftPrompt(prompt: string, config: PromptConfig): string {
   - Consider items that enhance lifestyle
   - Include at least one experience-based gift
   - Suggest items that show thoughtfulness
+  ${isMale || isFemale ? `- Double-check that all clothing and accessories are for the correct gender` : ''}
 
   Format each suggestion as:
   "Brand Name Specific Product (Premium/Special Edition) - [Category] Version"
@@ -57,7 +62,8 @@ export function buildGiftPrompt(prompt: string, config: PromptConfig): string {
   - Actually available for purchase
   - Within the specified budget range
   - Specific and detailed enough to find online
-  - Unique and memorable`;
+  - Unique and memorable
+  ${isMale || isFemale ? `- Gender-appropriate for the recipient` : ''}`;
 
   return enhancedPrompt;
 }

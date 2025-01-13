@@ -47,6 +47,7 @@ serve(async (req) => {
     const enhancedPrompt = buildGiftPrompt(prompt, {
       hasEverything: analysis.hasEverything,
       isMale: analysis.isMale,
+      isFemale: analysis.isFemale,
       minBudget,
       maxBudget
     });
