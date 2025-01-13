@@ -131,6 +131,30 @@ export type Database = {
         }
         Relationships: []
       }
+      popular_searches: {
+        Row: {
+          created_at: string | null
+          frequency: number | null
+          id: string
+          last_searched: string | null
+          search_term: string
+        }
+        Insert: {
+          created_at?: string | null
+          frequency?: number | null
+          id?: string
+          last_searched?: string | null
+          search_term: string
+        }
+        Update: {
+          created_at?: string | null
+          frequency?: number | null
+          id?: string
+          last_searched?: string | null
+          search_term?: string
+        }
+        Relationships: []
+      }
       product_suggestions: {
         Row: {
           amazon_asin: string | null

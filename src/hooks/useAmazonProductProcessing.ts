@@ -4,13 +4,58 @@ import { GiftSuggestion } from '@/types/suggestions';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from "@/integrations/supabase/client";
 
-const BATCH_SIZE = 5;
-const STAGGER_DELAY = 100;
+const BATCH_SIZE = 10;
+const STAGGER_DELAY = 50;
 
 export const useAmazonProductProcessing = () => {
   const { getAmazonProduct } = useAmazonProducts();
   const { processBatch } = useBatchProcessor<GiftSuggestion, GiftSuggestion>();
   const queryClient = useQueryClient();
+
+  const updateSearchFrequency = async (searchTerm: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('popular_searches')
+        .upsert(
+          { 
+            search_term: searchTerm.toLowerCase().trim(),
+            frequency: 1,
+            last_searched: new Date().toISOString()
+          },
+          {
+            onConflict: 'search_term',
+            target: ['search_term']
+          }
+        )
+        .select();
+
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Error updating search frequency:', error);
+    }
+  };
+
+  const warmCache = async () => {
+    try {
+      const { data: popularSearches } = await supabase
+        .from('popular_searches')
+        .select('search_term')
+        .order('frequency', { ascending: false })
+        .order('last_searched', { ascending: false })
+        .limit(20);
+
+      if (popularSearches) {
+        // Process popular searches in parallel with a smaller batch size
+        const warmingPromises = popularSearches.map(({ search_term }) => 
+          getAmazonProduct(search_term, '')
+        );
+        await Promise.allSettled(warmingPromises);
+      }
+    } catch (error) {
+      console.error('Error warming cache:', error);
+    }
+  };
 
   const generateCustomDescription = async (title: string, originalDescription: string): Promise<string> => {
     try {
@@ -56,15 +101,21 @@ export const useAmazonProductProcessing = () => {
         return cachedData as GiftSuggestion;
       }
 
+      // Update search frequency for cache warming
+      await updateSearchFrequency(suggestion.title);
+
       console.log('Processing suggestion:', suggestion.title);
-      const amazonProduct = await getAmazonProduct(suggestion.title, suggestion.priceRange);
+      
+      // Parallel processing of product data and custom description
+      const [amazonProduct, customDescription] = await Promise.all([
+        getAmazonProduct(suggestion.title, suggestion.priceRange),
+        generateCustomDescription(
+          suggestion.title,
+          suggestion.description
+        )
+      ]);
       
       if (amazonProduct && amazonProduct.asin) {
-        const customDescription = await generateCustomDescription(
-          amazonProduct.title || suggestion.title,
-          suggestion.description
-        );
-
         const processedSuggestion = {
           ...suggestion,
           title: amazonProduct.title || suggestion.title,
@@ -78,9 +129,7 @@ export const useAmazonProductProcessing = () => {
           amazon_total_ratings: amazonProduct.totalRatings
         };
 
-        queryClient.setQueryData(cacheKey, processedSuggestion, {
-          updatedAt: Date.now(),
-        });
+        queryClient.setQueryData(cacheKey, processedSuggestion);
 
         await supabase.from('api_metrics').insert({
           endpoint: 'amazon-product-processing',
@@ -108,6 +157,10 @@ export const useAmazonProductProcessing = () => {
 
   const processSuggestions = async (suggestions: GiftSuggestion[]) => {
     console.log('Processing suggestions in parallel batches');
+    
+    // Start cache warming in the background
+    warmCache().catch(console.error);
+    
     const results: GiftSuggestion[] = [];
     
     for (let i = 0; i < suggestions.length; i += BATCH_SIZE) {
