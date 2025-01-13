@@ -26,7 +26,7 @@ export const useAmazonProducts = () => {
       const product = await withRetry(
         () => searchWithFallback(searchTerm, priceRange),
         AMAZON_CONFIG.MAX_RETRIES,
-        AMAZON_CONFIG.BASE_DELAY
+        AMAZON_CONFIG.BASE_RETRY_DELAY
       );
       
       if (product) {
