@@ -42,11 +42,13 @@ export const useAmazonProductProcessing = () => {
       const amazonProduct = await getAmazonProduct(suggestion.title, suggestion.priceRange);
       
       if (amazonProduct && amazonProduct.asin) {
-        // Always generate a custom description using GPT
-        const customDescription = await generateCustomDescription(
-          amazonProduct.title || suggestion.title,
-          suggestion.description
-        );
+        // Generate custom description in parallel with product fetching
+        const [customDescription] = await Promise.all([
+          generateCustomDescription(
+            amazonProduct.title || suggestion.title,
+            suggestion.description
+          )
+        ]);
 
         const processedSuggestion = {
           ...suggestion,
@@ -74,16 +76,11 @@ export const useAmazonProductProcessing = () => {
   };
 
   const processSuggestions = async (suggestions: GiftSuggestion[]) => {
-    return processBatch(suggestions, {
-      processFn: processGiftSuggestion,
-      onError: (error, suggestion) => {
-        console.error('Error processing suggestion:', suggestion.title, error);
-        return suggestion;
-      },
-      parallel: true, // Keep parallel processing enabled
-      batchSize: 8, // Process 8 items at a time
-      staggerDelay: 0 // No delay between requests for maximum speed
-    });
+    // Process suggestions in parallel with a maximum batch size
+    const results = await Promise.all(
+      suggestions.map(suggestion => processGiftSuggestion(suggestion))
+    );
+    return results;
   };
 
   return { processSuggestions };

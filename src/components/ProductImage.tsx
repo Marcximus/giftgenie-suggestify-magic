@@ -16,11 +16,23 @@ export const ProductImage = ({ title, imageUrl }: ProductImageProps) => {
   // Generic fallback image that's guaranteed to work
   const genericFallback = 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=300&q=80';
 
+  // Generate optimized image URLs with different sizes
+  const getOptimizedImageUrl = (url: string, width: number) => {
+    if (!url) return genericFallback;
+    if (url.includes('unsplash.com')) {
+      return `${url}&w=${width}&q=80`;
+    }
+    // Add more image service handlers here if needed
+    return url;
+  };
+
   // Generate a tiny placeholder version of the image
   const getTinyPlaceholder = (url: string) => {
     if (!url) return genericFallback;
-    // Add blur and reduce quality for thumbnail
-    return `${url}?auto=format&w=20&q=10&blur=5`;
+    if (url.includes('unsplash.com')) {
+      return `${url}&w=20&q=10&blur=5`;
+    }
+    return url;
   };
 
   const fetchGoogleImage = async (searchTerm: string) => {
@@ -47,27 +59,34 @@ export const ProductImage = ({ title, imageUrl }: ProductImageProps) => {
   const handleImageError = async () => {
     setHasError(true);
     
-    // If we're not already showing the fallback and we have a title
     if (currentImageUrl !== genericFallback && title) {
       console.log('Image failed to load, fetching fallback for:', title);
       await fetchGoogleImage(title);
     } else {
-      // If Google image also fails or we have no title, use generic fallback
       console.log('Using generic fallback image');
       setCurrentImageUrl(genericFallback);
     }
   };
 
-  // Preload the full resolution image
+  // Preload the full resolution image with proper srcset
   useEffect(() => {
     if (currentImageUrl) {
       const img = new Image();
-      img.src = currentImageUrl;
+      
+      // Create srcset for responsive images
+      const srcset = [300, 600, 900].map(width => 
+        `${getOptimizedImageUrl(currentImageUrl, width)} ${width}w`
+      ).join(', ');
+      
+      img.srcset = srcset;
+      img.src = getOptimizedImageUrl(currentImageUrl, 600); // Default size
+      
       img.onload = () => {
         console.log('Image loaded successfully:', currentImageUrl);
         setIsLoading(false);
         setHasError(false);
       };
+      
       img.onerror = () => {
         console.error('Image failed to load:', currentImageUrl);
         handleImageError();
@@ -84,18 +103,24 @@ export const ProductImage = ({ title, imageUrl }: ProductImageProps) => {
           alt=""
           className="absolute inset-0 w-full h-full object-contain blur-lg scale-110 transform"
           aria-hidden="true"
+          loading="lazy"
         />
       )}
       
-      {/* Main image */}
+      {/* Main image with srcset */}
       <img
-        src={currentImageUrl || genericFallback}
+        srcSet={currentImageUrl ? [300, 600, 900]
+          .map(width => `${getOptimizedImageUrl(currentImageUrl, width)} ${width}w`)
+          .join(', ') : undefined}
+        sizes="(max-width: 640px) 300px, (max-width: 1024px) 600px, 900px"
+        src={currentImageUrl ? getOptimizedImageUrl(currentImageUrl, 600) : genericFallback}
         alt={`Product image of ${title}`}
         className={`w-full h-full object-contain group-hover:scale-105 transition-all duration-500 ${
           isLoading ? 'opacity-0' : 'opacity-100'
         } ${hasError ? 'opacity-0' : ''}`}
         loading="lazy"
         onError={handleImageError}
+        decoding="async"
       />
       
       {/* Loading spinner */}

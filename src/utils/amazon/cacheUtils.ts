@@ -10,29 +10,28 @@ interface CacheEntry {
   timestamp: number;
 }
 
-// Use a Map for O(1) lookups and better performance
+// Use both memory and localStorage for caching
 const productCache = new Map<string, CacheEntry>();
 
-// Add localStorage persistence with lazy loading
-let isInitialized = false;
-
+// Initialize cache from localStorage
 const initializeCache = () => {
-  if (isInitialized) return;
-  
   try {
-    const cached = localStorage.getItem('amazonProductCache');
-    if (cached) {
-      const entries = JSON.parse(cached);
+    const localStorageCache = localStorage.getItem('amazonProductCache');
+    if (localStorageCache) {
+      const entries = JSON.parse(localStorageCache);
       entries.forEach(([key, value]: [string, CacheEntry]) => {
-        productCache.set(key, value);
+        if (Date.now() - value.timestamp <= CACHE_DURATION) {
+          productCache.set(key, value);
+        }
       });
     }
-    isInitialized = true;
+    console.log('Cache initialized with', productCache.size, 'entries');
   } catch (error) {
     console.warn('Failed to load cache from storage:', error);
   }
 };
 
+// Save cache to localStorage
 const saveCacheToStorage = () => {
   try {
     localStorage.setItem('amazonProductCache', 
@@ -43,7 +42,7 @@ const saveCacheToStorage = () => {
   }
 };
 
-// Optimized cache cleanup with batch processing
+// Optimized cache cleanup
 const clearStaleCache = () => {
   const now = Date.now();
   const entriesToDelete: string[] = [];
@@ -61,24 +60,37 @@ const clearStaleCache = () => {
   }
 };
 
+// Get cached product with localStorage fallback
 export const getCachedProduct = (cacheKey: string): AmazonProduct | null => {
-  initializeCache();
+  // Initialize cache if needed
+  if (productCache.size === 0) {
+    initializeCache();
+  }
+  
+  // Clean up stale entries
   clearStaleCache();
   
+  // Check memory cache first
   const cached = productCache.get(cacheKey);
   if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
-    console.log('Cache hit for:', cacheKey);
+    console.log('Memory cache hit for:', cacheKey);
     return cached.data;
   }
+  
   console.log('Cache miss for:', cacheKey);
   return null;
 };
 
+// Cache product in both memory and localStorage
 export const cacheProduct = (cacheKey: string, product: AmazonProduct) => {
-  initializeCache();
+  if (productCache.size === 0) {
+    initializeCache();
+  }
+  
   clearStaleCache();
   
-  productCache.set(cacheKey, { data: product, timestamp: Date.now() });
+  const cacheEntry = { data: product, timestamp: Date.now() };
+  productCache.set(cacheKey, cacheEntry);
   saveCacheToStorage();
   console.log('Cached product:', cacheKey);
 };
