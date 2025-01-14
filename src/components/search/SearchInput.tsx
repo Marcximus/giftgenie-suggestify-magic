@@ -22,13 +22,20 @@ export const SearchInput = ({
   return (
     <form onSubmit={onSubmit} className="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full">
       <div className="flex-1 min-w-0 group">
-        <textarea
-          placeholder={`E.g., "${<TypingPlaceholder />}"`}
-          value={query}
-          onChange={onQueryChange}
-          className="w-full min-h-[40px] max-h-[120px] text-sm sm:text-base p-2 sm:p-3 rounded-md border border-input bg-background/50 backdrop-blur-sm resize-y overflow-auto focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 transition-all duration-200 group-hover:border-primary/50"
-          style={{ lineHeight: '1.5' }}
-        />
+        <div className="relative">
+          <textarea
+            placeholder=""
+            value={query}
+            onChange={onQueryChange}
+            className="w-full min-h-[40px] max-h-[120px] text-sm sm:text-base p-2 sm:p-3 rounded-md border border-input bg-background/50 backdrop-blur-sm resize-y overflow-auto focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 transition-all duration-200 group-hover:border-primary/50"
+            style={{ lineHeight: '1.5' }}
+          />
+          {!query && (
+            <div className="absolute top-2 sm:top-3 left-2 sm:left-3 text-muted-foreground pointer-events-none">
+              E.g., "<TypingPlaceholder />"
+            </div>
+          )}
+        </div>
       </div>
       <div className="flex gap-2 shrink-0">
         <Button 
