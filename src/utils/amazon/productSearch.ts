@@ -17,6 +17,7 @@ export class ProductSearchService {
   private rateLimiter: RateLimiter;
   private cache: Map<string, { data: any; timestamp: number }>;
   private static instance: ProductSearchService;
+  private subscriptionErrorShown: boolean = false;
 
   private constructor() {
     this.rateLimiter = RateLimiter.getInstance();
@@ -50,11 +51,15 @@ export class ProductSearchService {
         
         if (response.status === 403) {
           console.error('API subscription error');
-          toast({
-            title: "Amazon Product Search Unavailable",
-            description: "We're experiencing some technical difficulties with our product search. Please try again later.",
-            variant: "destructive",
-          });
+          if (!this.subscriptionErrorShown) {
+            toast({
+              title: "Amazon Product Search Unavailable",
+              description: "We're experiencing technical difficulties with our product search. Please try again later or contact support.",
+              variant: "destructive",
+              duration: 5000,
+            });
+            this.subscriptionErrorShown = true;
+          }
           throw new Error('API subscription error');
         }
 
@@ -69,6 +74,9 @@ export class ProductSearchService {
           data,
           timestamp: Date.now()
         });
+        
+        // Reset subscription error flag on successful request
+        this.subscriptionErrorShown = false;
         
         return data;
       } catch (error: any) {
