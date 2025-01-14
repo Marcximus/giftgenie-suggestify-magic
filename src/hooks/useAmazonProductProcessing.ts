@@ -8,7 +8,7 @@ import { logApiMetrics } from '@/utils/metricsUtils';
 import { toast } from "@/components/ui/use-toast";
 
 const BATCH_SIZE = 8;
-const STAGGER_DELAY = 200; // Reduced delay
+const STAGGER_DELAY = 200;
 const MAX_CONCURRENT = 4;
 
 export const useAmazonProductProcessing = () => {
@@ -43,14 +43,19 @@ export const useAmazonProductProcessing = () => {
           description: customDescription,
           priceRange: `${amazonProduct.currency} ${amazonProduct.price}`,
           amazon_asin: amazonProduct.asin,
-          amazon_url: amazonProduct.asin ? `https://www.amazon.com/dp/${amazonProduct.asin}` : undefined,
+          amazon_url: `https://www.amazon.com/dp/${amazonProduct.asin}`,
           amazon_price: amazonProduct.price,
           amazon_image_url: amazonProduct.imageUrl,
           amazon_rating: amazonProduct.rating,
           amazon_total_ratings: amazonProduct.totalRatings
         };
 
+        // Update the cache with the enriched data
         queryClient.setQueryData(cacheKey, processedSuggestion);
+        
+        // Invalidate the suggestions query to trigger a re-render
+        queryClient.invalidateQueries({ queryKey: ['suggestions'] });
+        
         await logApiMetrics('amazon-product-processing', startTime, 'success');
         return processedSuggestion;
       }
@@ -77,6 +82,12 @@ export const useAmazonProductProcessing = () => {
         try {
           const result = await processGiftSuggestion(suggestion);
           results.push(result);
+          
+          // Update the suggestions cache with each processed result
+          queryClient.setQueryData(['suggestions'], (old: GiftSuggestion[] | undefined) => {
+            if (!old) return results;
+            return old.map(s => s.title === result.title ? result : s);
+          });
         } catch (error) {
           console.error('Error in batch processing:', error);
         }

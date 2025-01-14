@@ -48,11 +48,9 @@ export const useSuggestions = () => {
         throw error;
       }
     },
-    retry: 1, // Limit retries to reduce user waiting time
-    meta: {
-      onError: (error: Error) => {
-        console.error('Error in suggestion mutation:', error);
-      }
+    onSuccess: (data) => {
+      // Update the suggestions cache with the enriched data
+      queryClient.setQueryData(['suggestions'], data);
     }
   });
 
