@@ -21,25 +21,55 @@ serve(async (req) => {
   }
 
   try {
-    const { searchTerm, priceRange } = await req.json();
+    const { searchTerm } = await req.json();
     const apiKey = Deno.env.get('RAPIDAPI_KEY');
 
+    // Validate required inputs
     if (!apiKey) {
       console.error('RAPIDAPI_KEY not configured');
-      throw new Error('API configuration error');
+      return new Response(
+        JSON.stringify({ 
+          error: 'API configuration error',
+          details: 'RapidAPI key is not configured'
+        }),
+        { 
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
     }
 
-    if (!searchTerm) {
-      console.error('No search term provided');
-      throw new Error('Search term is required');
+    if (!searchTerm || typeof searchTerm !== 'string' || searchTerm.trim().length === 0) {
+      console.error('Invalid or missing search term:', searchTerm);
+      return new Response(
+        JSON.stringify({ 
+          error: 'Invalid request',
+          details: 'Search term is required and must be a non-empty string'
+        }),
+        { 
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
     }
 
     console.log('Searching Amazon for:', searchTerm);
 
+    // Clean and encode search term
+    const cleanSearchTerm = searchTerm
+      .replace(/&quot;/g, '"')
+      .replace(/&amp;/g, '&')
+      .replace(/&#x27;/g, "'")
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .trim();
+
     // Create URL with proper encoding
     const url = new URL(`https://${RAPIDAPI_HOST}/search`);
-    url.searchParams.append('query', searchTerm);
+    url.searchParams.append('query', cleanSearchTerm);
     url.searchParams.append('country', 'US');
+
+    console.log('Making request to:', url.toString());
 
     // Perform the search
     const searchResponse = await fetch(url, {
@@ -72,13 +102,22 @@ serve(async (req) => {
     }
 
     const searchData = await searchResponse.json();
-    console.log('Search response received');
+    console.log('Search response received:', {
+      hasData: !!searchData.data,
+      productsCount: searchData.data?.products?.length || 0
+    });
 
     if (!searchData.data?.products?.[0]) {
       console.log('No products found for search term:', searchTerm);
       return new Response(
-        JSON.stringify({ error: 'No products found' }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ 
+          error: 'No products found',
+          details: 'No matching products found for the search term'
+        }),
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 404
+        }
       );
     }
 
@@ -91,8 +130,14 @@ serve(async (req) => {
       if (!productWithAsin) {
         console.error('No product with ASIN found');
         return new Response(
-          JSON.stringify({ error: 'No valid product found' }),
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          JSON.stringify({ 
+            error: 'Invalid product data',
+            details: 'No valid product identifier found'
+          }),
+          { 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 400
+          }
         );
       }
       product = productWithAsin;
@@ -113,15 +158,14 @@ serve(async (req) => {
       }
     });
 
-    if (!detailsResponse.ok) {
-      console.error('Product details API error:', detailsResponse.status);
-      // Continue with search data if details request fails
-      console.log('Falling back to search data');
-    }
-
     let detailsData;
     try {
-      detailsData = await detailsResponse.json();
+      if (detailsResponse.ok) {
+        detailsData = await detailsResponse.json();
+        console.log('Details response received for ASIN:', asin);
+      } else {
+        console.warn('Failed to get product details, falling back to search data');
+      }
     } catch (error) {
       console.error('Error parsing details response:', error);
       // Continue with search data if details parsing fails
@@ -138,7 +182,7 @@ serve(async (req) => {
     // Combine search and details data, preferring details when available
     const productDetails: AmazonProduct = {
       title: detailsData?.data?.product_title || product.title,
-      description: detailsData?.data?.product_description || product.product_description,
+      description: detailsData?.data?.product_description || product.product_description || product.title,
       price: formatPrice(detailsData?.data?.product_price || product.product_price),
       currency: detailsData?.data?.currency || 'USD',
       imageUrl: detailsData?.data?.product_photos?.[0] || product.product_photo || product.thumbnail,
@@ -168,7 +212,9 @@ serve(async (req) => {
 
     console.log('Returning product details:', {
       title: productDetails.title,
-      asin: productDetails.asin
+      asin: productDetails.asin,
+      hasPrice: !!productDetails.price,
+      hasImage: !!productDetails.imageUrl
     });
 
     return new Response(
@@ -178,10 +224,13 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Error in get-amazon-products function:', error);
+    console.error('Stack trace:', error.stack);
+    
     return new Response(
       JSON.stringify({ 
-        error: error.message,
-        details: 'Failed to fetch product details'
+        error: 'Failed to fetch product details',
+        details: error.message,
+        timestamp: new Date().toISOString()
       }),
       { 
         status: 500,
