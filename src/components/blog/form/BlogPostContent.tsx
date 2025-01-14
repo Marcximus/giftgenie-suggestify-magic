@@ -41,7 +41,7 @@ export const BlogPostContent = ({ form, handleAIGenerate }: BlogPostContentProps
       console.log('Received generated content:', data);
 
       if (data?.content) {
-        // Update the form's content field
+        // Update the form's content field with processed content
         form.setValue('content', data.content, { 
           shouldDirty: true,
           shouldTouch: true,
@@ -59,7 +59,7 @@ export const BlogPostContent = ({ form, handleAIGenerate }: BlogPostContentProps
         
         toast({
           title: "Success",
-          description: "Blog post generated successfully!",
+          description: `Blog post generated with ${data.affiliateLinks?.length || 0} product links`,
         });
       } else {
         throw new Error('No content received from AI');

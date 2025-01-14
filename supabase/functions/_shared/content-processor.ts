@@ -6,6 +6,7 @@ export async function processContent(
   associateId: string,
   apiKey: string
 ): Promise<{ content: string; affiliateLinks: Array<{ productTitle: string; affiliateLink: string; imageUrl?: string }> }> {
+  // Extract product titles from H3 tags
   const productMatches = content.match(/<h3>([^<]+)<\/h3>/g) || [];
   const affiliateLinks: Array<{ productTitle: string; affiliateLink: string; imageUrl?: string }> = [];
   
@@ -57,7 +58,7 @@ export async function processContent(
                 Rating: ${product.rating.toFixed(1)} stars${product.totalRatings ? ` • ${product.totalRatings.toLocaleString()} reviews` : ''}
               </p>
             ` : ''}
-            <div class="flex justify-center mt-4">
+            <div class="flex justify-center mt-4 mb-8">
               <a 
                 href="${affiliateLink}" 
                 target="_blank" 
