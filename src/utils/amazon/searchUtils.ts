@@ -1,60 +1,47 @@
 import { cleanSearchTerm } from './utils';
-import { getSearchTerms } from './categoryRouting';
 
 export const searchWithFallback = async (
   searchTerm: string,
   apiKey: string,
   rapidApiHost: string
 ) => {
-  console.log('Starting structured search for:', searchTerm);
+  console.log('Starting search with fallback for:', searchTerm);
   
   try {
-    // Determine if this is a sports-related search
-    const isSportsSearch = searchTerm.toLowerCase().includes('sports') ||
-      ['basketball', 'football', 'soccer', 'tennis', 'fitness', 'running']
-        .some(sport => searchTerm.toLowerCase().includes(sport));
+    // First try with exact search term
+    const searchData = await performSearch(searchTerm, apiKey, rapidApiHost);
+    
+    if (searchData?.data?.products?.length > 0) {
+      return searchData;
+    }
 
-    // Get prioritized search terms
-    const searchTerms = isSportsSearch
-      ? getSearchTerms(searchTerm, 'sports')
-      : [searchTerm];
+    // If no results, try with simplified search term
+    const simplifiedTerm = simplifySearchTerm(searchTerm);
+    console.log('Trying simplified search term:', simplifiedTerm);
+    
+    const fallbackData = await performSearch(simplifiedTerm, apiKey, rapidApiHost);
+    
+    if (fallbackData?.data?.products?.length > 0) {
+      return fallbackData;
+    }
 
-    // Try each search term in order of specificity
-    for (const term of searchTerms) {
-      console.log('Trying search term:', term);
-      const searchData = await performSearch(term, apiKey, rapidApiHost);
+    // If still no results, try with fallback terms
+    const fallbackTerms = getFallbackSearchTerms(searchTerm);
+    
+    for (const term of fallbackTerms) {
+      console.log('Trying fallback term:', term);
+      const termData = await performSearch(term, apiKey, rapidApiHost);
       
-      if (searchData?.data?.products?.length > 0) {
-        // Validate result relevance
-        const isRelevant = validateSearchResult(searchData.data.products[0], searchTerm);
-        if (isRelevant) {
-          console.log('Found relevant result for:', term);
-          return searchData;
-        }
+      if (termData?.data?.products?.length > 0) {
+        return termData;
       }
     }
 
-    // If no relevant results found, try simplified search as last resort
-    const simplifiedTerm = simplifySearchTerm(searchTerm);
-    console.log('Trying simplified search term:', simplifiedTerm);
-    return await performSearch(simplifiedTerm, apiKey, rapidApiHost);
-
+    return null;
   } catch (error) {
     console.error('Error in searchWithFallback:', error);
     throw error;
   }
-};
-
-const validateSearchResult = (product: any, searchTerm: string): boolean => {
-  const searchWords = searchTerm.toLowerCase().split(' ')
-    .filter(word => word.length > 3)
-    .filter(word => !['with', 'and', 'for', 'the'].includes(word));
-
-  const titleWords = product.title.toLowerCase().split(' ');
-  
-  // Check if at least 2 significant search terms appear in the title
-  const matchingWords = searchWords.filter(word => titleWords.includes(word));
-  return matchingWords.length >= 2;
 };
 
 const performSearch = async (
@@ -91,4 +78,21 @@ const simplifySearchTerm = (searchTerm: string): string => {
     .replace(/-.*$/, '')
     .replace(/\d+(?:\s*-\s*\d+)?\s*(?:gb|tb|inch|"|cm|mm)/gi, '')
     .trim();
+};
+
+const getFallbackSearchTerms = (searchTerm: string): string[] => {
+  const words = searchTerm.split(' ')
+    .filter(word => !['with', 'and', 'in', 'for', 'by', 'the', 'a', 'an'].includes(word.toLowerCase()))
+    .filter(word => word.length > 2);
+  
+  const searchTerms = [];
+  
+  if (words.length > 2) {
+    searchTerms.push(words.slice(0, 3).join(' '));
+    searchTerms.push([words[0], words[words.length - 1]].join(' '));
+  } else {
+    searchTerms.push(words.join(' '));
+  }
+  
+  return [...new Set(searchTerms)];
 };

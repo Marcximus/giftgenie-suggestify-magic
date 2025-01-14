@@ -37,7 +37,11 @@ export const useAmazonProducts = () => {
       requestLog.push({ timestamp: Date.now() });
       
       const product = await withRetry(
-        () => searchWithFallback(searchTerm, priceRange),
+        () => searchWithFallback(
+          searchTerm, 
+          AMAZON_CONFIG.API_KEY,
+          AMAZON_CONFIG.RAPID_API_HOST
+        ),
         2,
         1000
       );
