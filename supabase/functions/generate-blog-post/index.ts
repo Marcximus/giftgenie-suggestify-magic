@@ -16,6 +16,20 @@ serve(async (req) => {
     const { title } = await req.json();
     console.log('Generating blog post for title:', title);
 
+    // Verify required API keys are present
+    const associateId = Deno.env.get('AMAZON_ASSOCIATE_ID');
+    const rapidApiKey = Deno.env.get('RAPIDAPI_KEY');
+    const openAiKey = Deno.env.get('OPENAI_API_KEY');
+
+    if (!associateId || !rapidApiKey || !openAiKey) {
+      console.error('Missing required API keys:', {
+        hasAssociateId: !!associateId,
+        hasRapidApiKey: !!rapidApiKey,
+        hasOpenAiKey: !!openAiKey
+      });
+      throw new Error('Missing required API configuration');
+    }
+
     const numItemsMatch = title.match(/\b(\d+)\b/);
     const numItems = numItemsMatch ? parseInt(numItemsMatch[1]) : 5;
     console.log('Number of items to generate:', numItems);
@@ -23,7 +37,7 @@ serve(async (req) => {
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${Deno.env.get('OPENAI_API_KEY')}`,
+        'Authorization': `Bearer ${openAiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
@@ -47,21 +61,20 @@ serve(async (req) => {
 
     const data = await response.json();
     const rawContent = data.choices[0].message.content;
-    console.log('Generated raw content:', rawContent);
+    console.log('Generated raw content length:', rawContent.length);
 
-    // Process content to add Amazon product data
-    const associateId = Deno.env.get('AMAZON_ASSOCIATE_ID');
-    const rapidApiKey = Deno.env.get('RAPIDAPI_KEY');
-
-    if (!associateId || !rapidApiKey) {
-      throw new Error('Missing required API keys');
-    }
-
+    // Process content with Amazon product data
     console.log('Processing content with Amazon data...');
     const { content, affiliateLinks } = await processContent(rawContent, associateId, rapidApiKey);
+    
     console.log('Content processed successfully:', {
-      contentLength: content.length,
-      numAffiliateLinks: affiliateLinks.length
+      originalLength: rawContent.length,
+      processedLength: content.length,
+      numAffiliateLinks: affiliateLinks.length,
+      affiliateLinks: affiliateLinks.map(link => ({
+        title: link.productTitle,
+        hasImage: !!link.imageUrl
+      }))
     });
 
     return new Response(
