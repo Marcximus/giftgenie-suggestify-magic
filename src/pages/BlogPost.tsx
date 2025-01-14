@@ -1,11 +1,13 @@
 import { useQuery } from "@tanstack/react-query";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Tables } from "@/integrations/supabase/types";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, Calendar, User, Clock } from "lucide-react";
+import { ChevronLeft } from "lucide-react";
 import { Helmet } from "react-helmet";
 import { toast } from "@/components/ui/use-toast";
+import { BlogPostHeader } from "@/components/blog/BlogPostHeader";
+import { BlogPostContent } from "@/components/blog/BlogPostContent";
+import { RelatedPosts } from "@/components/blog/RelatedPosts";
 
 const BlogPost = () => {
   const { slug } = useParams();
@@ -37,7 +39,6 @@ const BlogPost = () => {
         return null;
       }
 
-      // Fetch related posts
       const { data: relatedPosts, error: relatedError } = await supabase
         .from("blog_posts")
         .select("title, slug")
@@ -52,7 +53,7 @@ const BlogPost = () => {
       return {
         ...currentPost,
         relatedPosts: relatedPosts || []
-      } as Tables<"blog_posts"> & { relatedPosts: any[] };
+      };
     },
   });
 
@@ -73,7 +74,6 @@ const BlogPost = () => {
   }
 
   if (error) {
-    console.error("Error in blog post component:", error);
     return (
       <>
         <Helmet>
@@ -136,83 +136,9 @@ const BlogPost = () => {
             More Ideas
           </Button>
           
-          {/* SEO title hidden visually but present in DOM */}
-          <h1 className="sr-only">
-            {post.title}
-          </h1>
-
-          {post.image_url && (
-            <div className="aspect-[21/9] relative overflow-hidden rounded-lg mb-6 sm:mb-8 shadow-xl animate-fade-in">
-              <img 
-                src={post.image_url} 
-                alt={post.image_alt_text || post.title}
-                className="object-cover w-full h-full"
-              />
-            </div>
-          )}
-          
-          <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground mb-6 sm:mb-8 animate-fade-in">
-            <div className="flex items-center gap-1">
-              <User className="w-4 h-4" />
-              <span>{post.author}</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <Calendar className="w-4 h-4" />
-              <span>{new Date(post.published_at || "").toLocaleDateString()}</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <Clock className="w-4 h-4" />
-              <span>{new Date(post.published_at || "").toLocaleTimeString()}</span>
-            </div>
-          </div>
-          
-          <div className="prose prose-lg w-full max-w-none animate-fade-in">
-            <div 
-              className="[&>h1]:text-lg [&>h1]:sm:text-xl [&>h1]:lg:text-3xl [&>h1]:font-bold [&>h1]:mb-4 
-                         [&>h2]:text-lg [&>h2]:sm:text-xl [&>h2]:lg:text-2xl [&>h2]:font-semibold [&>h2]:mt-6 [&>h2]:mb-3
-                         [&>p]:text-base [&>p]:leading-relaxed [&>p]:mb-4
-                         [&>ul]:list-disc [&>ul]:pl-6 [&>ul]:mb-4 [&>ul]:space-y-2
-                         [&>ol]:list-decimal [&>ol]:pl-6 [&>ol]:mb-4 [&>ol]:space-y-2
-                         [&_img]:w-full [&_img]:max-w-[400px] [&_img]:sm:max-w-[500px] [&_img]:lg:max-w-[600px] 
-                         [&_img]:h-auto [&_img]:aspect-square
-                         [&_img]:!object-contain [&_img]:!rounded-lg [&_img]:!shadow-md
-                         [&_img]:!mx-auto [&_img]:!my-4 [&_img]:sm:!my-6
-                         [&_a.amazon-button]:!text-white [&_a.amazon-button]:no-underline
-                         [&_h3]:mt-6 [&_h3]:mb-3
-                         [&_div.flex]:mt-4 [&_div.flex]:mb-4"
-              dangerouslySetInnerHTML={{ __html: post.content }}
-            />
-          </div>
-
-          {/* Related Posts Section */}
-          {post.relatedPosts && post.relatedPosts.length > 0 && (
-            <div className="mt-12 pt-8 border-t border-primary/10 mb-20">
-              <h2 className="text-2xl font-bold mb-6 animate-pulse-text bg-gradient-to-r from-purple-500 via-blue-500 to-purple-500 bg-clip-text text-transparent animate-gradient">
-                More Gift Ideas
-              </h2>
-              <div className="grid gap-3">
-                {post.relatedPosts.map((relatedPost: any) => (
-                  <div 
-                    key={relatedPost.slug}
-                    className="group relative overflow-hidden rounded-md bg-gradient-to-r from-background to-muted/30 border border-primary/5 hover:border-primary/20 transition-all duration-300 shadow-sm hover:shadow-md"
-                  >
-                    <Button
-                      variant="ghost"
-                      className="w-full text-left py-2.5 px-4 hover:bg-primary/5"
-                      onClick={() => navigate(`/blog/post/${relatedPost.slug}`)}
-                    >
-                      <h3 className="font-medium text-base group-hover:text-primary transition-colors line-clamp-1">
-                        {relatedPost.title}
-                      </h3>
-                    </Button>
-                    <div className="absolute inset-y-0 right-0 flex items-center pr-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <ChevronLeft className="w-3.5 h-3.5 rotate-180 text-primary" />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
+          <BlogPostHeader post={post} />
+          <BlogPostContent post={post} />
+          <RelatedPosts relatedPosts={post.relatedPosts} />
         </div>
       </article>
     </>
