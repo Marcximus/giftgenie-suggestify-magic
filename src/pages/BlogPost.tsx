@@ -136,7 +136,8 @@ const BlogPost = () => {
             More Ideas
           </Button>
           
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-6 sm:mb-8">
+          {/* SEO title hidden visually but present in DOM */}
+          <h1 className="sr-only">
             {post.title}
           </h1>
 
@@ -186,7 +187,7 @@ const BlogPost = () => {
           {/* Related Posts Section */}
           {post.relatedPosts && post.relatedPosts.length > 0 && (
             <div className="mt-12 pt-8 border-t border-primary/10 mb-20">
-              <h2 className="text-2xl font-bold mb-6 animate-pulse-text bg-gradient-to-r from-purple-500 via-blue-500 to-purple-500 bg-clip-text text-transparent">
+              <h2 className="text-2xl font-bold mb-6 animate-pulse-text bg-gradient-to-r from-purple-500 via-blue-500 to-purple-500 bg-clip-text text-transparent animate-gradient">
                 More Gift Ideas
               </h2>
               <div className="grid gap-3">
