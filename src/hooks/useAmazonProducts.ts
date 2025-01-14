@@ -7,11 +7,11 @@ import { getCachedProduct, cacheProduct } from '@/utils/amazon/cacheUtils';
 import { withRetry } from '@/utils/amazon/retryUtils';
 import { toast } from "@/components/ui/use-toast";
 
-// Rate limiting configuration
+// Rate limiting configuration - adjusted for increased concurrency
 const RATE_LIMIT = {
-  MAX_REQUESTS: 20, // Reduced from 30
+  MAX_REQUESTS: 25, // Increased from 20 to 25
   WINDOW_MS: 60000, // 1 minute
-  RETRY_AFTER: 60 // Increased from 30 to 60 seconds
+  RETRY_AFTER: 45 // Reduced from 60 to 45 seconds for faster recovery
 };
 
 const requestLog: { timestamp: number }[] = [];

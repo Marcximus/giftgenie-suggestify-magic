@@ -7,12 +7,12 @@ import { generateCustomDescription } from '@/utils/descriptionUtils';
 import { logApiMetrics } from '@/utils/metricsUtils';
 import { toast } from "@/components/ui/use-toast";
 
-// Reduced from 8 to 4 to stay well within rate limits
-const BATCH_SIZE = 4;
-// Increased from 100ms to 500ms to reduce rate limit issues
+// Increased from 4 to 8 for better performance
+const BATCH_SIZE = 8;
+// Keep 500ms delay to avoid rate limit issues
 const STAGGER_DELAY = 500;
-// Maximum concurrent requests
-const MAX_CONCURRENT = 2;
+// Increased from 2 to 4 maximum concurrent requests
+const MAX_CONCURRENT = 4;
 
 export const useAmazonProductProcessing = () => {
   const { getAmazonProduct } = useAmazonProducts();
