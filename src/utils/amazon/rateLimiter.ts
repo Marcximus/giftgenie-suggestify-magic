@@ -13,11 +13,11 @@ const RATE_LIMITS: RateLimitConfig = {
 };
 
 export class RateLimiter {
+  private static instance: RateLimiter;
   private requestLog: number[] = [];
   private warningCount = 0;
   private activeRequests = 0;
   private lastCoolingTime = 0;
-  private static instance: RateLimiter;
 
   private constructor() {}
 
@@ -72,7 +72,8 @@ export class RateLimiter {
 }
 
 // Helper functions that use the singleton instance
-export const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+export const sleep = (ms: number): Promise<void> => 
+  new Promise(resolve => setTimeout(resolve, ms));
 
 export const waitForRateLimit = async (retryCount = 0): Promise<void> => {
   const rateLimiter = RateLimiter.getInstance();
@@ -83,7 +84,7 @@ export const waitForRateLimit = async (retryCount = 0): Promise<void> => {
 
 export const logRequest = (): void => {
   const rateLimiter = RateLimiter.getInstance();
-  rateLimiter.acquireSlot();
+  rateLimiter.acquireSlot().catch(console.error);
 };
 
 export const handleRateLimitResponse = async (status: number): Promise<void> => {
