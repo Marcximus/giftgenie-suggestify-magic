@@ -1,82 +1,94 @@
-import { supabase } from "@/integrations/supabase/client";
-import type { AmazonProduct } from './types';
-
-const cleanSearchTerm = (searchTerm: string): string => {
-  return searchTerm
-    .replace(/\([^)]*\)/g, '') // Remove anything in parentheses
-    .replace(/&/g, 'and') // Replace & with 'and'
-    .replace(/[^\w\s-]/g, ' ') // Remove special characters except hyphens
-    .replace(/\s+/g, ' ') // Replace multiple spaces with single space
-    .trim();
-};
-
-export const simplifySearchTerm = (searchTerm: string): string => {
-  const genericSearchTerm = searchTerm
-    .replace(/\([^)]*\)/g, '') // Remove anything in parentheses
-    .replace(/\b(?:edition|version|series)\b/gi, '') // Remove common suffixes
-    .replace(/-.*$/, '') // Remove anything after a hyphen
-    .replace(/\d+(?:\s*-\s*\d+)?\s*(?:gb|tb|inch|"|cm|mm)/gi, '') // Remove sizes
-    .trim();
-
-  return genericSearchTerm;
-};
-
-export const getFallbackSearchTerms = (searchTerm: string): string[] => {
-  const words = searchTerm.split(' ')
-    .filter(word => !['with', 'and', 'in', 'for', 'by', 'the', 'a', 'an'].includes(word.toLowerCase()))
-    .filter(word => word.length > 2);
-  
-  const searchTerms = [];
-  
-  if (words.length > 2) {
-    searchTerms.push(words.slice(0, 3).join(' '));
-    searchTerms.push([words[0], words[words.length - 1]].join(' '));
-  } else {
-    searchTerms.push(words.join(' '));
-  }
-  
-  return [...new Set(searchTerms)];
-};
+import { cleanSearchTerm } from './utils';
+import { getSearchTerms } from './categoryRouting';
 
 export const searchWithFallback = async (
   searchTerm: string,
-  priceRange: string
-): Promise<AmazonProduct | null> => {
+  apiKey: string,
+  rapidApiHost: string
+) => {
+  console.log('Starting structured search for:', searchTerm);
+  
   try {
-    console.log('Searching with term:', searchTerm);
-    
-    const { data, error } = await supabase.functions.invoke('get-amazon-products', {
-      body: { 
-        searchTerm: cleanSearchTerm(searchTerm),
-        priceRange 
-      }
-    });
+    // Determine if this is a sports-related search
+    const isSportsSearch = searchTerm.toLowerCase().includes('sports') ||
+      ['basketball', 'football', 'soccer', 'tennis', 'fitness', 'running']
+        .some(sport => searchTerm.toLowerCase().includes(sport));
 
-    if (error) {
-      console.error('Error in searchWithFallback:', error);
-      throw error;
-    }
+    // Get prioritized search terms
+    const searchTerms = isSportsSearch
+      ? getSearchTerms(searchTerm, 'sports')
+      : [searchTerm];
 
-    if (!data?.product) {
-      console.log('No product found, trying simplified search');
-      const simplifiedTerm = simplifySearchTerm(searchTerm);
+    // Try each search term in order of specificity
+    for (const term of searchTerms) {
+      console.log('Trying search term:', term);
+      const searchData = await performSearch(term, apiKey, rapidApiHost);
       
-      const { data: fallbackData, error: fallbackError } = await supabase.functions.invoke('get-amazon-products', {
-        body: { 
-          searchTerm: simplifiedTerm,
-          priceRange 
+      if (searchData?.data?.products?.length > 0) {
+        // Validate result relevance
+        const isRelevant = validateSearchResult(searchData.data.products[0], searchTerm);
+        if (isRelevant) {
+          console.log('Found relevant result for:', term);
+          return searchData;
         }
-      });
-
-      if (fallbackError) throw fallbackError;
-      if (!fallbackData?.product) return null;
-      
-      return fallbackData.product;
+      }
     }
 
-    return data.product;
+    // If no relevant results found, try simplified search as last resort
+    const simplifiedTerm = simplifySearchTerm(searchTerm);
+    console.log('Trying simplified search term:', simplifiedTerm);
+    return await performSearch(simplifiedTerm, apiKey, rapidApiHost);
+
   } catch (error) {
     console.error('Error in searchWithFallback:', error);
     throw error;
   }
+};
+
+const validateSearchResult = (product: any, searchTerm: string): boolean => {
+  const searchWords = searchTerm.toLowerCase().split(' ')
+    .filter(word => word.length > 3)
+    .filter(word => !['with', 'and', 'for', 'the'].includes(word));
+
+  const titleWords = product.title.toLowerCase().split(' ');
+  
+  // Check if at least 2 significant search terms appear in the title
+  const matchingWords = searchWords.filter(word => titleWords.includes(word));
+  return matchingWords.length >= 2;
+};
+
+const performSearch = async (
+  term: string,
+  apiKey: string,
+  rapidApiHost: string
+) => {
+  const cleanedTerm = cleanSearchTerm(term);
+  
+  console.log('Performing search for:', cleanedTerm);
+
+  const searchResponse = await fetch(
+    `https://${rapidApiHost}/search?query=${encodeURIComponent(cleanedTerm)}&country=US`,
+    {
+      headers: {
+        'X-RapidAPI-Key': apiKey,
+        'X-RapidAPI-Host': rapidApiHost,
+      }
+    }
+  );
+
+  if (!searchResponse.ok) {
+    console.error('Search API error:', searchResponse.status);
+    throw new Error(`Amazon Search API error: ${searchResponse.status}`);
+  }
+
+  return await searchResponse.json();
+};
+
+const simplifySearchTerm = (searchTerm: string): string => {
+  return searchTerm
+    .replace(/\([^)]*\)/g, '')
+    .replace(/\b(?:edition|version|series)\b/gi, '')
+    .replace(/-.*$/, '')
+    .replace(/\d+(?:\s*-\s*\d+)?\s*(?:gb|tb|inch|"|cm|mm)/gi, '')
+    .trim();
 };
