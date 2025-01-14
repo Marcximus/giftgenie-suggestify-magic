@@ -50,19 +50,18 @@ const performSearch = async (
   rapidApiHost: string
 ) => {
   const cleanedTerm = cleanSearchTerm(term);
-  
   console.log('Performing search for:', cleanedTerm);
 
-  const response = await fetch(`https://${rapidApiHost}/search`, {
+  const url = new URL(`https://${rapidApiHost}/search`);
+  url.searchParams.append('query', encodeURIComponent(cleanedTerm));
+  url.searchParams.append('country', 'US');
+
+  const response = await fetch(url.toString(), {
     method: 'GET',
     headers: {
       'X-RapidAPI-Key': apiKey,
       'X-RapidAPI-Host': rapidApiHost,
       'Content-Type': 'application/json'
-    },
-    params: {
-      query: encodeURIComponent(cleanedTerm),
-      country: 'US'
     }
   });
 

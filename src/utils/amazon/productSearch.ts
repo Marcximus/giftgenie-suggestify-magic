@@ -46,16 +46,16 @@ export class ProductSearchService {
       try {
         await waitForRateLimit();
 
-        const response = await fetch(`https://${rapidApiHost}/search`, {
+        const url = new URL(`https://${rapidApiHost}/search`);
+        url.searchParams.append('query', encodeURIComponent(term));
+        url.searchParams.append('country', 'US');
+
+        const response = await fetch(url.toString(), {
           method: 'GET',
           headers: {
             'X-RapidAPI-Key': apiKey,
             'X-RapidAPI-Host': rapidApiHost,
             'Content-Type': 'application/json'
-          },
-          params: {
-            query: encodeURIComponent(term),
-            country: 'US'
           }
         });
         
