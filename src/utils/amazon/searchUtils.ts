@@ -1,4 +1,4 @@
-import { waitForRateLimit, logRequest } from './rateLimiter';
+import { waitForRateLimit } from './rateLimiter';
 import { cleanSearchTerm } from './utils';
 import { toast } from "@/components/ui/use-toast";
 
@@ -74,8 +74,6 @@ const performSearch = async (
 ) => {
   const cleanedTerm = cleanSearchTerm(term);
   console.log('Performing search for:', cleanedTerm);
-
-  logRequest();
 
   const searchResponse = await fetch(
     `https://${rapidApiHost}/search?query=${encodeURIComponent(cleanedTerm)}&country=US`,
