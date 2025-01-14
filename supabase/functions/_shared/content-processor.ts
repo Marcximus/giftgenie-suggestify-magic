@@ -59,7 +59,7 @@ export async function processContent(
             <img 
               src="${product.imageUrl}" 
               alt="${productName}"
-              class="w-64 h-64 object-contain rounded-lg shadow-md" 
+              class="w-96 h-96 object-contain rounded-lg shadow-md" 
               loading="lazy"
             />
           </div>
