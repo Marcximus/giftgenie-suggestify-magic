@@ -8,8 +8,6 @@ import { buildGiftPrompt } from '../_shared/prompt-builder.ts';
 import { analyzePrompt } from '../_shared/prompt-analyzer.ts';
 
 const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
-const MAX_RETRIES = 3;
-const RETRY_DELAY = 1000; // Base delay in milliseconds
 
 serve(async (req) => {
   const startTime = performance.now();
@@ -31,6 +29,7 @@ serve(async (req) => {
       throw new Error('Invalid prompt');
     }
 
+    // Analyze prompt and build enhanced prompt
     const promptAnalysis = analyzePrompt(prompt);
     const enhancedPrompt = buildGiftPrompt(prompt, {
       hasEverything: prompt.toLowerCase().includes('has everything'),
@@ -44,33 +43,27 @@ serve(async (req) => {
 
     console.log('Enhanced prompt:', enhancedPrompt);
 
-    let suggestions = null;
-    let retryCount = 0;
-    let lastError = null;
-
-    while (!suggestions && retryCount < MAX_RETRIES) {
-      try {
-        const response = await fetch('https://api.openai.com/v1/chat/completions', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${OPENAI_API_KEY}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            model: "gpt-4o",
-            messages: [
-              {
-                role: "system",
-                content: `You are a gift suggestion expert. Your task is to provide EXACTLY 8 specific gift suggestions that are perfectly balanced:
+    // Generate suggestions using OpenAI
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${OPENAI_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: "gpt-4o",
+        messages: [
+          {
+            role: "system",
+            content: `You are a gift suggestion expert. Your task is to provide 8 specific gift suggestions that are perfectly balanced:
 
 CRITICAL REQUIREMENTS:
 1. PROVIDE EXACTLY 8 SUGGESTIONS:
-   - 5 suggestions MUST be directly related to the stated interests
-   - 3 suggestions MUST be age-appropriate general gifts
+   - 5 suggestions MUST be directly related to the stated interests (while still taking gender and age into consideration)
+   - 3 suggestions MUST be age-appropriate general gifts (while still taking gender into consideration)
    
 2. ENSURE VARIETY:
-   - No duplicate product categories
-   - Mix of price points within budget
+   - No duplicate product categories (e.g., don't suggest multiple speakers or notebooks)
    
 3. CONSIDER DEMOGRAPHICS:
    - All suggestions must be gender-appropriate
@@ -79,108 +72,76 @@ CRITICAL REQUIREMENTS:
    
 4. BE SPECIFIC:
    - Use exact product names (e.g., "Sony WH-1000XM4 Wireless Headphones" not just "headphones")
-   - Include brand names and model numbers
+   - Include brand names and model numbers when possible
    - Each suggestion must be easily searchable on Amazon
 
-Return ONLY a JSON array of 8 specific gift suggestions. No other text or formatting.
-Example format: ["suggestion1", "suggestion2", "suggestion3", "suggestion4", "suggestion5", "suggestion6", "suggestion7", "suggestion8"]`
-              },
-              { 
-                role: "user", 
-                content: `${enhancedPrompt}\n\nIMPORTANT: Return ONLY a JSON array of 8 strings. No other text.` 
-              }
-            ],
-            temperature: 0.7,
-            max_tokens: 500,
-          }),
-        });
+Return ONLY a JSON array of 8 specific gift suggestions in this format:
+["suggestion1", "suggestion2", "suggestion3", "suggestion4", "suggestion5", "suggestion6", "suggestion7", "suggestion8"]
 
-        if (!response.ok) {
-          throw new Error(`OpenAI API error: ${response.status}`);
-        }
-
-        const data = await response.json();
-        console.log('OpenAI raw response:', data);
-        
-        const content = data.choices[0].message.content.trim();
-        console.log('Content from OpenAI:', content);
-        
-        // Parse and validate the response
-        try {
-          const parsedContent = JSON.parse(content);
-          
-          if (!Array.isArray(parsedContent)) {
-            throw new Error('Invalid response format: expected array');
+DO NOT include any additional text, formatting, or explanations.`
+          },
+          { 
+            role: "user", 
+            content: `${enhancedPrompt}\n\nIMPORTANT: Return ONLY a JSON array of 8 strings. No other text.` 
           }
-          
-          if (parsedContent.length !== 8) {
-            throw new Error('Invalid response format: expected array of 8 suggestions');
-          }
-          
-          if (!parsedContent.every(item => typeof item === 'string' && item.trim().length > 0)) {
-            throw new Error('Invalid response format: all items must be non-empty strings');
-          }
-          
-          suggestions = parsedContent;
-          console.log('Successfully parsed suggestions:', suggestions);
-          break;
-          
-        } catch (e) {
-          console.error('Failed to parse OpenAI response:', e);
-          lastError = e;
-          retryCount++;
-          
-          if (retryCount >= MAX_RETRIES) {
-            throw new Error(`Failed to parse gift suggestions after ${MAX_RETRIES} attempts: ${e.message}`);
-          }
-          
-          // Wait with exponential backoff before retrying
-          await new Promise(resolve => setTimeout(resolve, RETRY_DELAY * Math.pow(2, retryCount - 1)));
-          continue;
-        }
-      } catch (error) {
-        console.error('Error generating suggestions:', error);
-        lastError = error;
-        retryCount++;
-        
-        if (retryCount >= MAX_RETRIES) {
-          throw error;
-        }
-        
-        // Wait with exponential backoff before retrying
-        await new Promise(resolve => setTimeout(resolve, RETRY_DELAY * Math.pow(2, retryCount - 1)));
-      }
-    }
-
-    if (!suggestions) {
-      throw new Error(`Failed to generate valid suggestions after ${MAX_RETRIES} attempts: ${lastError?.message}`);
-    }
-
-    // Process suggestions in parallel batches
-    console.log('Processing suggestions in parallel');
-    const processedProducts = await processSuggestionsInBatches(suggestions);
-    console.log('Processed products:', processedProducts);
-    
-    if (!processedProducts.length) {
-      throw new Error('No products found for suggestions');
-    }
-
-    // Log metrics
-    await supabase.from('api_metrics').insert({
-      endpoint: 'generate-gift-suggestions',
-      duration_ms: Math.round(performance.now() - startTime),
-      status: 'success',
-      cache_hit: false
+        ],
+        temperature: 0.8,
+        max_tokens: 500,
+      }),
     });
 
-    return new Response(
-      JSON.stringify({ suggestions: processedProducts }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    if (!response.ok) {
+      console.error('OpenAI API error:', response.status, await response.text());
+      throw new Error(`OpenAI API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    console.log('OpenAI response:', data);
+    
+    const content = data.choices[0].message.content.trim();
+    console.log('Raw content from OpenAI:', content);
+    
+    try {
+      // Try to parse the content directly
+      const suggestions = JSON.parse(content);
+      
+      if (!Array.isArray(suggestions) || suggestions.length !== 8) {
+        throw new Error('Invalid response format: expected array of 8 suggestions');
+      }
+      
+      if (!suggestions.every(item => typeof item === 'string')) {
+        throw new Error('Invalid response format: all items must be strings');
+      }
+      
+      // Process suggestions in parallel batches
+      console.log('Processing suggestions in parallel');
+      const processedProducts = await processSuggestionsInBatches(suggestions);
+      console.log('Processed products:', processedProducts);
+      
+      if (!processedProducts.length) {
+        throw new Error('No products found for suggestions');
+      }
+
+      // Log metrics
+      await supabase.from('api_metrics').insert({
+        endpoint: 'generate-gift-suggestions',
+        duration_ms: Math.round(performance.now() - startTime),
+        status: 'success',
+        cache_hit: false
+      });
+
+      return new Response(
+        JSON.stringify({ suggestions: processedProducts }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+      
+    } catch (e) {
+      console.error('Failed to parse OpenAI response:', e);
+      throw new Error('Failed to parse gift suggestions from OpenAI response');
+    }
 
   } catch (error) {
     console.error('Error in generate-gift-suggestions function:', error);
-    console.error('Stack trace:', error.stack);
     
     // Log error metrics
     await supabase.from('api_metrics').insert({

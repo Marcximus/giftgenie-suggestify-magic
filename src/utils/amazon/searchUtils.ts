@@ -1,96 +1,27 @@
-import { cleanSearchTerm } from './utils';
+import { supabase } from "@/integrations/supabase/client";
+import type { AmazonProduct } from './types';
 
-export const searchWithFallback = async (
-  searchTerm: string,
-  apiKey: string,
-  rapidApiHost: string
-) => {
-  console.log('Starting search with fallback for:', searchTerm);
-  
-  try {
-    // First try with exact search term
-    const searchData = await performSearch(searchTerm, apiKey, rapidApiHost);
-    
-    if (searchData?.data?.products?.length > 0) {
-      return searchData;
-    }
-
-    // If no results, try with simplified search term
-    const simplifiedTerm = simplifySearchTerm(searchTerm);
-    console.log('Trying simplified search term:', simplifiedTerm);
-    
-    const fallbackData = await performSearch(simplifiedTerm, apiKey, rapidApiHost);
-    
-    if (fallbackData?.data?.products?.length > 0) {
-      return fallbackData;
-    }
-
-    // If still no results, try with fallback terms
-    const fallbackTerms = getFallbackSearchTerms(searchTerm);
-    
-    for (const term of fallbackTerms) {
-      console.log('Trying fallback term:', term);
-      const termData = await performSearch(term, apiKey, rapidApiHost);
-      
-      if (termData?.data?.products?.length > 0) {
-        return termData;
-      }
-    }
-
-    return null;
-  } catch (error) {
-    console.error('Error in searchWithFallback:', error);
-    throw error;
-  }
-};
-
-const performSearch = async (
-  term: string,
-  apiKey: string,
-  rapidApiHost: string
-) => {
-  const cleanedTerm = cleanSearchTerm(term);
-  console.log('Performing search for:', cleanedTerm);
-
-  const url = new URL(`https://${rapidApiHost}/search`);
-  url.searchParams.append('query', cleanedTerm);
-  url.searchParams.append('country', 'US');
-
-  console.log('Final request URL:', url.toString());
-
-  const response = await fetch(url.toString(), {
-    method: 'GET',
-    headers: {
-      'X-RapidAPI-Key': apiKey,
-      'X-RapidAPI-Host': rapidApiHost,
-      'Content-Type': 'application/json'
-    }
-  });
-
-  if (!response.ok) {
-    const errorBody = await response.text();
-    console.error('Search API error:', {
-      status: response.status,
-      statusText: response.statusText,
-      body: errorBody,
-      url: url.toString()
-    });
-    throw new Error(`Amazon Search API error: ${response.status} - ${errorBody}`);
-  }
-
-  return await response.json();
-};
-
-const simplifySearchTerm = (searchTerm: string): string => {
+const cleanSearchTerm = (searchTerm: string): string => {
   return searchTerm
-    .replace(/\([^)]*\)/g, '')
-    .replace(/\b(?:edition|version|series)\b/gi, '')
-    .replace(/-.*$/, '')
-    .replace(/\d+(?:\s*-\s*\d+)?\s*(?:gb|tb|inch|"|cm|mm)/gi, '')
+    .replace(/\([^)]*\)/g, '') // Remove anything in parentheses
+    .replace(/&/g, 'and') // Replace & with 'and'
+    .replace(/[^\w\s-]/g, ' ') // Remove special characters except hyphens
+    .replace(/\s+/g, ' ') // Replace multiple spaces with single space
     .trim();
 };
 
-const getFallbackSearchTerms = (searchTerm: string): string[] => {
+export const simplifySearchTerm = (searchTerm: string): string => {
+  const genericSearchTerm = searchTerm
+    .replace(/\([^)]*\)/g, '') // Remove anything in parentheses
+    .replace(/\b(?:edition|version|series)\b/gi, '') // Remove common suffixes
+    .replace(/-.*$/, '') // Remove anything after a hyphen
+    .replace(/\d+(?:\s*-\s*\d+)?\s*(?:gb|tb|inch|"|cm|mm)/gi, '') // Remove sizes
+    .trim();
+
+  return genericSearchTerm;
+};
+
+export const getFallbackSearchTerms = (searchTerm: string): string[] => {
   const words = searchTerm.split(' ')
     .filter(word => !['with', 'and', 'in', 'for', 'by', 'the', 'a', 'an'].includes(word.toLowerCase()))
     .filter(word => word.length > 2);
@@ -105,4 +36,47 @@ const getFallbackSearchTerms = (searchTerm: string): string[] => {
   }
   
   return [...new Set(searchTerms)];
+};
+
+export const searchWithFallback = async (
+  searchTerm: string,
+  priceRange: string
+): Promise<AmazonProduct | null> => {
+  try {
+    console.log('Searching with term:', searchTerm);
+    
+    const { data, error } = await supabase.functions.invoke('get-amazon-products', {
+      body: { 
+        searchTerm: cleanSearchTerm(searchTerm),
+        priceRange 
+      }
+    });
+
+    if (error) {
+      console.error('Error in searchWithFallback:', error);
+      throw error;
+    }
+
+    if (!data?.product) {
+      console.log('No product found, trying simplified search');
+      const simplifiedTerm = simplifySearchTerm(searchTerm);
+      
+      const { data: fallbackData, error: fallbackError } = await supabase.functions.invoke('get-amazon-products', {
+        body: { 
+          searchTerm: simplifiedTerm,
+          priceRange 
+        }
+      });
+
+      if (fallbackError) throw fallbackError;
+      if (!fallbackData?.product) return null;
+      
+      return fallbackData.product;
+    }
+
+    return data.product;
+  } catch (error) {
+    console.error('Error in searchWithFallback:', error);
+    throw error;
+  }
 };

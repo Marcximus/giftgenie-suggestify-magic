@@ -24,25 +24,23 @@ export async function searchAmazonProduct(
 
   console.log('Searching Amazon for:', searchTerm, { minPrice, maxPrice });
   
-  const url = new URL(`https://${RAPIDAPI_HOST}/search`);
-  // Don't encode searchTerm - URL API will handle it
-  url.searchParams.append('query', searchTerm.trim());
-  url.searchParams.append('country', 'US');
-  url.searchParams.append('category_id', 'aps');
-  url.searchParams.append('sort_by', 'RELEVANCE');
+  const searchParams = new URLSearchParams({
+    query: searchTerm.trim(),
+    country: 'US',
+    category_id: 'aps',
+    sort_by: 'RELEVANCE'
+  });
 
   if (minPrice !== undefined) {
-    url.searchParams.append('min_price', minPrice.toString());
+    searchParams.append('min_price', minPrice.toString());
   }
   if (maxPrice !== undefined) {
-    url.searchParams.append('max_price', maxPrice.toString());
+    searchParams.append('max_price', maxPrice.toString());
   }
 
   try {
-    console.log('Making request to:', url.toString());
-    
     // First, search for the product
-    const searchResponse = await fetch(url.toString(), {
+    const searchResponse = await fetch(`https://${RAPIDAPI_HOST}/search?${searchParams.toString()}`, {
       headers: {
         'X-RapidAPI-Key': apiKey,
         'X-RapidAPI-Host': RAPIDAPI_HOST,
@@ -76,11 +74,7 @@ export async function searchAmazonProduct(
     const asin = product.asin;
 
     // Then, get detailed product information using the ASIN
-    const detailsUrl = new URL(`https://${RAPIDAPI_HOST}/product-details`);
-    detailsUrl.searchParams.append('asin', asin);
-    detailsUrl.searchParams.append('country', 'US');
-
-    const detailsResponse = await fetch(detailsUrl.toString(), {
+    const detailsResponse = await fetch(`https://${RAPIDAPI_HOST}/product-details?asin=${asin}&country=US`, {
       headers: {
         'X-RapidAPI-Key': apiKey,
         'X-RapidAPI-Host': RAPIDAPI_HOST,
