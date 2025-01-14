@@ -1,4 +1,4 @@
-import { cleanSearchTerm } from './utils';
+import { cleanSearchTerm } from './utils.ts';
 
 export const searchWithFallback = async (
   searchTerm: string,
@@ -53,7 +53,8 @@ const performSearch = async (
   console.log('Performing search for:', cleanedTerm);
 
   const url = new URL(`https://${rapidApiHost}/search`);
-  url.searchParams.append('query', encodeURIComponent(cleanedTerm));
+  // Don't encode the term - URL API will handle it
+  url.searchParams.append('query', cleanedTerm);
   url.searchParams.append('country', 'US');
 
   const response = await fetch(url.toString(), {

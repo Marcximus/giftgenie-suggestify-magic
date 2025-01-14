@@ -47,8 +47,11 @@ export class ProductSearchService {
         await waitForRateLimit();
 
         const url = new URL(`https://${rapidApiHost}/search`);
-        url.searchParams.append('query', encodeURIComponent(term));
+        // Don't encode the term - URL API will handle it
+        url.searchParams.append('query', term);
         url.searchParams.append('country', 'US');
+
+        console.log('Making request to:', url.toString());
 
         const response = await fetch(url.toString(), {
           method: 'GET',
