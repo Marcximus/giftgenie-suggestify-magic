@@ -1,5 +1,3 @@
-import { searchAmazonProduct } from './amazon-api.ts';
-
 export async function processContent(
   content: string,
   associateId: string,
@@ -59,7 +57,7 @@ export async function processContent(
               <img 
                 src="${product.imageUrl}" 
                 alt="${productName}"
-                class="w-full h-full object-contain rounded-lg shadow-md" 
+                class="w-80 h-80 sm:w-96 sm:h-96 lg:w-full lg:max-w-2xl object-contain rounded-lg shadow-md mx-auto" 
                 loading="lazy"
               />
             </div>
