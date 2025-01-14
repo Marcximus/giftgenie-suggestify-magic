@@ -185,27 +185,27 @@ const BlogPost = () => {
 
           {/* Related Posts Section */}
           {post.relatedPosts && post.relatedPosts.length > 0 && (
-            <div className="mt-12 pt-8 border-t border-primary/10">
-              <h2 className="text-2xl font-bold mb-6 bg-gradient-to-r from-primary/80 to-primary bg-clip-text text-transparent">
+            <div className="mt-12 pt-8 border-t border-primary/10 mb-20">
+              <h2 className="text-2xl font-bold mb-6 animate-pulse-text bg-gradient-to-r from-purple-500 via-blue-500 to-purple-500 bg-clip-text text-transparent">
                 More Gift Ideas
               </h2>
-              <div className="grid gap-4">
+              <div className="grid gap-3">
                 {post.relatedPosts.map((relatedPost: any) => (
                   <div 
                     key={relatedPost.slug}
-                    className="group relative overflow-hidden rounded-lg bg-gradient-to-r from-background to-muted/50 border border-primary/10 hover:border-primary/30 transition-all duration-300"
+                    className="group relative overflow-hidden rounded-md bg-gradient-to-r from-background to-muted/30 border border-primary/5 hover:border-primary/20 transition-all duration-300 shadow-sm hover:shadow-md"
                   >
                     <Button
                       variant="ghost"
-                      className="w-full text-left p-4 hover:bg-primary/5"
+                      className="w-full text-left py-2.5 px-4 hover:bg-primary/5"
                       onClick={() => navigate(`/blog/post/${relatedPost.slug}`)}
                     >
-                      <h3 className="font-semibold text-lg group-hover:text-primary transition-colors">
+                      <h3 className="font-medium text-base group-hover:text-primary transition-colors line-clamp-1">
                         {relatedPost.title}
                       </h3>
                     </Button>
-                    <div className="absolute inset-y-0 right-0 flex items-center pr-4 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <ChevronLeft className="w-4 h-4 rotate-180 text-primary" />
+                    <div className="absolute inset-y-0 right-0 flex items-center pr-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <ChevronLeft className="w-3.5 h-3.5 rotate-180 text-primary" />
                     </div>
                   </div>
                 ))}
