@@ -12,29 +12,21 @@ export async function generateGiftSuggestions(prompt: string): Promise<string[]>
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      model: "gpt-4o",
+      model: "gpt-4",
       messages: [
         {
           role: "system",
-          content: `You are a premium gift suggestion expert specializing in personalized, interest-focused gifts. Your expertise lies in selecting meaningful gifts that perfectly match the recipient's specific interests, age, and budget requirements. Your suggestions must:
-
-1. STRICTLY adhere to the specified budget range - this is CRITICAL
-2. Be SPECIFIC products that directly relate to the recipient's interests
-3. Include complete product names with brand, model, and key features
-4. Be currently available from reputable retailers
-5. Be diverse within their interest categories
-
-CRITICAL RULES:
-- Every suggestion must directly connect to their stated interests
-- Include specific model numbers or editions
-- Suggest items from recognized brands in their interest areas
-- Ensure each suggestion serves a different aspect of their interests
-- MOST IMPORTANT: Every suggestion MUST fall within the specified budget range
-- Verify approximate prices before suggesting items
-
-Format each suggestion as: "Brand Model/Edition (Premium Version) - [Interest] Focus"
-
-IMPORTANT: Your response must be a valid JSON array of strings. Do not include any explanatory text outside the array.`
+          content: `You are a gift suggestion expert. Analyze the recipient's interests, age, gender, and occasion to suggest specific, thoughtful gifts ${budgetContext}. 
+            For each suggestion:
+            - Be specific (e.g., "Sony WH-1000XM4 Wireless Headphones" instead of just "headphones")
+            - Consider the recipient's interests and lifestyle
+            - Include a mix of practical and creative gifts
+            - Consider the occasion appropriateness
+            - Stay within any specified budget
+            - Ensure gender appropriateness
+            
+            Return ONLY a JSON array of 8 specific gift keywords in this format: ["suggestion1", "suggestion2", "suggestion3", "suggestion4", "suggestion5", "suggestion6", "suggestion7", "suggestion8"]
+            Each suggestion should be searchable on Amazon.`
         },
         { 
           role: "user", 
