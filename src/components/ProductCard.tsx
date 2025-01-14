@@ -26,28 +26,70 @@ export const simplifyTitle = (title: string): string => {
     .replace(/\s{2,}/g, ' ') // Remove extra spaces
     .trim();
 
-  // Extract the main part of the title by focusing on the product name
-  const parts = cleanTitle.split(/[–—-]|\(|\)|,/); // Split on dashes, parentheses, commas
+  // Split on common delimiters
+  const parts = cleanTitle.split(/[|–—\-,]|\s*\(|\)\s*/).map(part => part.trim());
   
-  // Get the first part as it usually contains the main product name
-  let mainTitle = parts[0].trim();
-  
-  // If the first part is too short (less than 3 words), try to find a better part
-  if (mainTitle.split(' ').length < 3) {
-    // Look for a part that has 3-8 words and doesn't contain common suffixes
-    mainTitle = parts.find(part => {
-      const words = part.trim().split(' ');
-      return words.length >= 3 && 
-             words.length <= 8 && 
-             !part.toLowerCase().includes('with') &&
-             !part.toLowerCase().includes('featuring') &&
-             !part.toLowerCase().includes('includes');
-    }) || mainTitle;
+  // Filter out empty parts and common marketing phrases
+  const meaningfulParts = parts.filter(part => {
+    const lower = part.toLowerCase();
+    return part.length > 0 &&
+           !lower.includes('click here') &&
+           !lower.includes('buy now') &&
+           !lower.includes('limited time') &&
+           !lower.includes('best seller') &&
+           !lower.includes('on sale');
+  });
+
+  // Try to find the most descriptive part
+  let bestPart = meaningfulParts[0];
+  let maxScore = 0;
+
+  for (const part of meaningfulParts) {
+    const words = part.split(' ');
+    // Score based on number of words and presence of key product terms
+    let score = words.length;
+    
+    // Boost score for parts containing product type words
+    const productTypes = ['bag', 'watch', 'phone', 'camera', 'book', 'game', 'set', 'kit'];
+    if (productTypes.some(type => part.toLowerCase().includes(type))) {
+      score += 3;
+    }
+    
+    // Boost score for brand names followed by product type
+    if (/^[A-Z][a-zA-Z]+ /.test(part) && words.length >= 3) {
+      score += 2;
+    }
+
+    if (score > maxScore) {
+      maxScore = score;
+      bestPart = part;
+    }
+  }
+
+  // If the best part is too short, try combining with next meaningful part
+  if (bestPart.split(' ').length < 3 && meaningfulParts.length > 1) {
+    const combinedTitle = `${bestPart} ${meaningfulParts[1]}`.trim();
+    if (combinedTitle.split(' ').length <= 8) {
+      bestPart = combinedTitle;
+    }
   }
 
   // Ensure the title isn't too long
-  const words = mainTitle.split(' ');
-  return words.slice(0, 8).join(' ').trim();
+  const words = bestPart.split(' ');
+  const finalTitle = words.slice(0, 8).join(' ');
+
+  // Add product type if missing
+  const lower = finalTitle.toLowerCase();
+  const commonTypes = ['bag', 'watch', 'phone', 'camera', 'book', 'game', 'set', 'kit'];
+  if (!commonTypes.some(type => lower.includes(type)) && meaningfulParts.length > 1) {
+    for (const part of meaningfulParts.slice(1)) {
+      if (commonTypes.some(type => part.toLowerCase().includes(type))) {
+        return `${finalTitle} ${part}`.split(' ').slice(0, 8).join(' ');
+      }
+    }
+  }
+
+  return finalTitle;
 };
 
 const ProductCardComponent = ({ 
