@@ -10,10 +10,85 @@ import { buildGiftPrompt } from '../_shared/prompt-builder.ts';
 import { filterProducts } from '../_shared/product-filter.ts';
 import { analyzePrompt } from '../_shared/prompt-analyzer.ts';
 
+interface AmazonProduct {
+  title: string;
+  image_url?: string;
+  price?: number;
+  rating?: number;
+  total_ratings?: number;
+  url?: string;
+  asin?: string;
+}
+
+async function searchAmazonProducts(keyword: string): Promise<AmazonProduct | null> {
+  console.log('Searching with term:', keyword);
+  
+  try {
+    const apiKey = Deno.env.get('RAPIDAPI_KEY');
+    if (!apiKey) {
+      throw new Error('RAPIDAPI_KEY not configured');
+    }
+
+    const url = `https://real-time-amazon-data.p.rapidapi.com/search?query=${encodeURIComponent(keyword)}&country=US`;
+    const response = await fetch(url, {
+      headers: {
+        'X-RapidAPI-Key': apiKey,
+        'X-RapidAPI-Host': 'real-time-amazon-data.p.rapidapi.com'
+      }
+    });
+
+    if (!response.ok) {
+      console.error(`API error for keyword ${keyword}:`, response.status);
+      return null;
+    }
+
+    const data = await response.json();
+    
+    if (!data?.data?.products?.[0]) {
+      console.log('No product found, trying simplified search');
+      // Try a simplified search by taking the first few words
+      const simplifiedKeyword = keyword.split(' ').slice(0, 3).join(' ');
+      if (simplifiedKeyword !== keyword) {
+        return searchAmazonProducts(simplifiedKeyword);
+      }
+      return null;
+    }
+
+    const product = data.data.products[0];
+    
+    // Extract and validate required fields
+    const formattedProduct: AmazonProduct = {
+      title: product.product_title || keyword,
+      image_url: product.product_photo || null,
+      price: product.product_price ? 
+        parseFloat(product.product_price.replace(/[^0-9.]/g, '')) : 
+        undefined,
+      rating: product.product_star_rating ? 
+        parseFloat(product.product_star_rating) : 
+        undefined,
+      total_ratings: product.product_num_ratings ? 
+        parseInt(product.product_num_ratings.toString(), 10) : 
+        undefined,
+      url: product.product_url,
+      asin: product.asin
+    };
+
+    // Validate minimum required fields
+    if (!formattedProduct.title || (!formattedProduct.image_url && !formattedProduct.asin)) {
+      console.error(`Missing required fields for keyword ${keyword}`);
+      return null;
+    }
+
+    return formattedProduct;
+  } catch (error) {
+    console.error(`Error searching for keyword ${keyword}:`, error);
+    return null;
+  }
+}
+
 serve(async (req) => {
   const startTime = performance.now();
   
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -32,36 +107,19 @@ serve(async (req) => {
     console.log('Processing request with prompt:', prompt);
 
     if (!prompt || typeof prompt !== 'string' || prompt.trim().length < 3) {
-      await supabase.from('api_metrics').insert({
-        endpoint: 'generate-gift-suggestions',
-        duration_ms: Math.round(performance.now() - startTime),
-        status: 'error',
-        error_message: 'Invalid prompt',
-        cache_hit: false
-      });
-
-      return new Response(
-        JSON.stringify({ 
-          error: 'Invalid prompt',
-          details: 'Please provide a more specific gift request'
-        }),
-        { 
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
-      );
+      throw new Error('Invalid prompt');
     }
 
     // Analyze the prompt first
     const promptAnalysis = analyzePrompt(prompt);
     console.log('Prompt analysis:', promptAnalysis);
 
-    // Default budget range for general queries
     const minBudget = promptAnalysis.budget.min || 50;
     const maxBudget = promptAnalysis.budget.max || 200;
 
     const enhancedPrompt = buildGiftPrompt(prompt, {
-      hasEverything: prompt.toLowerCase().includes('has everything') || prompt.toLowerCase().includes('owns everything'),
+      hasEverything: prompt.toLowerCase().includes('has everything') || 
+                     prompt.toLowerCase().includes('owns everything'),
       isMale: promptAnalysis.gender === 'male',
       isFemale: promptAnalysis.gender === 'female',
       minBudget,
@@ -98,18 +156,40 @@ serve(async (req) => {
 
     console.log('Raw suggestions:', suggestions);
 
-    const productPromises = suggestions.map((suggestion, index) => 
-      new Promise<GiftSuggestion>(async (resolve) => {
-        await new Promise(r => setTimeout(r, index * 100)); // Reduced delay
-        const product = await processGiftSuggestion(suggestion);
-        resolve(product);
-      })
-    );
+    // Process suggestions in parallel with batching
+    console.log('Processing suggestions in parallel');
+    const batchSize = 3;
+    const batches = [];
+    
+    for (let i = 0; i < suggestions.length; i += batchSize) {
+      const batch = suggestions.slice(i, i + batchSize);
+      batches.push(batch);
+    }
 
-    const products = await Promise.all(productPromises);
-    console.log('Processed products:', products);
+    const processedSuggestions: GiftSuggestion[] = [];
+    
+    for (const batch of batches) {
+      console.log(`Processing batch of ${batch.length} suggestions`);
+      const batchResults = await Promise.all(
+        batch.map(async (suggestion) => {
+          try {
+            return await processGiftSuggestion(suggestion);
+          } catch (error) {
+            console.error('Error processing suggestion:', error);
+            return null;
+          }
+        })
+      );
+      
+      processedSuggestions.push(...batchResults.filter((result): result is GiftSuggestion => result !== null));
+      
+      // Add a small delay between batches to avoid rate limits
+      if (batches.indexOf(batch) < batches.length - 1) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+    }
 
-    const filteredProducts = filterProducts(products, minBudget, maxBudget);
+    const filteredProducts = filterProducts(processedSuggestions, minBudget, maxBudget);
     console.log('Filtered products:', filteredProducts);
 
     // Log successful processing
@@ -121,7 +201,7 @@ serve(async (req) => {
     });
 
     return new Response(
-      JSON.stringify({ suggestions: filteredProducts.length > 0 ? filteredProducts : products }),
+      JSON.stringify({ suggestions: filteredProducts.length > 0 ? filteredProducts : processedSuggestions }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
