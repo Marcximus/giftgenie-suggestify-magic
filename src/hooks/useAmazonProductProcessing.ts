@@ -2,57 +2,19 @@ import { useAmazonProducts } from './useAmazonProducts';
 import { useBatchProcessor } from './useBatchProcessor';
 import { GiftSuggestion } from '@/types/suggestions';
 import { useQueryClient } from '@tanstack/react-query';
-import { updateSearchFrequency, getPopularSearches } from '@/utils/searchFrequencyUtils';
+import { updateSearchFrequency } from '@/utils/searchFrequencyUtils';
 import { generateCustomDescription } from '@/utils/descriptionUtils';
 import { logApiMetrics } from '@/utils/metricsUtils';
 import { toast } from "@/components/ui/use-toast";
 
-// Increased from 4 to 8 for better performance
 const BATCH_SIZE = 8;
-// Keep 500ms delay to avoid rate limit issues
-const STAGGER_DELAY = 500;
-// Increased from 2 to 4 maximum concurrent requests
+const STAGGER_DELAY = 200; // Reduced delay
 const MAX_CONCURRENT = 4;
 
 export const useAmazonProductProcessing = () => {
   const { getAmazonProduct } = useAmazonProducts();
   const { processBatch } = useBatchProcessor<GiftSuggestion, GiftSuggestion>();
   const queryClient = useQueryClient();
-
-  // Request queue implementation
-  const requestQueue: Array<() => Promise<void>> = [];
-  let isProcessing = false;
-
-  const processQueue = async () => {
-    if (isProcessing || requestQueue.length === 0) return;
-    
-    isProcessing = true;
-    while (requestQueue.length > 0) {
-      const request = requestQueue.shift();
-      if (request) {
-        await request();
-        // Add delay between queue processing
-        await new Promise(resolve => setTimeout(resolve, STAGGER_DELAY));
-      }
-    }
-    isProcessing = false;
-  };
-
-  const warmCache = async () => {
-    try {
-      const popularSearches = await getPopularSearches();
-      if (popularSearches) {
-        // Process popular searches sequentially to avoid rate limits
-        for (const { search_term } of popularSearches) {
-          await getAmazonProduct(search_term, '');
-          // Add delay between cache warming requests
-          await new Promise(resolve => setTimeout(resolve, STAGGER_DELAY));
-        }
-      }
-    } catch (error) {
-      console.error('Error warming cache:', error);
-    }
-  };
 
   const processGiftSuggestion = async (suggestion: GiftSuggestion): Promise<GiftSuggestion> => {
     const startTime = performance.now();
@@ -67,17 +29,11 @@ export const useAmazonProductProcessing = () => {
         return cachedData as GiftSuggestion;
       }
 
-      await updateSearchFrequency(suggestion.title);
-
-      console.log('Processing suggestion:', suggestion.title);
-      
-      // Parallel processing of product data and custom description
+      // Run these operations in parallel
       const [amazonProduct, customDescription] = await Promise.all([
         getAmazonProduct(suggestion.title, suggestion.priceRange),
-        generateCustomDescription(
-          suggestion.title,
-          suggestion.description
-        )
+        generateCustomDescription(suggestion.title, suggestion.description),
+        updateSearchFrequency(suggestion.title)
       ]);
       
       if (amazonProduct && amazonProduct.asin) {
@@ -102,69 +58,38 @@ export const useAmazonProductProcessing = () => {
       return suggestion;
     } catch (error) {
       console.error('Error processing suggestion:', error);
-      
-      if (error.status === 429) {
-        const retryAfter = error.retryAfter || 30;
-        toast({
-          title: "Rate limit reached",
-          description: `Please wait ${retryAfter} seconds before trying again`,
-          variant: "destructive",
-        });
-        // Wait for the specified time before continuing
-        await new Promise(resolve => setTimeout(resolve, retryAfter * 1000));
-      }
-      
       await logApiMetrics('amazon-product-processing', startTime, 'error', error.message);
       return suggestion;
     }
   };
 
   const processSuggestions = async (suggestions: GiftSuggestion[]) => {
-    console.log('Processing suggestions with improved rate limiting');
-    
-    // Start cache warming in the background with reduced aggressiveness
-    setTimeout(() => warmCache().catch(console.error), STAGGER_DELAY * 2);
+    console.log('Processing suggestions with optimized settings');
     
     const results: GiftSuggestion[] = [];
     const processingPromises: Promise<void>[] = [];
     
-    // Process suggestions in smaller batches with better spacing
+    // Process suggestions in parallel batches
     for (let i = 0; i < suggestions.length; i += BATCH_SIZE) {
       const batch = suggestions.slice(i, i + BATCH_SIZE);
-      console.log(`Processing batch ${i / BATCH_SIZE + 1}`);
       
-      // Process each suggestion in the batch with controlled concurrency
-      const batchPromises = batch.map((suggestion, index) => 
-        new Promise<void>(async (resolve) => {
-          // Add to queue instead of processing immediately
-          requestQueue.push(async () => {
-            try {
-              const result = await processGiftSuggestion(suggestion);
-              results.push(result);
-            } catch (error) {
-              console.error('Error in request queue:', error);
-            }
-            resolve();
-          });
-          
-          // Start queue processing if not already running
-          if (!isProcessing) {
-            processQueue().catch(console.error);
-          }
-        })
-      );
+      const batchPromises = batch.map(async (suggestion) => {
+        try {
+          const result = await processGiftSuggestion(suggestion);
+          results.push(result);
+        } catch (error) {
+          console.error('Error in batch processing:', error);
+        }
+      });
       
       processingPromises.push(...batchPromises);
       
-      // Wait longer between batches to avoid rate limits
       if (i + BATCH_SIZE < suggestions.length) {
-        await new Promise(r => setTimeout(r, STAGGER_DELAY * 2));
+        await new Promise(r => setTimeout(r, STAGGER_DELAY));
       }
     }
     
-    // Wait for all processing to complete
     await Promise.all(processingPromises);
-    
     return results;
   };
 
