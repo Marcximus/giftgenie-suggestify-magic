@@ -47,7 +47,6 @@ export class ProductSearchService {
         await waitForRateLimit();
 
         const url = new URL(`https://${rapidApiHost}/search`);
-        // Don't encode the term - URL API will handle it
         url.searchParams.append('query', term);
         url.searchParams.append('country', 'US');
 
@@ -79,7 +78,14 @@ export class ProductSearchService {
         }
 
         if (!response.ok) {
-          throw new Error(`Search failed: ${response.status}`);
+          const errorBody = await response.text();
+          console.error('Search API error:', {
+            status: response.status,
+            statusText: response.statusText,
+            body: errorBody,
+            url: url.toString()
+          });
+          throw new Error(`Search failed: ${response.status} - ${errorBody}`);
         }
 
         const data = await response.json();

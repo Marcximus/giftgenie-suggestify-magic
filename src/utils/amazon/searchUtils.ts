@@ -1,4 +1,4 @@
-import { cleanSearchTerm } from './utils.ts';
+import { cleanSearchTerm } from './utils';
 
 export const searchWithFallback = async (
   searchTerm: string,
@@ -53,9 +53,10 @@ const performSearch = async (
   console.log('Performing search for:', cleanedTerm);
 
   const url = new URL(`https://${rapidApiHost}/search`);
-  // Don't encode the term - URL API will handle it
   url.searchParams.append('query', cleanedTerm);
   url.searchParams.append('country', 'US');
+
+  console.log('Final request URL:', url.toString());
 
   const response = await fetch(url.toString(), {
     method: 'GET',
@@ -67,8 +68,14 @@ const performSearch = async (
   });
 
   if (!response.ok) {
-    console.error('Search API error:', response.status);
-    throw new Error(`Amazon Search API error: ${response.status}`);
+    const errorBody = await response.text();
+    console.error('Search API error:', {
+      status: response.status,
+      statusText: response.statusText,
+      body: errorBody,
+      url: url.toString()
+    });
+    throw new Error(`Amazon Search API error: ${response.status} - ${errorBody}`);
   }
 
   return await response.json();
