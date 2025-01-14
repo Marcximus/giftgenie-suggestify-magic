@@ -15,6 +15,7 @@ import { BlogPostContent } from "./form/BlogPostContent";
 import { BlogPostSEO } from "./form/BlogPostSEO";
 import { BlogPostFormData, BlogPostData } from "./types/BlogPostTypes";
 import { Input } from "@/components/ui/input";
+import { Wand2 } from "lucide-react";
 
 interface BlogPostFormProps {
   initialData?: BlogPostData;
@@ -22,6 +23,7 @@ interface BlogPostFormProps {
 
 const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isGeneratingAltText, setIsGeneratingAltText] = useState(false);
   const [activeTab, setActiveTab] = useState("edit");
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -45,6 +47,51 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
       related_posts: [],
     },
   });
+
+  const generateAltText = async () => {
+    const title = form.getValues('title');
+    if (!title) {
+      toast({
+        title: "Error",
+        description: "Please provide a title first",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsGeneratingAltText(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-blog-image', {
+        body: { 
+          title,
+          prompt: "Generate a descriptive alt text for this blog post's featured image" 
+        }
+      });
+
+      if (error) throw error;
+
+      if (data?.altText) {
+        form.setValue('image_alt_text', data.altText, { 
+          shouldDirty: true,
+          shouldTouch: true,
+          shouldValidate: true 
+        });
+        toast({
+          title: "Success",
+          description: "Alt text generated successfully",
+        });
+      }
+    } catch (error: any) {
+      console.error('Generation error:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to generate alt text",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGeneratingAltText(false);
+    }
+  };
 
   const onSubmit = async (data: BlogPostFormData, isDraft: boolean = false) => {
     setIsSubmitting(true);
@@ -170,7 +217,19 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
               name="image_alt_text"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Image Alt Text</FormLabel>
+                  <FormLabel className="flex items-center justify-between">
+                    Image Alt Text
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={generateAltText}
+                      disabled={isGeneratingAltText}
+                    >
+                      <Wand2 className="w-4 h-4 mr-2" />
+                      {isGeneratingAltText ? "Generating..." : "Generate Alt Text"}
+                    </Button>
+                  </FormLabel>
                   <FormControl>
                     <Input 
                       {...field} 

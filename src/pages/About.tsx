@@ -9,7 +9,7 @@ import { FAQSection } from "@/components/about/FAQSection";
 
 const About = () => {
   return (
-    <div className="container mx-auto px-4 sm:px-6 py-6 sm:py-8 max-w-4xl bg-[#F1F0FB]">
+    <div className="container mx-auto px-4 sm:px-6 py-6 sm:py-8 max-w-4xl bg-[#F1F0FB] mb-24">
       <div className="prose prose-sm sm:prose-base max-w-none">
         <div className="space-y-8">
           <WelcomeSection />
