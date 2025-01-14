@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { buildBlogPrompt } from "./openaiPrompt.ts";
+import { processContent } from "../_shared/content-processor.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -15,7 +16,6 @@ serve(async (req) => {
     const { title } = await req.json();
     console.log('Generating blog post for title:', title);
 
-    // Extract number of items from title (e.g., "Top 10" -> 10)
     const numItemsMatch = title.match(/\b(\d+)\b/);
     const numItems = numItemsMatch ? parseInt(numItemsMatch[1]) : 5;
     console.log('Number of items to generate:', numItems);
@@ -46,16 +46,26 @@ serve(async (req) => {
     }
 
     const data = await response.json();
-    const content = data.choices[0].message.content;
+    const rawContent = data.choices[0].message.content;
+    console.log('Generated raw content:', rawContent);
 
-    // Log the generated content for debugging
-    console.log('Generated content:', { content });
+    // Process content to add Amazon product data
+    const associateId = Deno.env.get('AMAZON_ASSOCIATE_ID');
+    const rapidApiKey = Deno.env.get('RAPIDAPI_KEY');
+
+    if (!associateId || !rapidApiKey) {
+      throw new Error('Missing required API keys');
+    }
+
+    console.log('Processing content with Amazon data...');
+    const { content, affiliateLinks } = await processContent(rawContent, associateId, rapidApiKey);
+    console.log('Content processed successfully:', {
+      contentLength: content.length,
+      numAffiliateLinks: affiliateLinks.length
+    });
 
     return new Response(
-      JSON.stringify({ 
-        content,
-        affiliateLinks: [] // We'll implement this later if needed
-      }),
+      JSON.stringify({ content, affiliateLinks }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 

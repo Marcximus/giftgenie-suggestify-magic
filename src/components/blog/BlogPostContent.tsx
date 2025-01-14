@@ -18,10 +18,12 @@ export const BlogPostContent = ({ post }: BlogPostContentProps) => {
                    [&>img]:h-auto [&>img]:aspect-square
                    [&>img]:!object-contain [&>img]:!rounded-lg [&>img]:!shadow-md
                    [&>img]:!mx-auto [&>img]:!my-4 [&>img]:sm:!my-6
-                   [&_a.amazon-button]:!text-white [&_a.amazon-button]:no-underline
-                   [&_h3]:mt-6 [&_h3]:mb-3 [&_h3]:text-left
-                   [&_div.flex]:mt-4 [&_div.flex]:mb-4
-                   [&_div.flex]:justify-center [&_div.flex]:w-full
+                   [&_a.amazon-button]:inline-block [&_a.amazon-button]:px-4 [&_a.amazon-button]:py-2 
+                   [&_a.amazon-button]:bg-[#F97316] [&_a.amazon-button]:hover:bg-[#F97316]/90 
+                   [&_a.amazon-button]:text-white [&_a.amazon-button]:rounded-md 
+                   [&_a.amazon-button]:transition-colors [&_a.amazon-button]:text-sm
+                   [&_a.amazon-button]:no-underline [&_a.amazon-button]:font-medium
+                   [&_div.flex]:justify-center [&_div.flex]:my-4 [&_div.flex]:w-full
                    [&_img]:max-w-[400px] [&_img]:sm:max-w-[500px] [&_img]:lg:max-w-[600px]
                    [&_img]:mx-auto [&_img]:rounded-lg [&_img]:shadow-md
                    [&_img]:object-contain [&_img]:my-4 [&_img]:sm:my-6"
