@@ -8,3 +8,9 @@ verify_jwt = false
 
 [functions.get-amazon-associate-id]
 verify_jwt = false
+
+[functions.generate-blog-post]
+verify_jwt = false
+
+[functions.generate-blog-image]
+verify_jwt = false
