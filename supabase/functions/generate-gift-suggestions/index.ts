@@ -85,8 +85,8 @@ DO NOT include any additional text, formatting, or explanations.`
             content: `${enhancedPrompt}\n\nIMPORTANT: Return ONLY a JSON array of 8 strings. No other text.` 
           }
         ],
-        temperature: 0.8,
-        max_tokens: 500,
+        temperature: 0.7,
+        max_tokens: 1000,
       }),
     });
 
@@ -96,25 +96,36 @@ DO NOT include any additional text, formatting, or explanations.`
     }
 
     const data = await response.json();
-    console.log('OpenAI response:', data);
+    console.log('OpenAI response:', JSON.stringify(data, null, 2));
     
     const content = data.choices[0].message.content.trim();
     console.log('Raw content from OpenAI:', content);
     
+    let suggestions;
     try {
       // Try to parse the content directly
-      const suggestions = JSON.parse(content);
+      suggestions = JSON.parse(content);
       
-      if (!Array.isArray(suggestions) || suggestions.length !== 8) {
+      if (!Array.isArray(suggestions)) {
+        console.error('Invalid response format: not an array', suggestions);
+        throw new Error('Invalid response format: expected array');
+      }
+      
+      if (suggestions.length !== 8) {
+        console.error('Invalid response format: wrong length', suggestions.length);
         throw new Error('Invalid response format: expected array of 8 suggestions');
       }
       
-      if (!suggestions.every(item => typeof item === 'string')) {
-        throw new Error('Invalid response format: all items must be strings');
+      if (!suggestions.every(item => typeof item === 'string' && item.trim().length > 0)) {
+        console.error('Invalid response format: invalid items', suggestions);
+        throw new Error('Invalid response format: all items must be non-empty strings');
       }
       
+      // Clean up suggestions
+      suggestions = suggestions.map(s => s.trim());
+      
       // Process suggestions in parallel batches
-      console.log('Processing suggestions in parallel');
+      console.log('Processing suggestions in parallel:', suggestions);
       const processedProducts = await processSuggestionsInBatches(suggestions);
       console.log('Processed products:', processedProducts);
       
@@ -137,11 +148,13 @@ DO NOT include any additional text, formatting, or explanations.`
       
     } catch (e) {
       console.error('Failed to parse OpenAI response:', e);
-      throw new Error('Failed to parse gift suggestions from OpenAI response');
+      console.error('Content that failed to parse:', content);
+      throw new Error(`Failed to parse gift suggestions: ${e.message}`);
     }
 
   } catch (error) {
     console.error('Error in generate-gift-suggestions function:', error);
+    console.error('Stack trace:', error.stack);
     
     // Log error metrics
     await supabase.from('api_metrics').insert({
@@ -155,7 +168,8 @@ DO NOT include any additional text, formatting, or explanations.`
     return new Response(
       JSON.stringify({ 
         error: 'Failed to generate gift suggestions',
-        details: error.message
+        details: error.message,
+        timestamp: new Date().toISOString()
       }),
       {
         status: 500,
