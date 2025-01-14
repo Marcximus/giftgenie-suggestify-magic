@@ -38,8 +38,8 @@ export const useAmazonProducts = () => {
       
       const product = await withRetry(
         () => searchWithFallback(searchTerm, priceRange),
-        2, // Reduced retries
-        1000 // Reduced delay
+        2,
+        1000
       );
       
       if (product) {
