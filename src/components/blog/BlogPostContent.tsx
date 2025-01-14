@@ -21,7 +21,10 @@ export const BlogPostContent = ({ post }: BlogPostContentProps) => {
                    [&_a.amazon-button]:!text-white [&_a.amazon-button]:no-underline
                    [&_h3]:mt-6 [&_h3]:mb-3 [&_h3]:text-left
                    [&_div.flex]:mt-4 [&_div.flex]:mb-4
-                   [&_div.flex]:justify-center [&_div.flex]:w-full"
+                   [&_div.flex]:justify-center [&_div.flex]:w-full
+                   [&_img]:max-w-[400px] [&_img]:sm:max-w-[500px] [&_img]:lg:max-w-[600px]
+                   [&_img]:mx-auto [&_img]:rounded-lg [&_img]:shadow-md
+                   [&_img]:object-contain [&_img]:my-4 [&_img]:sm:my-6"
         dangerouslySetInnerHTML={{ __html: post.content }}
       />
     </div>

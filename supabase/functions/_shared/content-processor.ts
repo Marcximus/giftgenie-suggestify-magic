@@ -57,7 +57,8 @@ export async function processContent(
 
         // Replace the original product section with the new one
         const sectionRegex = new RegExp(
-          `<h3>${productName}</h3>[^]*?(?=<h3>|$)`
+          `<h3>${productName}</h3>[\\s\\S]*?(?=<h3>|$)`,
+          'g'
         );
         content = content.replace(sectionRegex, productSection);
       } else {
