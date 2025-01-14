@@ -1,38 +1,73 @@
-const RATE_LIMIT_WINDOW = 60000; // 1 minute
-const MAX_REQUESTS_PER_WINDOW = 3; // Reduced from 5
-const requestLog: number[] = [];
+interface RateLimitConfig {
+  REQUESTS_PER_MINUTE: number;
+  CONCURRENT_REQUESTS: number;
+  COOLING_PERIOD: number;
+  WARNING_THRESHOLD: number;
+}
 
-export const isRateLimited = () => {
-  const now = Date.now();
-  while (requestLog.length && requestLog[0] < now - RATE_LIMIT_WINDOW) {
-    requestLog.shift();
+const RATE_LIMITS: RateLimitConfig = {
+  REQUESTS_PER_MINUTE: 4,      // Allow 4 requests per minute
+  CONCURRENT_REQUESTS: 2,      // 2 concurrent requests
+  COOLING_PERIOD: 3000,        // 3 second cooling after warnings
+  WARNING_THRESHOLD: 3         // Start cooling after 3 429s
+};
+
+export class RateLimiter {
+  private requestLog: number[] = [];
+  private warningCount = 0;
+  private activeRequests = 0;
+  private lastCoolingTime = 0;
+
+  private isInCoolingPeriod(): boolean {
+    return Date.now() - this.lastCoolingTime < RATE_LIMITS.COOLING_PERIOD;
   }
-  return requestLog.length >= MAX_REQUESTS_PER_WINDOW;
-};
 
-export const logRequest = () => {
-  requestLog.push(Date.now());
-};
+  async acquireSlot(): Promise<boolean> {
+    // Clean old requests
+    const now = Date.now();
+    this.requestLog = this.requestLog.filter(time => 
+      now - time < 60000
+    );
+
+    // Check if we can make a request
+    if (
+      this.activeRequests >= RATE_LIMITS.CONCURRENT_REQUESTS ||
+      this.requestLog.length >= RATE_LIMITS.REQUESTS_PER_MINUTE ||
+      this.isInCoolingPeriod()
+    ) {
+      return false;
+    }
+
+    this.activeRequests++;
+    this.requestLog.push(now);
+    return true;
+  }
+
+  releaseSlot(): void {
+    this.activeRequests = Math.max(0, this.activeRequests - 1);
+  }
+
+  async handleResponse(status: number): Promise<void> {
+    if (status === 429) {
+      this.warningCount++;
+      if (this.warningCount >= RATE_LIMITS.WARNING_THRESHOLD) {
+        this.lastCoolingTime = Date.now();
+        this.warningCount = 0;
+        await new Promise(resolve => setTimeout(resolve, RATE_LIMITS.COOLING_PERIOD));
+      }
+    } else {
+      this.warningCount = Math.max(0, this.warningCount - 1);
+    }
+  }
+
+  static getInstance(): RateLimiter {
+    if (!RateLimiter.instance) {
+      RateLimiter.instance = new RateLimiter();
+    }
+    return RateLimiter.instance;
+  }
+
+  private static instance: RateLimiter;
+}
 
 export const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
-
-export const calculateBackoffDelay = (
-  retryCount: number,
-  baseDelay = 2000,
-  maxDelay = 30000
-) => {
-  const delay = Math.min(
-    baseDelay * Math.pow(2, retryCount),
-    maxDelay
-  );
-  console.log(`Rate limited, waiting ${delay}ms before retry`);
-  return delay;
-};
-
-export const waitForRateLimit = async (retryCount = 0) => {
-  if (isRateLimited()) {
-    const delay = calculateBackoffDelay(retryCount);
-    await sleep(delay);
-    return waitForRateLimit(retryCount + 1);
-  }
-};
