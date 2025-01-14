@@ -46,7 +46,19 @@ export class ProductSearchService {
       try {
         await waitForRateLimit();
 
-        const response = await this.performSearch(term, apiKey, rapidApiHost);
+        const response = await fetch(`https://${rapidApiHost}/search`, {
+          method: 'GET',
+          headers: {
+            'X-RapidAPI-Key': apiKey,
+            'X-RapidAPI-Host': rapidApiHost,
+            'Content-Type': 'application/json'
+          },
+          params: {
+            query: encodeURIComponent(term),
+            country: 'US'
+          }
+        });
+        
         await this.rateLimiter.handleResponse(response.status);
         
         if (response.status === 403) {
@@ -100,29 +112,6 @@ export class ProductSearchService {
     }
 
     throw new Error('Max retries exceeded');
-  }
-
-  private async performSearch(term: string, apiKey: string, rapidApiHost: string): Promise<Response> {
-    const searchTerm = this.optimizeSearchTerm(term);
-    const url = `https://${rapidApiHost}/search?query=${encodeURIComponent(searchTerm)}&country=US`;
-    
-    console.log('Performing search with URL:', url);
-    
-    return fetch(url, {
-      headers: {
-        'X-RapidAPI-Key': apiKey,
-        'X-RapidAPI-Host': rapidApiHost,
-      }
-    });
-  }
-
-  private optimizeSearchTerm(term: string): string {
-    return term
-      .split(' ')
-      .filter(word => !['with', 'and', 'for', 'the', 'a', 'an'].includes(word.toLowerCase()))
-      .slice(0, 4)
-      .join(' ')
-      .replace(/[^\w\s-]/g, ''); // Remove special characters except hyphens
   }
 
   static getInstance(): ProductSearchService {
