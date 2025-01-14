@@ -28,7 +28,7 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: "gpt-4",
+        model: "gpt-4o",
         messages: [
           buildBlogPrompt(numItems),
           {
@@ -48,6 +48,9 @@ serve(async (req) => {
 
     const data = await response.json();
     const content = data.choices[0].message.content;
+
+    // Log the generated content for debugging
+    console.log('Generated content:', { content });
 
     return new Response(
       JSON.stringify({ 

@@ -12,7 +12,7 @@ export const buildBlogPrompt = (numItems: number) => ({
 2. HTML Formatting Rules:
    - Format title as: <h1>Your Title Here</h1>
    - Format main section headings as: <h2>Section Title</h2>
-   - Format product titles as: <h3>No. [NUMBER]: [SPECIFIC PRODUCT NAME WITH BRAND]</h3>
+   - Format product titles as: <h3>[SPECIFIC PRODUCT NAME WITH BRAND]</h3>
    - Format unordered lists as: <ul><li>List item</li></ul>
    - Format ordered lists as: <ol><li>List item</li></ol>
    - Use proper paragraph spacing with <p> tags
@@ -27,7 +27,7 @@ export const buildBlogPrompt = (numItems: number) => ({
    - If relevant, include a list of 3-4 key features using ✅ as bullets
    - End with a paragraph about why it makes a great gift
    - Format each product section as:
-     <h3>No. [NUMBER]: [SPECIFIC PRODUCT NAME]</h3>
+     <h3>[SPECIFIC PRODUCT NAME]</h3>
      <p>[Introduction paragraph]</p>
      <p>[Features and benefits]</p>
      <ul>
