@@ -10,7 +10,6 @@ const cleanSearchTerm = (searchTerm: string): string => {
 };
 
 export const simplifySearchTerm = (searchTerm: string): string => {
-  // Remove specific model numbers, sizes, and colors from search term
   const genericSearchTerm = searchTerm
     .replace(/\([^)]*\)/g, '') // Remove anything in parentheses
     .replace(/\b(?:edition|version|series)\b/gi, '') // Remove common suffixes
