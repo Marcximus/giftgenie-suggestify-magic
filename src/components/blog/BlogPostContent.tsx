@@ -9,7 +9,7 @@ export const BlogPostContent = ({ post }: BlogPostContentProps) => {
     <div className="prose prose-lg w-full max-w-none animate-fade-in">
       <div 
         className="text-left px-4 sm:px-6 lg:px-8
-                   [&>h1]:text-3xl [&>h1]:sm:text-4xl [&>h1]:lg:text-5xl [&>h1]:font-bold [&>h1]:mb-10 [&>h1]:text-center
+                   [&>h1]:text-4xl [&>h1]:sm:text-5xl [&>h1]:lg:text-6xl [&>h1]:font-bold [&>h1]:mb-10 [&>h1]:text-center
                    [&>h2]:text-2xl [&>h2]:sm:text-3xl [&>h2]:lg:text-4xl [&>h2]:font-semibold [&>h2]:mt-8 [&>h2]:mb-4
                    [&>h3]:text-xl [&>h3]:sm:text-2xl [&>h3]:lg:text-3xl [&>h3]:font-semibold [&>h3]:mt-8 [&>h3]:mb-4
                    [&>p]:text-xs [&>p]:sm:text-sm [&>p]:lg:text-base [&>p]:leading-relaxed [&>p]:mb-6 [&>p]:text-left
