@@ -9,6 +9,7 @@ import { analyzePrompt } from '../_shared/prompt-analyzer.ts';
 
 const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
 const MAX_RETRIES = 3;
+const RETRY_DELAY = 1000; // Base delay in milliseconds
 
 serve(async (req) => {
   const startTime = performance.now();
@@ -30,7 +31,6 @@ serve(async (req) => {
       throw new Error('Invalid prompt');
     }
 
-    // Analyze prompt and build enhanced prompt
     const promptAnalysis = analyzePrompt(prompt);
     const enhancedPrompt = buildGiftPrompt(prompt, {
       hasEverything: prompt.toLowerCase().includes('has everything'),
@@ -46,10 +46,10 @@ serve(async (req) => {
 
     let suggestions = null;
     let retryCount = 0;
+    let lastError = null;
 
     while (!suggestions && retryCount < MAX_RETRIES) {
       try {
-        // Generate suggestions using OpenAI
         const response = await fetch('https://api.openai.com/v1/chat/completions', {
           method: 'POST',
           headers: {
@@ -96,7 +96,6 @@ Example format: ["suggestion1", "suggestion2", "suggestion3", "suggestion4", "su
         });
 
         if (!response.ok) {
-          console.error('OpenAI API error:', response.status, await response.text());
           throw new Error(`OpenAI API error: ${response.status}`);
         }
 
@@ -106,8 +105,8 @@ Example format: ["suggestion1", "suggestion2", "suggestion3", "suggestion4", "su
         const content = data.choices[0].message.content.trim();
         console.log('Content from OpenAI:', content);
         
+        // Parse and validate the response
         try {
-          // Try to parse the content directly
           const parsedContent = JSON.parse(content);
           
           if (!Array.isArray(parsedContent)) {
@@ -123,32 +122,38 @@ Example format: ["suggestion1", "suggestion2", "suggestion3", "suggestion4", "su
           }
           
           suggestions = parsedContent;
+          console.log('Successfully parsed suggestions:', suggestions);
           break;
           
         } catch (e) {
           console.error('Failed to parse OpenAI response:', e);
-          console.error('Raw content that failed to parse:', content);
+          lastError = e;
           retryCount++;
+          
           if (retryCount >= MAX_RETRIES) {
-            throw new Error(`Failed to parse gift suggestions after ${MAX_RETRIES} attempts`);
+            throw new Error(`Failed to parse gift suggestions after ${MAX_RETRIES} attempts: ${e.message}`);
           }
-          // Wait before retrying
-          await new Promise(resolve => setTimeout(resolve, 1000 * retryCount));
+          
+          // Wait with exponential backoff before retrying
+          await new Promise(resolve => setTimeout(resolve, RETRY_DELAY * Math.pow(2, retryCount - 1)));
           continue;
         }
       } catch (error) {
         console.error('Error generating suggestions:', error);
+        lastError = error;
         retryCount++;
+        
         if (retryCount >= MAX_RETRIES) {
           throw error;
         }
-        // Wait before retrying
-        await new Promise(resolve => setTimeout(resolve, 1000 * retryCount));
+        
+        // Wait with exponential backoff before retrying
+        await new Promise(resolve => setTimeout(resolve, RETRY_DELAY * Math.pow(2, retryCount - 1)));
       }
     }
 
     if (!suggestions) {
-      throw new Error('Failed to generate valid suggestions after all retries');
+      throw new Error(`Failed to generate valid suggestions after ${MAX_RETRIES} attempts: ${lastError?.message}`);
     }
 
     // Process suggestions in parallel batches
