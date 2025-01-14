@@ -1,4 +1,5 @@
-import { AmazonProduct } from './types';
+import { supabase } from "@/integrations/supabase/client";
+import type { AmazonProduct } from './types';
 
 const cleanSearchTerm = (searchTerm: string): string => {
   return searchTerm
@@ -37,90 +38,43 @@ export const getFallbackSearchTerms = (searchTerm: string): string[] => {
   return [...new Set(searchTerms)];
 };
 
-export const performSearch = async (
-  term: string,
-  apiKey: string,
-  rapidApiHost: string
-): Promise<{ data?: { products?: any[] } }> => {
-  const cleanedTerm = cleanSearchTerm(term);
-  console.log('Searching with term:', cleanedTerm);
-
-  const searchParams = new URLSearchParams({
-    query: cleanedTerm,
-    country: 'US',
-    category_id: 'aps',
-    sort_by: 'RELEVANCE'
-  });
-
-  const searchResponse = await fetch(
-    `https://${rapidApiHost}/search?${searchParams.toString()}`,
-    {
-      headers: {
-        'X-RapidAPI-Key': apiKey,
-        'X-RapidAPI-Host': rapidApiHost,
-      }
-    }
-  );
-
-  if (!searchResponse.ok) {
-    if (searchResponse.status === 429) {
-      throw new Error('rate limit exceeded');
-    }
-    throw new Error(`Amazon Search API error: ${searchResponse.status}`);
-  }
-
-  return searchResponse.json();
-};
-
 export const searchWithFallback = async (
   searchTerm: string,
   priceRange: string
 ): Promise<AmazonProduct | null> => {
   try {
-    // Try with exact search term first
-    const result = await performSearch(
-      searchTerm,
-      process.env.RAPIDAPI_KEY || '',
-      'real-time-amazon-data.p.rapidapi.com'
-    );
+    console.log('Searching with term:', searchTerm);
+    
+    const { data, error } = await supabase.functions.invoke('get-amazon-products', {
+      body: { 
+        searchTerm: cleanSearchTerm(searchTerm),
+        priceRange 
+      }
+    });
 
-    if (result.data?.products?.[0]) {
-      const product = result.data.products[0];
-      return {
-        title: product.title || searchTerm,
-        description: product.product_description || product.title || '',
-        price: parseFloat(product.product_price?.replace(/[$,]/g, '') || '0'),
-        currency: 'USD',
-        imageUrl: product.product_photo || product.thumbnail,
-        rating: parseFloat(product.product_star_rating || '0'),
-        totalRatings: parseInt(product.product_num_ratings || '0', 10),
-        asin: product.asin || ''
-      };
+    if (error) {
+      console.error('Error in searchWithFallback:', error);
+      throw error;
     }
 
-    // Try with simplified search term
-    const simplifiedTerm = simplifySearchTerm(searchTerm);
-    const fallbackResult = await performSearch(
-      simplifiedTerm,
-      process.env.RAPIDAPI_KEY || '',
-      'real-time-amazon-data.p.rapidapi.com'
-    );
+    if (!data?.product) {
+      console.log('No product found, trying simplified search');
+      const simplifiedTerm = simplifySearchTerm(searchTerm);
+      
+      const { data: fallbackData, error: fallbackError } = await supabase.functions.invoke('get-amazon-products', {
+        body: { 
+          searchTerm: simplifiedTerm,
+          priceRange 
+        }
+      });
 
-    if (fallbackResult.data?.products?.[0]) {
-      const product = fallbackResult.data.products[0];
-      return {
-        title: product.title || searchTerm,
-        description: product.product_description || product.title || '',
-        price: parseFloat(product.product_price?.replace(/[$,]/g, '') || '0'),
-        currency: 'USD',
-        imageUrl: product.product_photo || product.thumbnail,
-        rating: parseFloat(product.product_star_rating || '0'),
-        totalRatings: parseInt(product.product_num_ratings || '0', 10),
-        asin: product.asin || ''
-      };
+      if (fallbackError) throw fallbackError;
+      if (!fallbackData?.product) return null;
+      
+      return fallbackData.product;
     }
 
-    return null;
+    return data.product;
   } catch (error) {
     console.error('Error in searchWithFallback:', error);
     throw error;
