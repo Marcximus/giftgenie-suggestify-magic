@@ -42,43 +42,49 @@ serve(async (req) => {
 
     console.log('Enhanced prompt:', enhancedPrompt);
 
-    // Generate suggestions using OpenAI
-    const suggestions = await generateGiftSuggestions(enhancedPrompt);
-    console.log('Raw suggestions from OpenAI:', suggestions);
+    try {
+      // Generate suggestions using OpenAI
+      const suggestions = await generateGiftSuggestions(enhancedPrompt);
+      console.log('Raw suggestions from OpenAI:', suggestions);
 
-    if (!suggestions || !Array.isArray(suggestions)) {
-      console.error('Invalid suggestions format:', suggestions);
-      throw new Error('Invalid suggestions format received from OpenAI');
+      if (!suggestions || !Array.isArray(suggestions)) {
+        console.error('Invalid suggestions format:', suggestions);
+        throw new Error('Invalid suggestions format received from OpenAI');
+      }
+
+      const validSuggestions = validateAndCleanSuggestions(JSON.stringify(suggestions));
+      console.log('Validated suggestions:', validSuggestions);
+      
+      if (!validSuggestions.length) {
+        throw new Error('No valid suggestions generated');
+      }
+      
+      // Process suggestions in parallel batches
+      console.log('Processing suggestions in parallel');
+      const processedProducts = await processSuggestionsInBatches(validSuggestions);
+      console.log('Processed products:', processedProducts);
+      
+      if (!processedProducts.length) {
+        throw new Error('No products found for suggestions');
+      }
+
+      // Log metrics
+      await supabase.from('api_metrics').insert({
+        endpoint: 'generate-gift-suggestions',
+        duration_ms: Math.round(performance.now() - startTime),
+        status: 'success',
+        cache_hit: false
+      });
+
+      return new Response(
+        JSON.stringify({ suggestions: processedProducts }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+
+    } catch (error) {
+      console.error('Error processing suggestions:', error);
+      throw error;
     }
-
-    const validSuggestions = validateAndCleanSuggestions(JSON.stringify(suggestions));
-    console.log('Validated suggestions:', validSuggestions);
-    
-    if (!validSuggestions.length) {
-      throw new Error('No valid suggestions generated');
-    }
-    
-    // Process suggestions in parallel batches
-    console.log('Processing suggestions in parallel');
-    const processedProducts = await processSuggestionsInBatches(validSuggestions);
-    console.log('Processed products:', processedProducts);
-    
-    if (!processedProducts.length) {
-      throw new Error('No products found for suggestions');
-    }
-
-    // Log metrics
-    await supabase.from('api_metrics').insert({
-      endpoint: 'generate-gift-suggestions',
-      duration_ms: Math.round(performance.now() - startTime),
-      status: 'success',
-      cache_hit: false
-    });
-
-    return new Response(
-      JSON.stringify({ suggestions: processedProducts }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
 
   } catch (error) {
     console.error('Error in generate-gift-suggestions function:', error);
