@@ -13,14 +13,13 @@ serve(async (req) => {
 
   try {
     const { title } = await req.json();
-    console.log('Generating blog post for:', title);
+    console.log('Generating blog post for title:', title);
 
     // Extract number of items from title (e.g., "Top 10" -> 10)
     const numItemsMatch = title.match(/\b(\d+)\b/);
     const numItems = numItemsMatch ? parseInt(numItemsMatch[1]) : 5;
     console.log('Number of items to generate:', numItems);
 
-    // Generate blog post using OpenAI
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
