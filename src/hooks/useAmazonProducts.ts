@@ -7,6 +7,27 @@ import { getCachedProduct, cacheProduct } from '@/utils/amazon/cacheUtils';
 import { withRetry } from '@/utils/amazon/retryUtils';
 import { toast } from "@/components/ui/use-toast";
 
+// Rate limiting configuration
+const RATE_LIMIT = {
+  MAX_REQUESTS: 20, // Reduced from 30
+  WINDOW_MS: 60000, // 1 minute
+  RETRY_AFTER: 60 // Increased from 30 to 60 seconds
+};
+
+const requestLog: { timestamp: number }[] = [];
+
+const isRateLimited = () => {
+  const now = Date.now();
+  const windowStart = now - RATE_LIMIT.WINDOW_MS;
+  
+  // Clean up old requests
+  const recentRequests = requestLog.filter(req => req.timestamp > windowStart);
+  requestLog.length = 0;
+  requestLog.push(...recentRequests);
+  
+  return recentRequests.length >= RATE_LIMIT.MAX_REQUESTS;
+};
+
 export const useAmazonProducts = () => {
   const [isLoading, setIsLoading] = useState(false);
 
@@ -20,13 +41,22 @@ export const useAmazonProducts = () => {
         return cached;
       }
 
+      // Check rate limiting
+      if (isRateLimited()) {
+        console.log('Rate limit reached, waiting before retry');
+        await sleep(RATE_LIMIT.RETRY_AFTER * 1000);
+      }
+
       console.log(`Attempting Amazon product request for: ${searchTerm} with price range: ${priceRange}`);
       
-      // Use withRetry for the product search with increased delays
+      // Log this request
+      requestLog.push({ timestamp: Date.now() });
+      
+      // Use withRetry with increased delays
       const product = await withRetry(
         () => searchWithFallback(searchTerm, priceRange),
         AMAZON_CONFIG.MAX_RETRIES,
-        AMAZON_CONFIG.BASE_RETRY_DELAY
+        AMAZON_CONFIG.BASE_RETRY_DELAY * 2 // Doubled the base retry delay
       );
       
       if (product) {
@@ -46,15 +76,13 @@ export const useAmazonProducts = () => {
       console.error('Error getting Amazon product:', error);
       
       if (error.status === 429) {
-        // Handle rate limiting with a more informative message
-        const retryAfter = error.retryAfter || 30;
+        const retryAfter = error.retryAfter || RATE_LIMIT.RETRY_AFTER;
         toast({
           title: "Too many requests",
           description: `Please wait ${retryAfter} seconds before trying again`,
           variant: "destructive",
         });
         
-        // Add an artificial delay before retrying
         await sleep(retryAfter * 1000);
       } else if (error.status !== 404) {
         toast({
