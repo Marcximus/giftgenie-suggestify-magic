@@ -1,3 +1,5 @@
+import { searchAmazonProduct } from './amazon-api.ts';
+ 
 export async function processContent(
   content: string,
   associateId: string,
@@ -65,7 +67,7 @@ export async function processContent(
               href="${affiliateLink}" 
               target="_blank" 
               rel="noopener noreferrer" 
-              class="inline-block px-6 py-3 bg-[#F97316] hover:bg-[#F97316]/90 text-white rounded-md transition-colors text-base font-medium shadow-sm hover:shadow-md active:scale-95"
+              class="amazon-button"
             >
               View on Amazon
             </a>
