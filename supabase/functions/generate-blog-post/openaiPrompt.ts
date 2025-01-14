@@ -28,9 +28,6 @@ export const buildBlogPrompt = (numItems: number) => ({
    - End with a paragraph about why it makes a great gift
    - Format each product section as:
      <h3>[SPECIFIC PRODUCT NAME]</h3>
-     <div class="flex justify-center my-4">
-       <img src="[PRODUCT_IMAGE_PLACEHOLDER]" alt="[PRODUCT_NAME]" class="w-72 sm:w-96 md:w-[500px] h-72 sm:h-96 md:h-[500px] object-contain rounded-lg shadow-md" loading="lazy" />
-     </div>
      <p>[Introduction paragraph - 100-150 words] 🎁</p>
      <p>[Features and benefits - 100-150 words] ⭐</p>
      <ul>
@@ -39,11 +36,6 @@ export const buildBlogPrompt = (numItems: number) => ({
        <li>✅ [Key Feature 3]</li>
      </ul>
      <p>[Why it makes a great gift - 50-100 words] 💝</p>
-     <div class="flex justify-center mt-4 mb-8">
-       <a href="[AMAZON_LINK_PLACEHOLDER]" target="_blank" rel="noopener noreferrer" class="amazon-button inline-block px-4 py-2 bg-[#F97316] hover:bg-[#F97316]/90 text-white rounded-md transition-colors text-sm">
-         View on Amazon
-       </a>
-     </div>
 
 4. Content Guidelines:
    - Write naturally flowing text that's easy to read
@@ -82,5 +74,5 @@ IMPORTANT:
 - Ensure all content is unique and valuable
 - Add spacing between sections for better readability
 - Write DETAILED content (250-450 words per product)
-- Include image and link placeholders for each product`
+- Include emojis in the text as specified`
 });
