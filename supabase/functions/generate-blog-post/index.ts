@@ -16,7 +16,7 @@ serve(async (req) => {
     const { title } = await req.json();
     console.log('Generating blog post for title:', title);
 
-    // Verify required API keys are present
+    // Verify required API keys
     const associateId = Deno.env.get('AMAZON_ASSOCIATE_ID');
     const rapidApiKey = Deno.env.get('RAPIDAPI_KEY');
     const openAiKey = Deno.env.get('OPENAI_API_KEY');
