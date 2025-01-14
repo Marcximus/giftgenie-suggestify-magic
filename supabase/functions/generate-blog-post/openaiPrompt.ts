@@ -31,15 +31,15 @@ export const buildBlogPrompt = (numItems: number) => ({
      <div class="flex justify-center my-4">
        <img src="[PRODUCT_IMAGE_PLACEHOLDER]" alt="[PRODUCT_NAME]" class="w-72 sm:w-96 md:w-[500px] h-72 sm:h-96 md:h-[500px] object-contain rounded-lg shadow-md" loading="lazy" />
      </div>
-     <p>[Introduction paragraph - 100-150 words]</p>
-     <p>[Features and benefits - 100-150 words]</p>
+     <p>[Introduction paragraph - 100-150 words] 🎁</p>
+     <p>[Features and benefits - 100-150 words] ⭐</p>
      <ul>
        <li>✅ [Key Feature 1]</li>
        <li>✅ [Key Feature 2]</li>
        <li>✅ [Key Feature 3]</li>
      </ul>
-     <p>[Why it makes a great gift - 50-100 words]</p>
-     <div class="mt-4 mb-8">
+     <p>[Why it makes a great gift - 50-100 words] 💝</p>
+     <div class="flex justify-center mt-4 mb-8">
        <a href="[AMAZON_LINK_PLACEHOLDER]" target="_blank" rel="noopener noreferrer" class="amazon-button inline-block px-4 py-2 bg-[#F97316] hover:bg-[#F97316]/90 text-white rounded-md transition-colors text-sm">
          View on Amazon
        </a>
@@ -54,6 +54,15 @@ export const buildBlogPrompt = (numItems: number) => ({
    - Add personal touches and recommendations
    - End with a strong conclusion summarizing key points
    - Leave space before the conclusion with a horizontal rule: <hr class="my-8">
+
+5. Emoji Usage:
+   - Use 🎁 for introducing new products
+   - Use ⭐ for highlighting features
+   - Use 💝 for gift-giving benefits
+   - Use 🎯 for key points
+   - Use 💡 for tips and advice
+   - Place emojis at the start of relevant paragraphs
+   - Don't overuse - aim for 1-2 emojis per section
 
 Style Guidelines:
 - Maintain a conversational, friendly tone

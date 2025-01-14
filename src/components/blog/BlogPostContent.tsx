@@ -20,7 +20,8 @@ export const BlogPostContent = ({ post }: BlogPostContentProps) => {
                    [&>img]:!mx-auto [&>img]:!my-4 [&>img]:sm:!my-6
                    [&_a.amazon-button]:!text-white [&_a.amazon-button]:no-underline
                    [&_h3]:mt-6 [&_h3]:mb-3 [&_h3]:text-left
-                   [&_div.flex]:mt-4 [&_div.flex]:mb-4"
+                   [&_div.flex]:mt-4 [&_div.flex]:mb-4
+                   [&_div.flex]:justify-center [&_div.flex]:w-full"
         dangerouslySetInnerHTML={{ __html: post.content }}
       />
     </div>
