@@ -8,84 +8,85 @@ export async function processContent(
 ): Promise<{ content: string; affiliateLinks: Array<{ productTitle: string; affiliateLink: string; imageUrl?: string }> }> {
   console.log('Processing content with length:', content.length);
   
-  // First, let's clean up any duplicate product sections
+  const affiliateLinks: Array<{ productTitle: string; affiliateLink: string; imageUrl?: string }> = [];
+  
+  // First, clean up any existing product images or buttons
   content = content.replace(/View on Amazon\n/g, '');
   
-  // Extract product sections with surrounding content
-  const sections = content.split(/(?=<h3>)/);
+  // Process each product section
+  const sections = content.split('<hr class="my-8">');
+  console.log('Found sections:', sections.length);
   
-  // Process each section
   const processedSections = await Promise.all(sections.map(async (section) => {
     const h3Match = section.match(/<h3>([^<]+)<\/h3>/);
     
-    if (!h3Match) return section; // Not a product section, return as is
+    if (!h3Match) {
+      console.log('No product title found in section, keeping as is');
+      return section;
+    }
     
     const productName = h3Match[1].trim();
-    console.log('Processing product section:', productName);
+    console.log('Processing product:', productName);
     
     try {
       const product = await searchAmazonProduct(productName, apiKey);
       
       if (product?.asin) {
-        const affiliateLink = `https://www.amazon.com/dp/${product.asin}/ref=nosim?tag=${associateId}`;
-        
-        // Extract the description paragraphs that follow the h3
-        const paragraphs = section
-          .split(/<h3>[^<]+<\/h3>/)[1]  // Get everything after the h3
-          .split(/(?=<h3>)/)[0]         // Get everything before the next h3
-          .trim();
+        console.log('Found Amazon product:', {
+          title: product.title,
+          asin: product.asin,
+          hasImage: !!product.imageUrl
+        });
 
-        // Create the new product section
-        return `
-<div class="product-section my-8 p-6 bg-white/50 backdrop-blur-sm border border-gray-200 rounded-lg shadow-sm">
-  <h3 class="text-xl font-semibold mb-4">${product.title}</h3>
-  ${product.imageUrl ? `
-    <div class="flex justify-center my-4">
-      <img 
-        src="${product.imageUrl}" 
-        alt="${product.title}" 
-        class="w-full max-w-[400px] sm:max-w-[500px] lg:max-w-[600px] h-auto object-contain rounded-lg shadow-md" 
-        loading="lazy"
-      />
-    </div>
-  ` : ''}
-  ${product.price ? `
-    <p class="text-left text-sm text-muted-foreground mb-2">
-      Current price: ${product.currency || 'USD'} ${product.price}
-    </p>
-  ` : ''}
-  ${product.rating ? `
-    <p class="text-left text-sm text-muted-foreground mb-4">
-      Rating: ${product.rating.toFixed(1)} stars${product.totalRatings ? ` • ${product.totalRatings.toLocaleString()} reviews` : ''}
-    </p>
-  ` : ''}
-  <div class="product-content my-4">
-    ${paragraphs}
-  </div>
-  <div class="flex justify-center mt-4 mb-2">
-    <a 
-      href="${affiliateLink}" 
-      target="_blank" 
-      rel="noopener noreferrer" 
-      class="amazon-button"
-    >
-      View on Amazon
-    </a>
-  </div>
-</div>`;
+        const affiliateLink = `https://www.amazon.com/dp/${product.asin}/ref=nosim?tag=${associateId}`;
+        affiliateLinks.push({
+          productTitle: product.title,
+          affiliateLink,
+          imageUrl: product.imageUrl
+        });
+
+        // Split the section content to insert image and button after the h3 tag
+        const [beforeH3, afterH3] = section.split(/<\/h3>/);
+        
+        if (!beforeH3 || !afterH3) {
+          console.warn('Could not split section content properly');
+          return section;
+        }
+
+        // Reconstruct the section with the product information
+        return `${beforeH3}</h3>
+          <div class="flex justify-center my-4">
+            <img 
+              src="${product.imageUrl}" 
+              alt="${productName}"
+              class="w-64 h-64 object-contain rounded-lg shadow-md" 
+              loading="lazy"
+            />
+          </div>
+          <div class="flex justify-center mb-8">
+            <a 
+              href="${affiliateLink}" 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              class="inline-block px-4 py-2 bg-[#F97316] hover:bg-[#F97316]/90 text-white rounded-md transition-colors text-sm font-medium"
+            >
+              View on Amazon
+            </a>
+          </div>${afterH3}`;
+      } else {
+        console.warn('No Amazon product found for:', productName);
+        return section;
       }
-      
-      console.warn('No Amazon product found for:', productName);
-      return section; // Return original section if no product found
-      
     } catch (error) {
       console.error('Error processing product:', productName, error);
-      return section; // Return original section if processing fails
+      return section;
     }
   }));
 
+  console.log('Processed all sections, affiliate links found:', affiliateLinks.length);
+
   return { 
-    content: processedSections.join('\n'),
-    affiliateLinks: [] // We'll populate this later if needed
+    content: processedSections.join('<hr class="my-8">'),
+    affiliateLinks 
   };
 }
