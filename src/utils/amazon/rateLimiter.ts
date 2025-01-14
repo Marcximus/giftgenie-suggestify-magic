@@ -1,11 +1,5 @@
-interface RateLimitConfig {
-  MAX_RETRIES: number;
-  BASE_DELAY: number;
-  BACKOFF_FACTOR: number;
-}
-
 const RATE_LIMIT_WINDOW = 60000; // 1 minute
-const MAX_REQUESTS_PER_WINDOW = 10;
+const MAX_REQUESTS_PER_WINDOW = 5; // Reduced from 10 to 5 requests per minute
 const requestLog: number[] = [];
 
 export const isRateLimited = () => {
@@ -23,16 +17,25 @@ export const logRequest = () => {
 
 export const calculateBackoffDelay = (
   retryCount: number,
-  config: RateLimitConfig = {
-    MAX_RETRIES: 3,
+  config = {
     BASE_DELAY: 2000,
-    BACKOFF_FACTOR: 2
+    BACKOFF_FACTOR: 2,
+    MAX_DELAY: 30000
   }
 ) => {
   return Math.min(
     config.BASE_DELAY * Math.pow(config.BACKOFF_FACTOR, retryCount),
-    30000 // Max delay of 30 seconds
+    config.MAX_DELAY
   );
 };
 
 export const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+export const waitForRateLimit = async (retryCount = 0) => {
+  if (isRateLimited()) {
+    const delay = calculateBackoffDelay(retryCount);
+    console.log(`Rate limited, waiting ${delay}ms before retry`);
+    await sleep(delay);
+    return waitForRateLimit(retryCount + 1);
+  }
+};

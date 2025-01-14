@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { AMAZON_CONFIG } from '@/utils/amazon/config';
-import { sleep } from '@/utils/amazon/rateLimiter';
+import { sleep, waitForRateLimit } from '@/utils/amazon/rateLimiter';
 
 interface BatchProcessorOptions<T, R> {
   processFn: (item: T) => Promise<R>;
@@ -43,6 +43,7 @@ export const useBatchProcessor = <T, R>() => {
           const batchPromises = batch.map(async (item, index) => {
             const globalIndex = i + index;
             try {
+              await waitForRateLimit();
               if (index > 0) await sleep(staggerDelay);
               const result = await processFn(item);
               processedItems.add(globalIndex);
@@ -62,6 +63,7 @@ export const useBatchProcessor = <T, R>() => {
           for (const [index, item] of batch.entries()) {
             const globalIndex = i + index;
             try {
+              await waitForRateLimit();
               const result = await processFn(item);
               results.push(result);
               processedItems.add(globalIndex);

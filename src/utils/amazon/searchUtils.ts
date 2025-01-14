@@ -1,6 +1,5 @@
+import { waitForRateLimit, logRequest } from './rateLimiter';
 import { cleanSearchTerm } from './utils';
-import { isRateLimited, logRequest, calculateBackoffDelay, sleep } from './rateLimiter';
-import { toast } from "@/components/ui/use-toast";
 
 export const searchWithFallback = async (
   searchTerm: string,
@@ -14,11 +13,7 @@ export const searchWithFallback = async (
 
   while (retryCount < MAX_RETRIES) {
     try {
-      if (isRateLimited()) {
-        const delay = calculateBackoffDelay(retryCount);
-        console.log(`Rate limited, waiting ${delay}ms before retry`);
-        await sleep(delay);
-      }
+      await waitForRateLimit(retryCount);
 
       // First try with exact search term
       const searchData = await performSearch(searchTerm, apiKey, rapidApiHost);
@@ -31,6 +26,7 @@ export const searchWithFallback = async (
       const simplifiedTerm = simplifySearchTerm(searchTerm);
       console.log('Trying simplified search term:', simplifiedTerm);
       
+      await waitForRateLimit(retryCount);
       const fallbackData = await performSearch(simplifiedTerm, apiKey, rapidApiHost);
       
       if (fallbackData?.data?.products?.length > 0) {
@@ -42,6 +38,7 @@ export const searchWithFallback = async (
       
       for (const term of fallbackTerms) {
         console.log('Trying fallback term:', term);
+        await waitForRateLimit(retryCount);
         const termData = await performSearch(term, apiKey, rapidApiHost);
         
         if (termData?.data?.products?.length > 0) {
@@ -55,30 +52,16 @@ export const searchWithFallback = async (
       
       if (error.status === 429) {
         retryCount++;
-        const delay = calculateBackoffDelay(retryCount);
+        const delay = Math.min(1000 * Math.pow(2, retryCount), 8000);
         console.log(`Rate limited (429), retry ${retryCount} of ${MAX_RETRIES}, waiting ${delay}ms`);
-        await sleep(delay);
+        await new Promise(resolve => setTimeout(resolve, delay));
         continue;
-      }
-      
-      if (error.status === 403) {
-        toast({
-          title: "API Error",
-          description: "Unable to access the product search service. Please try again later.",
-          variant: "destructive",
-        });
-        return null;
       }
       
       throw error;
     }
   }
 
-  toast({
-    title: "Service Unavailable",
-    description: "The product search service is temporarily unavailable. Please try again later.",
-    variant: "destructive",
-  });
   return null;
 };
 
