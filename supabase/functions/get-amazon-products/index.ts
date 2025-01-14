@@ -25,29 +25,54 @@ serve(async (req) => {
     const apiKey = Deno.env.get('RAPIDAPI_KEY');
 
     if (!apiKey) {
-      throw new Error('RAPIDAPI_KEY not configured');
+      console.error('RAPIDAPI_KEY not configured');
+      throw new Error('API configuration error');
+    }
+
+    if (!searchTerm) {
+      console.error('No search term provided');
+      throw new Error('Search term is required');
     }
 
     console.log('Searching Amazon for:', searchTerm);
 
+    // Create URL with proper encoding
+    const url = new URL(`https://${RAPIDAPI_HOST}/search`);
+    url.searchParams.append('query', searchTerm);
+    url.searchParams.append('country', 'US');
+
     // Perform the search
-    const searchResponse = await fetch(
-      `https://${RAPIDAPI_HOST}/search?query=${encodeURIComponent(searchTerm)}&country=US`,
-      {
-        headers: {
-          'X-RapidAPI-Key': apiKey,
-          'X-RapidAPI-Host': RAPIDAPI_HOST,
-        }
+    const searchResponse = await fetch(url, {
+      headers: {
+        'X-RapidAPI-Key': apiKey,
+        'X-RapidAPI-Host': RAPIDAPI_HOST,
       }
-    );
+    });
 
     if (!searchResponse.ok) {
-      console.error('Amazon Search API error:', searchResponse.status);
+      console.error('Amazon Search API error:', {
+        status: searchResponse.status,
+        statusText: searchResponse.statusText
+      });
+      
+      if (searchResponse.status === 403) {
+        return new Response(
+          JSON.stringify({
+            error: 'API subscription error',
+            details: 'Please check the RapidAPI subscription status'
+          }),
+          { 
+            status: 403,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          }
+        );
+      }
+      
       throw new Error(`Amazon API error: ${searchResponse.status}`);
     }
 
     const searchData = await searchResponse.json();
-    console.log('Search response:', searchData);
+    console.log('Search response received');
 
     if (!searchData.data?.products?.[0]) {
       console.log('No products found for search term:', searchTerm);
@@ -57,37 +82,52 @@ serve(async (req) => {
       );
     }
 
-    const product = searchData.data.products[0];
+    let product = searchData.data.products[0];
+    
+    // Ensure we have an ASIN
+    if (!product.asin) {
+      // If no ASIN found in first result, try next products
+      const productWithAsin = searchData.data.products.find(p => p.asin);
+      if (!productWithAsin) {
+        console.error('No product with ASIN found');
+        return new Response(
+          JSON.stringify({ error: 'No valid product found' }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      product = productWithAsin;
+    }
+
     const asin = product.asin;
 
-    if (!asin) {
-      console.warn('Invalid product data: No ASIN found');
-      return new Response(
-        JSON.stringify({ error: 'Invalid product data' }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
     // Get detailed product information
-    console.log('Getting details for ASIN:', asin);
-    const detailsResponse = await fetch(
-      `https://${RAPIDAPI_HOST}/product-details?asin=${asin}&country=US`,
-      {
-        headers: {
-          'X-RapidAPI-Key': apiKey,
-          'X-RapidAPI-Host': RAPIDAPI_HOST,
-        }
+    const detailsUrl = new URL(`https://${RAPIDAPI_HOST}/product-details`);
+    detailsUrl.searchParams.append('asin', asin);
+    detailsUrl.searchParams.append('country', 'US');
+
+    console.log('Fetching details for ASIN:', asin);
+    const detailsResponse = await fetch(detailsUrl, {
+      headers: {
+        'X-RapidAPI-Key': apiKey,
+        'X-RapidAPI-Host': RAPIDAPI_HOST,
       }
-    );
+    });
 
     if (!detailsResponse.ok) {
-      throw new Error(`Product details API error: ${detailsResponse.status}`);
+      console.error('Product details API error:', detailsResponse.status);
+      // Continue with search data if details request fails
+      console.log('Falling back to search data');
     }
 
-    const detailsData = await detailsResponse.json();
-    console.log('Details response:', detailsData);
+    let detailsData;
+    try {
+      detailsData = await detailsResponse.json();
+    } catch (error) {
+      console.error('Error parsing details response:', error);
+      // Continue with search data if details parsing fails
+    }
 
-    // Extract and format product details
+    // Format price
     const formatPrice = (priceStr: string | null | undefined): number | undefined => {
       if (!priceStr) return undefined;
       const cleanPrice = priceStr.replace(/[^0-9.]/g, '');
@@ -95,16 +135,17 @@ serve(async (req) => {
       return isNaN(price) ? undefined : price;
     };
 
+    // Combine search and details data, preferring details when available
     const productDetails: AmazonProduct = {
-      title: detailsData.data?.product_title || product.title,
-      description: detailsData.data?.product_description || product.product_description,
-      price: formatPrice(detailsData.data?.product_price || product.product_price),
-      currency: detailsData.data?.currency || 'USD',
-      imageUrl: detailsData.data?.product_photos?.[0] || product.product_photo || product.thumbnail,
-      rating: detailsData.data?.product_star_rating ? 
+      title: detailsData?.data?.product_title || product.title,
+      description: detailsData?.data?.product_description || product.product_description,
+      price: formatPrice(detailsData?.data?.product_price || product.product_price),
+      currency: detailsData?.data?.currency || 'USD',
+      imageUrl: detailsData?.data?.product_photos?.[0] || product.product_photo || product.thumbnail,
+      rating: detailsData?.data?.product_star_rating ? 
         parseFloat(detailsData.data.product_star_rating) : 
         product.product_star_rating ? parseFloat(product.product_star_rating) : undefined,
-      totalRatings: detailsData.data?.product_num_ratings ? 
+      totalRatings: detailsData?.data?.product_num_ratings ? 
         parseInt(detailsData.data.product_num_ratings.toString(), 10) : 
         product.product_num_ratings ? parseInt(product.product_num_ratings.toString(), 10) : undefined,
       asin: asin
@@ -113,10 +154,22 @@ serve(async (req) => {
     // Validate required fields
     if (!productDetails.title || !productDetails.asin) {
       console.error('Invalid product details:', productDetails);
-      throw new Error('Invalid product details');
+      return new Response(
+        JSON.stringify({ 
+          error: 'Invalid product details',
+          details: 'Missing required product information'
+        }),
+        { 
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
     }
 
-    console.log('Returning product details:', productDetails);
+    console.log('Returning product details:', {
+      title: productDetails.title,
+      asin: productDetails.asin
+    });
 
     return new Response(
       JSON.stringify({ product: productDetails }),
