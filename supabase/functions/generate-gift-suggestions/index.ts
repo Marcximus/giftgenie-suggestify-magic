@@ -22,8 +22,8 @@ serve(async (req) => {
   );
 
   try {
-    const { prompt } = await req.json();
-    console.log('Processing request with prompt:', prompt);
+    const { prompt, maxBudget } = await req.json();
+    console.log('Processing request with prompt:', prompt, 'maxBudget:', maxBudget);
 
     if (!prompt || typeof prompt !== 'string' || prompt.trim().length < 3) {
       throw new Error('Invalid prompt');
@@ -35,9 +35,10 @@ serve(async (req) => {
       hasEverything: prompt.toLowerCase().includes('has everything'),
       isMale: promptAnalysis.gender === 'male',
       isFemale: promptAnalysis.gender === 'female',
-      minBudget: promptAnalysis.budget.min || 50,
-      maxBudget: promptAnalysis.budget.max || 200,
-      ageCategory: promptAnalysis.ageCategory
+      minBudget: promptAnalysis.budget.min || 25,
+      maxBudget: maxBudget || promptAnalysis.budget.max || 200,
+      ageCategory: promptAnalysis.ageCategory,
+      occasion: promptAnalysis.occasion
     });
 
     // Generate suggestions using OpenAI
@@ -51,8 +52,8 @@ serve(async (req) => {
     // Filter products based on budget
     const filteredProducts = filterProducts(
       processedProducts,
-      promptAnalysis.budget.min,
-      promptAnalysis.budget.max
+      promptAnalysis.budget.min || 25,
+      maxBudget || promptAnalysis.budget.max || 200
     );
 
     // Log metrics
@@ -65,7 +66,7 @@ serve(async (req) => {
 
     return new Response(
       JSON.stringify({ 
-        suggestions: filteredProducts.length > 0 ? filteredProducts : processedProducts 
+        suggestions: filteredProducts.length > 0 ? filteredProducts : processedProducts.slice(0, 3) 
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );

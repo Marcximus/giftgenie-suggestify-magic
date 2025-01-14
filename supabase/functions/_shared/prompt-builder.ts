@@ -5,12 +5,14 @@ interface PromptConfig {
   minBudget: number;
   maxBudget: number;
   ageCategory?: string | null;
+  occasion?: string;
 }
 
 export function buildGiftPrompt(prompt: string, config: PromptConfig): string {
-  const { hasEverything, isMale, isFemale, minBudget, maxBudget, ageCategory } = config;
+  const { hasEverything, isMale, isFemale, minBudget, maxBudget, ageCategory, occasion } = config;
+  const budgetContext = `with a budget between $${minBudget} and $${maxBudget}`;
 
-  let enhancedPrompt = `As a luxury gift expert, suggest 8 thoughtful and unique gift ideas `;
+  let enhancedPrompt = `As a luxury gift expert, suggest 3-4 thoughtful and specific gift ideas ${budgetContext} `;
   
   if (hasEverything) {
     enhancedPrompt += `for someone who seemingly has everything. Focus on:
@@ -19,9 +21,7 @@ export function buildGiftPrompt(prompt: string, config: PromptConfig): string {
     - Innovative new products they might not know about
     - Luxury versions of everyday items
     - Experiential gifts that create memories
-    - Personalized or bespoke items
-    - Collector's editions or rare finds
-    - Items that combine multiple interests\n\n`;
+    - Personalized or bespoke items\n\n`;
   }
 
   // Add age-specific instructions based on category
@@ -34,9 +34,7 @@ export function buildGiftPrompt(prompt: string, config: PromptConfig): string {
       - Free from small parts or choking hazards
       - Easy to clean and maintain
       - Durable and high-quality
-      - Supporting motor skills development
-      - Engaging sensory experiences
-      - Parent-approved and trusted brands\n`;
+      - Supporting motor skills development\n`;
       break;
 
     case 'child':
@@ -46,10 +44,7 @@ export function buildGiftPrompt(prompt: string, config: PromptConfig): string {
       - Educational and developmental value
       - Fun and engaging activities
       - Creative expression tools
-      - Social skill development
-      - Physical activity promotion
-      - STEM learning opportunities
-      - Imaginative play items\n`;
+      - STEM learning opportunities\n`;
       break;
 
     case 'teen':
@@ -57,12 +52,9 @@ export function buildGiftPrompt(prompt: string, config: PromptConfig): string {
       CRITICAL: These suggestions are for a teenager. Focus on:
       - Current trends and popular culture
       - Technology and gadgets
-      - Social connection tools
       - Creative expression items
       - Identity and personality development
-      - Independence-promoting items
-      - Learning and skill development
-      - Entertainment and gaming\n`;
+      - Learning and skill development\n`;
       break;
 
     case 'youngAdult':
@@ -71,11 +63,8 @@ export function buildGiftPrompt(prompt: string, config: PromptConfig): string {
       - Career and professional development
       - First home/apartment essentials
       - Modern technology and gadgets
-      - Social and experiential gifts
       - Personal growth items
-      - Lifestyle and wellness products
-      - Practical luxury items
-      - Travel and adventure gear\n`;
+      - Lifestyle and wellness products\n`;
       break;
 
     case 'adult':
@@ -85,10 +74,7 @@ export function buildGiftPrompt(prompt: string, config: PromptConfig): string {
       - Quality over novelty
       - Professional and career enhancement
       - Home and lifestyle improvement
-      - Wellness and self-care
-      - Hobby and interest development
-      - Time-saving solutions
-      - Premium experiences\n`;
+      - Wellness and self-care\n`;
       break;
 
     case 'senior':
@@ -98,20 +84,20 @@ export function buildGiftPrompt(prompt: string, config: PromptConfig): string {
       - Memory and legacy items
       - Easy-to-use technology
       - Health and wellness products
-      - Social connection tools
-      - Hobby enhancement
-      - Nostalgic elements
-      - Safety and convenience features
-      - Quality leisure activities
-      - Thoughtful practical items\n`;
+      - Social connection tools\n`;
       break;
   }
 
   // Add gender-specific instructions
   if (isMale) {
-    enhancedPrompt += `CRITICAL: Ensure all suggestions are specifically appropriate for male recipients. Focus on men's sizes, styles, and preferences.\n`;
+    enhancedPrompt += `CRITICAL: Ensure all suggestions are specifically appropriate for male recipients.\n`;
   } else if (isFemale) {
-    enhancedPrompt += `CRITICAL: Ensure all suggestions are specifically appropriate for female recipients. Focus on women's sizes, styles, and preferences.\n`;
+    enhancedPrompt += `CRITICAL: Ensure all suggestions are specifically appropriate for female recipients.\n`;
+  }
+
+  // Add occasion-specific context if provided
+  if (occasion) {
+    enhancedPrompt += `CRITICAL: These suggestions are for ${occasion}. Ensure gifts are appropriate for this occasion.\n`;
   }
 
   // Extract any specific interests from the prompt
@@ -120,27 +106,21 @@ export function buildGiftPrompt(prompt: string, config: PromptConfig): string {
 
   enhancedPrompt += `
   CRITICAL REQUIREMENTS:
-  1. Budget: Between $${minBudget} and $${maxBudget}
-  ${specificInterest ? `2. IMPORTANT: Include 3-4 suggestions that directly relate to their interest in ${specificInterest}, but distribute them randomly throughout the list of suggestions` : ''}
+  1. Budget: Strictly between $${minBudget} and $${maxBudget}
+  ${specificInterest ? `2. Include 2 suggestions that directly relate to their interest in ${specificInterest}` : ''}
   
-  Quality Guidelines:
-  - Focus on premium brands and materials
-  - Include specific model numbers or editions
-  - Emphasize uniqueness and exclusivity
-  - Consider items that enhance lifestyle
-  - Include at least one experience-based gift
-  - Suggest items that show thoughtfulness
-  ${isMale || isFemale ? `- Double-check that all clothing and accessories are for the correct gender` : ''}
+  Format Guidelines:
+  - Include specific brand names and model numbers
+  - Use complete product names (e.g., "Sony WH-1000XM4 Wireless Noise Cancelling Headphones" instead of just "headphones")
+  - Include premium or special editions when available
+  - Ensure items are currently available on Amazon
+  - Avoid generic descriptions
+  ${isMale || isFemale ? `- Ensure gender-appropriate suggestions` : ''}
 
   Format each suggestion as:
-  "Brand Name Specific Product (Premium/Special Edition) - [Category] Version"
+  "Brand Name Specific Product Model (Premium/Special Edition) - [Category] Version"
 
-  IMPORTANT: Each suggestion must be:
-  - Actually available for purchase
-  - Within the specified budget range
-  - Specific and detailed enough to find online
-  - Unique and memorable
-  ${isMale || isFemale ? `- Gender-appropriate for the recipient` : ''}`;
+  Return ONLY a JSON array of 3-4 specific gift suggestions.`;
 
   return enhancedPrompt;
 }
