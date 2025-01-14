@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useQuery, useMutation } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useOpenAISuggestions } from './useOpenAISuggestions';
 import { useAmazonProductProcessing } from './useAmazonProductProcessing';
 import { GiftSuggestion } from '@/types/suggestions';
@@ -10,6 +10,7 @@ export const useSuggestions = () => {
   const [lastQuery, setLastQuery] = useState('');
   const { generateSuggestions } = useOpenAISuggestions();
   const { processSuggestions } = useAmazonProductProcessing();
+  const queryClient = useQueryClient();
 
   const { data: suggestions = [], isPending: isLoading, mutate: fetchSuggestions } = useMutation({
     mutationFn: async (query: string) => {
