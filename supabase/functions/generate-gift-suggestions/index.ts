@@ -59,13 +59,11 @@ serve(async (req) => {
 
 CRITICAL REQUIREMENTS:
 1. PROVIDE EXACTLY 8 SUGGESTIONS:
-   - 4 suggestions MUST be directly related to the stated interests
-   - 4 suggestions MUST be age-appropriate general gifts
+   - 5 suggestions MUST be directly related to the stated interests (while still taking gender and age into consideration)
+   - 3 suggestions MUST be age-appropriate general gifts (while still taking gender into consideration)
    
 2. ENSURE VARIETY:
    - No duplicate product categories (e.g., don't suggest multiple speakers or notebooks)
-   - Mix practical items with entertainment/hobby items
-   - Include both premium and value options within the budget
    
 3. CONSIDER DEMOGRAPHICS:
    - All suggestions must be gender-appropriate
