@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import { TabsContent, Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
+import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage, FormDescription } from "@/components/ui/form";
 import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
@@ -14,6 +14,7 @@ import { BlogPostBasicInfo } from "./form/BlogPostBasicInfo";
 import { BlogPostContent } from "./form/BlogPostContent";
 import { BlogPostSEO } from "./form/BlogPostSEO";
 import { BlogPostFormData, BlogPostData } from "./types/BlogPostTypes";
+import { Input } from "@/components/ui/input";
 
 interface BlogPostFormProps {
   initialData?: BlogPostData;
@@ -39,7 +40,9 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
       meta_description: "",
       meta_keywords: "",
       images: [],
-      affiliate_links: [], // Added this line
+      affiliate_links: [],
+      image_alt_text: "",
+      related_posts: [],
     },
   });
 
@@ -157,6 +160,27 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
                     value={field.value || ''} 
                     setValue={form.setValue}
                   />
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="image_alt_text"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Image Alt Text</FormLabel>
+                  <FormControl>
+                    <Input 
+                      {...field} 
+                      placeholder="Descriptive text for the featured image"
+                      value={field.value || ''}
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    Describe the image content for better SEO and accessibility
+                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
