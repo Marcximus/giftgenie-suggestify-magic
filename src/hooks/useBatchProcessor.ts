@@ -21,9 +21,9 @@ export const useBatchProcessor = <T, R>() => {
     const {
       processFn,
       onError = console.error,
-      batchSize = 2, // Reduced from AMAZON_CONFIG.MAX_CONCURRENT_REQUESTS
+      batchSize = 2,
       staggerDelay = AMAZON_CONFIG.STAGGER_DELAY,
-      parallel = false // Changed default to false for more controlled processing
+      parallel = false
     } = options;
 
     setIsProcessing(true);
@@ -42,7 +42,7 @@ export const useBatchProcessor = <T, R>() => {
             const globalIndex = i + index;
             try {
               await waitForRateLimit();
-              await sleep(staggerDelay * index); // Ensure delay between items
+              await sleep(staggerDelay * index);
               const result = await processFn(item);
               processedItems.add(globalIndex);
               setProcessingQueue(prev => prev.filter((_, idx) => !processedItems.has(idx)));
@@ -73,7 +73,6 @@ export const useBatchProcessor = <T, R>() => {
           }
         }
 
-        // Longer delay between batches
         if (i + batchSize < items.length) {
           await sleep(AMAZON_CONFIG.BASE_RETRY_DELAY * 2);
         }

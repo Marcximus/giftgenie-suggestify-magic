@@ -17,6 +17,16 @@ export class RateLimiter {
   private warningCount = 0;
   private activeRequests = 0;
   private lastCoolingTime = 0;
+  private static instance: RateLimiter;
+
+  private constructor() {}
+
+  static getInstance(): RateLimiter {
+    if (!RateLimiter.instance) {
+      RateLimiter.instance = new RateLimiter();
+    }
+    return RateLimiter.instance;
+  }
 
   private isInCoolingPeriod(): boolean {
     return Date.now() - this.lastCoolingTime < RATE_LIMITS.COOLING_PERIOD;
@@ -59,15 +69,24 @@ export class RateLimiter {
       this.warningCount = Math.max(0, this.warningCount - 1);
     }
   }
-
-  static getInstance(): RateLimiter {
-    if (!RateLimiter.instance) {
-      RateLimiter.instance = new RateLimiter();
-    }
-    return RateLimiter.instance;
-  }
-
-  private static instance: RateLimiter;
 }
 
+// Helper functions that use the singleton instance
 export const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+export const waitForRateLimit = async (retryCount = 0): Promise<void> => {
+  const rateLimiter = RateLimiter.getInstance();
+  while (!(await rateLimiter.acquireSlot())) {
+    await sleep(1000);
+  }
+};
+
+export const logRequest = (): void => {
+  const rateLimiter = RateLimiter.getInstance();
+  rateLimiter.acquireSlot();
+};
+
+export const handleRateLimitResponse = async (status: number): Promise<void> => {
+  const rateLimiter = RateLimiter.getInstance();
+  await rateLimiter.handleResponse(status);
+};
