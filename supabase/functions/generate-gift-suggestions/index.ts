@@ -5,7 +5,6 @@ import { corsHeaders } from '../_shared/cors.ts';
 import { validateAndCleanSuggestions } from '../_shared/suggestion-validator.ts';
 import { processSuggestionsInBatches } from '../_shared/batch-processor.ts';
 import { generateGiftSuggestions } from '../_shared/openai.ts';
-import { filterProducts } from '../_shared/product-filter.ts';
 import { analyzePrompt } from '../_shared/prompt-analyzer.ts';
 import { buildGiftPrompt } from '../_shared/prompt-builder.ts';
 
@@ -41,20 +40,32 @@ serve(async (req) => {
       occasion: promptAnalysis.occasion
     });
 
+    console.log('Enhanced prompt:', enhancedPrompt);
+
     // Generate suggestions using OpenAI
     const suggestions = await generateGiftSuggestions(enhancedPrompt);
-    const validSuggestions = validateAndCleanSuggestions(suggestions);
+    console.log('Raw suggestions from OpenAI:', suggestions);
+
+    if (!suggestions || !Array.isArray(suggestions)) {
+      console.error('Invalid suggestions format:', suggestions);
+      throw new Error('Invalid suggestions format received from OpenAI');
+    }
+
+    const validSuggestions = validateAndCleanSuggestions(JSON.stringify(suggestions));
+    console.log('Validated suggestions:', validSuggestions);
+    
+    if (!validSuggestions.length) {
+      throw new Error('No valid suggestions generated');
+    }
     
     // Process suggestions in parallel batches
     console.log('Processing suggestions in parallel');
     const processedProducts = await processSuggestionsInBatches(validSuggestions);
+    console.log('Processed products:', processedProducts);
     
-    // Filter products based on budget
-    const filteredProducts = filterProducts(
-      processedProducts,
-      promptAnalysis.budget.min || 25,
-      maxBudget || promptAnalysis.budget.max || 200
-    );
+    if (!processedProducts.length) {
+      throw new Error('No products found for suggestions');
+    }
 
     // Log metrics
     await supabase.from('api_metrics').insert({
@@ -65,9 +76,7 @@ serve(async (req) => {
     });
 
     return new Response(
-      JSON.stringify({ 
-        suggestions: filteredProducts.length > 0 ? filteredProducts : processedProducts.slice(0, 3) 
-      }),
+      JSON.stringify({ suggestions: processedProducts }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
@@ -85,8 +94,8 @@ serve(async (req) => {
     
     return new Response(
       JSON.stringify({ 
-        error: error.message,
-        details: 'Failed to generate gift suggestions'
+        error: 'Failed to generate gift suggestions',
+        details: error.message
       }),
       {
         status: 500,

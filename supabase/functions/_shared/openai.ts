@@ -3,6 +3,8 @@ import { OpenAI } from "https://deno.land/x/openai@v4.24.0/mod.ts";
 const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
 
 export async function generateGiftSuggestions(prompt: string): Promise<string[]> {
+  console.log('Generating suggestions with prompt:', prompt);
+  
   const response = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
     headers: {
@@ -10,7 +12,7 @@ export async function generateGiftSuggestions(prompt: string): Promise<string[]>
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      model: "gpt-4o-mini",
+      model: "gpt-4",
       messages: [
         {
           role: "system",
@@ -45,11 +47,15 @@ IMPORTANT: Your response must be a valid JSON array of strings. Do not include a
   });
 
   if (!response.ok) {
+    console.error('OpenAI API error:', response.status, await response.text());
     throw new Error(`OpenAI API error: ${response.status}`);
   }
 
   const data = await response.json();
+  console.log('OpenAI response:', data);
+  
   const content = data.choices[0].message.content.trim();
+  console.log('Raw content from OpenAI:', content);
   
   try {
     // Try to parse the content directly
