@@ -9,11 +9,15 @@ interface BlogPostPreviewProps {
 export const BlogPostPreview = ({ data }: BlogPostPreviewProps) => {
   return (
     <article className="w-full">
+      <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-6">
+        {data.title}
+      </h1>
+
       {data.image_url && (
         <div className="flex justify-center my-2 sm:my-3">
           <img
             src={data.image_url}
-            alt={data.title}
+            alt={data.image_alt_text || data.title}
             className="rounded-lg shadow-md w-full max-w-[400px] sm:max-w-[500px] lg:max-w-[600px] object-cover"
           />
         </div>

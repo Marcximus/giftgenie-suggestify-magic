@@ -16,29 +16,43 @@ const BlogPost = () => {
     queryFn: async () => {
       console.log("Fetching blog post with slug:", slug);
       
-      const { data, error } = await supabase
+      const { data: currentPost, error: currentError } = await supabase
         .from("blog_posts")
         .select("*")
         .eq("slug", slug)
         .maybeSingle();
       
-      if (error) {
-        console.error("Error fetching blog post:", error);
+      if (currentError) {
+        console.error("Error fetching blog post:", currentError);
         toast({
           title: "Error loading blog post",
           description: "Please try again later",
           variant: "destructive",
         });
-        throw error;
+        throw currentError;
       }
 
-      if (!data) {
+      if (!currentPost) {
         console.log("No blog post found with slug:", slug);
         return null;
       }
 
-      console.log("Found blog post:", data);
-      return data as Tables<"blog_posts">;
+      // Fetch related posts
+      const { data: relatedPosts, error: relatedError } = await supabase
+        .from("blog_posts")
+        .select("title, slug, published_at")
+        .neq("slug", slug)
+        .order("published_at", { ascending: false })
+        .limit(3);
+
+      if (relatedError) {
+        console.error("Error fetching related posts:", relatedError);
+      }
+
+      return {
+        ...currentPost,
+        relatedPosts: relatedPosts || []
+      } as Tables<"blog_posts"> & { relatedPosts: any[] };
     },
   });
 
@@ -47,6 +61,7 @@ const BlogPost = () => {
       <>
         <Helmet>
           <title>Loading... - Get The Gift Blog</title>
+          <meta name="description" content="Loading blog post content..." />
         </Helmet>
         <div className="container mx-auto px-2 sm:px-4 py-8 max-w-4xl animate-pulse">
           <div className="h-8 bg-gray-200 rounded w-3/4 mb-4"></div>
@@ -63,6 +78,7 @@ const BlogPost = () => {
       <>
         <Helmet>
           <title>Error - Get The Gift Blog</title>
+          <meta name="description" content="An error occurred while loading the blog post." />
         </Helmet>
         <div className="container mx-auto px-2 sm:px-4 py-8 max-w-4xl">
           <h1 className="text-2xl font-bold mb-4">Error loading blog post</h1>
@@ -98,8 +114,9 @@ const BlogPost = () => {
   return (
     <>
       <Helmet>
-        <title>{post.title} - Get The Gift Blog</title>
-        <meta name="description" content={post.excerpt || `Read ${post.title} on Get The Gift Blog`} />
+        <title>{post.meta_title || post.title} - Get The Gift Blog</title>
+        <meta name="description" content={post.meta_description || post.excerpt || `Read ${post.title} on Get The Gift Blog`} />
+        <meta name="keywords" content={post.meta_keywords || ''} />
         <meta property="og:title" content={`${post.title} - Get The Gift Blog`} />
         <meta property="og:description" content={post.excerpt || `Read ${post.title} on Get The Gift Blog`} />
         {post.image_url && (
@@ -119,11 +136,15 @@ const BlogPost = () => {
             More Ideas
           </Button>
           
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-6 sm:mb-8">
+            {post.title}
+          </h1>
+
           {post.image_url && (
             <div className="aspect-[21/9] relative overflow-hidden rounded-lg mb-6 sm:mb-8 shadow-xl animate-fade-in">
               <img 
                 src={post.image_url} 
-                alt={post.title}
+                alt={post.image_alt_text || post.title}
                 className="object-cover w-full h-full"
               />
             </div>
@@ -161,6 +182,33 @@ const BlogPost = () => {
               dangerouslySetInnerHTML={{ __html: post.content }}
             />
           </div>
+
+          {/* Related Posts Section */}
+          {post.relatedPosts && post.relatedPosts.length > 0 && (
+            <div className="mt-12 border-t pt-8">
+              <h2 className="text-2xl font-bold mb-6">Related Posts</h2>
+              <div className="grid gap-6">
+                {post.relatedPosts.map((relatedPost: any) => (
+                  <div key={relatedPost.slug} className="group">
+                    <Button
+                      variant="ghost"
+                      className="w-full text-left hover:bg-primary/10 p-4"
+                      onClick={() => navigate(`/blog/post/${relatedPost.slug}`)}
+                    >
+                      <div>
+                        <h3 className="font-semibold group-hover:text-primary transition-colors">
+                          {relatedPost.title}
+                        </h3>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          {new Date(relatedPost.published_at).toLocaleDateString()}
+                        </p>
+                      </div>
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </article>
     </>

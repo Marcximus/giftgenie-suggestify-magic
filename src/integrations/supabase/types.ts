@@ -85,12 +85,14 @@ export type Database = {
           created_at: string | null
           excerpt: string | null
           id: string
+          image_alt_text: string | null
           image_url: string | null
           images: Json | null
           meta_description: string | null
           meta_keywords: string | null
           meta_title: string | null
           published_at: string | null
+          related_posts: Json | null
           slug: string
           title: string
           updated_at: string | null
@@ -102,12 +104,14 @@ export type Database = {
           created_at?: string | null
           excerpt?: string | null
           id?: string
+          image_alt_text?: string | null
           image_url?: string | null
           images?: Json | null
           meta_description?: string | null
           meta_keywords?: string | null
           meta_title?: string | null
           published_at?: string | null
+          related_posts?: Json | null
           slug: string
           title: string
           updated_at?: string | null
@@ -119,12 +123,14 @@ export type Database = {
           created_at?: string | null
           excerpt?: string | null
           id?: string
+          image_alt_text?: string | null
           image_url?: string | null
           images?: Json | null
           meta_description?: string | null
           meta_keywords?: string | null
           meta_title?: string | null
           published_at?: string | null
+          related_posts?: Json | null
           slug?: string
           title?: string
           updated_at?: string | null
