@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { corsHeaders } from '../_shared/cors.ts';
+import { searchWithFallback } from './searchUtils.ts';
 
 const RAPIDAPI_HOST = 'real-time-amazon-data.p.rapidapi.com';
 
@@ -25,34 +26,31 @@ serve(async (req) => {
     const apiKey = Deno.env.get('RAPIDAPI_KEY');
 
     if (!apiKey) {
+      console.error('RAPIDAPI_KEY not configured');
       throw new Error('RAPIDAPI_KEY not configured');
     }
 
-    console.log('Searching Amazon for:', searchTerm);
-
-    // Perform the search
-    const searchResponse = await fetch(
-      `https://${RAPIDAPI_HOST}/search?query=${encodeURIComponent(searchTerm)}&country=US`,
-      {
-        headers: {
-          'X-RapidAPI-Key': apiKey,
-          'X-RapidAPI-Host': RAPIDAPI_HOST,
-        }
-      }
-    );
-
-    if (!searchResponse.ok) {
-      console.error('Amazon Search API error:', searchResponse.status);
-      throw new Error(`Amazon API error: ${searchResponse.status}`);
+    if (!searchTerm) {
+      console.error('No search term provided');
+      throw new Error('Search term is required');
     }
 
-    const searchData = await searchResponse.json();
-    console.log('Search response:', searchData);
+    console.log('Starting Amazon search for:', searchTerm);
 
-    if (!searchData.data?.products?.[0]) {
+    // Perform the search with fallback
+    const searchData = await searchWithFallback(searchTerm, apiKey, RAPIDAPI_HOST);
+    console.log('Search response received:', {
+      hasData: !!searchData?.data,
+      productsCount: searchData?.data?.products?.length
+    });
+
+    if (!searchData?.data?.products?.[0]) {
       console.log('No products found for search term:', searchTerm);
       return new Response(
-        JSON.stringify({ error: 'No products found' }),
+        JSON.stringify({ 
+          error: 'No products found',
+          searchTerm 
+        }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -63,7 +61,10 @@ serve(async (req) => {
     if (!asin) {
       console.warn('Invalid product data: No ASIN found');
       return new Response(
-        JSON.stringify({ error: 'Invalid product data' }),
+        JSON.stringify({ 
+          error: 'Invalid product data',
+          details: 'No ASIN found'
+        }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -81,11 +82,15 @@ serve(async (req) => {
     );
 
     if (!detailsResponse.ok) {
+      console.error('Product details API error:', detailsResponse.status);
       throw new Error(`Product details API error: ${detailsResponse.status}`);
     }
 
     const detailsData = await detailsResponse.json();
-    console.log('Details response:', detailsData);
+    console.log('Details response received:', {
+      hasData: !!detailsData?.data,
+      title: detailsData?.data?.product_title?.substring(0, 50)
+    });
 
     // Extract and format product details
     const formatPrice = (priceStr: string | null | undefined): number | undefined => {
@@ -116,7 +121,10 @@ serve(async (req) => {
       throw new Error('Invalid product details');
     }
 
-    console.log('Returning product details:', productDetails);
+    console.log('Returning product details:', {
+      title: productDetails.title.substring(0, 50),
+      asin: productDetails.asin
+    });
 
     return new Response(
       JSON.stringify({ product: productDetails }),
@@ -127,11 +135,12 @@ serve(async (req) => {
     console.error('Error in get-amazon-products function:', error);
     return new Response(
       JSON.stringify({ 
-        error: error.message,
-        details: 'Failed to fetch product details'
+        error: error.message || 'Unknown error',
+        details: 'Failed to fetch product details',
+        timestamp: new Date().toISOString()
       }),
       { 
-        status: 500,
+        status: error.status || 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       }
     );
