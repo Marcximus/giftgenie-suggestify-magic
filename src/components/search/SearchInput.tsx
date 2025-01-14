@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Search, RefreshCw } from 'lucide-react';
+import { TypingPlaceholder } from './TypingPlaceholder';
 
 interface SearchInputProps {
   query: string;
@@ -22,7 +23,7 @@ export const SearchInput = ({
     <form onSubmit={onSubmit} className="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full">
       <div className="flex-1 min-w-0 group">
         <textarea
-          placeholder="E.g., 'Tech-savvy dad who loves cooking'"
+          placeholder={`E.g., "${<TypingPlaceholder />}"`}
           value={query}
           onChange={onQueryChange}
           className="w-full min-h-[40px] max-h-[120px] text-sm sm:text-base p-2 sm:p-3 rounded-md border border-input bg-background/50 backdrop-blur-sm resize-y overflow-auto focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 transition-all duration-200 group-hover:border-primary/50"
