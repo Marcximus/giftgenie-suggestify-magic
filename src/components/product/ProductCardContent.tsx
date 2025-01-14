@@ -22,13 +22,6 @@ const formatPrice = (price: string | number): string => {
 };
 
 const formatDescription = (description: string): string => {
-  // If it's already a GPT-generated description (they typically end with a period),
-  // just clean up any HTML and return it
-  if (description.trim().endsWith('.')) {
-    return description.replace(/<[^>]*>/g, '').trim();
-  }
-
-  // Otherwise, it's an Amazon description that needs formatting
   // Remove any HTML tags that might come from Amazon
   const cleanDescription = description.replace(/<[^>]*>/g, '');
   
@@ -37,19 +30,31 @@ const formatDescription = (description: string): string => {
     .replace(/\s+/g, ' ')
     .trim();
 
-  // Remove product title repetitions that often appear at the start
-  const withoutTitleRepetition = normalizedDescription
-    .replace(/^(.+?)[-–:]/, '')
-    .trim();
+  // If it's a very short description, return it as is
+  if (normalizedDescription.length < 100) {
+    return normalizedDescription;
+  }
 
-  // Capitalize first letter if it's not already
-  const capitalizedDescription = withoutTitleRepetition.charAt(0).toUpperCase() + 
-    withoutTitleRepetition.slice(1);
+  // Split into sentences
+  const sentences = normalizedDescription.split(/[.!?]+/).filter(s => s.trim().length > 0);
+  
+  // Take the first 2-3 meaningful sentences
+  const meaningfulSentences = sentences
+    .filter(sentence => {
+      const lower = sentence.toLowerCase().trim();
+      return !lower.includes('click here') &&
+             !lower.includes('buy now') &&
+             !lower.includes('limited time') &&
+             !lower.includes('check price') &&
+             sentence.length > 20;
+    })
+    .slice(0, 3);
 
-  // Ensure description ends with a period
-  const finalDescription = capitalizedDescription.endsWith('.') ? 
-    capitalizedDescription : 
-    `${capitalizedDescription}.`;
+  // Join sentences and ensure it ends with a period
+  let finalDescription = meaningfulSentences.join('. ').trim();
+  if (!finalDescription.endsWith('.')) {
+    finalDescription += '.';
+  }
 
   return finalDescription;
 };

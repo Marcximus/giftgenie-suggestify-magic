@@ -26,23 +26,28 @@ export const simplifyTitle = (title: string): string => {
     .replace(/\s{2,}/g, ' ') // Remove extra spaces
     .trim();
 
-  // Extract the main part of the title
-  const mainTitle = cleanTitle
-    .split(/[,|\-\(\)]/) // Split on common separators
-    .map(part => part.trim()) // Trim each part
-    .filter(part => part.length > 0) // Remove empty parts
-    .reduce((longest, current) => {
-      // Keep the longest meaningful part
-      return (current.length > longest.length && current.split(' ').length >= 2) 
-        ? current 
-        : longest;
-    }, cleanTitle.split(/[,|\-\(\)]/)[0].trim());
-
-  // Take up to 8 words, but ensure we have at least 2
-  const words = mainTitle.split(' ');
-  const titleWords = words.length <= 2 ? words : words.slice(0, 8);
+  // Extract the main part of the title by focusing on the product name
+  const parts = cleanTitle.split(/[–—-]|\(|\)|,/); // Split on dashes, parentheses, commas
   
-  return titleWords.join(' ').trim();
+  // Get the first part as it usually contains the main product name
+  let mainTitle = parts[0].trim();
+  
+  // If the first part is too short (less than 3 words), try to find a better part
+  if (mainTitle.split(' ').length < 3) {
+    // Look for a part that has 3-8 words and doesn't contain common suffixes
+    mainTitle = parts.find(part => {
+      const words = part.trim().split(' ');
+      return words.length >= 3 && 
+             words.length <= 8 && 
+             !part.toLowerCase().includes('with') &&
+             !part.toLowerCase().includes('featuring') &&
+             !part.toLowerCase().includes('includes');
+    }) || mainTitle;
+  }
+
+  // Ensure the title isn't too long
+  const words = mainTitle.split(' ');
+  return words.slice(0, 8).join(' ').trim();
 };
 
 const ProductCardComponent = ({ 
