@@ -12,7 +12,7 @@ const RATE_LIMITS: RateLimitConfig = {
   WARNING_THRESHOLD: 2         // Reduced from 3
 };
 
-class RateLimiter {
+export class RateLimiter {
   private static instance: RateLimiter;
   private requestLog: number[] = [];
   private warningCount = 0;
