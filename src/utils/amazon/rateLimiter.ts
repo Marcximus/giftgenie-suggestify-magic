@@ -6,18 +6,19 @@ interface RateLimitConfig {
 }
 
 const RATE_LIMITS: RateLimitConfig = {
-  REQUESTS_PER_MINUTE: 4,      // Allow 4 requests per minute
-  CONCURRENT_REQUESTS: 2,      // 2 concurrent requests
-  COOLING_PERIOD: 3000,        // 3 second cooling after warnings
-  WARNING_THRESHOLD: 3         // Start cooling after 3 429s
+  REQUESTS_PER_MINUTE: 2,      // Reduced from 4
+  CONCURRENT_REQUESTS: 1,      // Reduced from 2
+  COOLING_PERIOD: 5000,        // Increased from 3000
+  WARNING_THRESHOLD: 2         // Reduced from 3
 };
 
-export class RateLimiter {
+class RateLimiter {
   private static instance: RateLimiter;
   private requestLog: number[] = [];
   private warningCount = 0;
   private activeRequests = 0;
   private lastCoolingTime = 0;
+  private subscriptionErrorCount = 0;
 
   private constructor() {}
 
@@ -39,12 +40,19 @@ export class RateLimiter {
       now - time < 60000
     );
 
-    // Check if we can make a request
+    // Check if we're in a cooling period or have hit limits
     if (
       this.activeRequests >= RATE_LIMITS.CONCURRENT_REQUESTS ||
       this.requestLog.length >= RATE_LIMITS.REQUESTS_PER_MINUTE ||
       this.isInCoolingPeriod()
     ) {
+      console.log('Rate limit reached, waiting...');
+      return false;
+    }
+
+    // Check if we've had subscription errors
+    if (this.subscriptionErrorCount > 0) {
+      console.error('API subscription issues detected');
       return false;
     }
 
@@ -60,25 +68,42 @@ export class RateLimiter {
   async handleResponse(status: number): Promise<void> {
     if (status === 429) {
       this.warningCount++;
+      console.warn(`Rate limit warning ${this.warningCount}/${RATE_LIMITS.WARNING_THRESHOLD}`);
+      
       if (this.warningCount >= RATE_LIMITS.WARNING_THRESHOLD) {
         this.lastCoolingTime = Date.now();
         this.warningCount = 0;
+        console.log(`Entering cooling period for ${RATE_LIMITS.COOLING_PERIOD}ms`);
         await new Promise(resolve => setTimeout(resolve, RATE_LIMITS.COOLING_PERIOD));
       }
+    } else if (status === 403) {
+      this.subscriptionErrorCount++;
+      console.error('API subscription error detected');
+      // Reset after 5 minutes
+      setTimeout(() => {
+        this.subscriptionErrorCount = Math.max(0, this.subscriptionErrorCount - 1);
+      }, 300000);
     } else {
       this.warningCount = Math.max(0, this.warningCount - 1);
     }
   }
 }
 
-// Helper functions that use the singleton instance
 export const sleep = (ms: number): Promise<void> => 
   new Promise(resolve => setTimeout(resolve, ms));
 
 export const waitForRateLimit = async (retryCount = 0): Promise<void> => {
   const rateLimiter = RateLimiter.getInstance();
+  let attempts = 0;
+  const maxAttempts = 5;
+
   while (!(await rateLimiter.acquireSlot())) {
-    await sleep(1000);
+    if (attempts >= maxAttempts) {
+      throw new Error('Max rate limit wait attempts exceeded');
+    }
+    console.log(`Waiting for rate limit (attempt ${attempts + 1}/${maxAttempts})`);
+    await sleep(2000 * Math.pow(2, attempts));
+    attempts++;
   }
 };
 

@@ -1,5 +1,6 @@
 import { waitForRateLimit, logRequest } from './rateLimiter';
 import { cleanSearchTerm } from './utils';
+import { toast } from "@/components/ui/use-toast";
 
 export const searchWithFallback = async (
   searchTerm: string,
@@ -9,7 +10,7 @@ export const searchWithFallback = async (
   console.log('Starting search with fallback for:', searchTerm);
   
   let retryCount = 0;
-  const MAX_RETRIES = 3;
+  const MAX_RETRIES = 2;
 
   while (retryCount < MAX_RETRIES) {
     try {
@@ -33,19 +34,6 @@ export const searchWithFallback = async (
         return fallbackData;
       }
 
-      // If still no results, try with fallback terms
-      const fallbackTerms = getFallbackSearchTerms(searchTerm);
-      
-      for (const term of fallbackTerms) {
-        console.log('Trying fallback term:', term);
-        await waitForRateLimit(retryCount);
-        const termData = await performSearch(term, apiKey, rapidApiHost);
-        
-        if (termData?.data?.products?.length > 0) {
-          return termData;
-        }
-      }
-
       return null;
     } catch (error: any) {
       console.error('Error in searchWithFallback:', error);
@@ -54,8 +42,22 @@ export const searchWithFallback = async (
         retryCount++;
         const delay = Math.min(1000 * Math.pow(2, retryCount), 8000);
         console.log(`Rate limited (429), retry ${retryCount} of ${MAX_RETRIES}, waiting ${delay}ms`);
+        toast({
+          title: "Please wait",
+          description: "We're processing your request...",
+          duration: delay,
+        });
         await new Promise(resolve => setTimeout(resolve, delay));
         continue;
+      }
+
+      if (error.status === 403) {
+        console.error('API subscription error');
+        toast({
+          title: "Service Temporarily Unavailable",
+          description: "We're experiencing some technical difficulties. Please try again later.",
+          variant: "destructive",
+        });
       }
       
       throw error;
@@ -73,7 +75,7 @@ const performSearch = async (
   const cleanedTerm = cleanSearchTerm(term);
   console.log('Performing search for:', cleanedTerm);
 
-  logRequest(); // Log the request for rate limiting
+  logRequest();
 
   const searchResponse = await fetch(
     `https://${rapidApiHost}/search?query=${encodeURIComponent(cleanedTerm)}&country=US`,
@@ -101,21 +103,4 @@ const simplifySearchTerm = (searchTerm: string): string => {
     .replace(/-.*$/, '')
     .replace(/\d+(?:\s*-\s*\d+)?\s*(?:gb|tb|inch|"|cm|mm)/gi, '')
     .trim();
-};
-
-const getFallbackSearchTerms = (searchTerm: string): string[] => {
-  const words = searchTerm.split(' ')
-    .filter(word => !['with', 'and', 'in', 'for', 'by', 'the', 'a', 'an'].includes(word.toLowerCase()))
-    .filter(word => word.length > 2);
-  
-  const searchTerms = [];
-  
-  if (words.length > 2) {
-    searchTerms.push(words.slice(0, 3).join(' '));
-    searchTerms.push([words[0], words[words.length - 1]].join(' '));
-  } else {
-    searchTerms.push(words.join(' '));
-  }
-  
-  return [...new Set(searchTerms)];
 };
