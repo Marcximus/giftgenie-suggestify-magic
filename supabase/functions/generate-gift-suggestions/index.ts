@@ -85,7 +85,7 @@ DO NOT include any additional text, formatting, or explanations.`
             content: `${enhancedPrompt}\n\nIMPORTANT: Return ONLY a JSON array of 8 strings. No other text.` 
           }
         ],
-        temperature: 0.8,
+        temperature: 0.7,
         max_tokens: 500,
       }),
     });
@@ -96,20 +96,29 @@ DO NOT include any additional text, formatting, or explanations.`
     }
 
     const data = await response.json();
-    console.log('OpenAI response:', data);
+    console.log('OpenAI raw response:', data);
     
     const content = data.choices[0].message.content.trim();
-    console.log('Raw content from OpenAI:', content);
+    console.log('Content from OpenAI:', content);
     
+    let suggestions;
     try {
       // Try to parse the content directly
-      const suggestions = JSON.parse(content);
+      suggestions = JSON.parse(content);
+      console.log('Parsed suggestions:', suggestions);
       
-      if (!Array.isArray(suggestions) || suggestions.length !== 8) {
+      if (!Array.isArray(suggestions)) {
+        console.error('Not an array:', suggestions);
+        throw new Error('Invalid response format: expected array');
+      }
+      
+      if (suggestions.length !== 8) {
+        console.error('Wrong array length:', suggestions.length);
         throw new Error('Invalid response format: expected array of 8 suggestions');
       }
       
       if (!suggestions.every(item => typeof item === 'string')) {
+        console.error('Invalid item types:', suggestions.map(item => typeof item));
         throw new Error('Invalid response format: all items must be strings');
       }
       
@@ -137,11 +146,13 @@ DO NOT include any additional text, formatting, or explanations.`
       
     } catch (e) {
       console.error('Failed to parse OpenAI response:', e);
-      throw new Error('Failed to parse gift suggestions from OpenAI response');
+      console.error('Raw content that failed to parse:', content);
+      throw new Error(`Failed to parse gift suggestions: ${e.message}`);
     }
 
   } catch (error) {
     console.error('Error in generate-gift-suggestions function:', error);
+    console.error('Stack trace:', error.stack);
     
     // Log error metrics
     await supabase.from('api_metrics').insert({
