@@ -40,7 +40,7 @@ const BlogPost = () => {
       // Fetch related posts
       const { data: relatedPosts, error: relatedError } = await supabase
         .from("blog_posts")
-        .select("title, slug, published_at")
+        .select("title, slug")
         .neq("slug", slug)
         .order("published_at", { ascending: false })
         .limit(3);
@@ -185,25 +185,28 @@ const BlogPost = () => {
 
           {/* Related Posts Section */}
           {post.relatedPosts && post.relatedPosts.length > 0 && (
-            <div className="mt-12 border-t pt-8">
-              <h2 className="text-2xl font-bold mb-6">Related Posts</h2>
-              <div className="grid gap-6">
+            <div className="mt-12 pt-8 border-t border-primary/10">
+              <h2 className="text-2xl font-bold mb-6 bg-gradient-to-r from-primary/80 to-primary bg-clip-text text-transparent">
+                More Gift Ideas
+              </h2>
+              <div className="grid gap-4">
                 {post.relatedPosts.map((relatedPost: any) => (
-                  <div key={relatedPost.slug} className="group">
+                  <div 
+                    key={relatedPost.slug}
+                    className="group relative overflow-hidden rounded-lg bg-gradient-to-r from-background to-muted/50 border border-primary/10 hover:border-primary/30 transition-all duration-300"
+                  >
                     <Button
                       variant="ghost"
-                      className="w-full text-left hover:bg-primary/10 p-4"
+                      className="w-full text-left p-4 hover:bg-primary/5"
                       onClick={() => navigate(`/blog/post/${relatedPost.slug}`)}
                     >
-                      <div>
-                        <h3 className="font-semibold group-hover:text-primary transition-colors">
-                          {relatedPost.title}
-                        </h3>
-                        <p className="text-sm text-muted-foreground mt-1">
-                          {new Date(relatedPost.published_at).toLocaleDateString()}
-                        </p>
-                      </div>
+                      <h3 className="font-semibold text-lg group-hover:text-primary transition-colors">
+                        {relatedPost.title}
+                      </h3>
                     </Button>
+                    <div className="absolute inset-y-0 right-0 flex items-center pr-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <ChevronLeft className="w-4 h-4 rotate-180 text-primary" />
+                    </div>
                   </div>
                 ))}
               </div>
