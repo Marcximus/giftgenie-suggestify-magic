@@ -1,4 +1,4 @@
-import { RateLimiter } from './rateLimiter';
+import { RateLimiter, waitForRateLimit } from './rateLimiter';
 import { toast } from "@/components/ui/use-toast";
 
 interface SearchConfig {
@@ -16,8 +16,9 @@ const SEARCH_CONFIG: SearchConfig = {
 export class ProductSearchService {
   private rateLimiter: RateLimiter;
   private cache: Map<string, { data: any; timestamp: number }>;
+  private static instance: ProductSearchService;
 
-  constructor() {
+  private constructor() {
     this.rateLimiter = RateLimiter.getInstance();
     this.cache = new Map();
   }
@@ -31,59 +32,60 @@ export class ProductSearchService {
   }
 
   async searchProduct(term: string, apiKey: string, rapidApiHost: string): Promise<any> {
-    // Check cache first
     const cacheKey = this.getCacheKey(term);
     const cached = this.cache.get(cacheKey);
+    
     if (cached && this.isCacheValid(cached.timestamp)) {
       console.log('Cache hit for:', term);
       return cached.data;
     }
 
-    let retries = 0;
-    while (retries <= SEARCH_CONFIG.maxRetries) {
+    let retryCount = 0;
+    while (retryCount < SEARCH_CONFIG.maxRetries) {
       try {
-        // Wait for available slot
-        while (!(await this.rateLimiter.acquireSlot())) {
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          console.log('Waiting for available request slot...');
-        }
+        await waitForRateLimit();
 
-        // Perform search
         const response = await this.performSearch(term, apiKey, rapidApiHost);
         await this.rateLimiter.handleResponse(response.status);
         
-        if (response.ok) {
-          const data = await response.json();
-          
-          // Cache successful results
-          this.cache.set(cacheKey, {
-            data,
-            timestamp: Date.now()
-          });
-          
-          return data;
-        }
-
-        if (response.status === 429) {
-          retries++;
-          toast({
-            title: "Rate limit reached",
-            description: "Please wait a moment while we process your request",
-            variant: "destructive",
-          });
-          continue;
-        }
-
         if (response.status === 403) {
+          console.error('API subscription error');
           toast({
-            title: "API Access Error",
-            description: "Unable to access the product search API. Please try again later.",
+            title: "Amazon Product Search Unavailable",
+            description: "We're experiencing some technical difficulties with our product search. Please try again later.",
             variant: "destructive",
           });
+          throw new Error('API subscription error');
+        }
+
+        if (!response.ok) {
           throw new Error(`Search failed: ${response.status}`);
         }
 
-        throw new Error(`Search failed: ${response.status}`);
+        const data = await response.json();
+        
+        // Cache successful results
+        this.cache.set(cacheKey, {
+          data,
+          timestamp: Date.now()
+        });
+        
+        return data;
+      } catch (error: any) {
+        console.error('Error in searchProduct:', error);
+        retryCount++;
+        
+        // Don't retry on subscription errors
+        if (error.message === 'API subscription error') {
+          throw error;
+        }
+        
+        if (retryCount >= SEARCH_CONFIG.maxRetries) {
+          throw error;
+        }
+        
+        // Wait before retrying with exponential backoff
+        await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, retryCount)));
       } finally {
         this.rateLimiter.releaseSlot();
       }
@@ -94,23 +96,25 @@ export class ProductSearchService {
 
   private async performSearch(term: string, apiKey: string, rapidApiHost: string): Promise<Response> {
     const searchTerm = this.optimizeSearchTerm(term);
-    return fetch(
-      `https://${rapidApiHost}/search?query=${encodeURIComponent(searchTerm)}&country=US`,
-      {
-        headers: {
-          'X-RapidAPI-Key': apiKey,
-          'X-RapidAPI-Host': rapidApiHost,
-        }
+    const url = `https://${rapidApiHost}/search?query=${encodeURIComponent(searchTerm)}&country=US`;
+    
+    console.log('Performing search with URL:', url);
+    
+    return fetch(url, {
+      headers: {
+        'X-RapidAPI-Key': apiKey,
+        'X-RapidAPI-Host': rapidApiHost,
       }
-    );
+    });
   }
 
   private optimizeSearchTerm(term: string): string {
-    const words = term.split(' ');
-    return words
+    return term
+      .split(' ')
       .filter(word => !['with', 'and', 'for', 'the', 'a', 'an'].includes(word.toLowerCase()))
       .slice(0, 4)
-      .join(' ');
+      .join(' ')
+      .replace(/[^\w\s-]/g, ''); // Remove special characters except hyphens
   }
 
   static getInstance(): ProductSearchService {
@@ -119,6 +123,4 @@ export class ProductSearchService {
     }
     return ProductSearchService.instance;
   }
-
-  private static instance: ProductSearchService;
 }

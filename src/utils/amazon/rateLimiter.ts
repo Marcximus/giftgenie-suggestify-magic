@@ -6,10 +6,10 @@ interface RateLimitConfig {
 }
 
 const RATE_LIMITS: RateLimitConfig = {
-  REQUESTS_PER_MINUTE: 2,      // Reduced from 4
-  CONCURRENT_REQUESTS: 1,      // Reduced from 2
-  COOLING_PERIOD: 5000,        // Increased from 3000
-  WARNING_THRESHOLD: 2         // Reduced from 3
+  REQUESTS_PER_MINUTE: 2,
+  CONCURRENT_REQUESTS: 1,
+  COOLING_PERIOD: 5000,
+  WARNING_THRESHOLD: 2
 };
 
 export class RateLimiter {
@@ -34,13 +34,11 @@ export class RateLimiter {
   }
 
   async acquireSlot(): Promise<boolean> {
-    // Clean old requests
     const now = Date.now();
     this.requestLog = this.requestLog.filter(time => 
       now - time < 60000
     );
 
-    // Check if we're in a cooling period or have hit limits
     if (
       this.activeRequests >= RATE_LIMITS.CONCURRENT_REQUESTS ||
       this.requestLog.length >= RATE_LIMITS.REQUESTS_PER_MINUTE ||
@@ -50,7 +48,6 @@ export class RateLimiter {
       return false;
     }
 
-    // Check if we've had subscription errors
     if (this.subscriptionErrorCount > 0) {
       console.error('API subscription issues detected');
       return false;
@@ -105,14 +102,4 @@ export const waitForRateLimit = async (retryCount = 0): Promise<void> => {
     await sleep(2000 * Math.pow(2, attempts));
     attempts++;
   }
-};
-
-export const logRequest = (): void => {
-  const rateLimiter = RateLimiter.getInstance();
-  rateLimiter.acquireSlot().catch(console.error);
-};
-
-export const handleRateLimitResponse = async (status: number): Promise<void> => {
-  const rateLimiter = RateLimiter.getInstance();
-  await rateLimiter.handleResponse(status);
 };
