@@ -7,9 +7,9 @@ import { withRetry } from '@/utils/amazon/retryUtils';
 import { toast } from "@/components/ui/use-toast";
 
 const RATE_LIMIT = {
-  MAX_REQUESTS: 25,
+  MAX_REQUESTS: 3,
   WINDOW_MS: 60000,
-  RETRY_AFTER: 30
+  RETRY_AFTER: 60
 };
 
 const requestLog: { timestamp: number }[] = [];
@@ -31,6 +31,11 @@ export const useAmazonProducts = () => {
       if (cached) return cached;
 
       if (isRateLimited()) {
+        toast({
+          title: "Slow down",
+          description: "Please wait a moment before trying again",
+          variant: "destructive",
+        });
         await new Promise(resolve => setTimeout(resolve, RATE_LIMIT.RETRY_AFTER * 1000));
       }
 
@@ -42,8 +47,8 @@ export const useAmazonProducts = () => {
           AMAZON_CONFIG.API_KEY,
           AMAZON_CONFIG.RAPID_API_HOST
         ),
-        2,
-        1000
+        5, // Increased retries
+        2000 // Increased base delay
       );
       
       if (product) {
@@ -64,6 +69,12 @@ export const useAmazonProducts = () => {
           variant: "destructive",
         });
         await new Promise(resolve => setTimeout(resolve, retryAfter * 1000));
+      } else if (error.status === 403) {
+        toast({
+          title: "API Access Error",
+          description: "Unable to access the product search API. Please try again later.",
+          variant: "destructive",
+        });
       }
       
       return null;
