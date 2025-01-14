@@ -1,5 +1,4 @@
 import { searchAmazonProduct } from './amazon-api.ts';
-import type { AmazonProduct } from './types.ts';
 
 export async function processContent(
   content: string,
@@ -55,20 +54,20 @@ export async function processContent(
 
         // Reconstruct the section with the product information
         return `${beforeH3}</h3>
-          <div class="flex justify-center my-4">
-            <img 
-              src="${product.imageUrl}" 
-              alt="${productName}"
-              class="w-96 h-96 object-contain rounded-lg shadow-md" 
-              loading="lazy"
-            />
-          </div>
-          <div class="flex justify-center mb-8">
+          <div class="flex flex-col items-center my-6 sm:my-8">
+            <div class="relative w-full max-w-2xl aspect-square mb-4">
+              <img 
+                src="${product.imageUrl}" 
+                alt="${productName}"
+                class="w-full h-full object-contain rounded-lg shadow-md" 
+                loading="lazy"
+              />
+            </div>
             <a 
               href="${affiliateLink}" 
               target="_blank" 
               rel="noopener noreferrer" 
-              class="inline-block px-4 py-2 bg-[#F97316] hover:bg-[#F97316]/90 text-white rounded-md transition-colors text-sm font-medium"
+              class="inline-block px-6 py-3 bg-[#F97316] hover:bg-[#F97316]/90 text-white rounded-md transition-colors text-base font-medium shadow-sm hover:shadow-md active:scale-95"
             >
               View on Amazon
             </a>
