@@ -1,10 +1,8 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
+import { corsHeaders } from '../_shared/cors.ts';
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -12,13 +10,12 @@ serve(async (req) => {
   }
 
   try {
-    const { title, originalDescription } = await req.json();
-    console.log('Generating custom description for:', title);
+    const { title, description } = await req.json();
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${Deno.env.get('OPENAI_API_KEY')}`,
+        'Authorization': `Bearer ${OPENAI_API_KEY}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
@@ -26,69 +23,61 @@ serve(async (req) => {
         messages: [
           {
             role: "system",
-            content: `You are a creative gift copywriter with a fun, engaging style. Your descriptions should be unique and captivating, avoiding clichéd openings like "elevate" or "embark." Follow these guidelines:
+            content: `You are a creative product description writer. Your task is to create engaging, informative descriptions that:
 
-1. Start each description differently - be creative and varied
-2. Focus on what makes this gift special and memorable
-3. Include sensory details or emotional appeal
-4. Keep descriptions concise (60-80 words)
-5. Use engaging, conversational language
-6. Highlight unique features or experiences
-7. Consider the gift-giving context
-8. Make each description distinct and fresh
+1. VARY YOUR OPENINGS:
+- Use diverse ways to start descriptions
+- Avoid repetitive phrases like "Imagine" or "Picture this"
+- Focus on the product's key features and benefits
 
-AVOID these overused openings:
-- "Elevate..."
-- "Embark..."
-- "Transform..."
-- "Discover..."
-- "Experience..."
-- "Introducing..."
+2. BE CONCISE BUT INFORMATIVE:
+- Keep descriptions under 2 sentences
+- Highlight the most important features
+- Explain why this makes a great gift
 
-Instead, use creative, varied approaches like:
-- Describing a moment of use
-- Starting with an interesting fact
-- Using playful or intriguing questions
-- Beginning with sensory details
-- Opening with emotional appeal
-- Using humor when appropriate
+3. MAINTAIN PROFESSIONALISM:
+- Use clear, straightforward language
+- Avoid overly casual or marketing-style language
+- Focus on factual information
 
-BAD example: "Elevate their coffee experience with this premium machine."
-GOOD example: "Watch their eyes light up as the rich aroma of barista-quality coffee fills their kitchen. This sleek machine brings cafe-worthy brews home, combining Italian craftsmanship with one-touch convenience for their perfect morning cup."`
+4. STRUCTURE:
+First sentence: Describe the main feature or benefit
+Second sentence: Explain why it makes a great gift
+
+Example formats:
+- "This [product] delivers [key benefit], making it a perfect gift for [recipient type]."
+- "Featuring [key feature], this [product] is ideal for [specific use case]."
+- "Crafted with [quality/feature], this [product] offers [benefit] that any [recipient] would appreciate."
+
+Return only the description, no additional formatting or text.`
           },
           {
             role: "user",
-            content: `Product: ${title}\nOriginal Description: ${originalDescription}\n\nCreate an engaging, unique gift description that captures what makes this a special present.`
+            content: `Create a concise, engaging description for this product: ${title}\n\nOriginal description: ${description}`
           }
         ],
-        temperature: 0.8,
+        temperature: 0.7,
         max_tokens: 150,
       }),
     });
 
     if (!response.ok) {
-      console.error('OpenAI API error:', response.status);
-      return new Response(
-        JSON.stringify({ description: originalDescription }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      throw new Error(`OpenAI API error: ${response.status}`);
     }
 
     const data = await response.json();
-    const description = data.choices?.[0]?.message?.content?.replace(/['"]/g, '') || originalDescription;
-
     return new Response(
-      JSON.stringify({ description }),
+      JSON.stringify({ description: data.choices[0].message.content.trim() }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
   } catch (error) {
-    console.error('Error in generate-custom-description function:', error);
+    console.error('Error in generate-custom-description:', error);
     return new Response(
       JSON.stringify({ error: error.message }),
-      {
+      { 
         status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       }
     );
   }
