@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { buildBlogPrompt } from "./openaiPrompt.ts";
 import { processContent } from "../_shared/content-processor.ts";
+import { buildBlogPrompt } from "./openaiPrompt.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
