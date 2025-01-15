@@ -17,22 +17,6 @@ import { BlogPostFormActions } from "./form/BlogPostFormActions";
 import { useAltTextGeneration } from "./form/useAltTextGeneration";
 import { useSlugGeneration } from "./form/useSlugGeneration";
 
-const defaultFormData: BlogPostFormData = {
-  title: "",
-  slug: "",
-  content: "",
-  excerpt: null,
-  author: "",
-  image_url: null,
-  image_alt_text: null,
-  meta_title: null,
-  meta_description: null,
-  meta_keywords: null,
-  affiliate_links: [],
-  images: null,
-  related_posts: null
-};
-
 interface BlogPostFormProps {
   initialData?: DatabaseFormData;
 }
@@ -46,7 +30,11 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
   const { generateUniqueSlug, generateSlug } = useSlugGeneration();
 
   const form = useForm<BlogPostFormData>({
-    defaultValues: initialData ? convertDatabaseToRuntime(initialData) : defaultFormData,
+    defaultValues: initialData ? convertDatabaseToRuntime(initialData) : {
+      ...defaultFormData,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    },
   });
 
   const { isGeneratingAltText, generateAltText } = useAltTextGeneration(form);
