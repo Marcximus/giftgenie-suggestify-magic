@@ -1,5 +1,6 @@
-import { searchAmazonProduct } from './amazon-api.ts';
- 
+import { processContent } from "../_shared/content-processor.ts";
+import { formatReviewData } from "./reviewUtils.ts";
+
 export async function processContent(
   content: string,
   associateId: string,
@@ -52,20 +53,21 @@ export async function processContent(
           return section;
         }
 
-        // Add review information with improved styling
-        const reviewInfo = product.rating ? `
+        // Format review data
+        const reviewData = formatReviewData(product.rating, product.totalRatings);
+        const reviewInfo = reviewData ? `
           <div class="flex flex-col items-center gap-2 my-6 p-6 bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl shadow-sm">
             <div class="flex items-center gap-2">
               ${Array.from({ length: 5 }, (_, i) => 
                 `<span class="text-yellow-400 text-xl">
-                  ${i < Math.floor(product.rating) ? '★' : (i < product.rating ? '★' : '☆')}
+                  ${i < Math.floor(reviewData.rating) ? '★' : (i < reviewData.rating ? '★' : '☆')}
                 </span>`
               ).join('')}
-              <span class="font-semibold text-xl text-gray-800">${product.rating.toFixed(1)}</span>
+              <span class="font-semibold text-xl text-gray-800">${reviewData.rating.toFixed(1)}</span>
             </div>
-            ${product.totalRatings ? `
+            ${reviewData.totalRatings ? `
               <div class="text-base text-gray-600">
-                Based on ${product.totalRatings.toLocaleString()} verified customer reviews
+                Based on ${reviewData.totalRatings.toLocaleString()} verified customer reviews
               </div>
             ` : ''}
           </div>` : '';
