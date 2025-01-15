@@ -9,7 +9,12 @@ export interface AffiliateLink {
 
 // Form data type matching Supabase table structure
 export type BlogPostFormData = Omit<Tables<"blog_posts">, "id" | "created_at" | "updated_at"> & {
-  affiliate_links: AffiliateLink[] | null;
+  affiliate_links: AffiliateLink[];
+};
+
+// Type for data being submitted to Supabase
+export type BlogPostSubmitData = Omit<Tables<"blog_posts">, "id" | "created_at"> & {
+  affiliate_links: string | null;
 };
 
 // Database type

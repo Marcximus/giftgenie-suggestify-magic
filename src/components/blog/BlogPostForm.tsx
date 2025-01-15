@@ -11,7 +11,7 @@ import { useAIContent } from "@/hooks/useAIContent";
 import { BlogPostBasicInfo } from "./form/BlogPostBasicInfo";
 import { BlogPostContent } from "./form/BlogPostContent";
 import { BlogPostSEO } from "./form/BlogPostSEO";
-import { BlogPostFormData, BlogPostData, convertToJson, convertToAffiliateLinks } from "./types/BlogPostTypes";
+import { BlogPostFormData, BlogPostData, convertToJson, convertToAffiliateLinks, BlogPostSubmitData } from "./types/BlogPostTypes";
 import { BlogPostImageSection } from "./form/BlogPostImageSection";
 import { BlogPostFormActions } from "./form/BlogPostFormActions";
 import { useAltTextGeneration } from "./form/useAltTextGeneration";
@@ -41,7 +41,7 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
     meta_description: null,
     meta_keywords: null,
     images: null,
-    affiliate_links: null,
+    affiliate_links: [], // Initialize as an empty array
     image_alt_text: null,
     related_posts: null,
   };
@@ -49,7 +49,7 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
   const form = useForm<BlogPostFormData>({
     defaultValues: initialData ? {
       ...initialData,
-      affiliate_links: convertToAffiliateLinks(initialData.affiliate_links)
+      affiliate_links: convertToAffiliateLinks(initialData.affiliate_links) || [],
     } : defaultValues,
   });
 
@@ -99,9 +99,9 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
         });
       }
 
-      const dataToSubmit = {
+      const dataToSubmit: BlogPostSubmitData = {
         ...data,
-        affiliate_links: data.affiliate_links ? JSON.stringify(data.affiliate_links) : null,
+        affiliate_links: convertToJson(data.affiliate_links),
         updated_at: currentTime,
         published_at: publishedAt,
       };
