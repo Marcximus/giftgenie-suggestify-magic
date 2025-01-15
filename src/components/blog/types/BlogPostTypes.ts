@@ -8,7 +8,7 @@ export interface AffiliateLink {
   totalRatings?: number | string;
 }
 
-// Base interface for form data
+// Base interface for form data with explicit types
 export interface BlogPostFormData {
   title: string;
   slug: string;
@@ -20,10 +20,10 @@ export interface BlogPostFormData {
   meta_title: string | null;
   meta_description: string | null;
   meta_keywords: string | null;
-  images: Json[] | null;
+  images: Json | null;
   affiliate_links: Json | null;
   image_alt_text: string | null;
-  related_posts: Json[] | null;
+  related_posts: Json | null;
 }
 
 // Extended interface for database data

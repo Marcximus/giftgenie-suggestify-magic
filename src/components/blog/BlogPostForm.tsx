@@ -29,6 +29,7 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
   const { toast } = useToast();
   const { generateContent, getFormFieldFromType } = useAIContent();
 
+  // Define default values explicitly
   const defaultValues: BlogPostFormData = {
     title: "",
     slug: "",
