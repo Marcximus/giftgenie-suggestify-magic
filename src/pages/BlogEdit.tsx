@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import BlogPostForm from "@/components/blog/BlogPostForm";
 import { useToast } from "@/hooks/use-toast";
-import { DatabaseFormData } from "@/components/blog/types/BlogPostTypes";
+import { BlogPostFormData } from "@/components/blog/types/BlogPostTypes";
 
 const BlogEdit = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -46,7 +46,7 @@ const BlogEdit = () => {
         return null;
       }
 
-      return data as DatabaseFormData;
+      return data as BlogPostFormData;
     },
   });
 

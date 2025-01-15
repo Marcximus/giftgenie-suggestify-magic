@@ -1,8 +1,8 @@
-import { UseFormReturn } from 'react-hook-form';
-import { BlogPostFormData } from '../types/BlogPostTypes';
+import { Control } from "react-hook-form";
+import { BlogPostFormData } from "../types/BlogPostTypes";
 
 export interface FormComponentBaseProps {
-  form: UseFormReturn<BlogPostFormData>;
+  control: Control<BlogPostFormData>;
 }
 
 export interface BlogPostBasicInfoProps extends FormComponentBaseProps {
