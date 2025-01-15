@@ -48,14 +48,22 @@ export const BlogPostContent = ({ post }: BlogPostContentProps) => {
         const reviewData = reviewMap.get(imageUrl);
         
         if (reviewData) {
-          // If we have review data for this image, add the review component after it
+          // Create a div to wrap the image and review
           return `${segment}
             <div class="my-4">
-              ${ProductReview({
-                rating: reviewData.rating,
-                totalRatings: reviewData.totalRatings,
-                className: "my-4"
-              })}
+              <div class="flex flex-col items-center gap-2 my-6 p-6 bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl shadow-sm">
+                <div class="flex items-center gap-2">
+                  ${Array.from({ length: 5 }, (_, i) => 
+                    `<span class="text-yellow-400 text-xl">
+                      ${i < Math.floor(reviewData.rating) ? '★' : (i < reviewData.rating ? '★' : '☆')}
+                    </span>`
+                  ).join('')}
+                  <span class="font-semibold text-xl text-gray-800">${reviewData.rating.toFixed(1)}</span>
+                </div>
+                <div class="text-base text-gray-600">
+                  Based on ${reviewData.totalRatings.toLocaleString()} verified customer reviews
+                </div>
+              </div>
             </div>`;
         }
       }
