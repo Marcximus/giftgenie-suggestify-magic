@@ -9,7 +9,7 @@ interface BlogPostPreviewProps {
 export const BlogPostPreview = ({ data }: BlogPostPreviewProps) => {
   return (
     <article className="w-full">
-      <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-6">
+      <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-4 sm:mb-6">
         {data.title}
       </h1>
 
@@ -18,31 +18,43 @@ export const BlogPostPreview = ({ data }: BlogPostPreviewProps) => {
           <img
             src={data.image_url}
             alt={data.image_alt_text || data.title}
-            className="rounded-lg shadow-md w-full max-w-[400px] sm:max-w-[500px] lg:max-w-[600px] object-cover"
+            className="rounded-lg shadow-md w-full max-w-[300px] sm:max-w-[400px] lg:max-w-[500px] object-cover"
           />
         </div>
       )}
+      
       {data.excerpt && (
-        <p className="text-left text-sm sm:text-base text-muted-foreground mb-4">{data.excerpt}</p>
+        <p className="text-sm md:text-base text-muted-foreground mb-4">
+          {data.excerpt}
+        </p>
       )}
+      
       <div 
-        className="mt-4 space-y-3 sm:space-y-4 text-left w-full
-                   [&>h2]:text-lg [&>h2]:sm:text-xl [&>h2]:md:text-2xl [&>h2]:font-bold [&>h2]:mt-4 [&>h2]:mb-2 
-                   [&>h3]:text-base [&>h3]:sm:text-lg [&>h3]:md:text-xl [&>h3]:font-semibold [&>h3]:mt-3 [&>h3]:mb-2
-                   [&>p]:text-sm [&>p]:sm:text-base [&>p]:leading-relaxed [&>p]:mb-2
-                   [&>ul]:list-disc [&>ul]:pl-4 [&>ul]:sm:pl-6 [&>ul]:mb-2 [&>ul]:space-y-1
-                   [&>ol]:list-decimal [&>ol]:pl-4 [&>ol]:sm:pl-6 [&>ol]:mb-2 [&>ol]:space-y-1
-                   [&_img]:w-full [&_img]:max-w-[400px] [&_img]:sm:max-w-[500px] [&_img]:lg:max-w-[600px]
-                   [&_img]:h-auto [&_img]:aspect-square
-                   [&_img]:object-contain [&_img]:mx-auto [&_img]:my-2 [&_img]:sm:my-3
-                   [&_img]:rounded-lg [&_img]:shadow-md
-                   [&_a]:block [&_a]:mt-2 [&_a]:sm:mt-3 [&_a]:text-primary [&_a]:hover:underline"
+        className="mt-4 space-y-2 sm:space-y-3 text-left w-full
+                   prose-sm md:prose-base lg:prose-lg
+                   prose-h2:text-lg sm:prose-h2:text-xl md:prose-h2:text-2xl
+                   prose-h2:font-bold prose-h2:mt-4 prose-h2:mb-2
+                   
+                   prose-h3:text-base sm:prose-h3:text-lg md:prose-h3:text-xl
+                   prose-h3:font-semibold prose-h3:mt-3 prose-h3:mb-2
+                   
+                   prose-p:text-sm md:prose-p:text-base
+                   prose-p:leading-relaxed prose-p:mb-2
+                   
+                   prose-ul:list-disc prose-ul:pl-4 sm:prose-ul:pl-6 prose-ul:mb-2
+                   prose-ol:list-decimal prose-ol:pl-4 sm:prose-ol:pl-6 prose-ol:mb-2
+                   
+                   prose-img:w-full prose-img:max-w-[300px] sm:prose-img:max-w-[400px] lg:prose-img:max-w-[500px]
+                   prose-img:h-auto prose-img:aspect-square prose-img:object-contain
+                   prose-img:mx-auto prose-img:my-2 sm:prose-img:my-3
+                   prose-img:rounded-lg prose-img:shadow-md"
         dangerouslySetInnerHTML={{ 
           __html: data.content.replace(/```html\n?|\n?```/g, '') 
         }}
       />
+      
       {data.author && (
-        <div className="mt-4 sm:mt-6 text-left text-sm sm:text-base text-muted-foreground">
+        <div className="mt-4 sm:mt-6 text-sm md:text-base text-muted-foreground">
           Written by {data.author}
           {data.published_at && (
             <span> · {new Date(data.published_at).toLocaleDateString()}</span>
