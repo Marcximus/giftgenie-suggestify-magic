@@ -1,0 +1,13 @@
+User-agent: *
+Allow: /
+
+# Sitemap
+Sitemap: https://getthegift.ai/sitemap.xml
+
+# Crawl-delay
+Crawl-delay: 10
+
+# Disallow paths
+Disallow: /admin/
+Disallow: /blog/edit/
+Disallow: /blog/new
