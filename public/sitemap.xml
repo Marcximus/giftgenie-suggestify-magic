@@ -2,6 +2,6 @@
 <?xml-stylesheet type="text/xsl" href="/sitemap.xsl"?>
 <sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <sitemap>
-    <loc>https://ckcqttsdpxfbpkzljctl.functions.supabase.co/generate-sitemap</loc>
+    <loc>https://ckcqttsdpxfbpkzljctl.supabase.co/functions/v1/generate-sitemap</loc>
   </sitemap>
 </sitemapindex>

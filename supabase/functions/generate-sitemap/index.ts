@@ -32,6 +32,8 @@ serve(async (req) => {
   }
 
   try {
+    console.log('Generating sitemap...');
+    
     // Initialize Supabase client with anon key
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
@@ -48,6 +50,8 @@ serve(async (req) => {
       console.error('Database error:', error);
       throw error;
     }
+
+    console.log(`Found ${posts?.length || 0} published blog posts`);
 
     // Generate sitemap XML with both static and dynamic URLs
     const xml = `<?xml version="1.0" encoding="UTF-8"?>
