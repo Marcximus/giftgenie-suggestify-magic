@@ -1,13 +1,13 @@
 import { Tables } from "@/integrations/supabase/types";
-import { Json } from "@/integrations/supabase/types";
+import { Json } from "@supabase/supabase-js";
 
-// Simplified base interface for affiliate links
+// Simplified affiliate link interface without index signature
 export interface AffiliateLink {
   productTitle: string;
   affiliateLink: string;
   imageUrl?: string;
-  rating?: number;
-  totalRatings?: number;
+  rating?: number | null;
+  totalRatings?: number | null;
 }
 
 // Form data type matching Supabase table structure
