@@ -1,5 +1,5 @@
-import { processContent } from "../_shared/content-processor.ts";
-import { formatReviewData } from "./reviewUtils.ts";
+import { searchAmazonProduct } from './amazon-api.ts';
+import { formatReviewData } from './reviewUtils.ts';
 
 export async function processContent(
   content: string,
