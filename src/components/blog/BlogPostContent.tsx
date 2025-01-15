@@ -24,12 +24,12 @@ export const BlogPostContent = ({ post }: BlogPostContentProps) => {
   // Create a map of image URLs to their corresponding review data
   const reviewMap = new Map(
     affiliateLinks
-      .filter(link => link.rating !== undefined && link.totalRatings !== undefined && link.imageUrl)
+      .filter(link => link.imageUrl)
       .map(link => [
         link.imageUrl,
         {
-          rating: link.rating!,
-          totalRatings: link.totalRatings!
+          rating: link.rating,
+          totalRatings: link.totalRatings
         }
       ])
   );
@@ -47,7 +47,7 @@ export const BlogPostContent = ({ post }: BlogPostContentProps) => {
         const imageUrl = srcMatch[1];
         const reviewData = reviewMap.get(imageUrl);
         
-        if (reviewData) {
+        if (reviewData?.rating && reviewData?.totalRatings) {
           // Create a div to wrap the image and review
           return `${segment}
             <div class="my-4">
@@ -66,6 +66,7 @@ export const BlogPostContent = ({ post }: BlogPostContentProps) => {
               </div>
             </div>`;
         }
+        return segment;
       }
     }
     return segment;
