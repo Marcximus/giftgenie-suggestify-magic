@@ -21,6 +21,7 @@ export async function processContent(
     if (!parsedSection) return section;
     
     try {
+      console.log('Searching for product:', parsedSection.productName);
       const product = await searchAmazonProduct(parsedSection.productName, apiKey);
       
       if (product?.asin) {
