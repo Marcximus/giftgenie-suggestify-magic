@@ -1,8 +1,8 @@
 import { Json } from '@/integrations/supabase/types';
 import { AffiliateLink } from '../types/BlogPostTypes';
 
-export const affiliateUtils = {
-  fromJson(json: Json): AffiliateLink[] {
+export const affiliateLinksUtils = {
+  parse(json: Json): AffiliateLink[] {
     try {
       const parsed = typeof json === 'string' ? JSON.parse(json) : json;
       if (!Array.isArray(parsed)) return [];

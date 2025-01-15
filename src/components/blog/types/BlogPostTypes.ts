@@ -8,7 +8,7 @@ export interface AffiliateLink {
   totalRatings?: number;
 }
 
-export interface BlogPostFormData {
+export type BlogPostFormData = {
   id?: string;
   title: string;
   slug: string;
@@ -19,14 +19,13 @@ export interface BlogPostFormData {
   image_alt_text: string | null;
   meta_title: string | null;
   meta_description: string | null;
-  meta_keywords: string | null;
   created_at?: string;
   updated_at?: string;
   published_at: string | null;
   affiliate_links: Json;
-  images: Json | null;
-  related_posts: Json | null;
-}
+  images?: Json | null;
+  related_posts?: Json | null;
+};
 
 export const EMPTY_FORM_DATA: BlogPostFormData = {
   title: '',
@@ -38,7 +37,6 @@ export const EMPTY_FORM_DATA: BlogPostFormData = {
   image_alt_text: null,
   meta_title: null,
   meta_description: null,
-  meta_keywords: null,
   affiliate_links: '[]' as Json,
   images: null,
   related_posts: null,
