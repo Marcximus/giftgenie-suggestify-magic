@@ -11,14 +11,14 @@ import { useAIContent } from "@/hooks/useAIContent";
 import { BlogPostBasicInfo } from "./form/BlogPostBasicInfo";
 import { BlogPostContent } from "./form/BlogPostContent";
 import { BlogPostSEO } from "./form/BlogPostSEO";
-import { DatabaseFormData, BlogPostFormData, convertDatabaseToRuntime, convertRuntimeToDatabase } from "./types/BlogPostTypes";
+import { BlogPostFormData, defaultFormData, parseAffiliateLinks, stringifyAffiliateLinks } from "./types/BlogPostTypes";
 import { BlogPostImageSection } from "./form/BlogPostImageSection";
 import { BlogPostFormActions } from "./form/BlogPostFormActions";
 import { useAltTextGeneration } from "./form/useAltTextGeneration";
 import { useSlugGeneration } from "./form/useSlugGeneration";
 
 interface BlogPostFormProps {
-  initialData?: DatabaseFormData;
+  initialData?: BlogPostFormData;
 }
 
 const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
@@ -30,7 +30,7 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
   const { generateUniqueSlug, generateSlug } = useSlugGeneration();
 
   const form = useForm<BlogPostFormData>({
-    defaultValues: initialData ? convertDatabaseToRuntime(initialData) : {
+    defaultValues: initialData || {
       ...defaultFormData,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
@@ -83,11 +83,11 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
         });
       }
 
-      const dataToSubmit = convertRuntimeToDatabase({
+      const dataToSubmit = {
         ...data,
         updated_at: currentTime,
         published_at: publishedAt,
-      });
+      };
 
       if (initialData?.id) {
         const { error } = await supabase

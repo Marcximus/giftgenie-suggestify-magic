@@ -1,14 +1,14 @@
 import { Json } from '@/integrations/supabase/types';
 
 export interface AffiliateLink {
-  productTitle: string;
-  affiliateLink: string;
-  imageUrl?: string;
+  productUrl: string;
+  imageUrl: string;
+  title: string;
   rating?: number;
   totalRatings?: number;
 }
 
-export interface BasePostData {
+export interface BlogPostFormData {
   id?: string;
   title: string;
   slug: string;
@@ -20,20 +20,32 @@ export interface BasePostData {
   meta_title: string | null;
   meta_description: string | null;
   meta_keywords: string | null;
-  published_at: string | null;
   created_at: string;
   updated_at: string;
+  published_at: string | null;
+  affiliate_links: Json;
   images: Json | null;
   related_posts: Json | null;
 }
 
-export interface BlogPostFormData extends BasePostData {
-  affiliate_links: AffiliateLink[];
-}
+export const parseAffiliateLinks = (jsonData: Json): AffiliateLink[] => {
+  try {
+    if (typeof jsonData === 'string') {
+      return JSON.parse(jsonData);
+    }
+    if (Array.isArray(jsonData)) {
+      return jsonData;
+    }
+    return [];
+  } catch {
+    console.error('Error parsing affiliate links:', jsonData);
+    return [];
+  }
+};
 
-export interface DatabaseFormData extends BasePostData {
-  affiliate_links: Json;
-}
+export const stringifyAffiliateLinks = (links: AffiliateLink[]): Json => {
+  return JSON.stringify(links) as Json;
+};
 
 export const defaultFormData: BlogPostFormData = {
   title: '',
@@ -46,46 +58,10 @@ export const defaultFormData: BlogPostFormData = {
   meta_title: null,
   meta_description: null,
   meta_keywords: null,
-  affiliate_links: [],
+  affiliate_links: '[]' as Json,
   images: null,
   related_posts: null,
-  published_at: null,
   created_at: new Date().toISOString(),
-  updated_at: new Date().toISOString()
+  updated_at: new Date().toISOString(),
+  published_at: null
 };
-
-export function convertDatabaseToRuntime(dbData: DatabaseFormData): BlogPostFormData {
-  let affiliateLinks: AffiliateLink[] = [];
-  
-  try {
-    const parsed = typeof dbData.affiliate_links === 'string' 
-      ? JSON.parse(dbData.affiliate_links) 
-      : dbData.affiliate_links;
-    
-    if (Array.isArray(parsed)) {
-      affiliateLinks = parsed.map(link => ({
-        productTitle: String(link.productTitle || ''),
-        affiliateLink: String(link.affiliateLink || ''),
-        imageUrl: link.imageUrl ? String(link.imageUrl) : undefined,
-        rating: typeof link.rating === 'number' ? link.rating : undefined,
-        totalRatings: typeof link.totalRatings === 'number' ? link.totalRatings : undefined
-      }));
-    }
-  } catch (error) {
-    console.error('Error parsing affiliate links:', error);
-  }
-
-  return {
-    ...dbData,
-    affiliate_links: affiliateLinks,
-    created_at: dbData.created_at || new Date().toISOString(),
-    updated_at: dbData.updated_at || new Date().toISOString()
-  };
-}
-
-export function convertRuntimeToDatabase(formData: BlogPostFormData): DatabaseFormData {
-  return {
-    ...formData,
-    affiliate_links: formData.affiliate_links as unknown as Json
-  };
-}
