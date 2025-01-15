@@ -8,6 +8,13 @@ export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
     port: 8080,
+    proxy: {
+      '/sitemap.xml': {
+        target: 'https://ckcqttsdpxfbpkzljctl.functions.supabase.co/generate-sitemap',
+        changeOrigin: true,
+        rewrite: (path) => ''
+      }
+    }
   },
   plugins: [
     react(),
