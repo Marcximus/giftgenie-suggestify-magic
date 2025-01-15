@@ -8,7 +8,7 @@ export interface AffiliateLink {
   totalRatings?: number;
 }
 
-export interface BlogPostFormData {
+export type BlogPostBase = {
   id?: string;
   title: string;
   slug: string;
@@ -20,44 +20,18 @@ export interface BlogPostFormData {
   meta_title: string | null;
   meta_description: string | null;
   meta_keywords: string | null;
-  created_at: string;
-  updated_at: string;
+  created_at?: string;
+  updated_at?: string;
   published_at: string | null;
-  affiliate_links: Json;
   images: Json | null;
   related_posts: Json | null;
-}
-
-export const affiliateLinksUtils = {
-  parse(json: Json): AffiliateLink[] {
-    try {
-      if (typeof json === 'string') {
-        const parsed = JSON.parse(json);
-        return Array.isArray(parsed) ? parsed : [];
-      }
-      return Array.isArray(json) ? json : [];
-    } catch {
-      console.error('Error parsing affiliate links');
-      return [];
-    }
-  },
-
-  stringify(links: AffiliateLink[]): Json {
-    return JSON.stringify(links) as Json;
-  },
-
-  isValid(obj: unknown): obj is AffiliateLink {
-    return (
-      typeof obj === 'object' &&
-      obj !== null &&
-      'productUrl' in obj &&
-      'imageUrl' in obj &&
-      'title' in obj
-    );
-  }
 };
 
-export const defaultFormData: BlogPostFormData = {
+export type BlogPostFormData = BlogPostBase & {
+  affiliate_links: Json;
+};
+
+export const EMPTY_FORM_DATA: BlogPostFormData = {
   title: '',
   slug: '',
   content: '',
@@ -71,7 +45,5 @@ export const defaultFormData: BlogPostFormData = {
   affiliate_links: '[]' as Json,
   images: null,
   related_posts: null,
-  created_at: new Date().toISOString(),
-  updated_at: new Date().toISOString(),
   published_at: null
 };

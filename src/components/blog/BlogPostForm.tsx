@@ -1,5 +1,4 @@
-import { useState, useCallback } from "react";
-import { useForm } from "react-hook-form";
+import { useReducer } from "react";
 import { useNavigate } from "react-router-dom";
 import { TabsContent, Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Form } from "@/components/ui/form";
@@ -11,37 +10,47 @@ import { useAIContent } from "@/hooks/useAIContent";
 import { BlogPostBasicInfo } from "./form/BlogPostBasicInfo";
 import { BlogPostContent } from "./form/BlogPostContent";
 import { BlogPostSEO } from "./form/BlogPostSEO";
-import { BlogPostFormData, defaultFormData, affiliateLinksUtils } from "./types/BlogPostTypes";
+import { BlogPostFormData, EMPTY_FORM_DATA } from "./types/BlogPostTypes";
 import { BlogPostImageSection } from "./form/BlogPostImageSection";
 import { BlogPostFormActions } from "./form/BlogPostFormActions";
 import { useAltTextGeneration } from "./form/useAltTextGeneration";
 import { useSlugGeneration } from "./form/useSlugGeneration";
+
+type FormAction = 
+  | { type: 'SET_FIELD'; field: keyof BlogPostFormData; value: any }
+  | { type: 'RESET'; data: BlogPostFormData };
+
+function formReducer(state: BlogPostFormData, action: FormAction): BlogPostFormData {
+  switch (action.type) {
+    case 'SET_FIELD':
+      return { ...state, [action.field]: action.value };
+    case 'RESET':
+      return action.data;
+    default:
+      return state;
+  }
+}
 
 interface BlogPostFormProps {
   initialData?: BlogPostFormData;
 }
 
 const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formData, dispatch] = useReducer(formReducer, initialData || EMPTY_FORM_DATA);
   const [activeTab, setActiveTab] = useState("edit");
   const navigate = useNavigate();
   const { toast } = useToast();
   const { generateContent, getFormFieldFromType } = useAIContent();
   const { generateUniqueSlug, generateSlug } = useSlugGeneration();
+  const { isGeneratingAltText, generateAltText } = useAltTextGeneration(formData, dispatch);
 
-  const form = useForm<BlogPostFormData>({
-    defaultValues: initialData || {
-      ...defaultFormData,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    },
-  });
-
-  const { isGeneratingAltText, generateAltText } = useAltTextGeneration(form);
+  const handleFieldChange = (field: keyof BlogPostFormData, value: any) => {
+    dispatch({ type: 'SET_FIELD', field, value });
+  };
 
   const handleAIGenerate = async (type: 'excerpt' | 'seo-title' | 'seo-description' | 'seo-keywords' | 'improve-content') => {
-    const currentTitle = form.getValues('title');
-    const currentContent = form.getValues('content');
+    const currentTitle = formData.title;
+    const currentContent = formData.content;
     
     if (!currentTitle && !currentContent) {
       toast({
@@ -60,7 +69,7 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
 
     if (generatedContent) {
       const formField = getFormFieldFromType(type);
-      form.setValue(formField, generatedContent, { shouldDirty: true });
+      handleFieldChange(formField, generatedContent);
       toast({
         title: "Success",
         description: "Content generated successfully!",
@@ -68,15 +77,14 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
     }
   };
 
-  const onSubmit = async (data: BlogPostFormData, isDraft: boolean = false) => {
-    setIsSubmitting(true);
+  const onSubmit = async (isDraft: boolean = false) => {
     try {
       const currentTime = new Date().toISOString();
       const publishedAt = isDraft ? null : currentTime;
       
-      const uniqueSlug = await generateUniqueSlug(data.slug);
-      if (uniqueSlug !== data.slug) {
-        data.slug = uniqueSlug;
+      const uniqueSlug = await generateUniqueSlug(formData.slug);
+      if (uniqueSlug !== formData.slug) {
+        handleFieldChange('slug', uniqueSlug);
         toast({
           title: "Notice",
           description: "A similar slug already existed. Generated a unique one.",
@@ -84,7 +92,7 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
       }
 
       const dataToSubmit = {
-        ...data,
+        ...formData,
         updated_at: currentTime,
         published_at: publishedAt,
       };
@@ -122,8 +130,6 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
         description: error.message || "Failed to save blog post",
         variant: "destructive",
       });
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
@@ -135,42 +141,45 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
       </TabsList>
 
       <TabsContent value="edit">
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit((data) => onSubmit(data, false))} className="space-y-6 text-left">
+        <Form>
+          <form className="space-y-6 text-left">
             <BlogPostBasicInfo 
-              form={form} 
+              formData={formData}
+              onFieldChange={handleFieldChange}
               generateSlug={generateSlug}
               initialData={initialData}
             />
 
             <BlogPostImageSection
-              form={form}
+              formData={formData}
+              onFieldChange={handleFieldChange}
               isGeneratingAltText={isGeneratingAltText}
               generateAltText={generateAltText}
             />
 
             <BlogPostContent 
-              form={form}
+              formData={formData}
+              onFieldChange={handleFieldChange}
               handleAIGenerate={handleAIGenerate}
             />
 
             <Separator />
 
             <BlogPostSEO 
-              form={form}
+              formData={formData}
+              onFieldChange={handleFieldChange}
               handleAIGenerate={handleAIGenerate}
             />
 
             <BlogPostFormActions
-              isSubmitting={isSubmitting}
-              onSubmit={(isDraft) => form.handleSubmit((data) => onSubmit(data, isDraft))()}
+              onSubmit={onSubmit}
             />
           </form>
         </Form>
       </TabsContent>
 
       <TabsContent value="preview" className="text-left">
-        <BlogPostPreview data={form.watch()} />
+        <BlogPostPreview data={formData} />
       </TabsContent>
     </Tabs>
   );
