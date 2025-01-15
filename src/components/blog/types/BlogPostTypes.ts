@@ -1,6 +1,10 @@
 import { Json } from "@/integrations/supabase/types";
 
-export interface AffiliateLink {
+// Define a type that matches Supabase's Json type structure
+export type JsonCompatible = string | number | boolean | null | JsonCompatible[] | { [key: string]: JsonCompatible };
+
+// Make AffiliateLink compatible with Json type
+export interface AffiliateLink extends Record<string, JsonCompatible> {
   productTitle: string;
   affiliateLink: string;
   imageUrl?: string;
