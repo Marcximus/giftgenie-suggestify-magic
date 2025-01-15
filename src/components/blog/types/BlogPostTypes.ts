@@ -20,7 +20,7 @@ export interface BlogPostFormData {
   meta_description: string | null;
   meta_keywords: string | null;
   images: Json | null;
-  affiliate_links: AffiliateLink[] | null;
+  affiliate_links: Json | null;
   image_alt_text: string | null;
   related_posts: Json | null;
 }
@@ -29,4 +29,28 @@ export interface BlogPostData extends BlogPostFormData {
   id: string;
   created_at: string;
   updated_at: string;
+}
+
+export function isAffiliateLinkArray(value: unknown): value is AffiliateLink[] {
+  if (!Array.isArray(value)) return false;
+  return value.every(item => 
+    typeof item === 'object' &&
+    item !== null &&
+    'productTitle' in item &&
+    'affiliateLink' in item
+  );
+}
+
+export function convertToAffiliateLinks(value: Json | null): AffiliateLink[] {
+  if (!value) return [];
+  try {
+    const parsed = typeof value === 'string' ? JSON.parse(value) : value;
+    return isAffiliateLinkArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+export function convertToJson(links: AffiliateLink[] | null): Json {
+  return links || [];
 }

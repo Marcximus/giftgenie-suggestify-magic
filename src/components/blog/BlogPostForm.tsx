@@ -11,7 +11,7 @@ import { useAIContent } from "@/hooks/useAIContent";
 import { BlogPostBasicInfo } from "./form/BlogPostBasicInfo";
 import { BlogPostContent } from "./form/BlogPostContent";
 import { BlogPostSEO } from "./form/BlogPostSEO";
-import { BlogPostFormData, BlogPostData } from "./types/BlogPostTypes";
+import { BlogPostFormData, BlogPostData, convertToJson } from "./types/BlogPostTypes";
 import { BlogPostImageSection } from "./form/BlogPostImageSection";
 import { BlogPostFormActions } from "./form/BlogPostFormActions";
 import { useAltTextGeneration } from "./form/useAltTextGeneration";
@@ -98,6 +98,7 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
 
       const dataToSubmit = {
         ...data,
+        affiliate_links: convertToJson(data.affiliate_links as unknown as AffiliateLink[] | null),
         updated_at: currentTime,
         published_at: publishedAt,
       };
