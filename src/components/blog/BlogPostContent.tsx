@@ -58,11 +58,11 @@ export const BlogPostContent = ({ post }: BlogPostContentProps) => {
         // Add image styling - maintain aspect ratio and prevent compression
         const styledImage = segment.replace(
           'class="',
-          'class="w-full max-w-2xl h-auto object-contain rounded-lg shadow-md mx-auto my-4 '
+          'class="w-full max-w-xl h-auto object-contain rounded-lg shadow-md mx-auto my-4 '
         );
         
         // If we have review data, add the review section
-        if (reviewData?.rating && reviewData?.totalRatings) {
+        if (reviewData?.rating !== undefined && reviewData?.totalRatings !== undefined) {
           return `
             <div class="flex flex-col items-center my-6">
               ${styledImage}
@@ -116,7 +116,7 @@ export const BlogPostContent = ({ post }: BlogPostContentProps) => {
                    prose-ul:list-disc prose-ul:pl-4 sm:prose-ul:pl-6 prose-ul:mb-4
                    prose-ol:list-decimal prose-ol:pl-4 sm:prose-ol:pl-6 prose-ol:mb-4
                    
-                   prose-img:w-full prose-img:max-w-2xl prose-img:mx-auto
+                   prose-img:w-full prose-img:max-w-xl prose-img:mx-auto
                    prose-img:h-auto prose-img:object-contain prose-img:my-4
                    prose-img:rounded-lg prose-img:shadow-md
                    
