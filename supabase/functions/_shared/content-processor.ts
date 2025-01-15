@@ -54,18 +54,18 @@ export async function processContent(
 
         // Add review information with improved styling
         const reviewInfo = product.rating ? `
-          <div class="flex flex-col items-center gap-2 my-4 p-4 bg-gray-50 rounded-lg">
+          <div class="flex flex-col items-center gap-2 my-6 p-6 bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl shadow-sm">
             <div class="flex items-center gap-2">
               ${Array.from({ length: 5 }, (_, i) => 
-                `<span class="text-yellow-400 text-lg">
+                `<span class="text-yellow-400 text-xl">
                   ${i < Math.floor(product.rating) ? '★' : (i < product.rating ? '★' : '☆')}
                 </span>`
               ).join('')}
-              <span class="font-medium text-lg">${product.rating.toFixed(1)}</span>
+              <span class="font-semibold text-xl text-gray-800">${product.rating.toFixed(1)}</span>
             </div>
             ${product.totalRatings ? `
-              <div class="text-sm text-gray-600">
-                Based on ${product.totalRatings.toLocaleString()} customer reviews
+              <div class="text-base text-gray-600">
+                Based on ${product.totalRatings.toLocaleString()} verified customer reviews
               </div>
             ` : ''}
           </div>` : '';
@@ -102,12 +102,12 @@ export async function processContent(
     }
   }));
   
-  // Add the "Get the Perfect Gift" link with improved design
+  // Add the "Get the Perfect Gift" link with improved design matching the menu
   const footerLink = `
-    <div class="text-center mt-12 mb-8">
+    <div class="flex justify-center mt-12 mb-8">
       <a 
         href="/" 
-        class="inline-flex items-center justify-center px-6 py-3 text-base font-medium text-white rounded-md transition-all duration-300 bg-gradient-to-r from-purple-500/80 via-blue-500/80 to-purple-500/80 hover:opacity-90 hover:scale-105"
+        class="perfect-gift-button"
       >
         Get the Perfect Gift
       </a>

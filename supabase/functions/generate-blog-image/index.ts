@@ -24,7 +24,7 @@ serve(async (req) => {
       },
       body: JSON.stringify({
         model: "dall-e-3",
-        prompt: prompt || `Create a entertaining, intresting and funny image for a blog post related to the subject of the title, do not include text: ${title}`,
+        prompt: prompt || `Create an entertaining, interesting, and funny image for a blog post related to the subject of the title. The image should be visually engaging and fill the entire frame. Do not include any text or typography in the image: ${title}`,
         n: 1,
         size: "1792x1024",
         quality: "standard",
