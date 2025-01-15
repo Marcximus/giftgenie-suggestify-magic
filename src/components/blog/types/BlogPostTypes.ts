@@ -53,5 +53,6 @@ export function convertToAffiliateLinks(value: Json | null): AffiliateLink[] {
 }
 
 export function convertToJson(links: AffiliateLink[] | null): Json {
-  return links || [];
+  if (!links) return [];
+  return links as unknown as Json;
 }
