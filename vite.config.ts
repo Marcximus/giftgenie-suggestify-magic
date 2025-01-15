@@ -11,8 +11,7 @@ export default defineConfig(({ mode }) => ({
     proxy: {
       '/sitemap.xml': {
         target: 'https://ckcqttsdpxfbpkzljctl.functions.supabase.co/functions/v1/generate-sitemap',
-        changeOrigin: true,
-        rewrite: (path) => ''
+        changeOrigin: true
       }
     }
   },
