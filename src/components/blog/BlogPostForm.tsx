@@ -101,7 +101,7 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
 
       const dataToSubmit = {
         ...data,
-        affiliate_links: convertToJson(data.affiliate_links),
+        affiliate_links: data.affiliate_links ? JSON.stringify(data.affiliate_links) : null,
         updated_at: currentTime,
         published_at: publishedAt,
       };
