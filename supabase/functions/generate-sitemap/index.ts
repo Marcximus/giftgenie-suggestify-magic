@@ -1,121 +1,67 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { createClient } from '@supabase/supabase-js';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
   'Content-Type': 'application/xml',
-  'Cache-Control': 'public, max-age=3600'
 };
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    // Get the anon key from the request header
-    const apikey = req.headers.get('apikey');
-    if (!apikey) {
-      throw new Error('Missing API key');
+    // Get the API key from the request headers
+    const apiKey = req.headers.get('apikey');
+    if (!apiKey) {
+      throw new Error('No API key provided');
     }
 
-    // Initialize Supabase client with anon key
+    // Initialize Supabase client with the provided API key
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabase = createClient(supabaseUrl, apikey);
+    const supabase = createClient(supabaseUrl, apiKey);
 
     // Fetch all published blog posts
     const { data: posts, error } = await supabase
       .from('blog_posts')
-      .select('slug, updated_at')
+      .select('slug, updated_at, published_at')
       .not('published_at', 'is', null)
       .order('published_at', { ascending: false });
 
-    if (error) {
-      console.error('Error fetching blog posts:', error);
-      throw error;
-    }
+    if (error) throw error;
 
-    // Generate sitemap XML with XSL stylesheet reference
-    const baseUrl = 'https://getthegift.ai';
-    const today = new Date().toISOString();
-
-    let xml = `<?xml version="1.0" encoding="UTF-8"?>
+    // Generate sitemap XML
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <?xml-stylesheet type="text/xsl" href="/sitemap.xsl"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${posts?.map(post => `
   <url>
-    <loc>${baseUrl}</loc>
-    <lastmod>${today}</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>1.0</priority>
-  </url>
-  <url>
-    <loc>${baseUrl}/about</loc>
-    <lastmod>${today}</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>${baseUrl}/blog</loc>
-    <lastmod>${today}</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.9</priority>
-  </url>`;
-
-    // Add blog posts to sitemap
-    for (const post of posts) {
-      xml += `
-  <url>
-    <loc>${baseUrl}/blog/post/${post.slug}</loc>
-    <lastmod>${post.updated_at}</lastmod>
+    <loc>https://getthegift.ai/blog/post/${post.slug}</loc>
+    <lastmod>${new Date(post.updated_at || post.published_at).toISOString()}</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
-  </url>`;
-    }
-
-    xml += '\n</urlset>';
+  </url>`).join('')}
+</urlset>`;
 
     return new Response(xml, {
       headers: {
         ...corsHeaders,
-        'Content-Type': 'application/xml',
-      },
+        'Cache-Control': 'public, max-age=3600'
+      }
     });
 
   } catch (error) {
     console.error('Error generating sitemap:', error);
-    
-    // Return a basic sitemap with main pages in case of error
-    const baseUrl = 'https://getthegift.ai';
-    const today = new Date().toISOString();
-    
-    const fallbackXml = `<?xml version="1.0" encoding="UTF-8"?>
-<?xml-stylesheet type="text/xsl" href="/sitemap.xsl"?>
+    return new Response(
+      `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url>
-    <loc>${baseUrl}</loc>
-    <lastmod>${today}</lastmod>
-    <priority>1.0</priority>
-  </url>
-  <url>
-    <loc>${baseUrl}/about</loc>
-    <lastmod>${today}</lastmod>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>${baseUrl}/blog</loc>
-    <lastmod>${today}</lastmod>
-    <priority>0.9</priority>
-  </url>
-</urlset>`;
-
-    return new Response(fallbackXml, {
-      headers: {
-        ...corsHeaders,
-        'Content-Type': 'application/xml',
-      },
-      status: error.message === 'Missing API key' ? 401 : 500,
-    });
+</urlset>`,
+      {
+        headers: corsHeaders,
+        status: 500
+      }
+    );
   }
 });
