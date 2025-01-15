@@ -3,11 +3,13 @@ import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft } from "lucide-react";
-import { Helmet } from "react-helmet";
 import { toast } from "@/components/ui/use-toast";
 import { BlogPostHeader } from "@/components/blog/BlogPostHeader";
 import { BlogPostContent } from "@/components/blog/BlogPostContent";
 import { RelatedPosts } from "@/components/blog/RelatedPosts";
+import { BlogPostMeta } from "@/components/blog/meta/BlogPostMeta";
+import { BlogPostSkeleton } from "@/components/blog/loading/BlogPostSkeleton";
+import { BlogPostError } from "@/components/blog/error/BlogPostError";
 
 const BlogPost = () => {
   const { slug } = useParams();
@@ -43,7 +45,7 @@ const BlogPost = () => {
         .from("blog_posts")
         .select("title, slug, image_url, excerpt")
         .neq("slug", slug)
-        .lt("published_at", new Date().toISOString()) // Only get previously published posts
+        .lt("published_at", new Date().toISOString())
         .order("published_at", { ascending: false })
         .limit(3);
 
@@ -59,114 +61,20 @@ const BlogPost = () => {
   });
 
   if (isLoading) {
-    return (
-      <>
-        <Helmet>
-          <title>Loading... - Get The Gift Blog</title>
-          <meta name="description" content="Loading blog post content..." />
-        </Helmet>
-        <div className="container mx-auto px-2 sm:px-4 py-8 max-w-4xl animate-pulse">
-          <div className="h-8 bg-gray-200 rounded w-3/4 mb-4"></div>
-          <div className="h-4 bg-gray-200 rounded w-full mb-2"></div>
-          <div className="h-4 bg-gray-200 rounded w-2/3"></div>
-        </div>
-      </>
-    );
+    return <BlogPostSkeleton />;
   }
 
   if (error) {
-    return (
-      <>
-        <Helmet>
-          <title>Error - Get The Gift Blog</title>
-          <meta name="description" content="An error occurred while loading the blog post." />
-        </Helmet>
-        <div className="container mx-auto px-2 sm:px-4 py-8 max-w-4xl">
-          <h1 className="text-2xl font-bold mb-4">Error loading blog post</h1>
-          <p className="text-red-500 mb-4">There was an error loading this blog post. Please try again later.</p>
-          <Button onClick={() => navigate("/blog")} variant="default">
-            <ChevronLeft className="mr-2 h-4 w-4" />
-            More Ideas
-          </Button>
-        </div>
-      </>
-    );
+    return <BlogPostError type="error" error={error as Error} />;
   }
 
   if (!post) {
-    return (
-      <>
-        <Helmet>
-          <title>Post Not Found - Get The Gift Blog</title>
-          <meta name="description" content="The blog post you're looking for could not be found." />
-        </Helmet>
-        <div className="container mx-auto px-2 sm:px-4 py-8 max-w-4xl">
-          <h1 className="text-2xl font-bold mb-4">Post not found</h1>
-          <p className="mb-4">The blog post you're looking for could not be found.</p>
-          <Button onClick={() => navigate("/blog")} variant="default">
-            <ChevronLeft className="mr-2 h-4 w-4" />
-            More Ideas
-          </Button>
-        </div>
-      </>
-    );
+    return <BlogPostError type="not-found" />;
   }
-
-  // Extract the first affiliate link for structured data
-  const firstProduct = post.affiliate_links?.[0] || null;
 
   return (
     <>
-      <Helmet>
-        <title>{post.meta_title || post.title} - Get The Gift Blog</title>
-        <meta name="description" content={post.meta_description || post.excerpt || `Read ${post.title} on Get The Gift Blog`} />
-        <meta name="keywords" content={post.meta_keywords || ''} />
-        <meta property="og:title" content={`${post.title} - Get The Gift Blog`} />
-        <meta property="og:description" content={post.excerpt || `Read ${post.title} on Get The Gift Blog`} />
-        {post.image_url && (
-          <meta property="og:image" content={post.image_url} />
-        )}
-        <meta name="author" content={post.author} />
-        <meta property="article:published_time" content={post.published_at || ""} />
-        <link rel="canonical" href={`https://getthegift.ai/blog/post/${post.slug}`} />
-        
-        {/* Structured Data for Blog Post */}
-        <script type="application/ld+json">
-          {JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "BlogPosting",
-            "headline": post.title,
-            "image": post.image_url,
-            "author": {
-              "@type": "Person",
-              "name": post.author
-            },
-            "publisher": {
-              "@type": "Organization",
-              "name": "Get The Gift",
-              "logo": {
-                "@type": "ImageObject",
-                "url": "/lovable-uploads/89d8ebcd-a5f6-4614-a505-80ed3d467943.png"
-              }
-            },
-            "datePublished": post.published_at,
-            "dateModified": post.updated_at,
-            "description": post.excerpt,
-            "mainEntityOfPage": {
-              "@type": "WebPage",
-              "@id": `https://getthegift.ai/blog/post/${post.slug}`
-            },
-            ...(firstProduct && {
-              "about": {
-                "@type": "Product",
-                "name": firstProduct.productTitle,
-                "image": firstProduct.imageUrl,
-                "url": firstProduct.affiliateLink
-              }
-            })
-          })}
-        </script>
-      </Helmet>
+      <BlogPostMeta post={post} />
       <article className="min-h-screen bg-gradient-to-b from-background to-muted/20">
         <div className="container mx-auto px-2 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-12 max-w-5xl">
           <Button 
