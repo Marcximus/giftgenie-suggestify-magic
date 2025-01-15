@@ -28,6 +28,20 @@ export interface BlogPostFormData {
   related_posts: Json | null;
 }
 
+export const affiliateLinksUtils = {
+  parse(json: Json): AffiliateLink[] {
+    try {
+      const parsed = typeof json === 'string' ? JSON.parse(json) : json;
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  },
+  stringify(links: AffiliateLink[]): Json {
+    return JSON.stringify(links) as Json;
+  }
+};
+
 export const EMPTY_FORM_DATA: BlogPostFormData = {
   title: '',
   slug: '',
