@@ -96,10 +96,13 @@ export async function processContent(
     }
   }));
   
-  // Add the "Get the Perfect Gift" link at the bottom
+  // Add the "Get the Perfect Gift" link with improved design
   const footerLink = `
     <div class="text-center mt-12 mb-8">
-      <a href="/" class="inline-flex items-center justify-center px-6 py-3 text-base font-medium text-white bg-primary rounded-md hover:bg-primary/90 transition-colors">
+      <a 
+        href="/" 
+        class="inline-flex items-center justify-center px-6 py-3 text-base font-medium text-white rounded-md transition-all duration-300 bg-gradient-to-r from-[#9b87f5] via-[#D946EF] to-[#0EA5E9] hover:opacity-90 hover:scale-105"
+      >
         Get the Perfect Gift
       </a>
     </div>

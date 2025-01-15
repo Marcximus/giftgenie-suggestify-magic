@@ -43,6 +43,7 @@ const BlogPost = () => {
         .from("blog_posts")
         .select("title, slug, image_url, excerpt")
         .neq("slug", slug)
+        .lt("published_at", new Date().toISOString()) // Only get previously published posts
         .order("published_at", { ascending: false })
         .limit(3);
 
@@ -179,7 +180,7 @@ const BlogPost = () => {
           
           <BlogPostHeader post={post} />
           <BlogPostContent post={post} />
-          <RelatedPosts relatedPosts={post.relatedPosts} />
+          <RelatedPosts currentPostId={post.id} currentPostSlug={post.slug} />
         </div>
       </article>
     </>
