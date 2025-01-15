@@ -9,15 +9,21 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    // Initialize Supabase client with service role key
+    // Get the anon key from the request header
+    const apikey = req.headers.get('apikey');
+    if (!apikey) {
+      throw new Error('Missing API key');
+    }
+
+    // Initialize Supabase client with anon key
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    const supabase = createClient(supabaseUrl, apikey);
 
     // Fetch all published blog posts
     const { data: posts, error } = await supabase
@@ -31,11 +37,12 @@ serve(async (req) => {
       throw error;
     }
 
-    // Generate sitemap XML
+    // Generate sitemap XML with XSL stylesheet reference
     const baseUrl = 'https://getthegift.ai';
     const today = new Date().toISOString();
 
     let xml = `<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" href="/sitemap.xsl"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>${baseUrl}</loc>
@@ -84,6 +91,7 @@ serve(async (req) => {
     const today = new Date().toISOString();
     
     const fallbackXml = `<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" href="/sitemap.xsl"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>${baseUrl}</loc>
@@ -107,7 +115,7 @@ serve(async (req) => {
         ...corsHeaders,
         'Content-Type': 'application/xml',
       },
-      status: 500,
+      status: error.message === 'Missing API key' ? 401 : 500,
     });
   }
 });
