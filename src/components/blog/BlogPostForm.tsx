@@ -94,11 +94,21 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
   };
 
   const generateUniqueSlug = async (baseSlug: string): Promise<string> => {
-    const { data: existingPost } = await supabase
+    const { data: existingPost, error } = await supabase
       .from("blog_posts")
       .select("slug")
       .eq("slug", baseSlug)
-      .single();
+      .maybeSingle();
+    
+    if (error) {
+      console.error("Error checking slug uniqueness:", error);
+      toast({
+        title: "Error",
+        description: "Failed to verify slug uniqueness",
+        variant: "destructive",
+      });
+      throw error;
+    }
 
     if (!existingPost) {
       return baseSlug;
