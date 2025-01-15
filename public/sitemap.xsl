@@ -49,26 +49,69 @@
             max-width: 400px;
             word-break: break-all;
           }
+          .lastmod {
+            width: 200px;
+          }
+          .priority {
+            width: 100px;
+            text-align: center;
+          }
+          .changefreq {
+            width: 100px;
+            text-align: center;
+          }
         </style>
       </head>
       <body>
         <h1>XML Sitemap</h1>
-        <table>
-          <tr>
-            <th>URL</th>
-            <th>Last Modified</th>
-          </tr>
-          <xsl:for-each select="sitemap:sitemapindex/sitemap:sitemap">
-            <tr>
-              <td class="url">
-                <a href="{sitemap:loc}"><xsl:value-of select="sitemap:loc"/></a>
-              </td>
-              <td>
-                <xsl:value-of select="sitemap:lastmod"/>
-              </td>
-            </tr>
-          </xsl:for-each>
-        </table>
+        <xsl:choose>
+          <xsl:when test="//sitemap:url">
+            <!-- This is a regular sitemap -->
+            <table>
+              <tr>
+                <th>URL</th>
+                <th>Last Modified</th>
+                <th>Change Frequency</th>
+                <th>Priority</th>
+              </tr>
+              <xsl:for-each select="//sitemap:url">
+                <tr>
+                  <td class="url">
+                    <a href="{sitemap:loc}"><xsl:value-of select="sitemap:loc"/></a>
+                  </td>
+                  <td class="lastmod">
+                    <xsl:value-of select="sitemap:lastmod"/>
+                  </td>
+                  <td class="changefreq">
+                    <xsl:value-of select="sitemap:changefreq"/>
+                  </td>
+                  <td class="priority">
+                    <xsl:value-of select="sitemap:priority"/>
+                  </td>
+                </tr>
+              </xsl:for-each>
+            </table>
+          </xsl:when>
+          <xsl:otherwise>
+            <!-- This is a sitemap index -->
+            <table>
+              <tr>
+                <th>URL</th>
+                <th>Last Modified</th>
+              </tr>
+              <xsl:for-each select="sitemap:sitemapindex/sitemap:sitemap">
+                <tr>
+                  <td class="url">
+                    <a href="{sitemap:loc}"><xsl:value-of select="sitemap:loc"/></a>
+                  </td>
+                  <td class="lastmod">
+                    <xsl:value-of select="sitemap:lastmod"/>
+                  </td>
+                </tr>
+              </xsl:for-each>
+            </table>
+          </xsl:otherwise>
+        </xsl:choose>
       </body>
     </html>
   </xsl:template>
