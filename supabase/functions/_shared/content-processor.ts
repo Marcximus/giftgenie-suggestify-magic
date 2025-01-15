@@ -34,7 +34,9 @@ export async function processContent(
         console.log('Found Amazon product:', {
           title: product.title,
           asin: product.asin,
-          hasImage: !!product.imageUrl
+          hasImage: !!product.imageUrl,
+          rating: product.rating,
+          totalRatings: product.totalRatings
         });
         const affiliateLink = `https://www.amazon.com/dp/${product.asin}/ref=nosim?tag=${associateId}`;
         affiliateLinks.push({
@@ -49,6 +51,18 @@ export async function processContent(
           console.warn('Could not split section content properly');
           return section;
         }
+
+        // Add review information if available
+        const reviewInfo = product.rating ? `
+          <div class="text-center mb-4">
+            <div class="flex items-center justify-center gap-1">
+              <span class="text-yellow-500">⭐</span>
+              <span class="font-medium">${product.rating.toFixed(1)}</span>
+              ${product.totalRatings ? 
+                `<span class="text-gray-600 text-sm">(${product.totalRatings.toLocaleString()} reviews)</span>` 
+                : ''}
+            </div>
+          </div>` : '';
         
         return `${beforeH3}</h3>
           <div class="flex flex-col items-center my-8 sm:my-10">
@@ -60,6 +74,7 @@ export async function processContent(
                 loading="lazy"
               />
             </div>
+            ${reviewInfo}
             <div class="mt-4">
               <a 
                 href="${affiliateLink}" 
