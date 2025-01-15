@@ -1,11 +1,11 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
   'Content-Type': 'application/xml',
-  'Cache-Control': 'public, max-age=3600', // Cache for 1 hour
+  'Cache-Control': 'public, max-age=3600'
 };
 
 serve(async (req) => {
@@ -14,16 +14,13 @@ serve(async (req) => {
   }
 
   try {
-    // Initialize Supabase client
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    );
+    // Initialize Supabase client with service role key
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    console.log('Fetching blog posts...');
-    
     // Fetch all published blog posts
-    const { data: posts, error } = await supabaseClient
+    const { data: posts, error } = await supabase
       .from('blog_posts')
       .select('slug, updated_at')
       .not('published_at', 'is', null)
@@ -34,44 +31,43 @@ serve(async (req) => {
       throw error;
     }
 
-    console.log(`Found ${posts?.length || 0} published blog posts`);
-
     // Generate sitemap XML
     const baseUrl = 'https://getthegift.ai';
     const today = new Date().toISOString();
 
-    const staticPages = [
-      { url: '/', priority: '1.0', changefreq: 'daily' },
-      { url: '/blog', priority: '0.9', changefreq: 'daily' },
-      { url: '/about', priority: '0.7', changefreq: 'monthly' },
-    ];
+    let xml = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>${baseUrl}</loc>
+    <lastmod>${today}</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>${baseUrl}/about</loc>
+    <lastmod>${today}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>${baseUrl}/blog</loc>
+    <lastmod>${today}</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+  </url>`;
 
-    let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
-    xml += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n';
+    // Add blog posts to sitemap
+    for (const post of posts) {
+      xml += `
+  <url>
+    <loc>${baseUrl}/blog/post/${post.slug}</loc>
+    <lastmod>${post.updated_at}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>`;
+    }
 
-    // Add static pages
-    staticPages.forEach(page => {
-      xml += `  <url>\n`;
-      xml += `    <loc>${baseUrl}${page.url}</loc>\n`;
-      xml += `    <lastmod>${today}</lastmod>\n`;
-      xml += `    <changefreq>${page.changefreq}</changefreq>\n`;
-      xml += `    <priority>${page.priority}</priority>\n`;
-      xml += `  </url>\n`;
-    });
-
-    // Add blog posts
-    posts?.forEach(post => {
-      xml += `  <url>\n`;
-      xml += `    <loc>${baseUrl}/blog/post/${post.slug}</loc>\n`;
-      xml += `    <lastmod>${post.updated_at || today}</lastmod>\n`;
-      xml += `    <changefreq>weekly</changefreq>\n`;
-      xml += `    <priority>0.8</priority>\n`;
-      xml += `  </url>\n`;
-    });
-
-    xml += '</urlset>';
-
-    console.log('Sitemap generated successfully');
+    xml += '\n</urlset>';
 
     return new Response(xml, {
       headers: {
@@ -82,15 +78,36 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Error generating sitemap:', error);
-    return new Response(
-      `<?xml version="1.0" encoding="UTF-8"?>
-       <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-         <!-- Error generating dynamic sitemap -->
-       </urlset>`,
-      {
-        headers: corsHeaders,
-        status: 500,
-      }
-    );
+    
+    // Return a basic sitemap with main pages in case of error
+    const baseUrl = 'https://getthegift.ai';
+    const today = new Date().toISOString();
+    
+    const fallbackXml = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>${baseUrl}</loc>
+    <lastmod>${today}</lastmod>
+    <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>${baseUrl}/about</loc>
+    <lastmod>${today}</lastmod>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>${baseUrl}/blog</loc>
+    <lastmod>${today}</lastmod>
+    <priority>0.9</priority>
+  </url>
+</urlset>`;
+
+    return new Response(fallbackXml, {
+      headers: {
+        ...corsHeaders,
+        'Content-Type': 'application/xml',
+      },
+      status: 500,
+    });
   }
 });
