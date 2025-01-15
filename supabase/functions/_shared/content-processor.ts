@@ -96,9 +96,18 @@ export async function processContent(
     }
   }));
   
+  // Add the "Get the Perfect Gift" link at the bottom
+  const footerLink = `
+    <div class="text-center mt-12 mb-8">
+      <a href="/" class="inline-flex items-center justify-center px-6 py-3 text-base font-medium text-white bg-primary rounded-md hover:bg-primary/90 transition-colors">
+        Get the Perfect Gift
+      </a>
+    </div>
+  `;
+  
   console.log('Processed all sections, affiliate links found:', affiliateLinks.length);
   return { 
-    content: processedSections.join('<hr class="my-8">'),
+    content: processedSections.join('<hr class="my-8">') + footerLink,
     affiliateLinks 
   };
 }

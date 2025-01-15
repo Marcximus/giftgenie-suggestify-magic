@@ -24,7 +24,7 @@ serve(async (req) => {
       },
       body: JSON.stringify({
         model: "dall-e-3",
-        prompt: prompt || `Create a professional featured image for a blog post titled: ${title}`,
+        prompt: prompt || `Create a entertaining, intresting or funny image for a blog post titled: ${title}`,
         n: 1,
         size: "1792x1024",
         quality: "standard",
