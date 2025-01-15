@@ -1,5 +1,14 @@
 import { Json } from "@/integrations/supabase/types";
 
+export interface AffiliateLink {
+  productTitle?: string;
+  affiliateLink?: string;
+  imageUrl: string;
+  rating?: number | string;
+  totalRatings?: number | string;
+}
+
+// Base interface for form data
 export interface BlogPostFormData {
   title: string;
   slug: string;
@@ -17,16 +26,9 @@ export interface BlogPostFormData {
   related_posts: Json[] | null;
 }
 
+// Extended interface for database data
 export interface BlogPostData extends BlogPostFormData {
   id: string;
   created_at: string;
   updated_at: string;
-}
-
-export interface AffiliateLink {
-  productTitle?: string;
-  affiliateLink?: string;
-  imageUrl: string;
-  rating?: number | string;
-  totalRatings?: number | string;
 }

@@ -29,23 +29,25 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
   const { toast } = useToast();
   const { generateContent, getFormFieldFromType } = useAIContent();
 
+  const defaultValues: BlogPostFormData = {
+    title: "",
+    slug: "",
+    content: "",
+    excerpt: null,
+    author: "",
+    image_url: null,
+    published_at: null,
+    meta_title: null,
+    meta_description: null,
+    meta_keywords: null,
+    images: null,
+    affiliate_links: null,
+    image_alt_text: null,
+    related_posts: null,
+  };
+
   const form = useForm<BlogPostFormData>({
-    defaultValues: initialData || {
-      title: "",
-      slug: "",
-      content: "",
-      excerpt: "",
-      author: "",
-      image_url: "",
-      published_at: null,
-      meta_title: "",
-      meta_description: "",
-      meta_keywords: "",
-      images: [],
-      affiliate_links: [],
-      image_alt_text: "",
-      related_posts: [],
-    },
+    defaultValues: initialData || defaultValues,
   });
 
   const generateAltText = async () => {
