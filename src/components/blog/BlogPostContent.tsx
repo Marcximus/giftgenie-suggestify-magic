@@ -24,7 +24,7 @@ export const BlogPostContent = ({ post }: BlogPostContentProps) => {
   // Create a map of image URLs to their corresponding review data
   const reviewMap = new Map(
     affiliateLinks
-      .filter(link => link.imageUrl)
+      .filter(link => link.imageUrl && (link.rating !== undefined || link.totalRatings !== undefined))
       .map(link => [
         link.imageUrl,
         {
@@ -49,7 +49,7 @@ export const BlogPostContent = ({ post }: BlogPostContentProps) => {
         
         if (reviewData?.rating && reviewData?.totalRatings) {
           // Create a div to wrap the image and review
-          return `${segment}
+          return `${segment.replace('class="', 'class="w-full max-w-2xl h-auto aspect-[16/9] object-cover rounded-lg shadow-md mx-auto ')}
             <div class="my-4">
               <div class="flex flex-col items-center gap-2 my-6 p-6 bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl shadow-sm">
                 <div class="flex items-center gap-2">
@@ -66,7 +66,8 @@ export const BlogPostContent = ({ post }: BlogPostContentProps) => {
               </div>
             </div>`;
         }
-        return segment;
+        // If no review data, just return the image with proper styling
+        return segment.replace('class="', 'class="w-full max-w-2xl h-auto aspect-[16/9] object-cover rounded-lg shadow-md mx-auto ');
       }
     }
     return segment;
@@ -94,7 +95,7 @@ export const BlogPostContent = ({ post }: BlogPostContentProps) => {
                    prose-ul:list-disc prose-ul:pl-4 sm:prose-ul:pl-6 prose-ul:mb-4
                    prose-ol:list-decimal prose-ol:pl-4 sm:prose-ol:pl-6 prose-ol:mb-4
                    
-                   prose-img:w-full prose-img:max-w-lg prose-img:mx-auto
+                   prose-img:w-full prose-img:max-w-2xl prose-img:mx-auto
                    prose-img:h-auto prose-img:aspect-[16/9] prose-img:my-4 sm:prose-img:my-6
                    prose-img:object-cover prose-img:rounded-lg prose-img:shadow-md
                    
