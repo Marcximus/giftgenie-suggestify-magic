@@ -33,10 +33,10 @@ export const BlogPostContent = ({ post }: BlogPostContentProps) => {
                    
                    [&_div.flex]:justify-center [&_div.flex]:w-full [&_div.flex]:my-4 sm:[&_div.flex]:my-6
                    [&_a.amazon-button]:inline-block [&_a.amazon-button]:px-6 [&_a.amazon-button]:py-3 
-                   [&_a.amazon-button]:bg-[#F97316] [&_a.amazon-button]:hover:bg-[#F97316]/90 
+                   [&_a.amazon-button]:bg-gradient-to-r [&_a.amazon-button]:from-purple-500/80 [&_a.amazon-button]:via-blue-500/80 [&_a.amazon-button]:to-purple-500/80
                    [&_a.amazon-button]:text-white [&_a.amazon-button]:rounded-md 
-                   [&_a.amazon-button]:transition-colors [&_a.amazon-button]:text-base
-                   [&_a.amazon-button]:shadow-sm [&_a.amazon-button]:hover:shadow-md
+                   [&_a.amazon-button]:transition-all [&_a.amazon-button]:duration-300 [&_a.amazon-button]:text-base
+                   [&_a.amazon-button]:shadow-sm [&_a.amazon-button]:hover:shadow-md [&_a.amazon-button]:hover:opacity-90
                    [&_a.amazon-button]:active:scale-95"
         dangerouslySetInnerHTML={{ __html: post.content }}
       />

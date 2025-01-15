@@ -52,16 +52,22 @@ export async function processContent(
           return section;
         }
 
-        // Add review information if available
+        // Add review information with improved styling
         const reviewInfo = product.rating ? `
-          <div class="text-center mb-4">
-            <div class="flex items-center justify-center gap-1">
-              <span class="text-yellow-500">⭐</span>
-              <span class="font-medium">${product.rating.toFixed(1)}</span>
-              ${product.totalRatings ? 
-                `<span class="text-gray-600 text-sm">(${product.totalRatings.toLocaleString()} reviews)</span>` 
-                : ''}
+          <div class="flex flex-col items-center gap-2 my-4 p-4 bg-gray-50 rounded-lg">
+            <div class="flex items-center gap-2">
+              ${Array.from({ length: 5 }, (_, i) => 
+                `<span class="text-yellow-400 text-lg">
+                  ${i < Math.floor(product.rating) ? '★' : (i < product.rating ? '★' : '☆')}
+                </span>`
+              ).join('')}
+              <span class="font-medium text-lg">${product.rating.toFixed(1)}</span>
             </div>
+            ${product.totalRatings ? `
+              <div class="text-sm text-gray-600">
+                Based on ${product.totalRatings.toLocaleString()} customer reviews
+              </div>
+            ` : ''}
           </div>` : '';
         
         return `${beforeH3}</h3>
@@ -101,7 +107,7 @@ export async function processContent(
     <div class="text-center mt-12 mb-8">
       <a 
         href="/" 
-        class="inline-flex items-center justify-center px-6 py-3 text-base font-medium text-white rounded-md transition-all duration-300 bg-gradient-to-r from-[#9b87f5] via-[#D946EF] to-[#0EA5E9] hover:opacity-90 hover:scale-105"
+        class="inline-flex items-center justify-center px-6 py-3 text-base font-medium text-white rounded-md transition-all duration-300 bg-gradient-to-r from-purple-500/80 via-blue-500/80 to-purple-500/80 hover:opacity-90 hover:scale-105"
       >
         Get the Perfect Gift
       </a>
