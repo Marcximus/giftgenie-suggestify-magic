@@ -5,7 +5,45 @@ interface BlogPostContentProps {
   post: Tables<"blog_posts">;
 }
 
+interface AffiliateLink {
+  productTitle: string;
+  affiliateLink: string;
+  imageUrl: string;
+  rating?: number;
+  totalRatings?: number;
+}
+
 export const BlogPostContent = ({ post }: BlogPostContentProps) => {
+  // Parse the affiliate_links JSON if it exists
+  const affiliateLinks: AffiliateLink[] = Array.isArray(post.affiliate_links) 
+    ? post.affiliate_links 
+    : typeof post.affiliate_links === 'string' 
+      ? JSON.parse(post.affiliate_links)
+      : [];
+
+  let processedContent = post.content;
+
+  // Process each affiliate link to add reviews
+  affiliateLinks.forEach((link: AffiliateLink) => {
+    if (link.rating && link.totalRatings) {
+      const reviewSection = `
+        <div class="my-4">
+          ${ProductReview({
+            rating: link.rating,
+            totalRatings: link.totalRatings,
+            className: "my-4"
+          })}
+        </div>
+      `;
+      
+      // Insert the review section after the product image
+      processedContent = processedContent.replace(
+        `<img src="${link.imageUrl}"`,
+        `<img src="${link.imageUrl}"${reviewSection}`
+      );
+    }
+  });
+
   return (
     <div className="prose prose-sm md:prose-base lg:prose-lg w-full max-w-none animate-fade-in">
       <div 
@@ -47,28 +85,7 @@ export const BlogPostContent = ({ post }: BlogPostContentProps) => {
                    [&_a.perfect-gift-button]:shadow-md [&_a.perfect-gift-button]:hover:shadow-lg
                    [&_a.perfect-gift-button]:hover:opacity-90 [&_a.perfect-gift-button]:active:scale-95"
       >
-        {post.affiliate_links?.map((link: any, index: number) => {
-          if (link.rating && link.totalRatings) {
-            const reviewSection = `
-              <div class="my-4">
-                ${ProductReview({
-                  rating: link.rating,
-                  totalRatings: link.totalRatings,
-                  className: "my-4"
-                })}
-              </div>
-            `;
-            
-            // Insert the review section after the product image but before the Amazon button
-            post.content = post.content.replace(
-              `<img src="${link.imageUrl}"`,
-              `<img src="${link.imageUrl}"${reviewSection}`
-            );
-          }
-          return null;
-        })}
-        
-        <div dangerouslySetInnerHTML={{ __html: post.content }} />
+        <div dangerouslySetInnerHTML={{ __html: processedContent }} />
       </div>
     </div>
   );
