@@ -11,7 +11,7 @@ import { useAIContent } from "@/hooks/useAIContent";
 import { BlogPostBasicInfo } from "./form/BlogPostBasicInfo";
 import { BlogPostContent } from "./form/BlogPostContent";
 import { BlogPostSEO } from "./form/BlogPostSEO";
-import { BlogPostFormData, BlogPostData } from "./types/BlogPostTypes";
+import { BlogPostFormData, BlogPostData, AffiliateLink } from "./types/BlogPostTypes";
 import { BlogPostImageSection } from "./form/BlogPostImageSection";
 import { BlogPostFormActions } from "./form/BlogPostFormActions";
 import { useAltTextGeneration } from "./form/useAltTextGeneration";
@@ -30,8 +30,7 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
   const { generateContent, getFormFieldFromType } = useAIContent();
   const { generateUniqueSlug, generateSlug } = useSlugGeneration();
 
-  // Create defaultValues object separately to avoid type recursion
-  const emptyDefaultValues: BlogPostFormData = {
+  const defaultValues: BlogPostFormData = {
     title: "",
     slug: "",
     content: "",
@@ -49,7 +48,7 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
   };
 
   const form = useForm<BlogPostFormData>({
-    defaultValues: initialData || emptyDefaultValues,
+    defaultValues: initialData || defaultValues,
   });
 
   const { isGeneratingAltText, generateAltText } = useAltTextGeneration(form);
@@ -98,10 +97,10 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
         });
       }
 
-      // Convert affiliate_links to Json type before sending to Supabase
+      // Ensure affiliate_links is properly typed as Json before sending to Supabase
       const dataToSubmit = {
         ...data,
-        affiliate_links: data.affiliate_links as unknown as Json,
+        affiliate_links: data.affiliate_links as Json,
         updated_at: currentTime,
         published_at: publishedAt,
       };

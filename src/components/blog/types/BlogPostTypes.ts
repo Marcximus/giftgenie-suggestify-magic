@@ -9,7 +9,7 @@ export interface AffiliateLink {
 }
 
 // Base interface for form data
-export type BlogPostFormData = {
+export interface BlogPostFormData {
   title: string;
   slug: string;
   content: string;
@@ -24,7 +24,7 @@ export type BlogPostFormData = {
   affiliate_links: Json | null;
   image_alt_text: string | null;
   related_posts: Json | null;
-};
+}
 
 // Extended interface for database data
 export interface BlogPostData extends BlogPostFormData {
