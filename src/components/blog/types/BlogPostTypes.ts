@@ -9,8 +9,8 @@ export interface AffiliateLink {
   totalRatings?: number | null;
 }
 
-// Form data type matching Supabase table structure
-export type BlogPostFormData = Omit<Tables<"blog_posts">, "id" | "created_at" | "updated_at"> & {
+// Form data type matching Supabase table structure but with proper affiliate_links typing
+export type BlogPostFormData = Omit<Tables<"blog_posts">, "id" | "created_at" | "updated_at" | "affiliate_links"> & {
   affiliate_links: AffiliateLink[] | null;
 };
 
@@ -28,17 +28,17 @@ export function isAffiliateLinkArray(value: unknown): value is AffiliateLink[] {
   );
 }
 
-export function convertToAffiliateLinks(value: unknown): AffiliateLink[] {
-  if (!value) return [];
+export function convertToAffiliateLinks(value: unknown): AffiliateLink[] | null {
+  if (!value) return null;
   try {
     const parsed = typeof value === 'string' ? JSON.parse(value) : value;
-    return isAffiliateLinkArray(parsed) ? parsed : [];
+    return isAffiliateLinkArray(parsed) ? parsed : null;
   } catch {
-    return [];
+    return null;
   }
 }
 
-export function convertToJson(links: AffiliateLink[] | null): unknown {
+export function convertToJson(links: AffiliateLink[] | null): string | null {
   if (!links) return null;
-  return links;
+  return JSON.stringify(links);
 }
