@@ -15,6 +15,7 @@ export const BlogPostContent = ({ post }: BlogPostContentProps) => {
       ? JSON.parse(post.affiliate_links) as AffiliateLink[]
       : [];
 
+  // Log the affiliate links for debugging
   console.log('Processing blog post with affiliate links:', {
     postTitle: post.title,
     affiliateLinks: affiliateLinks.map(link => ({

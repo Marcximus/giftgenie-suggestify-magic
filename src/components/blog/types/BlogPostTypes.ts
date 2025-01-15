@@ -4,8 +4,8 @@ export interface AffiliateLink {
   productTitle: string;
   affiliateLink: string;
   imageUrl?: string;
-  rating?: number;
-  totalRatings?: number;
+  rating?: number | null;
+  totalRatings?: number | null;
 }
 
 export interface BlogPostFormData {
@@ -20,7 +20,7 @@ export interface BlogPostFormData {
   meta_description: string | null;
   meta_keywords: string | null;
   images: Json | null;
-  affiliate_links: Json | null;  // Changed back to Json for Supabase compatibility
+  affiliate_links: Json | null;
   image_alt_text: string | null;
   related_posts: Json | null;
 }
