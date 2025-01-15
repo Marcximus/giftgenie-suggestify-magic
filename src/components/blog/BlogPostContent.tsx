@@ -2,7 +2,6 @@ import { Tables } from "@/integrations/supabase/types";
 import { blogPostContentStyles } from "./content/BlogPostContentStyles";
 import { processContent } from "./content/BlogContentProcessor";
 import { AffiliateLink } from "./types/BlogPostTypes";
-import { ProductImage } from "@/components/ProductImage";
 
 interface BlogPostContentProps {
   post: Tables<"blog_posts">;

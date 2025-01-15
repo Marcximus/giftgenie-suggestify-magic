@@ -20,7 +20,7 @@ export interface BlogPostFormData {
   meta_description: string | null;
   meta_keywords: string | null;
   images: Json | null;
-  affiliate_links: AffiliateLink[] | null;
+  affiliate_links: Json | null;  // Changed back to Json for Supabase compatibility
   image_alt_text: string | null;
   related_posts: Json | null;
 }
