@@ -11,14 +11,30 @@ import { useAIContent } from "@/hooks/useAIContent";
 import { BlogPostBasicInfo } from "./form/BlogPostBasicInfo";
 import { BlogPostContent } from "./form/BlogPostContent";
 import { BlogPostSEO } from "./form/BlogPostSEO";
-import { BlogPostFormData, BlogPostData, convertToJson, convertToAffiliateLinks, BlogPostSubmitData } from "./types/BlogPostTypes";
+import { DatabaseFormData, RuntimeFormData, convertDatabaseToRuntime, convertRuntimeToDatabase } from "./types/BlogPostTypes";
 import { BlogPostImageSection } from "./form/BlogPostImageSection";
 import { BlogPostFormActions } from "./form/BlogPostFormActions";
 import { useAltTextGeneration } from "./form/useAltTextGeneration";
 import { useSlugGeneration } from "./form/useSlugGeneration";
 
+const defaultFormData: RuntimeFormData = {
+  title: "",
+  slug: "",
+  content: "",
+  excerpt: null,
+  author: "",
+  image_url: null,
+  image_alt_text: null,
+  meta_title: null,
+  meta_description: null,
+  meta_keywords: null,
+  affiliate_links: [],
+  images: null,
+  related_posts: null
+};
+
 interface BlogPostFormProps {
-  initialData?: BlogPostData;
+  initialData?: DatabaseFormData;
 }
 
 const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
@@ -29,28 +45,8 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
   const { generateContent, getFormFieldFromType } = useAIContent();
   const { generateUniqueSlug, generateSlug } = useSlugGeneration();
 
-  const defaultValues: BlogPostFormData = {
-    title: "",
-    slug: "",
-    content: "",
-    excerpt: null,
-    author: "",
-    image_url: null,
-    published_at: null,
-    meta_title: null,
-    meta_description: null,
-    meta_keywords: null,
-    images: null,
-    affiliate_links: [],
-    image_alt_text: null,
-    related_posts: null,
-  };
-
-  const form = useForm<BlogPostFormData>({
-    defaultValues: initialData ? {
-      ...initialData,
-      affiliate_links: convertToAffiliateLinks(initialData.affiliate_links),
-    } : defaultValues,
+  const form = useForm<RuntimeFormData>({
+    defaultValues: initialData ? convertDatabaseToRuntime(initialData) : defaultFormData,
   });
 
   const { isGeneratingAltText, generateAltText } = useAltTextGeneration(form);
@@ -84,7 +80,7 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
     }
   };
 
-  const onSubmit = async (data: BlogPostFormData, isDraft: boolean = false) => {
+  const onSubmit = async (data: RuntimeFormData, isDraft: boolean = false) => {
     setIsSubmitting(true);
     try {
       const currentTime = new Date().toISOString();
@@ -99,12 +95,11 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
         });
       }
 
-      const dataToSubmit: BlogPostSubmitData = {
+      const dataToSubmit = convertRuntimeToDatabase({
         ...data,
-        affiliate_links: convertToJson(data.affiliate_links),
         updated_at: currentTime,
         published_at: publishedAt,
-      };
+      });
 
       if (initialData?.id) {
         const { error } = await supabase
