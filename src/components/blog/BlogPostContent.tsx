@@ -25,13 +25,19 @@ export const BlogPostContent = ({ post }: BlogPostContentProps) => {
 
   // Create a map of image URLs to their corresponding review data
   const reviewMap = new Map(
-    affiliateLinks.map(link => [
-      link.imageUrl,
-      {
-        rating: typeof link.rating === 'number' ? link.rating : undefined,
-        totalRatings: typeof link.totalRatings === 'number' ? link.totalRatings : undefined
-      }
-    ])
+    affiliateLinks.map(link => {
+      // Ensure rating and totalRatings are numbers if they exist
+      const rating = typeof link.rating === 'number' ? link.rating : 
+                    typeof link.rating === 'string' ? parseFloat(link.rating) : undefined;
+      
+      const totalRatings = typeof link.totalRatings === 'number' ? link.totalRatings :
+                          typeof link.totalRatings === 'string' ? parseInt(link.totalRatings, 10) : undefined;
+      
+      return [
+        link.imageUrl,
+        { rating, totalRatings }
+      ];
+    })
   );
 
   // Split content into segments at image tags
@@ -52,28 +58,28 @@ export const BlogPostContent = ({ post }: BlogPostContentProps) => {
         // Add image styling - maintain aspect ratio and prevent compression
         const styledImage = segment.replace(
           'class="',
-          'class="w-full max-w-4xl h-auto object-contain rounded-lg shadow-md mx-auto my-6 '
+          'class="w-full max-w-2xl h-auto object-contain rounded-lg shadow-md mx-auto my-4 '
         );
         
         // If we have review data, add the review section
-        if (reviewData?.rating !== undefined && reviewData?.totalRatings !== undefined) {
+        if (reviewData?.rating && reviewData?.totalRatings) {
           return `
-            <div class="flex flex-col items-center my-8">
+            <div class="flex flex-col items-center my-6">
               ${styledImage}
-              <div class="w-full max-w-2xl mt-4">
-                <div class="flex flex-col items-center gap-2 p-6 bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl shadow-sm">
+              <div class="w-full max-w-xl mt-4">
+                <div class="flex flex-col items-center gap-2 p-4 bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl shadow-sm">
                   <div class="flex items-center gap-2">
                     ${Array.from({ length: 5 }, (_, i) => {
                       const rating = reviewData.rating || 0;
-                      return `<span class="text-yellow-400 text-xl">
+                      return `<span class="text-yellow-400 text-lg">
                         ${i < Math.floor(rating) ? '★' : (i < rating ? '★' : '☆')}
                       </span>`;
                     }).join('')}
-                    <span class="font-semibold text-xl text-gray-800">
-                      ${reviewData.rating.toFixed(1)}
+                    <span class="font-semibold text-lg text-gray-800">
+                      ${rating.toFixed(1)}
                     </span>
                   </div>
-                  <div class="text-base text-gray-600">
+                  <div class="text-sm text-gray-600">
                     Based on ${reviewData.totalRatings.toLocaleString()} verified customer reviews
                   </div>
                 </div>
@@ -82,7 +88,7 @@ export const BlogPostContent = ({ post }: BlogPostContentProps) => {
         }
         
         // If no review data, just return the styled image in a container
-        return `<div class="flex justify-center my-8">${styledImage}</div>`;
+        return `<div class="flex justify-center my-6">${styledImage}</div>`;
       }
     }
     return segment;
@@ -110,8 +116,8 @@ export const BlogPostContent = ({ post }: BlogPostContentProps) => {
                    prose-ul:list-disc prose-ul:pl-4 sm:prose-ul:pl-6 prose-ul:mb-4
                    prose-ol:list-decimal prose-ol:pl-4 sm:prose-ol:pl-6 prose-ol:mb-4
                    
-                   prose-img:w-full prose-img:max-w-4xl prose-img:mx-auto
-                   prose-img:h-auto prose-img:object-contain prose-img:my-6
+                   prose-img:w-full prose-img:max-w-2xl prose-img:mx-auto
+                   prose-img:h-auto prose-img:object-contain prose-img:my-4
                    prose-img:rounded-lg prose-img:shadow-md
                    
                    prose-a:text-primary prose-a:font-medium prose-a:no-underline
