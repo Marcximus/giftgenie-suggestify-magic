@@ -17,47 +17,27 @@ import { useAltTextGeneration } from "./form/useAltTextGeneration";
 import { useSlugGeneration } from "./form/useSlugGeneration";
 import { useForm, FormProvider } from "react-hook-form";
 
-type FormAction = 
-  | { type: 'SET_FIELD'; field: keyof BlogPostFormData; value: any }
-  | { type: 'RESET'; data: BlogPostFormData };
-
-function formReducer(state: BlogPostFormData, action: FormAction): BlogPostFormData {
-  switch (action.type) {
-    case 'SET_FIELD':
-      return { ...state, [action.field]: action.value };
-    case 'RESET':
-      return action.data;
-    default:
-      return state;
-  }
-}
-
 interface BlogPostFormProps {
   initialData?: BlogPostFormData;
 }
 
 const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
-  const [formData, dispatch] = useReducer(formReducer, initialData || EMPTY_FORM_DATA);
   const [activeTab, setActiveTab] = useState("edit");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
   const { generateContent, getFormFieldFromType } = useAIContent();
   const { generateUniqueSlug, generateSlug } = useSlugGeneration();
-  const { isGeneratingAltText, generateAltText } = useAltTextGeneration();
 
   const methods = useForm<BlogPostFormData>({
     defaultValues: initialData || EMPTY_FORM_DATA
   });
 
-  const handleFieldChange = (field: keyof BlogPostFormData, value: any) => {
-    dispatch({ type: 'SET_FIELD', field, value });
-    methods.setValue(field, value);
-  };
+  const { isGeneratingAltText, generateAltText } = useAltTextGeneration(methods);
 
   const handleAIGenerate = async (type: 'excerpt' | 'seo-title' | 'seo-description' | 'seo-keywords' | 'improve-content') => {
-    const currentTitle = formData.title;
-    const currentContent = formData.content;
+    const currentTitle = methods.getValues('title');
+    const currentContent = methods.getValues('content');
     
     if (!currentTitle && !currentContent) {
       toast({
@@ -76,7 +56,7 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
 
     if (generatedContent) {
       const formField = getFormFieldFromType(type);
-      handleFieldChange(formField, generatedContent);
+      methods.setValue(formField, generatedContent);
       toast({
         title: "Success",
         description: "Content generated successfully!",
@@ -90,9 +70,9 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
       const currentTime = new Date().toISOString();
       const publishedAt = isDraft ? null : currentTime;
       
-      const uniqueSlug = await generateUniqueSlug(formData.slug);
-      if (uniqueSlug !== formData.slug) {
-        handleFieldChange('slug', uniqueSlug);
+      const uniqueSlug = await generateUniqueSlug(methods.getValues('slug'));
+      if (uniqueSlug !== methods.getValues('slug')) {
+        methods.setValue('slug', uniqueSlug);
         toast({
           title: "Notice",
           description: "A similar slug already existed. Generated a unique one.",
@@ -100,7 +80,7 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
       }
 
       const dataToSubmit = {
-        ...formData,
+        ...methods.getValues(),
         updated_at: currentTime,
         published_at: publishedAt,
       };
@@ -155,21 +135,18 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
           <form className="space-y-6 text-left">
             <BlogPostBasicInfo 
               form={methods}
-              onFieldChange={handleFieldChange}
               generateSlug={generateSlug}
               initialData={initialData || EMPTY_FORM_DATA}
             />
 
             <BlogPostImageSection
               form={methods}
-              onFieldChange={handleFieldChange}
               isGeneratingAltText={isGeneratingAltText}
               generateAltText={generateAltText}
             />
 
             <BlogPostContent 
               form={methods}
-              onFieldChange={handleFieldChange}
               handleAIGenerate={handleAIGenerate}
             />
 
@@ -177,7 +154,6 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
 
             <BlogPostSEO 
               form={methods}
-              onFieldChange={handleFieldChange}
               handleAIGenerate={handleAIGenerate}
             />
 
@@ -190,7 +166,7 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
       </TabsContent>
 
       <TabsContent value="preview" className="text-left">
-        <BlogPostPreview data={formData} />
+        <BlogPostPreview data={methods.getValues()} />
       </TabsContent>
     </Tabs>
   );
