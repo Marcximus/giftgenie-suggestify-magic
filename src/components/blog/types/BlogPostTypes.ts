@@ -1,7 +1,14 @@
 import { Json } from '@/integrations/supabase/types';
 
-// Basic blog post type that matches Supabase exactly
-export type BlogPostFormData = {
+export interface AffiliateLink {
+  productUrl: string;
+  imageUrl: string;
+  title: string;
+  rating?: number;
+  totalRatings?: number;
+}
+
+export interface BlogPostFormData {
   id?: string;
   title: string;
   slug: string;
@@ -19,15 +26,35 @@ export type BlogPostFormData = {
   affiliate_links: Json;
   images: Json | null;
   related_posts: Json | null;
-};
+}
 
-// Separate runtime type for affiliate links
-export type RawAffiliateLink = {
-  productUrl: string;
-  imageUrl: string;
-  title: string;
-  rating?: number;
-  totalRatings?: number;
+export const affiliateLinksUtils = {
+  parse(json: Json): AffiliateLink[] {
+    try {
+      if (typeof json === 'string') {
+        const parsed = JSON.parse(json);
+        return Array.isArray(parsed) ? parsed : [];
+      }
+      return Array.isArray(json) ? json : [];
+    } catch {
+      console.error('Error parsing affiliate links');
+      return [];
+    }
+  },
+
+  stringify(links: AffiliateLink[]): Json {
+    return JSON.stringify(links) as Json;
+  },
+
+  isValid(obj: unknown): obj is AffiliateLink {
+    return (
+      typeof obj === 'object' &&
+      obj !== null &&
+      'productUrl' in obj &&
+      'imageUrl' in obj &&
+      'title' in obj
+    );
+  }
 };
 
 export const defaultFormData: BlogPostFormData = {
@@ -47,20 +74,4 @@ export const defaultFormData: BlogPostFormData = {
   created_at: new Date().toISOString(),
   updated_at: new Date().toISOString(),
   published_at: null
-};
-
-export const parseAffiliateLinks = (json: Json): RawAffiliateLink[] => {
-  try {
-    if (typeof json === 'string') {
-      return JSON.parse(json);
-    }
-    return Array.isArray(json) ? json : [];
-  } catch (error) {
-    console.error('Error parsing affiliate links:', error);
-    return [];
-  }
-};
-
-export const stringifyAffiliateLinks = (links: RawAffiliateLink[]): Json => {
-  return JSON.stringify(links) as Json;
 };

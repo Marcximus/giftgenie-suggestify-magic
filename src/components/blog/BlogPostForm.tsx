@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import { TabsContent, Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -11,7 +11,7 @@ import { useAIContent } from "@/hooks/useAIContent";
 import { BlogPostBasicInfo } from "./form/BlogPostBasicInfo";
 import { BlogPostContent } from "./form/BlogPostContent";
 import { BlogPostSEO } from "./form/BlogPostSEO";
-import { BlogPostFormData, defaultFormData, parseAffiliateLinks, stringifyAffiliateLinks } from "./types/BlogPostTypes";
+import { BlogPostFormData, defaultFormData, affiliateLinksUtils } from "./types/BlogPostTypes";
 import { BlogPostImageSection } from "./form/BlogPostImageSection";
 import { BlogPostFormActions } from "./form/BlogPostFormActions";
 import { useAltTextGeneration } from "./form/useAltTextGeneration";

@@ -1,9 +1,10 @@
-import { AffiliateLink } from "../types/BlogPostTypes";
+import { AffiliateLink, affiliateLinksUtils } from "../types/BlogPostTypes";
+import { Json } from "@/integrations/supabase/types";
 
-export const processContent = (
-  content: string,
-  affiliateLinks: AffiliateLink[]
-): string => {
+export const processContent = (content: string, rawAffiliateLinks: Json): string => {
+  // Convert Json to AffiliateLink[]
+  const affiliateLinks = affiliateLinksUtils.parse(rawAffiliateLinks);
+  
   // Split content into segments at image tags
   const segments = content.split(/(<img[^>]+>)/);
   
