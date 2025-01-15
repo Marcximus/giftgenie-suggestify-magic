@@ -10,7 +10,7 @@ export default defineConfig(({ mode }) => ({
     port: 8080,
     proxy: {
       '/sitemap.xml': {
-        target: 'https://ckcqttsdpxfbpkzljctl.functions.supabase.co/generate-sitemap',
+        target: 'https://ckcqttsdpxfbpkzljctl.functions.supabase.co/functions/v1/generate-sitemap',
         changeOrigin: true,
         rewrite: (path) => ''
       }
