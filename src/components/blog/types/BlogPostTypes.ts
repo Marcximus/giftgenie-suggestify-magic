@@ -1,3 +1,5 @@
+import { Json } from "@/integrations/supabase/types";
+
 export interface BlogPostFormData {
   title: string;
   slug: string;
@@ -9,10 +11,10 @@ export interface BlogPostFormData {
   meta_title: string | null;
   meta_description: string | null;
   meta_keywords: string | null;
-  images: any[] | null;
-  affiliate_links: AffiliateLink[] | null;
+  images: Json[] | null;
+  affiliate_links: Json | null;
   image_alt_text: string | null;
-  related_posts: any[] | null;
+  related_posts: Json[] | null;
 }
 
 export interface BlogPostData extends BlogPostFormData {

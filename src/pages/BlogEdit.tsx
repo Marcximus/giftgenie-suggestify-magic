@@ -3,7 +3,8 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import BlogPostForm from "@/components/blog/BlogPostForm";
 import { useToast } from "@/hooks/use-toast";
-import { BlogPostData } from "@/components/blog/types/BlogPostTypes";
+import { BlogPostData, AffiliateLink } from "@/components/blog/types/BlogPostTypes";
+import { Json } from "@/integrations/supabase/types";
 
 const BlogEdit = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -51,7 +52,7 @@ const BlogEdit = () => {
       const formattedPost: BlogPostData = {
         ...data,
         images: Array.isArray(data.images) ? data.images : [],
-        affiliate_links: Array.isArray(data.affiliate_links) ? data.affiliate_links : [],
+        affiliate_links: data.affiliate_links as Json,
         related_posts: Array.isArray(data.related_posts) ? data.related_posts : [],
         excerpt: data.excerpt || null,
         image_url: data.image_url || null,
