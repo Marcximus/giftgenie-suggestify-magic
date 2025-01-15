@@ -11,12 +11,11 @@ import { useAIContent } from "@/hooks/useAIContent";
 import { BlogPostBasicInfo } from "./form/BlogPostBasicInfo";
 import { BlogPostContent } from "./form/BlogPostContent";
 import { BlogPostSEO } from "./form/BlogPostSEO";
-import { BlogPostFormData, BlogPostData, AffiliateLink } from "./types/BlogPostTypes";
+import { BlogPostFormData, BlogPostData } from "./types/BlogPostTypes";
 import { BlogPostImageSection } from "./form/BlogPostImageSection";
 import { BlogPostFormActions } from "./form/BlogPostFormActions";
 import { useAltTextGeneration } from "./form/useAltTextGeneration";
 import { useSlugGeneration } from "./form/useSlugGeneration";
-import { Json } from "@/integrations/supabase/types";
 
 interface BlogPostFormProps {
   initialData?: BlogPostData;
@@ -97,10 +96,8 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
         });
       }
 
-      // Convert affiliate_links to Json type for Supabase
       const dataToSubmit = {
         ...data,
-        affiliate_links: data.affiliate_links as unknown as Json,
         updated_at: currentTime,
         published_at: publishedAt,
       };
