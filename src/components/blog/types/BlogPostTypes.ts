@@ -1,6 +1,14 @@
 import { Json } from '@/integrations/supabase/types';
 
-export interface BlogPostBase {
+export interface AffiliateLink {
+  productUrl: string;
+  imageUrl: string;
+  title: string;
+  rating?: number;
+  totalRatings?: number;
+}
+
+export interface BlogPostFormData {
   id?: string;
   title: string;
   slug: string;
@@ -15,21 +23,10 @@ export interface BlogPostBase {
   created_at?: string;
   updated_at?: string;
   published_at: string | null;
+  affiliate_links: Json;
   images: Json | null;
   related_posts: Json | null;
 }
-
-export interface AffiliateLink {
-  productUrl: string;
-  imageUrl: string;
-  title: string;
-  rating?: number;
-  totalRatings?: number;
-}
-
-export type BlogPostFormData = BlogPostBase & {
-  affiliate_links: Json;
-};
 
 export const EMPTY_FORM_DATA: BlogPostFormData = {
   title: '',
@@ -46,18 +43,4 @@ export const EMPTY_FORM_DATA: BlogPostFormData = {
   images: null,
   related_posts: null,
   published_at: null
-};
-
-export const affiliateLinksUtils = {
-  parse(json: Json): AffiliateLink[] {
-    try {
-      const parsed = typeof json === 'string' ? JSON.parse(json) : json;
-      return Array.isArray(parsed) ? parsed : [];
-    } catch {
-      return [];
-    }
-  },
-  stringify(links: AffiliateLink[]): Json {
-    return JSON.stringify(links) as Json;
-  }
 };

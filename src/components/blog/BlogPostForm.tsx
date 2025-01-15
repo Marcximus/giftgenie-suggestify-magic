@@ -1,7 +1,7 @@
-import { useReducer, useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { TabsContent, Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Form } from "@/components/ui/form";
+import { Form, FormProvider } from "@/components/ui/form";
 import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
@@ -15,43 +15,29 @@ import { BlogPostImageSection } from "./form/BlogPostImageSection";
 import { BlogPostFormActions } from "./form/BlogPostFormActions";
 import { useAltTextGeneration } from "./form/useAltTextGeneration";
 import { useSlugGeneration } from "./form/useSlugGeneration";
-
-type FormAction = 
-  | { type: 'SET_FIELD'; field: keyof BlogPostFormData; value: any }
-  | { type: 'RESET'; data: BlogPostFormData };
-
-function formReducer(state: BlogPostFormData, action: FormAction): BlogPostFormData {
-  switch (action.type) {
-    case 'SET_FIELD':
-      return { ...state, [action.field]: action.value };
-    case 'RESET':
-      return action.data;
-    default:
-      return state;
-  }
-}
+import { useForm } from "react-hook-form";
 
 interface BlogPostFormProps {
   initialData?: BlogPostFormData;
 }
 
-const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
-  const [formData, dispatch] = useReducer(formReducer, initialData || EMPTY_FORM_DATA);
+const BlogPostForm = ({ initialData = EMPTY_FORM_DATA }: BlogPostFormProps) => {
   const [activeTab, setActiveTab] = useState("edit");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
   const { generateContent, getFormFieldFromType } = useAIContent();
   const { generateUniqueSlug, generateSlug } = useSlugGeneration();
-  const { isGeneratingAltText, generateAltText } = useAltTextGeneration(formData, dispatch);
+  
+  const methods = useForm<BlogPostFormData>({
+    defaultValues: initialData
+  });
 
-  const handleFieldChange = (field: keyof BlogPostFormData, value: any) => {
-    dispatch({ type: 'SET_FIELD', field, value });
-  };
+  const { isGeneratingAltText, generateAltText } = useAltTextGeneration(methods);
 
   const handleAIGenerate = async (type: 'excerpt' | 'seo-title' | 'seo-description' | 'seo-keywords' | 'improve-content') => {
-    const currentTitle = formData.title;
-    const currentContent = formData.content;
+    const currentTitle = methods.getValues('title');
+    const currentContent = methods.getValues('content');
     
     if (!currentTitle && !currentContent) {
       toast({
@@ -70,7 +56,10 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
 
     if (generatedContent) {
       const formField = getFormFieldFromType(type);
-      handleFieldChange(formField, generatedContent);
+      methods.setValue(formField, generatedContent, {
+        shouldValidate: true,
+        shouldDirty: true
+      });
       toast({
         title: "Success",
         description: "Content generated successfully!",
@@ -84,9 +73,14 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
       const currentTime = new Date().toISOString();
       const publishedAt = isDraft ? null : currentTime;
       
+      const formData = methods.getValues();
       const uniqueSlug = await generateUniqueSlug(formData.slug);
+      
       if (uniqueSlug !== formData.slug) {
-        handleFieldChange('slug', uniqueSlug);
+        methods.setValue('slug', uniqueSlug, {
+          shouldValidate: true,
+          shouldDirty: true
+        });
         toast({
           title: "Notice",
           description: "A similar slug already existed. Generated a unique one.",
@@ -138,55 +132,48 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
   };
 
   return (
-    <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-      <TabsList className="grid w-full grid-cols-2">
-        <TabsTrigger value="edit">Edit</TabsTrigger>
-        <TabsTrigger value="preview">Preview</TabsTrigger>
-      </TabsList>
+    <FormProvider {...methods}>
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="edit">Edit</TabsTrigger>
+          <TabsTrigger value="preview">Preview</TabsTrigger>
+        </TabsList>
 
-      <TabsContent value="edit">
-        <Form>
-          <form className="space-y-6 text-left">
-            <BlogPostBasicInfo 
-              form={formData}
-              onFieldChange={handleFieldChange}
-              generateSlug={generateSlug}
-              initialData={initialData || EMPTY_FORM_DATA}
-            />
+        <TabsContent value="edit">
+          <Form>
+            <form className="space-y-6 text-left">
+              <BlogPostBasicInfo 
+                generateSlug={generateSlug}
+              />
 
-            <BlogPostImageSection
-              form={formData}
-              onFieldChange={handleFieldChange}
-              isGeneratingAltText={isGeneratingAltText}
-              generateAltText={generateAltText}
-            />
+              <BlogPostImageSection
+                isGeneratingAltText={isGeneratingAltText}
+                generateAltText={generateAltText}
+              />
 
-            <BlogPostContent 
-              form={formData}
-              onFieldChange={handleFieldChange}
-              handleAIGenerate={handleAIGenerate}
-            />
+              <BlogPostContent 
+                handleAIGenerate={handleAIGenerate}
+              />
 
-            <Separator />
+              <Separator />
 
-            <BlogPostSEO 
-              form={formData}
-              onFieldChange={handleFieldChange}
-              handleAIGenerate={handleAIGenerate}
-            />
+              <BlogPostSEO 
+                handleAIGenerate={handleAIGenerate}
+              />
 
-            <BlogPostFormActions
-              onSubmit={onSubmit}
-              isSubmitting={isSubmitting}
-            />
-          </form>
-        </Form>
-      </TabsContent>
+              <BlogPostFormActions
+                onSubmit={onSubmit}
+                isSubmitting={isSubmitting}
+              />
+            </form>
+          </Form>
+        </TabsContent>
 
-      <TabsContent value="preview" className="text-left">
-        <BlogPostPreview data={formData} />
-      </TabsContent>
-    </Tabs>
+        <TabsContent value="preview" className="text-left">
+          <BlogPostPreview data={methods.getValues()} />
+        </TabsContent>
+      </Tabs>
+    </FormProvider>
   );
 };
 
