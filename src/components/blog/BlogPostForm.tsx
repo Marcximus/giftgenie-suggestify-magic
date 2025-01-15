@@ -29,8 +29,8 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
   const { toast } = useToast();
   const { generateContent, getFormFieldFromType } = useAIContent();
 
-  // Define default values explicitly
-  const defaultValues: BlogPostFormData = {
+  // Create defaultValues object separately to avoid type recursion
+  const emptyDefaultValues: BlogPostFormData = {
     title: "",
     slug: "",
     content: "",
@@ -48,7 +48,7 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
   };
 
   const form = useForm<BlogPostFormData>({
-    defaultValues: initialData || defaultValues,
+    defaultValues: initialData || emptyDefaultValues,
   });
 
   const generateAltText = async () => {
