@@ -15,6 +15,7 @@ import { BlogPostImageSection } from "./form/BlogPostImageSection";
 import { BlogPostFormActions } from "./form/BlogPostFormActions";
 import { useAltTextGeneration } from "./form/useAltTextGeneration";
 import { useSlugGeneration } from "./form/useSlugGeneration";
+import { useForm, FormProvider } from "react-hook-form";
 
 type FormAction = 
   | { type: 'SET_FIELD'; field: keyof BlogPostFormData; value: any }
@@ -43,10 +44,15 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
   const { toast } = useToast();
   const { generateContent, getFormFieldFromType } = useAIContent();
   const { generateUniqueSlug, generateSlug } = useSlugGeneration();
-  const { isGeneratingAltText, generateAltText } = useAltTextGeneration(formData, dispatch);
+  const { isGeneratingAltText, generateAltText } = useAltTextGeneration();
+
+  const methods = useForm<BlogPostFormData>({
+    defaultValues: initialData || EMPTY_FORM_DATA
+  });
 
   const handleFieldChange = (field: keyof BlogPostFormData, value: any) => {
     dispatch({ type: 'SET_FIELD', field, value });
+    methods.setValue(field, value);
   };
 
   const handleAIGenerate = async (type: 'excerpt' | 'seo-title' | 'seo-description' | 'seo-keywords' | 'improve-content') => {
@@ -145,24 +151,24 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
       </TabsList>
 
       <TabsContent value="edit">
-        <Form>
+        <FormProvider {...methods}>
           <form className="space-y-6 text-left">
             <BlogPostBasicInfo 
-              form={formData}
+              form={methods}
               onFieldChange={handleFieldChange}
               generateSlug={generateSlug}
               initialData={initialData || EMPTY_FORM_DATA}
             />
 
             <BlogPostImageSection
-              form={formData}
+              form={methods}
               onFieldChange={handleFieldChange}
               isGeneratingAltText={isGeneratingAltText}
               generateAltText={generateAltText}
             />
 
             <BlogPostContent 
-              form={formData}
+              form={methods}
               onFieldChange={handleFieldChange}
               handleAIGenerate={handleAIGenerate}
             />
@@ -170,7 +176,7 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
             <Separator />
 
             <BlogPostSEO 
-              form={formData}
+              form={methods}
               onFieldChange={handleFieldChange}
               handleAIGenerate={handleAIGenerate}
             />
@@ -180,7 +186,7 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
               isSubmitting={isSubmitting}
             />
           </form>
-        </Form>
+        </FormProvider>
       </TabsContent>
 
       <TabsContent value="preview" className="text-left">
