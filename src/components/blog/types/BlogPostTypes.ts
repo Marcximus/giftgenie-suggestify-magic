@@ -1,17 +1,16 @@
+import { Tables } from "@/integrations/supabase/types";
 import { Json } from "@/integrations/supabase/types";
 
-// Define a type that matches Supabase's Json type structure
-export type JsonCompatible = string | number | boolean | null | JsonCompatible[] | { [key: string]: JsonCompatible };
-
-// Make AffiliateLink compatible with Json type
-export interface AffiliateLink extends Record<string, JsonCompatible> {
+// Simplified base interface for affiliate links
+export interface AffiliateLink {
   productTitle: string;
   affiliateLink: string;
   imageUrl?: string;
-  rating?: number | null;
-  totalRatings?: number | null;
+  rating?: number;
+  totalRatings?: number;
 }
 
+// Form data type matching Supabase table structure
 export interface BlogPostFormData {
   title: string;
   slug: string;
@@ -29,12 +28,10 @@ export interface BlogPostFormData {
   related_posts: Json | null;
 }
 
-export interface BlogPostData extends BlogPostFormData {
-  id: string;
-  created_at: string;
-  updated_at: string;
-}
+// Database type
+export type BlogPostData = Tables<"blog_posts">;
 
+// Helper functions for type conversion
 export function isAffiliateLinkArray(value: unknown): value is AffiliateLink[] {
   if (!Array.isArray(value)) return false;
   return value.every(item => 
