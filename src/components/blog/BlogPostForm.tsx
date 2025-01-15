@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { TabsContent, Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Form, FormProvider } from "@/components/ui/form";
+import { Form } from "@/components/ui/form";
 import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
@@ -17,11 +17,11 @@ import { useAltTextGeneration } from "./form/useAltTextGeneration";
 import { useSlugGeneration } from "./form/useSlugGeneration";
 import { useForm } from "react-hook-form";
 
-interface BlogPostFormProps {
+interface Props {
   initialData?: BlogPostFormData;
 }
 
-const BlogPostForm = ({ initialData = EMPTY_FORM_DATA }: BlogPostFormProps) => {
+const BlogPostForm = ({ initialData = EMPTY_FORM_DATA }: Props) => {
   const [activeTab, setActiveTab] = useState("edit");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
@@ -29,15 +29,15 @@ const BlogPostForm = ({ initialData = EMPTY_FORM_DATA }: BlogPostFormProps) => {
   const { generateContent, getFormFieldFromType } = useAIContent();
   const { generateUniqueSlug, generateSlug } = useSlugGeneration();
   
-  const methods = useForm<BlogPostFormData>({
+  const form = useForm<BlogPostFormData>({
     defaultValues: initialData
   });
 
-  const { isGeneratingAltText, generateAltText } = useAltTextGeneration(methods);
+  const { isGeneratingAltText, generateAltText } = useAltTextGeneration(form);
 
   const handleAIGenerate = async (type: 'excerpt' | 'seo-title' | 'seo-description' | 'seo-keywords' | 'improve-content') => {
-    const currentTitle = methods.getValues('title');
-    const currentContent = methods.getValues('content');
+    const currentTitle = form.getValues('title');
+    const currentContent = form.getValues('content');
     
     if (!currentTitle && !currentContent) {
       toast({
@@ -56,7 +56,7 @@ const BlogPostForm = ({ initialData = EMPTY_FORM_DATA }: BlogPostFormProps) => {
 
     if (generatedContent) {
       const formField = getFormFieldFromType(type);
-      methods.setValue(formField, generatedContent, {
+      form.setValue(formField, generatedContent, {
         shouldValidate: true,
         shouldDirty: true
       });
@@ -73,11 +73,11 @@ const BlogPostForm = ({ initialData = EMPTY_FORM_DATA }: BlogPostFormProps) => {
       const currentTime = new Date().toISOString();
       const publishedAt = isDraft ? null : currentTime;
       
-      const formData = methods.getValues();
+      const formData = form.getValues();
       const uniqueSlug = await generateUniqueSlug(formData.slug);
       
       if (uniqueSlug !== formData.slug) {
-        methods.setValue('slug', uniqueSlug, {
+        form.setValue('slug', uniqueSlug, {
           shouldValidate: true,
           shouldDirty: true
         });
@@ -132,48 +132,50 @@ const BlogPostForm = ({ initialData = EMPTY_FORM_DATA }: BlogPostFormProps) => {
   };
 
   return (
-    <FormProvider {...methods}>
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="edit">Edit</TabsTrigger>
-          <TabsTrigger value="preview">Preview</TabsTrigger>
-        </TabsList>
+    <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+      <TabsList className="grid w-full grid-cols-2">
+        <TabsTrigger value="edit">Edit</TabsTrigger>
+        <TabsTrigger value="preview">Preview</TabsTrigger>
+      </TabsList>
 
-        <TabsContent value="edit">
-          <Form>
-            <form className="space-y-6 text-left">
-              <BlogPostBasicInfo 
-                generateSlug={generateSlug}
-              />
+      <TabsContent value="edit">
+        <Form {...form}>
+          <form className="space-y-6 text-left">
+            <BlogPostBasicInfo 
+              form={form}
+              generateSlug={generateSlug}
+            />
 
-              <BlogPostImageSection
-                isGeneratingAltText={isGeneratingAltText}
-                generateAltText={generateAltText}
-              />
+            <BlogPostImageSection
+              form={form}
+              isGeneratingAltText={isGeneratingAltText}
+              generateAltText={generateAltText}
+            />
 
-              <BlogPostContent 
-                handleAIGenerate={handleAIGenerate}
-              />
+            <BlogPostContent 
+              form={form}
+              handleAIGenerate={handleAIGenerate}
+            />
 
-              <Separator />
+            <Separator />
 
-              <BlogPostSEO 
-                handleAIGenerate={handleAIGenerate}
-              />
+            <BlogPostSEO 
+              form={form}
+              handleAIGenerate={handleAIGenerate}
+            />
 
-              <BlogPostFormActions
-                onSubmit={onSubmit}
-                isSubmitting={isSubmitting}
-              />
-            </form>
-          </Form>
-        </TabsContent>
+            <BlogPostFormActions
+              onSubmit={onSubmit}
+              isSubmitting={isSubmitting}
+            />
+          </form>
+        </Form>
+      </TabsContent>
 
-        <TabsContent value="preview" className="text-left">
-          <BlogPostPreview data={methods.getValues()} />
-        </TabsContent>
-      </Tabs>
-    </FormProvider>
+      <TabsContent value="preview" className="text-left">
+        <BlogPostPreview data={form.getValues()} />
+      </TabsContent>
+    </Tabs>
   );
 };
 
