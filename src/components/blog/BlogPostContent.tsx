@@ -26,7 +26,7 @@ export const BlogPostContent = ({ post }: BlogPostContentProps) => {
                    
                    prose-img:w-full prose-img:max-w-2xl prose-img:mx-auto
                    prose-img:h-auto prose-img:aspect-square prose-img:my-4 sm:prose-img:my-6
-                   prose-img:object-contain prose-img:rounded-lg prose-img:shadow-md
+                   prose-img:object-cover prose-img:rounded-lg prose-img:shadow-md
                    
                    prose-a:text-primary prose-a:font-medium prose-a:no-underline
                    hover:prose-a:text-primary/90
@@ -37,7 +37,14 @@ export const BlogPostContent = ({ post }: BlogPostContentProps) => {
                    [&_a.amazon-button]:text-white [&_a.amazon-button]:rounded-md 
                    [&_a.amazon-button]:transition-colors [&_a.amazon-button]:text-base
                    [&_a.amazon-button]:shadow-sm [&_a.amazon-button]:hover:shadow-md
-                   [&_a.amazon-button]:active:scale-95"
+                   [&_a.amazon-button]:active:scale-95
+                   
+                   [&_a.perfect-gift-button]:inline-block [&_a.perfect-gift-button]:px-8 [&_a.perfect-gift-button]:py-4
+                   [&_a.perfect-gift-button]:bg-gradient-to-r [&_a.perfect-gift-button]:from-primary/80 [&_a.perfect-gift-button]:to-blue-500/80
+                   [&_a.perfect-gift-button]:text-white [&_a.perfect-gift-button]:font-medium [&_a.perfect-gift-button]:rounded-lg
+                   [&_a.perfect-gift-button]:transition-all [&_a.perfect-gift-button]:duration-300
+                   [&_a.perfect-gift-button]:shadow-md [&_a.perfect-gift-button]:hover:shadow-lg
+                   [&_a.perfect-gift-button]:hover:opacity-90 [&_a.perfect-gift-button]:active:scale-95"
         dangerouslySetInnerHTML={{ __html: post.content }}
       />
     </div>
