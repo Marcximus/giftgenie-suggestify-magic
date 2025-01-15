@@ -1,4 +1,5 @@
 import { Tables } from "@/integrations/supabase/types";
+import { ProductReview } from "@/components/product/ProductReview";
 
 interface BlogPostContentProps {
   post: Tables<"blog_posts">;
@@ -45,8 +46,30 @@ export const BlogPostContent = ({ post }: BlogPostContentProps) => {
                    [&_a.perfect-gift-button]:transition-all [&_a.perfect-gift-button]:duration-300
                    [&_a.perfect-gift-button]:shadow-md [&_a.perfect-gift-button]:hover:shadow-lg
                    [&_a.perfect-gift-button]:hover:opacity-90 [&_a.perfect-gift-button]:active:scale-95"
-        dangerouslySetInnerHTML={{ __html: post.content }}
-      />
+      >
+        {post.affiliate_links?.map((link: any, index: number) => {
+          if (link.rating && link.totalRatings) {
+            const reviewSection = `
+              <div class="my-4">
+                ${ProductReview({
+                  rating: link.rating,
+                  totalRatings: link.totalRatings,
+                  className: "my-4"
+                })}
+              </div>
+            `;
+            
+            // Insert the review section after the product image but before the Amazon button
+            post.content = post.content.replace(
+              `<img src="${link.imageUrl}"`,
+              `<img src="${link.imageUrl}"${reviewSection}`
+            );
+          }
+          return null;
+        })}
+        
+        <div dangerouslySetInnerHTML={{ __html: post.content }} />
+      </div>
     </div>
   );
 };
