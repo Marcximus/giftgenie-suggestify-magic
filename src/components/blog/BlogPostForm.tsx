@@ -11,7 +11,7 @@ import { useAIContent } from "@/hooks/useAIContent";
 import { BlogPostBasicInfo } from "./form/BlogPostBasicInfo";
 import { BlogPostContent } from "./form/BlogPostContent";
 import { BlogPostSEO } from "./form/BlogPostSEO";
-import { BlogPostFormData, BlogPostData, convertToJson } from "./types/BlogPostTypes";
+import { BlogPostFormData, BlogPostData, convertToJson, AffiliateLink } from "./types/BlogPostTypes";
 import { BlogPostImageSection } from "./form/BlogPostImageSection";
 import { BlogPostFormActions } from "./form/BlogPostFormActions";
 import { useAltTextGeneration } from "./form/useAltTextGeneration";
