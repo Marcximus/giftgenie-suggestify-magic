@@ -7,15 +7,15 @@ export interface AffiliateLink {
   imageUrl?: string;
 }
 
-// Form data type matching Supabase table structure but with proper affiliate_links typing
-export type BlogPostFormData = Omit<Tables<"blog_posts">, "id" | "created_at" | "updated_at" | "affiliate_links"> & {
+// Form data type matching Supabase table structure
+export type BlogPostFormData = Omit<Tables<"blog_posts">, "id" | "created_at" | "updated_at"> & {
   affiliate_links: AffiliateLink[] | null;
 };
 
 // Database type
 export type BlogPostData = Tables<"blog_posts">;
 
-// Helper functions for type conversion
+// Type guard for affiliate links
 export function isAffiliateLinkArray(value: unknown): value is AffiliateLink[] {
   if (!Array.isArray(value)) return false;
   return value.every(item => 
@@ -29,6 +29,7 @@ export function isAffiliateLinkArray(value: unknown): value is AffiliateLink[] {
   );
 }
 
+// Helper functions for type conversion
 export function convertToAffiliateLinks(value: unknown): AffiliateLink[] | null {
   if (!value) return null;
   try {
