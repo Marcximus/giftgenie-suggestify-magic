@@ -15,7 +15,22 @@ serve(async (req) => {
   try {
     const { title, prompt } = await req.json();
 
-    // Create OpenAI image
+    // Create a detailed prompt for gift-related blog images
+    const defaultPrompt = `Create a professional, magazine-style featured image for a gift recommendation blog post about: ${title}. 
+    Style: Modern, clean, and visually appealing lifestyle photography
+    Composition: Center-weighted with subtle depth of field
+    Lighting: Bright and airy with soft shadows
+    Colors: Warm, inviting tones with a cohesive color palette
+    Elements: Include gift-wrapped presents, ribbons, and celebratory elements
+    Mood: Joyful, exciting, and festive
+    Setting: Clean, minimalist background with focus on the main subject
+    Additional details: Add subtle decorative elements that relate to the specific gift category
+    Quality: Ensure high detail and professional photography style`;
+
+    // Use provided prompt or default to enhanced gift-themed prompt
+    const finalPrompt = prompt || defaultPrompt;
+    console.log('Generating image with prompt:', finalPrompt);
+
     const response = await fetch('https://api.openai.com/v1/images/generations', {
       method: 'POST',
       headers: {
@@ -24,7 +39,7 @@ serve(async (req) => {
       },
       body: JSON.stringify({
         model: "dall-e-3",
-        prompt: prompt || `Create a professional featured image for a blog post titled: ${title}`,
+        prompt: finalPrompt,
         n: 1,
         size: "1792x1024",
         quality: "standard",
@@ -76,7 +91,7 @@ serve(async (req) => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: "gpt-4",
+          model: "gpt-4o",
           messages: [{
             role: "system",
             content: "Generate a concise, descriptive alt text for an image. Focus on the main elements and purpose of the image."
