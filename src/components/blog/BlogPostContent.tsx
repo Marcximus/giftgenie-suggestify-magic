@@ -1,6 +1,7 @@
 import { Tables } from "@/integrations/supabase/types";
 import { blogPostContentStyles } from "./content/BlogPostContentStyles";
 import { processContent } from "./content/BlogContentProcessor";
+import { AffiliateLink } from "./types/BlogPostTypes";
 
 interface BlogPostContentProps {
   post: Tables<"blog_posts">;
@@ -9,13 +10,13 @@ interface BlogPostContentProps {
 export const BlogPostContent = ({ post }: BlogPostContentProps) => {
   // Parse the affiliate_links JSON if it exists and ensure proper typing
   const affiliateLinks = Array.isArray(post.affiliate_links) 
-    ? post.affiliate_links.map(link => ({
+    ? (post.affiliate_links as AffiliateLink[]).map(link => ({
         ...link,
         rating: typeof link.rating === 'string' ? parseFloat(link.rating) : link.rating,
         totalRatings: typeof link.totalRatings === 'string' ? parseInt(link.totalRatings, 10) : link.totalRatings
       }))
     : typeof post.affiliate_links === 'string' 
-      ? JSON.parse(post.affiliate_links).map(link => ({
+      ? (JSON.parse(post.affiliate_links) as AffiliateLink[]).map(link => ({
           ...link,
           rating: typeof link.rating === 'string' ? parseFloat(link.rating) : link.rating,
           totalRatings: typeof link.totalRatings === 'string' ? parseInt(link.totalRatings, 10) : link.totalRatings
