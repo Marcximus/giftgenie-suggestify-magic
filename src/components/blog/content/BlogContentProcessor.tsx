@@ -6,18 +6,15 @@ export const processContent = (
 ): string => {
   // Create a map of image URLs to their corresponding review data
   const reviewMap = new Map(
-    affiliateLinks.map(link => {
-      const rating = typeof link.rating === 'number' ? link.rating : 
-                    typeof link.rating === 'string' ? parseFloat(link.rating) : undefined;
-      
-      const totalRatings = typeof link.totalRatings === 'number' ? link.totalRatings :
-                          typeof link.totalRatings === 'string' ? parseInt(link.totalRatings, 10) : undefined;
-      
-      return [
-        link.imageUrl,
-        { rating, totalRatings }
-      ];
-    })
+    affiliateLinks.map(link => [
+      link.imageUrl,
+      {
+        rating: typeof link.rating === 'number' ? link.rating : 
+                typeof link.rating === 'string' ? parseFloat(link.rating) : undefined,
+        totalRatings: typeof link.totalRatings === 'number' ? link.totalRatings :
+                     typeof link.totalRatings === 'string' ? parseInt(link.totalRatings, 10) : undefined
+      }
+    ])
   );
 
   // Split content into segments at image tags
@@ -33,7 +30,11 @@ export const processContent = (
         const imageUrl = srcMatch[1];
         const reviewData = reviewMap.get(imageUrl);
         
-        console.log('Processing image:', imageUrl, 'Review data:', reviewData);
+        console.log('Processing image with review data:', {
+          imageUrl,
+          rating: reviewData?.rating,
+          totalRatings: reviewData?.totalRatings
+        });
 
         // Add image styling - maintain aspect ratio and prevent compression
         const styledImage = segment.replace(
