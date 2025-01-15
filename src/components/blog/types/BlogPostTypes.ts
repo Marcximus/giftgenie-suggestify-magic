@@ -1,7 +1,6 @@
 import { Tables } from "@/integrations/supabase/types";
-import { Json } from "@/integrations/supabase/types";
 
-// Simplified affiliate link interface without index signature
+// Simplified affiliate link interface
 export interface AffiliateLink {
   productTitle: string;
   affiliateLink: string;
@@ -11,22 +10,9 @@ export interface AffiliateLink {
 }
 
 // Form data type matching Supabase table structure
-export interface BlogPostFormData {
-  title: string;
-  slug: string;
-  content: string;
-  excerpt: string | null;
-  author: string;
-  image_url: string | null;
-  published_at: string | null;
-  meta_title: string | null;
-  meta_description: string | null;
-  meta_keywords: string | null;
-  images: Json | null;
-  affiliate_links: Json | null;
-  image_alt_text: string | null;
-  related_posts: Json | null;
-}
+export type BlogPostFormData = Omit<Tables<"blog_posts">, "id" | "created_at" | "updated_at"> & {
+  affiliate_links: AffiliateLink[] | null;
+};
 
 // Database type
 export type BlogPostData = Tables<"blog_posts">;
@@ -42,7 +28,7 @@ export function isAffiliateLinkArray(value: unknown): value is AffiliateLink[] {
   );
 }
 
-export function convertToAffiliateLinks(value: Json | null): AffiliateLink[] {
+export function convertToAffiliateLinks(value: unknown): AffiliateLink[] {
   if (!value) return [];
   try {
     const parsed = typeof value === 'string' ? JSON.parse(value) : value;
@@ -52,7 +38,7 @@ export function convertToAffiliateLinks(value: Json | null): AffiliateLink[] {
   }
 }
 
-export function convertToJson(links: AffiliateLink[] | null): Json {
-  if (!links) return [];
-  return links as unknown as Json;
+export function convertToJson(links: AffiliateLink[] | null): unknown {
+  if (!links) return null;
+  return links;
 }
