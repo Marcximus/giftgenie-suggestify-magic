@@ -1,11 +1,19 @@
 import { Tables } from "@/integrations/supabase/types";
 import { Calendar, User, Clock } from "lucide-react";
+import { useState } from "react";
 
 interface BlogPostHeaderProps {
   post: Tables<"blog_posts">;
 }
 
 export const BlogPostHeader = ({ post }: BlogPostHeaderProps) => {
+  const [imageError, setImageError] = useState(false);
+
+  const handleImageError = () => {
+    console.error(`Failed to load image: ${post.image_url}`);
+    setImageError(true);
+  };
+
   return (
     <>
       {/* SEO title hidden visually but present in DOM */}
@@ -13,12 +21,13 @@ export const BlogPostHeader = ({ post }: BlogPostHeaderProps) => {
         {post.title}
       </h1>
 
-      {post.image_url && (
+      {post.image_url && !imageError && (
         <div className="aspect-[21/9] relative overflow-hidden rounded-lg mb-6 sm:mb-8 shadow-xl animate-fade-in">
           <img 
             src={post.image_url} 
             alt={post.image_alt_text || post.title}
             className="object-cover w-full h-full"
+            onError={handleImageError}
           />
         </div>
       )}
