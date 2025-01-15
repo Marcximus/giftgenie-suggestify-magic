@@ -14,7 +14,10 @@ export const BlogPostContent = ({ post }: BlogPostContentProps) => {
       ? JSON.parse(post.affiliate_links)
       : [];
 
-  console.log('Processing affiliate links:', affiliateLinks);
+  console.log('Processing blog post with affiliate links:', {
+    postTitle: post.title,
+    affiliateLinks: affiliateLinks
+  });
 
   // Process the content with affiliate links and reviews
   const processedContent = processContent(post.content, affiliateLinks);

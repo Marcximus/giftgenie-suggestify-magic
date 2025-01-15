@@ -17,6 +17,8 @@ export const processContent = (
     ])
   );
 
+  console.log('Review map created:', Array.from(reviewMap.entries()));
+
   // Split content into segments at image tags
   const segments = content.split(/(<img[^>]+>)/);
   
@@ -32,20 +34,19 @@ export const processContent = (
         
         console.log('Processing image with review data:', {
           imageUrl,
-          rating: reviewData?.rating,
-          totalRatings: reviewData?.totalRatings
+          reviewData
         });
 
-        // Add image styling - maintain aspect ratio and prevent compression
+        // Add image styling
         const styledImage = segment.replace(
-          'class="',
-          'class="w-full max-w-xl h-auto object-contain rounded-lg shadow-md mx-auto my-4 '
+          /class="([^"]*)"/,
+          'class="w-full max-w-xl h-auto object-contain rounded-lg shadow-md mx-auto my-4 $1"'
         );
         
         // If we have review data, add the review section
         if (reviewData?.rating !== undefined && reviewData?.totalRatings !== undefined) {
           return `
-            <div class="flex flex-col items-center my-6">
+            <div class="flex flex-col items-center my-6 w-full">
               ${styledImage}
               <div class="w-full max-w-xl mt-4">
                 <div class="flex flex-col items-center gap-2 p-4 bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl shadow-sm">
@@ -69,7 +70,7 @@ export const processContent = (
         }
         
         // If no review data, just return the styled image in a container
-        return `<div class="flex justify-center my-6">${styledImage}</div>`;
+        return `<div class="flex justify-center my-6 w-full">${styledImage}</div>`;
       }
     }
     return segment;
