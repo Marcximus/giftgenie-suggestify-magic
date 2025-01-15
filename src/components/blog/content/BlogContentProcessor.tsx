@@ -9,10 +9,8 @@ export const processContent = (
     affiliateLinks.map(link => [
       link.imageUrl,
       {
-        rating: typeof link.rating === 'number' ? link.rating : 
-                typeof link.rating === 'string' ? parseFloat(link.rating) : undefined,
-        totalRatings: typeof link.totalRatings === 'number' ? link.totalRatings :
-                     typeof link.totalRatings === 'string' ? parseInt(link.totalRatings, 10) : undefined
+        rating: typeof link.rating === 'number' && !isNaN(link.rating) ? link.rating : undefined,
+        totalRatings: typeof link.totalRatings === 'number' && !isNaN(link.totalRatings) ? link.totalRatings : undefined
       }
     ])
   );
@@ -34,7 +32,10 @@ export const processContent = (
         
         console.log('Processing image with review data:', {
           imageUrl,
-          reviewData
+          reviewData: {
+            rating: reviewData?.rating,
+            totalRatings: reviewData?.totalRatings
+          }
         });
 
         // Add image styling
@@ -44,7 +45,7 @@ export const processContent = (
         );
         
         // If we have review data, add the review section
-        if (reviewData?.rating !== undefined && reviewData?.totalRatings !== undefined) {
+        if (typeof reviewData?.rating === 'number' && typeof reviewData?.totalRatings === 'number') {
           return `
             <div class="flex flex-col items-center my-6 w-full">
               ${styledImage}
