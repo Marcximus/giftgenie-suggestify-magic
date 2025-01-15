@@ -1,14 +1,7 @@
 import { Json } from '@/integrations/supabase/types';
 
-export interface AffiliateLink {
-  productUrl: string;
-  imageUrl: string;
-  title: string;
-  rating?: number;
-  totalRatings?: number;
-}
-
-export interface BlogPostFormData {
+// Basic blog post type that matches Supabase exactly
+export type BlogPostFormData = {
   id?: string;
   title: string;
   slug: string;
@@ -26,25 +19,15 @@ export interface BlogPostFormData {
   affiliate_links: Json;
   images: Json | null;
   related_posts: Json | null;
-}
-
-export const parseAffiliateLinks = (jsonData: Json): AffiliateLink[] => {
-  try {
-    if (typeof jsonData === 'string') {
-      return JSON.parse(jsonData);
-    }
-    if (Array.isArray(jsonData)) {
-      return jsonData;
-    }
-    return [];
-  } catch {
-    console.error('Error parsing affiliate links:', jsonData);
-    return [];
-  }
 };
 
-export const stringifyAffiliateLinks = (links: AffiliateLink[]): Json => {
-  return JSON.stringify(links) as Json;
+// Separate runtime type for affiliate links
+export type RawAffiliateLink = {
+  productUrl: string;
+  imageUrl: string;
+  title: string;
+  rating?: number;
+  totalRatings?: number;
 };
 
 export const defaultFormData: BlogPostFormData = {
@@ -64,4 +47,20 @@ export const defaultFormData: BlogPostFormData = {
   created_at: new Date().toISOString(),
   updated_at: new Date().toISOString(),
   published_at: null
+};
+
+export const parseAffiliateLinks = (json: Json): RawAffiliateLink[] => {
+  try {
+    if (typeof json === 'string') {
+      return JSON.parse(json);
+    }
+    return Array.isArray(json) ? json : [];
+  } catch (error) {
+    console.error('Error parsing affiliate links:', error);
+    return [];
+  }
+};
+
+export const stringifyAffiliateLinks = (links: RawAffiliateLink[]): Json => {
+  return JSON.stringify(links) as Json;
 };
