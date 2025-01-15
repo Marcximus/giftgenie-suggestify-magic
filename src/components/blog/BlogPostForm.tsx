@@ -93,14 +93,37 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
     }
   };
 
+  const generateUniqueSlug = async (baseSlug: string): Promise<string> => {
+    const { data: existingPost } = await supabase
+      .from("blog_posts")
+      .select("slug")
+      .eq("slug", baseSlug)
+      .single();
+
+    if (!existingPost) {
+      return baseSlug;
+    }
+
+    const timestamp = new Date().getTime();
+    return `${baseSlug}-${timestamp}`;
+  };
+
   const onSubmit = async (data: BlogPostFormData, isDraft: boolean = false) => {
     setIsSubmitting(true);
     try {
       const currentTime = new Date().toISOString();
       const publishedAt = isDraft ? null : currentTime;
       
+      const uniqueSlug = await generateUniqueSlug(data.slug);
+      if (uniqueSlug !== data.slug) {
+        data.slug = uniqueSlug;
+        toast({
+          title: "Notice",
+          description: "A similar slug already existed. Generated a unique one.",
+        });
+      }
+
       if (initialData?.id) {
-        // Update existing post
         const { error } = await supabase
           .from("blog_posts")
           .update({
@@ -116,7 +139,6 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
           description: isDraft ? "Draft saved successfully" : "Blog post updated successfully",
         });
       } else {
-        // Create new post
         const { error } = await supabase
           .from("blog_posts")
           .insert([{
