@@ -1,4 +1,4 @@
-import { Json } from '@/integrations/supabase/types';
+import { Json } from '@supabase/supabase-js';
 
 export interface AffiliateLink {
   productUrl: string;
@@ -19,6 +19,7 @@ export type BlogPostFormData = {
   image_alt_text: string | null;
   meta_title: string | null;
   meta_description: string | null;
+  meta_keywords: string[] | null;
   created_at?: string;
   updated_at?: string;
   published_at: string | null;
@@ -37,6 +38,7 @@ export const EMPTY_FORM_DATA: BlogPostFormData = {
   image_alt_text: null,
   meta_title: null,
   meta_description: null,
+  meta_keywords: [],
   affiliate_links: '[]' as Json,
   images: null,
   related_posts: null,
