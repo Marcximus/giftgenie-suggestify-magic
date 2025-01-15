@@ -41,7 +41,7 @@ const BlogPost = () => {
 
       const { data: relatedPosts, error: relatedError } = await supabase
         .from("blog_posts")
-        .select("title, slug")
+        .select("title, slug, image_url, excerpt")
         .neq("slug", slug)
         .order("published_at", { ascending: false })
         .limit(3);
@@ -111,6 +111,9 @@ const BlogPost = () => {
     );
   }
 
+  // Extract the first affiliate link for structured data
+  const firstProduct = post.affiliate_links?.[0] || null;
+
   return (
     <>
       <Helmet>
@@ -124,6 +127,44 @@ const BlogPost = () => {
         )}
         <meta name="author" content={post.author} />
         <meta property="article:published_time" content={post.published_at || ""} />
+        <link rel="canonical" href={`https://getthegift.ai/blog/post/${post.slug}`} />
+        
+        {/* Structured Data for Blog Post */}
+        <script type="application/ld+json">
+          {JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "BlogPosting",
+            "headline": post.title,
+            "image": post.image_url,
+            "author": {
+              "@type": "Person",
+              "name": post.author
+            },
+            "publisher": {
+              "@type": "Organization",
+              "name": "Get The Gift",
+              "logo": {
+                "@type": "ImageObject",
+                "url": "/lovable-uploads/89d8ebcd-a5f6-4614-a505-80ed3d467943.png"
+              }
+            },
+            "datePublished": post.published_at,
+            "dateModified": post.updated_at,
+            "description": post.excerpt,
+            "mainEntityOfPage": {
+              "@type": "WebPage",
+              "@id": `https://getthegift.ai/blog/post/${post.slug}`
+            },
+            ...(firstProduct && {
+              "about": {
+                "@type": "Product",
+                "name": firstProduct.productTitle,
+                "image": firstProduct.imageUrl,
+                "url": firstProduct.affiliateLink
+              }
+            })
+          })}
+        </script>
       </Helmet>
       <article className="min-h-screen bg-gradient-to-b from-background to-muted/20">
         <div className="container mx-auto px-2 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-12 max-w-5xl">
