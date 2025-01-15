@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<?xml-stylesheet type="text/xsl" href="/sitemap.xsl"?>
-<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <sitemap>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
     <loc>https://ckcqttsdpxfbpkzljctl.supabase.co/functions/v1/generate-sitemap</loc>
-    <lastmod>2024-01-15T00:00:00+00:00</lastmod>
-  </sitemap>
-</sitemapindex>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+  </url>
+</urlset>

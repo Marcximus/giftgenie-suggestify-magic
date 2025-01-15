@@ -34,7 +34,7 @@ serve(async (req) => {
   try {
     console.log('Generating sitemap...');
     
-    // Initialize Supabase client with anon key
+    // Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseAnonKey);
@@ -53,9 +53,8 @@ serve(async (req) => {
 
     console.log(`Found ${posts?.length || 0} published blog posts`);
 
-    // Generate sitemap XML with both static and dynamic URLs
+    // Generate sitemap XML
     const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<?xml-stylesheet type="text/xsl" href="/sitemap.xsl"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${staticUrls.map(url => `
   <url>
@@ -79,7 +78,6 @@ ${posts?.map(post => `
     
     // Return basic sitemap with static pages if there's an error
     const fallbackXml = `<?xml version="1.0" encoding="UTF-8"?>
-<?xml-stylesheet type="text/xsl" href="/sitemap.xsl"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${staticUrls.map(url => `
   <url>
