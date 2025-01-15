@@ -11,13 +11,13 @@ import { useAIContent } from "@/hooks/useAIContent";
 import { BlogPostBasicInfo } from "./form/BlogPostBasicInfo";
 import { BlogPostContent } from "./form/BlogPostContent";
 import { BlogPostSEO } from "./form/BlogPostSEO";
-import { DatabaseFormData, RuntimeFormData, convertDatabaseToRuntime, convertRuntimeToDatabase } from "./types/BlogPostTypes";
+import { DatabaseFormData, BlogPostFormData, convertDatabaseToRuntime, convertRuntimeToDatabase } from "./types/BlogPostTypes";
 import { BlogPostImageSection } from "./form/BlogPostImageSection";
 import { BlogPostFormActions } from "./form/BlogPostFormActions";
 import { useAltTextGeneration } from "./form/useAltTextGeneration";
 import { useSlugGeneration } from "./form/useSlugGeneration";
 
-const defaultFormData: RuntimeFormData = {
+const defaultFormData: BlogPostFormData = {
   title: "",
   slug: "",
   content: "",
@@ -45,7 +45,7 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
   const { generateContent, getFormFieldFromType } = useAIContent();
   const { generateUniqueSlug, generateSlug } = useSlugGeneration();
 
-  const form = useForm<RuntimeFormData>({
+  const form = useForm<BlogPostFormData>({
     defaultValues: initialData ? convertDatabaseToRuntime(initialData) : defaultFormData,
   });
 
@@ -80,7 +80,7 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
     }
   };
 
-  const onSubmit = async (data: RuntimeFormData, isDraft: boolean = false) => {
+  const onSubmit = async (data: BlogPostFormData, isDraft: boolean = false) => {
     setIsSubmitting(true);
     try {
       const currentTime = new Date().toISOString();
