@@ -1,4 +1,4 @@
-import { useReducer } from "react";
+import { useReducer, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { TabsContent, Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Form } from "@/components/ui/form";
@@ -38,6 +38,7 @@ interface BlogPostFormProps {
 const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
   const [formData, dispatch] = useReducer(formReducer, initialData || EMPTY_FORM_DATA);
   const [activeTab, setActiveTab] = useState("edit");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
   const { generateContent, getFormFieldFromType } = useAIContent();
@@ -78,6 +79,7 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
   };
 
   const onSubmit = async (isDraft: boolean = false) => {
+    setIsSubmitting(true);
     try {
       const currentTime = new Date().toISOString();
       const publishedAt = isDraft ? null : currentTime;
@@ -130,6 +132,8 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
         description: error.message || "Failed to save blog post",
         variant: "destructive",
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -144,21 +148,21 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
         <Form>
           <form className="space-y-6 text-left">
             <BlogPostBasicInfo 
-              formData={formData}
+              form={formData}
               onFieldChange={handleFieldChange}
               generateSlug={generateSlug}
-              initialData={initialData}
+              initialData={initialData || EMPTY_FORM_DATA}
             />
 
             <BlogPostImageSection
-              formData={formData}
+              form={formData}
               onFieldChange={handleFieldChange}
               isGeneratingAltText={isGeneratingAltText}
               generateAltText={generateAltText}
             />
 
             <BlogPostContent 
-              formData={formData}
+              form={formData}
               onFieldChange={handleFieldChange}
               handleAIGenerate={handleAIGenerate}
             />
@@ -166,13 +170,14 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
             <Separator />
 
             <BlogPostSEO 
-              formData={formData}
+              form={formData}
               onFieldChange={handleFieldChange}
               handleAIGenerate={handleAIGenerate}
             />
 
             <BlogPostFormActions
               onSubmit={onSubmit}
+              isSubmitting={isSubmitting}
             />
           </form>
         </Form>
