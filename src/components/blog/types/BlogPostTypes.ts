@@ -1,6 +1,6 @@
 import { Tables } from "@/integrations/supabase/types";
 
-// Simplified affiliate link interface - removed rating and totalRatings
+// Simplified affiliate link interface
 export interface AffiliateLink {
   productTitle: string;
   affiliateLink: string;
@@ -22,7 +22,10 @@ export function isAffiliateLinkArray(value: unknown): value is AffiliateLink[] {
     typeof item === 'object' &&
     item !== null &&
     'productTitle' in item &&
-    'affiliateLink' in item
+    'affiliateLink' in item &&
+    typeof item.productTitle === 'string' &&
+    typeof item.affiliateLink === 'string' &&
+    (!('imageUrl' in item) || typeof item.imageUrl === 'string' || item.imageUrl === undefined)
   );
 }
 
