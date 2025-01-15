@@ -8,7 +8,6 @@ export interface AffiliateLink {
   totalRatings?: number;
 }
 
-// Base interface for form data
 export interface BlogPostFormData {
   title: string;
   slug: string;
@@ -26,7 +25,6 @@ export interface BlogPostFormData {
   related_posts: Json | null;
 }
 
-// Extended interface for database data
 export interface BlogPostData extends BlogPostFormData {
   id: string;
   created_at: string;

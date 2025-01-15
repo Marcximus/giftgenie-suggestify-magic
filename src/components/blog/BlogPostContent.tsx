@@ -2,25 +2,18 @@ import { Tables } from "@/integrations/supabase/types";
 import { blogPostContentStyles } from "./content/BlogPostContentStyles";
 import { processContent } from "./content/BlogContentProcessor";
 import { AffiliateLink } from "./types/BlogPostTypes";
+import { ProductImage } from "@/components/ProductImage";
 
 interface BlogPostContentProps {
   post: Tables<"blog_posts">;
 }
 
 export const BlogPostContent = ({ post }: BlogPostContentProps) => {
-  // Parse the affiliate_links JSON if it exists and ensure proper typing
+  // Parse the affiliate_links JSON if it exists
   const affiliateLinks = Array.isArray(post.affiliate_links) 
-    ? (post.affiliate_links as unknown as AffiliateLink[]).map(link => ({
-        ...link,
-        rating: typeof link.rating === 'string' ? parseFloat(link.rating) : link.rating,
-        totalRatings: typeof link.totalRatings === 'string' ? parseInt(link.totalRatings, 10) : link.totalRatings
-      }))
+    ? post.affiliate_links as AffiliateLink[]
     : typeof post.affiliate_links === 'string' 
-      ? (JSON.parse(post.affiliate_links) as unknown as AffiliateLink[]).map(link => ({
-          ...link,
-          rating: typeof link.rating === 'string' ? parseFloat(link.rating) : link.rating,
-          totalRatings: typeof link.totalRatings === 'string' ? parseInt(link.totalRatings, 10) : link.totalRatings
-        }))
+      ? JSON.parse(post.affiliate_links) as AffiliateLink[]
       : [];
 
   console.log('Processing blog post with affiliate links:', {

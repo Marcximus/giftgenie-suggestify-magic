@@ -11,7 +11,7 @@ import { useAIContent } from "@/hooks/useAIContent";
 import { BlogPostBasicInfo } from "./form/BlogPostBasicInfo";
 import { BlogPostContent } from "./form/BlogPostContent";
 import { BlogPostSEO } from "./form/BlogPostSEO";
-import { BlogPostFormData, BlogPostData, AffiliateLink } from "./types/BlogPostTypes";
+import { BlogPostFormData, BlogPostData } from "./types/BlogPostTypes";
 import { BlogPostImageSection } from "./form/BlogPostImageSection";
 import { BlogPostFormActions } from "./form/BlogPostFormActions";
 import { useAltTextGeneration } from "./form/useAltTextGeneration";
@@ -50,8 +50,6 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
   const form = useForm<BlogPostFormData>({
     defaultValues: initialData || defaultValues,
   });
-
-  const { isGeneratingAltText, generateAltText } = useAltTextGeneration(form);
 
   const handleAIGenerate = async (type: 'excerpt' | 'seo-title' | 'seo-description' | 'seo-keywords' | 'improve-content') => {
     const currentTitle = form.getValues('title');
@@ -97,7 +95,6 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
         });
       }
 
-      // Ensure affiliate_links is properly typed as Json before sending to Supabase
       const dataToSubmit = {
         ...data,
         affiliate_links: data.affiliate_links as Json,
