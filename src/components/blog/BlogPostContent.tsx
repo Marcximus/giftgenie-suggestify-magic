@@ -21,28 +21,50 @@ export const BlogPostContent = ({ post }: BlogPostContentProps) => {
       ? JSON.parse(post.affiliate_links)
       : [];
 
-  let processedContent = post.content;
+  // Create a map of image URLs to their corresponding review data
+  const reviewMap = new Map(
+    affiliateLinks
+      .filter(link => link.rating && link.totalRatings && link.imageUrl)
+      .map(link => [
+        link.imageUrl,
+        {
+          rating: link.rating!,
+          totalRatings: link.totalRatings!
+        }
+      ])
+  );
 
-  // Process each affiliate link to add reviews
-  affiliateLinks.forEach((link: AffiliateLink) => {
-    if (link.rating && link.totalRatings) {
-      const reviewSection = `
-        <div class="my-4">
-          ${ProductReview({
-            rating: link.rating,
-            totalRatings: link.totalRatings,
-            className: "my-4"
-          })}
-        </div>
-      `;
-      
-      // Insert the review section after the product image
-      processedContent = processedContent.replace(
-        `<img src="${link.imageUrl}"`,
-        `<img src="${link.imageUrl}"${reviewSection}`
-      );
+  // Split content into segments at image tags
+  const segments = post.content.split(/(<img[^>]+>)/);
+  
+  // Process each segment
+  const processedSegments = segments.map(segment => {
+    // Check if this segment is an img tag
+    if (segment.startsWith('<img')) {
+      // Extract the src attribute
+      const srcMatch = segment.match(/src="([^"]+)"/);
+      if (srcMatch) {
+        const imageUrl = srcMatch[1];
+        const reviewData = reviewMap.get(imageUrl);
+        
+        if (reviewData) {
+          // If we have review data for this image, add the review component after it
+          return `${segment}
+            <div class="my-4">
+              ${ProductReview({
+                rating: reviewData.rating,
+                totalRatings: reviewData.totalRatings,
+                className: "my-4"
+              })}
+            </div>`;
+        }
+      }
     }
+    return segment;
   });
+
+  // Join segments back together
+  const processedContent = processedSegments.join('');
 
   return (
     <div className="prose prose-sm md:prose-base lg:prose-lg w-full max-w-none animate-fade-in">
