@@ -3,8 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import BlogPostForm from "@/components/blog/BlogPostForm";
 import { useToast } from "@/hooks/use-toast";
-import { BlogPostData, AffiliateLink } from "@/components/blog/types/BlogPostTypes";
-import { Json } from "@/integrations/supabase/types";
+import { BlogPostData } from "@/components/blog/types/BlogPostTypes";
 
 const BlogEdit = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -47,13 +46,12 @@ const BlogEdit = () => {
         return null;
       }
 
-      // Convert the database response to match BlogPostFormData structure
-      // Ensure JSON fields are properly parsed
+      // Convert the database response to match BlogPostData structure
       const formattedPost: BlogPostData = {
         ...data,
-        images: Array.isArray(data.images) ? data.images : [],
-        affiliate_links: data.affiliate_links as Json,
-        related_posts: Array.isArray(data.related_posts) ? data.related_posts : [],
+        images: data.images || null,
+        affiliate_links: data.affiliate_links || null,
+        related_posts: data.related_posts || null,
         excerpt: data.excerpt || null,
         image_url: data.image_url || null,
         published_at: data.published_at || null,

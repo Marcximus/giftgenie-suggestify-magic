@@ -136,14 +136,18 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
         });
       }
 
+      // Convert affiliate_links to Json type before sending to Supabase
+      const dataToSubmit = {
+        ...data,
+        affiliate_links: data.affiliate_links as unknown as Json,
+        updated_at: currentTime,
+        published_at: publishedAt,
+      };
+
       if (initialData?.id) {
         const { error } = await supabase
           .from("blog_posts")
-          .update({
-            ...data,
-            updated_at: currentTime,
-            published_at: publishedAt,
-          })
+          .update(dataToSubmit)
           .eq("id", initialData.id);
 
         if (error) throw error;
@@ -155,10 +159,8 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
         const { error } = await supabase
           .from("blog_posts")
           .insert([{
-            ...data,
+            ...dataToSubmit,
             created_at: currentTime,
-            updated_at: currentTime,
-            published_at: publishedAt,
           }]);
 
         if (error) throw error;
