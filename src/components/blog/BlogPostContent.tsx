@@ -21,19 +21,17 @@ export const BlogPostContent = ({ post }: BlogPostContentProps) => {
       ? JSON.parse(post.affiliate_links)
       : [];
 
-  console.log('Affiliate links:', affiliateLinks); // Debug log
+  console.log('Processing affiliate links:', affiliateLinks);
 
   // Create a map of image URLs to their corresponding review data
   const reviewMap = new Map(
-    affiliateLinks
-      .filter(link => link.imageUrl)
-      .map(link => [
-        link.imageUrl,
-        {
-          rating: link.rating,
-          totalRatings: link.totalRatings
-        }
-      ])
+    affiliateLinks.map(link => [
+      link.imageUrl,
+      {
+        rating: typeof link.rating === 'number' ? link.rating : undefined,
+        totalRatings: typeof link.totalRatings === 'number' ? link.totalRatings : undefined
+      }
+    ])
   );
 
   // Split content into segments at image tags
@@ -49,40 +47,42 @@ export const BlogPostContent = ({ post }: BlogPostContentProps) => {
         const imageUrl = srcMatch[1];
         const reviewData = reviewMap.get(imageUrl);
         
-        console.log('Review data for image:', imageUrl, reviewData); // Debug log
+        console.log('Processing image:', imageUrl, 'Review data:', reviewData);
 
-        // Add image styling
+        // Add image styling - maintain aspect ratio and prevent compression
         const styledImage = segment.replace(
           'class="',
-          'class="w-full max-w-2xl h-auto aspect-[16/9] object-cover rounded-lg shadow-md mx-auto '
+          'class="w-full max-w-4xl h-auto object-contain rounded-lg shadow-md mx-auto my-6 '
         );
         
         // If we have review data, add the review section
-        if (reviewData?.rating && reviewData?.totalRatings) {
+        if (reviewData?.rating !== undefined && reviewData?.totalRatings !== undefined) {
           return `
-            ${styledImage}
-            <div class="my-4">
-              <div class="flex flex-col items-center gap-2 my-6 p-6 bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl shadow-sm">
-                <div class="flex items-center gap-2">
-                  ${Array.from({ length: 5 }, (_, i) => {
-                    const rating = reviewData.rating || 0;
-                    return `<span class="text-yellow-400 text-xl">
-                      ${i < Math.floor(rating) ? '★' : (i < rating ? '★' : '☆')}
-                    </span>`;
-                  }).join('')}
-                  <span class="font-semibold text-xl text-gray-800">
-                    ${reviewData.rating?.toFixed(1)}
-                  </span>
-                </div>
-                <div class="text-base text-gray-600">
-                  Based on ${reviewData.totalRatings?.toLocaleString()} verified customer reviews
+            <div class="flex flex-col items-center my-8">
+              ${styledImage}
+              <div class="w-full max-w-2xl mt-4">
+                <div class="flex flex-col items-center gap-2 p-6 bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl shadow-sm">
+                  <div class="flex items-center gap-2">
+                    ${Array.from({ length: 5 }, (_, i) => {
+                      const rating = reviewData.rating || 0;
+                      return `<span class="text-yellow-400 text-xl">
+                        ${i < Math.floor(rating) ? '★' : (i < rating ? '★' : '☆')}
+                      </span>`;
+                    }).join('')}
+                    <span class="font-semibold text-xl text-gray-800">
+                      ${reviewData.rating.toFixed(1)}
+                    </span>
+                  </div>
+                  <div class="text-base text-gray-600">
+                    Based on ${reviewData.totalRatings.toLocaleString()} verified customer reviews
+                  </div>
                 </div>
               </div>
             </div>`;
         }
         
-        // If no review data, just return the styled image
-        return styledImage;
+        // If no review data, just return the styled image in a container
+        return `<div class="flex justify-center my-8">${styledImage}</div>`;
       }
     }
     return segment;
@@ -110,9 +110,9 @@ export const BlogPostContent = ({ post }: BlogPostContentProps) => {
                    prose-ul:list-disc prose-ul:pl-4 sm:prose-ul:pl-6 prose-ul:mb-4
                    prose-ol:list-decimal prose-ol:pl-4 sm:prose-ol:pl-6 prose-ol:mb-4
                    
-                   prose-img:w-full prose-img:max-w-2xl prose-img:mx-auto
-                   prose-img:h-auto prose-img:aspect-[16/9] prose-img:my-4 sm:prose-img:my-6
-                   prose-img:object-cover prose-img:rounded-lg prose-img:shadow-md
+                   prose-img:w-full prose-img:max-w-4xl prose-img:mx-auto
+                   prose-img:h-auto prose-img:object-contain prose-img:my-6
+                   prose-img:rounded-lg prose-img:shadow-md
                    
                    prose-a:text-primary prose-a:font-medium prose-a:no-underline
                    hover:prose-a:text-primary/90
