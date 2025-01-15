@@ -36,41 +36,40 @@ export async function processContent(
           asin: product.asin,
           hasImage: !!product.imageUrl
         });
-
         const affiliateLink = `https://www.amazon.com/dp/${product.asin}/ref=nosim?tag=${associateId}`;
         affiliateLinks.push({
           productTitle: product.title,
           affiliateLink,
           imageUrl: product.imageUrl
         });
-
-        // Split the section content to insert image and button after the h3 tag
+        
         const [beforeH3, afterH3] = section.split(/<\/h3>/);
         
         if (!beforeH3 || !afterH3) {
           console.warn('Could not split section content properly');
           return section;
         }
-
-        // Reconstruct the section with the product information
+        
         return `${beforeH3}</h3>
-          <div class="flex flex-col items-center my-6 sm:my-8">
-            <div class="relative w-full max-w-2xl aspect-square mb-4">
+          <div class="flex flex-col items-center my-8 sm:my-10">
+            <div class="relative w-full max-w-2xl mb-6">
               <img 
                 src="${product.imageUrl}" 
                 alt="${productName}"
-                class="w-80 h-80 sm:w-96 sm:h-96 lg:w-full lg:max-w-2xl object-contain rounded-lg shadow-md mx-auto" 
+                class="w-80 h-80 sm:w-96 sm:h-96 lg:w-[500px] lg:h-[500px] object-contain rounded-lg shadow-md mx-auto" 
                 loading="lazy"
               />
             </div>
-            <a 
-              href="${affiliateLink}" 
-              target="_blank" 
-              rel="noopener noreferrer" 
-              class="amazon-button"
-            >
-              View on Amazon
-            </a>
+            <div class="mt-4">
+              <a 
+                href="${affiliateLink}" 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                class="amazon-button"
+              >
+                View on Amazon
+              </a>
+            </div>
           </div>${afterH3}`;
       } else {
         console.warn('No Amazon product found for:', productName);
@@ -81,9 +80,8 @@ export async function processContent(
       return section;
     }
   }));
-
+  
   console.log('Processed all sections, affiliate links found:', affiliateLinks.length);
-
   return { 
     content: processedSections.join('<hr class="my-8">'),
     affiliateLinks 

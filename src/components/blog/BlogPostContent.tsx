@@ -29,7 +29,7 @@ export const BlogPostContent = ({ post }: BlogPostContentProps) => {
                    [&_a.amazon-button]:text-white [&_a.amazon-button]:rounded-md 
                    [&_a.amazon-button]:transition-colors [&_a.amazon-button]:text-base
                    [&_a.amazon-button]:shadow-sm [&_a.amazon-button]:hover:shadow-md
-                   [&_a.amazon-button]:active:scale-95
+                   [&_a.amazon-button]:active:scale-95 [&_a.amazon-button]:relative [&_a.amazon-button]:z-10
                    [&_div.product-section]:border [&_div.product-section]:border-gray-200 
                    [&_div.product-section]:rounded-lg [&_div.product-section]:p-4 [&_div.product-section]:mb-6
                    [&_div.product-section]:bg-white/50 [&_div.product-section]:backdrop-blur-sm"
