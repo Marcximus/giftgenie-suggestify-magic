@@ -25,7 +25,7 @@ export const BlogPostBasicInfo = ({ form, generateSlug, initialData }: BlogPostB
                   onChange={(e) => {
                     field.onChange(e);
                     if (!initialData) {
-                      form.setValue("slug", generateSlug(e.target.value));
+                      form.setValue('slug', generateSlug(e.target.value));
                     }
                   }}
                 />

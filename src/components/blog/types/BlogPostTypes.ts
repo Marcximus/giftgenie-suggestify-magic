@@ -1,5 +1,5 @@
 import { Tables } from "@/integrations/supabase/types";
-import { Json } from "@supabase/supabase-js";
+import { Json } from "@/integrations/supabase/types";
 
 // Simplified affiliate link interface without index signature
 export interface AffiliateLink {
