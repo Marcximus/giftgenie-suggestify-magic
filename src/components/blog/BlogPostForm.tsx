@@ -11,7 +11,7 @@ import { useAIContent } from "@/hooks/useAIContent";
 import { BlogPostBasicInfo } from "./form/BlogPostBasicInfo";
 import { BlogPostContent } from "./form/BlogPostContent";
 import { BlogPostSEO } from "./form/BlogPostSEO";
-import { BlogPostFormData, BlogPostData, convertToJson } from "./types/BlogPostTypes";
+import { BlogPostFormData, BlogPostData, convertToJson, convertToAffiliateLinks } from "./types/BlogPostTypes";
 import { BlogPostImageSection } from "./form/BlogPostImageSection";
 import { BlogPostFormActions } from "./form/BlogPostFormActions";
 import { useAltTextGeneration } from "./form/useAltTextGeneration";
@@ -49,9 +49,7 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
   const form = useForm<BlogPostFormData>({
     defaultValues: initialData ? {
       ...initialData,
-      affiliate_links: Array.isArray(initialData.affiliate_links) 
-        ? initialData.affiliate_links 
-        : null
+      affiliate_links: convertToAffiliateLinks(initialData.affiliate_links)
     } : defaultValues,
   });
 
