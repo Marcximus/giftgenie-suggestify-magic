@@ -24,7 +24,7 @@ export const BlogPostContent = ({ post }: BlogPostContentProps) => {
   // Create a map of image URLs to their corresponding review data
   const reviewMap = new Map(
     affiliateLinks
-      .filter(link => link.rating && link.totalRatings && link.imageUrl)
+      .filter(link => link.rating !== undefined && link.totalRatings !== undefined && link.imageUrl)
       .map(link => [
         link.imageUrl,
         {
@@ -86,8 +86,8 @@ export const BlogPostContent = ({ post }: BlogPostContentProps) => {
                    prose-ol:list-decimal prose-ol:pl-4 sm:prose-ol:pl-6 prose-ol:mb-4
                    
                    prose-img:w-full prose-img:max-w-lg prose-img:mx-auto
-                   prose-img:h-auto prose-img:aspect-square prose-img:my-4 sm:prose-img:my-6
-                   prose-img:object-contain prose-img:rounded-lg prose-img:shadow-md
+                   prose-img:h-auto prose-img:aspect-[16/9] prose-img:my-4 sm:prose-img:my-6
+                   prose-img:object-cover prose-img:rounded-lg prose-img:shadow-md
                    
                    prose-a:text-primary prose-a:font-medium prose-a:no-underline
                    hover:prose-a:text-primary/90

@@ -33,7 +33,7 @@ export const formatProductHtml = (
         <img 
           src="${product.imageUrl}" 
           alt="${product.title}"
-          class="w-80 h-80 sm:w-96 sm:h-96 lg:w-[500px] lg:h-[500px] object-contain rounded-lg shadow-md mx-auto" 
+          class="w-full aspect-[16/9] object-cover rounded-lg shadow-md mx-auto" 
           loading="lazy"
         />
       </div>

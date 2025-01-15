@@ -37,7 +37,9 @@ export async function processContent(
         affiliateLinks.push({
           productTitle: product.title,
           affiliateLink,
-          imageUrl: product.imageUrl
+          imageUrl: product.imageUrl,
+          rating: product.rating,
+          totalRatings: product.totalRatings
         });
         
         return formatProductHtml(
