@@ -76,7 +76,7 @@ export const BlogPostContent = ({ post }: BlogPostContentProps) => {
                       </span>`;
                     }).join('')}
                     <span class="font-semibold text-lg text-gray-800">
-                      ${rating.toFixed(1)}
+                      ${reviewData.rating.toFixed(1)}
                     </span>
                   </div>
                   <div class="text-sm text-gray-600">
