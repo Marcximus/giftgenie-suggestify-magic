@@ -21,10 +21,12 @@ export const BlogPostContent = ({ post }: BlogPostContentProps) => {
       ? JSON.parse(post.affiliate_links)
       : [];
 
+  console.log('Affiliate links:', affiliateLinks); // Debug log
+
   // Create a map of image URLs to their corresponding review data
   const reviewMap = new Map(
     affiliateLinks
-      .filter(link => link.imageUrl && (link.rating !== undefined || link.totalRatings !== undefined))
+      .filter(link => link.imageUrl)
       .map(link => [
         link.imageUrl,
         {
@@ -47,27 +49,40 @@ export const BlogPostContent = ({ post }: BlogPostContentProps) => {
         const imageUrl = srcMatch[1];
         const reviewData = reviewMap.get(imageUrl);
         
+        console.log('Review data for image:', imageUrl, reviewData); // Debug log
+
+        // Add image styling
+        const styledImage = segment.replace(
+          'class="',
+          'class="w-full max-w-2xl h-auto aspect-[16/9] object-cover rounded-lg shadow-md mx-auto '
+        );
+        
+        // If we have review data, add the review section
         if (reviewData?.rating && reviewData?.totalRatings) {
-          // Create a div to wrap the image and review
-          return `${segment.replace('class="', 'class="w-full max-w-2xl h-auto aspect-[16/9] object-cover rounded-lg shadow-md mx-auto ')}
+          return `
+            ${styledImage}
             <div class="my-4">
               <div class="flex flex-col items-center gap-2 my-6 p-6 bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl shadow-sm">
                 <div class="flex items-center gap-2">
-                  ${Array.from({ length: 5 }, (_, i) => 
-                    `<span class="text-yellow-400 text-xl">
-                      ${i < Math.floor(reviewData.rating) ? '★' : (i < reviewData.rating ? '★' : '☆')}
-                    </span>`
-                  ).join('')}
-                  <span class="font-semibold text-xl text-gray-800">${reviewData.rating.toFixed(1)}</span>
+                  ${Array.from({ length: 5 }, (_, i) => {
+                    const rating = reviewData.rating || 0;
+                    return `<span class="text-yellow-400 text-xl">
+                      ${i < Math.floor(rating) ? '★' : (i < rating ? '★' : '☆')}
+                    </span>`;
+                  }).join('')}
+                  <span class="font-semibold text-xl text-gray-800">
+                    ${reviewData.rating?.toFixed(1)}
+                  </span>
                 </div>
                 <div class="text-base text-gray-600">
-                  Based on ${reviewData.totalRatings.toLocaleString()} verified customer reviews
+                  Based on ${reviewData.totalRatings?.toLocaleString()} verified customer reviews
                 </div>
               </div>
             </div>`;
         }
-        // If no review data, just return the image with proper styling
-        return segment.replace('class="', 'class="w-full max-w-2xl h-auto aspect-[16/9] object-cover rounded-lg shadow-md mx-auto ');
+        
+        // If no review data, just return the styled image
+        return styledImage;
       }
     }
     return segment;
