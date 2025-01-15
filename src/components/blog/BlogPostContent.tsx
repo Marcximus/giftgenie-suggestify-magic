@@ -13,7 +13,7 @@ export const BlogPostContent = ({ post }: BlogPostContentProps) => {
     ? (post.affiliate_links as unknown as AffiliateLink[])
     : typeof post.affiliate_links === 'string' 
       ? JSON.parse(post.affiliate_links) as AffiliateLink[]
-      : [];
+      : post.affiliate_links as unknown as AffiliateLink[] || [];
 
   // Log the affiliate links for debugging
   console.log('Processing blog post with affiliate links:', {

@@ -9,8 +9,8 @@ export const processContent = (
     affiliateLinks.map(link => [
       link.imageUrl,
       {
-        rating: typeof link.rating === 'number' ? link.rating : undefined,
-        totalRatings: typeof link.totalRatings === 'number' ? link.totalRatings : undefined
+        rating: link.rating !== null && link.rating !== undefined ? Number(link.rating) : undefined,
+        totalRatings: link.totalRatings !== null && link.totalRatings !== undefined ? Number(link.totalRatings) : undefined
       }
     ])
   );
