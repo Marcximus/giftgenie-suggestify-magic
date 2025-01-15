@@ -10,8 +10,8 @@ interface BlogPostContentProps {
 
 export const BlogPostContent = ({ post }: BlogPostContentProps) => {
   // Parse the affiliate_links JSON if it exists
-  const affiliateLinks = Array.isArray(post.affiliate_links) 
-    ? post.affiliate_links as AffiliateLink[]
+  const affiliateLinks: AffiliateLink[] = Array.isArray(post.affiliate_links) 
+    ? (post.affiliate_links as unknown as AffiliateLink[])
     : typeof post.affiliate_links === 'string' 
       ? JSON.parse(post.affiliate_links) as AffiliateLink[]
       : [];

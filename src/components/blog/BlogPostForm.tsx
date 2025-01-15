@@ -16,7 +16,6 @@ import { BlogPostImageSection } from "./form/BlogPostImageSection";
 import { BlogPostFormActions } from "./form/BlogPostFormActions";
 import { useAltTextGeneration } from "./form/useAltTextGeneration";
 import { useSlugGeneration } from "./form/useSlugGeneration";
-import { Json } from "@/integrations/supabase/types";
 
 interface BlogPostFormProps {
   initialData?: BlogPostData;
@@ -29,7 +28,6 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
   const { toast } = useToast();
   const { generateContent, getFormFieldFromType } = useAIContent();
   const { generateUniqueSlug, generateSlug } = useSlugGeneration();
-
   const defaultValues: BlogPostFormData = {
     title: "",
     slug: "",
@@ -50,6 +48,8 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
   const form = useForm<BlogPostFormData>({
     defaultValues: initialData || defaultValues,
   });
+
+  const { isGeneratingAltText, generateAltText } = useAltTextGeneration(form);
 
   const handleAIGenerate = async (type: 'excerpt' | 'seo-title' | 'seo-description' | 'seo-keywords' | 'improve-content') => {
     const currentTitle = form.getValues('title');
@@ -97,7 +97,6 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
 
       const dataToSubmit = {
         ...data,
-        affiliate_links: data.affiliate_links as Json,
         updated_at: currentTime,
         published_at: publishedAt,
       };
