@@ -1,12 +1,10 @@
 import { Tables } from "@/integrations/supabase/types";
 
-// Simplified affiliate link interface
+// Simplified affiliate link interface - removed rating and totalRatings
 export interface AffiliateLink {
   productTitle: string;
   affiliateLink: string;
   imageUrl?: string;
-  rating?: number | null;
-  totalRatings?: number | null;
 }
 
 // Form data type matching Supabase table structure but with proper affiliate_links typing
