@@ -41,7 +41,7 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
     meta_description: null,
     meta_keywords: null,
     images: null,
-    affiliate_links: [], // Initialize as an empty array
+    affiliate_links: [],
     image_alt_text: null,
     related_posts: null,
   };
@@ -49,7 +49,7 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
   const form = useForm<BlogPostFormData>({
     defaultValues: initialData ? {
       ...initialData,
-      affiliate_links: convertToAffiliateLinks(initialData.affiliate_links) || [],
+      affiliate_links: convertToAffiliateLinks(initialData.affiliate_links),
     } : defaultValues,
   });
 
