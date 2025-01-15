@@ -22,11 +22,11 @@ export const BlogPostHeader = ({ post }: BlogPostHeaderProps) => {
       </h1>
 
       {post.image_url && !imageError && (
-        <div className="aspect-[21/9] relative overflow-hidden rounded-lg mb-6 sm:mb-8 shadow-xl animate-fade-in">
+        <div className="w-full aspect-[21/9] relative overflow-hidden rounded-lg mb-6 sm:mb-8 shadow-xl animate-fade-in">
           <img 
             src={post.image_url} 
             alt={post.image_alt_text || post.title}
-            className="object-cover w-full h-full"
+            className="absolute inset-0 w-full h-full object-cover"
             onError={handleImageError}
           />
         </div>
