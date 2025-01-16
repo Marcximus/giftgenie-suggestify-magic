@@ -1,11 +1,11 @@
 import { useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { BlogPostForm } from "@/components/blog/BlogPostForm";
-import { useToast } from "@/components/ui/use-toast";
-import { BlogPostFormData } from "@/components/blog/types/BlogPostTypes";
+import BlogPostForm from "@/components/blog/BlogPostForm";
+import { useToast } from "@/hooks/use-toast";
+import { BlogPostData } from "@/components/blog/types/BlogPostTypes";
 
-export default function BlogEdit() {
+const BlogEdit = () => {
   const { slug } = useParams<{ slug: string }>();
   const { toast } = useToast();
 
@@ -46,7 +46,22 @@ export default function BlogEdit() {
         return null;
       }
 
-      return data as BlogPostFormData;
+      // Convert the database response to match BlogPostData structure
+      const formattedPost: BlogPostData = {
+        ...data,
+        images: data.images || null,
+        affiliate_links: data.affiliate_links || null,
+        related_posts: data.related_posts || null,
+        excerpt: data.excerpt || null,
+        image_url: data.image_url || null,
+        published_at: data.published_at || null,
+        meta_title: data.meta_title || null,
+        meta_description: data.meta_description || null,
+        meta_keywords: data.meta_keywords || null,
+        image_alt_text: data.image_alt_text || null,
+      };
+      
+      return formattedPost;
     },
   });
 
@@ -80,4 +95,6 @@ export default function BlogEdit() {
       <BlogPostForm initialData={post} />
     </div>
   );
-}
+};
+
+export default BlogEdit;

@@ -1,42 +1,36 @@
-import { Control } from "react-hook-form";
-import { BlogPostFormData } from "./types/BlogPostTypes";
-import { FormField, FormItem, FormLabel, FormControl } from "@/components/ui/form";
-import { Textarea } from "@/components/ui/textarea";
-import { Button } from "@/components/ui/button";
-import { Wand2 } from "lucide-react";
+import { Tables } from "@/integrations/supabase/types";
+import { blogPostContentStyles } from "./content/BlogPostContentStyles";
+import { processContent } from "./content/BlogContentProcessor";
+import { AffiliateLink } from "./types/BlogPostTypes";
+import { ProductImage } from "@/components/ProductImage";
 
-interface Props {
-  control: Control<BlogPostFormData>;
-  handleAIGenerate: (type: "excerpt" | "seo-title" | "seo-description" | "seo-keywords" | "improve-content") => Promise<void>;
+interface BlogPostContentProps {
+  post: Tables<"blog_posts">;
 }
 
-export function BlogPostContent({ control, handleAIGenerate }: Props) {
+export const BlogPostContent = ({ post }: BlogPostContentProps) => {
+  // Parse the affiliate_links JSON if it exists
+  const affiliateLinks = Array.isArray(post.affiliate_links) 
+    ? post.affiliate_links as AffiliateLink[]
+    : typeof post.affiliate_links === 'string' 
+      ? JSON.parse(post.affiliate_links) as AffiliateLink[]
+      : [];
+
+  console.log('Processing blog post with affiliate links:', {
+    postTitle: post.title,
+    affiliateLinks: affiliateLinks.map(link => ({
+      ...link,
+      rating: typeof link.rating === 'number' ? link.rating : null,
+      totalRatings: typeof link.totalRatings === 'number' ? link.totalRatings : null
+    }))
+  });
+
+  // Process the content with affiliate links and reviews
+  const processedContent = processContent(post.content, affiliateLinks);
+
   return (
-    <div className="space-y-4">
-      <FormField
-        control={control}
-        name="content"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>Content</FormLabel>
-            <FormControl>
-              <Textarea
-                {...field}
-                className="min-h-[200px]"
-              />
-            </FormControl>
-          </FormItem>
-        )}
-      />
-      <Button
-        type="button"
-        variant="outline"
-        size="sm"
-        onClick={() => handleAIGenerate("improve-content")}
-      >
-        <Wand2 className="w-4 h-4 mr-2" />
-        Improve Content
-      </Button>
+    <div className={blogPostContentStyles}>
+      <div dangerouslySetInnerHTML={{ __html: processedContent }} />
     </div>
   );
-}
+};

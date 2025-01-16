@@ -31,7 +31,11 @@ export const useAltTextGeneration = (form: UseFormReturn<BlogPostFormData>) => {
       if (error) throw error;
 
       if (data?.altText) {
-        form.setValue('image_alt_text', data.altText);
+        form.setValue('image_alt_text', data.altText, { 
+          shouldDirty: true,
+          shouldTouch: true,
+          shouldValidate: true 
+        });
         toast({
           title: "Success",
           description: "Alt text generated successfully",

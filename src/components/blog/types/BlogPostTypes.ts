@@ -1,46 +1,32 @@
-export type Json = string | number | boolean | null | Json[] | { [key: string]: Json };
+import { Json } from "@/integrations/supabase/types";
 
 export interface AffiliateLink {
-  productUrl: string;
-  imageUrl: string;
-  title: string;
+  productTitle: string;
+  affiliateLink: string;
+  imageUrl?: string;
   rating?: number;
   totalRatings?: number;
 }
 
 export interface BlogPostFormData {
-  id?: string;
   title: string;
   slug: string;
   content: string;
   excerpt: string | null;
   author: string;
   image_url: string | null;
-  image_alt_text: string | null;
+  published_at: string | null;
   meta_title: string | null;
   meta_description: string | null;
   meta_keywords: string | null;
-  created_at?: string;
-  updated_at?: string;
-  published_at: string | null;
-  affiliate_links: string; // Store as JSON string
-  images: string | null;
-  related_posts: string | null;
+  images: Json | null;
+  affiliate_links: Json | null;
+  image_alt_text: string | null;
+  related_posts: Json | null;
 }
 
-export const EMPTY_FORM_DATA: BlogPostFormData = {
-  title: '',
-  slug: '',
-  content: '',
-  excerpt: null,
-  author: '',
-  image_url: null,
-  image_alt_text: null,
-  meta_title: null,
-  meta_description: null,
-  meta_keywords: null,
-  affiliate_links: '[]',
-  images: null,
-  related_posts: null,
-  published_at: null
-};
+export interface BlogPostData extends BlogPostFormData {
+  id: string;
+  created_at: string;
+  updated_at: string;
+}

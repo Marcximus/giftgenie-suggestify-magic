@@ -8,11 +8,6 @@ export const ProductReview = ({ rating, totalRatings, className = "" }: ProductR
   // Format total ratings with commas
   const formattedTotalRatings = totalRatings?.toLocaleString() || '0';
 
-  // Only render if we have valid rating data
-  if (numericRating === 0) {
-    return null;
-  }
-
   return (
     <div className={`flex flex-col items-center gap-2 my-6 p-6 bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl shadow-sm ${className}`}>
       <div className="flex items-center gap-2">

@@ -10,26 +10,12 @@ import { RelatedPosts } from "@/components/blog/RelatedPosts";
 import { BlogPostMeta } from "@/components/blog/meta/BlogPostMeta";
 import { BlogPostSkeleton } from "@/components/blog/loading/BlogPostSkeleton";
 import { BlogPostError } from "@/components/blog/error/BlogPostError";
-import { BlogPostFormData } from "@/components/blog/types/BlogPostTypes";
 
-interface BlogPostData extends BlogPostFormData {
-  relatedPosts: {
-    title: string;
-    slug: string;
-    image_url: string;
-    excerpt: string;
-  }[];
-}
-
-interface Props {
-  post: BlogPostData;
-}
-
-const BlogPost = ({ post }: Props) => {
+const BlogPost = () => {
   const { slug } = useParams();
   const navigate = useNavigate();
 
-  const { data: currentPost, isLoading, error } = useQuery({
+  const { data: post, isLoading, error } = useQuery({
     queryKey: ["blog-post", slug],
     queryFn: async () => {
       console.log("Fetching blog post with slug:", slug);
@@ -82,13 +68,13 @@ const BlogPost = ({ post }: Props) => {
     return <BlogPostError type="error" error={error as Error} />;
   }
 
-  if (!currentPost) {
+  if (!post) {
     return <BlogPostError type="not-found" />;
   }
 
   return (
     <>
-      <BlogPostMeta post={currentPost} />
+      <BlogPostMeta post={post} />
       <article className="min-h-screen bg-gradient-to-b from-background to-muted/20">
         <div className="container mx-auto px-2 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-12 max-w-5xl">
           <Button 
@@ -100,9 +86,9 @@ const BlogPost = ({ post }: Props) => {
             More Ideas
           </Button>
           
-          <BlogPostHeader post={currentPost} />
-          <BlogPostContent post={currentPost} />
-          <RelatedPosts currentPostId={currentPost.id} currentPostSlug={currentPost.slug} />
+          <BlogPostHeader post={post} />
+          <BlogPostContent post={post} />
+          <RelatedPosts currentPostId={post.id} currentPostSlug={post.slug} />
         </div>
       </article>
     </>
