@@ -11,10 +11,15 @@ export const ScheduledPostsTab = () => {
   const { data: queuedPosts, isLoading, refetch } = useQuery({
     queryKey: ["blog-post-queue"],
     queryFn: async () => {
+      const now = new Date();
+      const currentDate = now.toISOString().split('T')[0]; // Get current date in YYYY-MM-DD format
+      const currentTime = now.toTimeString().split(' ')[0]; // Get current time in HH:MM:SS format
+
       const { data, error } = await supabase
         .from("blog_post_queue")
         .select("*")
-        .not('status', 'eq', 'published') // Filter out published posts
+        .not('status', 'eq', 'published')
+        .or(`scheduled_date.gt.${currentDate},and(scheduled_date.eq.${currentDate},scheduled_time.gt.${currentTime})`)
         .order("scheduled_date", { ascending: true })
         .order("scheduled_time", { ascending: true });
       
