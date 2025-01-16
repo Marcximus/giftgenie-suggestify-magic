@@ -36,8 +36,4 @@ export const blogPostContentStyles = `
   [&_a.perfect-gift-button]:transition-all [&_a.perfect-gift-button]:duration-300
   [&_a.perfect-gift-button]:shadow-md [&_a.perfect-gift-button]:hover:shadow-lg
   [&_a.perfect-gift-button]:hover:opacity-90 [&_a.perfect-gift-button]:active:scale-95
-
-  [&>*]:text-left
-  [&_li]:text-left
-  [&_p]:text-left
 `;

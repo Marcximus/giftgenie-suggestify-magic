@@ -46,12 +46,13 @@ const BlogEdit = () => {
         return null;
       }
 
-      // Convert the database response to match BlogPostData structure
+      // Convert the database response to match BlogPostFormData structure
+      // Ensure JSON fields are properly parsed
       const formattedPost: BlogPostData = {
         ...data,
-        images: data.images || null,
-        affiliate_links: data.affiliate_links || null,
-        related_posts: data.related_posts || null,
+        images: Array.isArray(data.images) ? data.images : [],
+        affiliate_links: Array.isArray(data.affiliate_links) ? data.affiliate_links : [],
+        related_posts: Array.isArray(data.related_posts) ? data.related_posts : [],
         excerpt: data.excerpt || null,
         image_url: data.image_url || null,
         published_at: data.published_at || null,
