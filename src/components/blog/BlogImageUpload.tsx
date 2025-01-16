@@ -127,6 +127,7 @@ export const BlogImageUpload = ({ value, setValue }: BlogImageUploadProps) => {
           variant="secondary"
           onClick={handleGenerateImage}
           disabled={isGenerating || isUploading}
+          aria-label="Generate with AI"
         >
           {isGenerating ? (
             "Generating..."

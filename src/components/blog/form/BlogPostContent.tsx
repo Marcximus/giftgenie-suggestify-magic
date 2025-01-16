@@ -120,6 +120,7 @@ export const BlogPostContent = ({ form, handleAIGenerate }: BlogPostContentProps
                   size="sm"
                   onClick={generateFullPost}
                   disabled={isGenerating}
+                  aria-label="Generate Full Post"
                 >
                   <Wand2 className="w-4 h-4 mr-2" />
                   {isGenerating ? "Generating..." : "Generate Full Post"}
