@@ -31,15 +31,10 @@ export const AutoFillBlogPost = ({
   const { toast } = useToast();
 
   const getNextQueuedTitle = async () => {
-    const now = new Date();
-    const currentDate = now.toISOString().split('T')[0];
-    const currentTime = now.toTimeString().split(' ')[0];
-
     const { data: queuedPost, error } = await supabase
       .from("blog_post_queue")
       .select("title")
       .eq("status", "pending")
-      .or(`scheduled_date.lt.${currentDate},and(scheduled_date.eq.${currentDate},scheduled_time.lte.${currentTime})`)
       .order("scheduled_date", { ascending: true })
       .order("scheduled_time", { ascending: true })
       .limit(1)
@@ -51,7 +46,7 @@ export const AutoFillBlogPost = ({
     }
 
     if (!queuedPost) {
-      throw new Error("No pending posts found in queue that are ready to be processed");
+      throw new Error("No pending posts found in queue");
     }
 
     return queuedPost.title;
