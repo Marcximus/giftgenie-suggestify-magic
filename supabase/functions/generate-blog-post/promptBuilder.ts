@@ -25,7 +25,17 @@ export const buildBlogPrompt = (numItems: number) => ({
      ⭐ for features and benefits
      💝 for gift-giving benefits
 
-4. Features Format:
+4. Content Guidelines:
+   - Write naturally flowing text that's easy to read
+   - Create fun, engaging, informative content that provides value
+   - Include a mix of short and medium-length sentences
+   - Use transition words to improve flow
+   - Include relevant examples and use cases
+   - Add personal touches and recommendations
+   - End with a strong conclusion summarizing key points
+   - Leave space before the conclusion with a horizontal rule: <hr class="my-8">
+
+5. Features Format:
    - Include 3-4 UNIQUE key features for each product as a list
    - Format features as:
      <ul class="my-4">
