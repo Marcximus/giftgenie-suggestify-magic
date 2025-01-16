@@ -26,7 +26,7 @@ export const buildBlogPrompt = (numItems: number) => ({
      • "Fitbit Charge 6 Fitness Tracker"
 
 3. Content Structure:
-   - Write 2-3 engaging paragraphs (150-250 words total) for each product
+   - Write 2-3 engaging paragraphs (150-300 words total) for each product
    - Use proper paragraph breaks for spacing
    - Start with an introduction paragraph about the product
    - Follow with features and benefits 
@@ -36,7 +36,7 @@ export const buildBlogPrompt = (numItems: number) => ({
      ⭐ for features and benefits
      💝 for gift-giving benefits
 Features Format:
-   - Include 3-4 UNIQUE key features for each product as a list
+   - Include 2-3 UNIQUE key features for each product as a list
    - Format features as:
      <ul class="my-4">
        <li>✅ [Key Feature 1]</li>
