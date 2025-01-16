@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import { TabsContent, Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -15,7 +15,8 @@ import { BlogPostContent } from "./form/BlogPostContent";
 import { BlogPostSEO } from "./form/BlogPostSEO";
 import { BlogPostFormData, BlogPostData } from "./types/BlogPostTypes";
 import { Input } from "@/components/ui/input";
-import { Wand2 } from "lucide-react";
+import { Wand2, Loader2 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
 interface BlogPostFormProps {
   initialData?: BlogPostData;
@@ -24,6 +25,8 @@ interface BlogPostFormProps {
 const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGeneratingAltText, setIsGeneratingAltText] = useState(false);
+  const [isGeneratingAll, setIsGeneratingAll] = useState(false);
+  const [generationStatus, setGenerationStatus] = useState<string>("");
   const [activeTab, setActiveTab] = useState("edit");
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -35,7 +38,7 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
       slug: "",
       content: "",
       excerpt: "",
-      author: "",
+      author: "Get The Gift Team",
       image_url: "",
       published_at: null,
       meta_title: "",
@@ -47,6 +50,115 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
       related_posts: [],
     },
   });
+
+  const fetchNextQueuedTitle = async () => {
+    const { data, error } = await supabase
+      .from("blog_post_queue")
+      .select("*")
+      .eq("status", "pending")
+      .order("scheduled_date", { ascending: true })
+      .order("scheduled_time", { ascending: true })
+      .limit(1)
+      .single();
+
+    if (error) {
+      console.error("Error fetching next queued title:", error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch next queued title",
+        variant: "destructive",
+      });
+      return null;
+    }
+
+    return data;
+  };
+
+  const generateAll = async () => {
+    setIsGeneratingAll(true);
+    try {
+      // Fetch next queued title
+      setGenerationStatus("Fetching next queued title...");
+      const queuedPost = await fetchNextQueuedTitle();
+      if (!queuedPost) {
+        toast({
+          title: "Error",
+          description: "No pending posts in queue",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Set the title and author
+      form.setValue("title", queuedPost.title);
+      form.setValue("author", "Get The Gift Team");
+      form.setValue("slug", generateSlug(queuedPost.title));
+      setGenerationStatus("Title and author set...");
+
+      // Generate featured image
+      setGenerationStatus("Generating featured image...");
+      const { data: imageData, error: imageError } = await supabase.functions.invoke('generate-blog-image', {
+        body: { 
+          title: queuedPost.title,
+          prompt: "Create an entertaining, interesting, and funny image for a blog post" 
+        }
+      });
+
+      if (imageError) throw imageError;
+      if (imageData?.imageUrl) {
+        form.setValue('image_url', imageData.imageUrl);
+      }
+
+      // Generate alt text
+      setGenerationStatus("Generating alt text...");
+      const { data: altData, error: altError } = await supabase.functions.invoke('generate-blog-image', {
+        body: { 
+          title: queuedPost.title,
+          prompt: "Generate a descriptive alt text for this blog post's featured image" 
+        }
+      });
+
+      if (altError) throw altError;
+      if (altData?.altText) {
+        form.setValue('image_alt_text', altData.altText);
+      }
+
+      // Generate content
+      setGenerationStatus("Generating main content...");
+      const content = await generateContent('improve-content', "", queuedPost.title);
+      if (content) {
+        form.setValue('content', content);
+      }
+
+      // Generate SEO content
+      setGenerationStatus("Generating SEO content...");
+      const seoTitle = await generateContent('seo-title', content || "", queuedPost.title);
+      const seoDesc = await generateContent('seo-description', content || "", queuedPost.title);
+      const seoKeywords = await generateContent('seo-keywords', content || "", queuedPost.title);
+      const excerpt = await generateContent('excerpt', content || "", queuedPost.title);
+
+      if (seoTitle) form.setValue('meta_title', seoTitle);
+      if (seoDesc) form.setValue('meta_description', seoDesc);
+      if (seoKeywords) form.setValue('meta_keywords', seoKeywords);
+      if (excerpt) form.setValue('excerpt', excerpt);
+
+      setGenerationStatus("Generation complete! Ready to publish.");
+      toast({
+        title: "Success",
+        description: "Blog post generated successfully!",
+      });
+    } catch (error: any) {
+      console.error("Error generating blog post:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to generate blog post",
+        variant: "destructive",
+      });
+      setGenerationStatus("Generation failed. Please try again.");
+    } finally {
+      setIsGeneratingAll(false);
+    }
+  };
 
   const generateAltText = async () => {
     const title = form.getValues('title');
@@ -219,6 +331,27 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
         <TabsTrigger value="edit">Edit</TabsTrigger>
         <TabsTrigger value="preview">Preview</TabsTrigger>
       </TabsList>
+
+      <div className="flex items-center justify-between mb-4">
+        <Button
+          type="button"
+          onClick={generateAll}
+          disabled={isGeneratingAll}
+          className="flex items-center gap-2"
+        >
+          {isGeneratingAll ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : (
+            <Wand2 className="w-4 h-4" />
+          )}
+          Generate All from Queue
+        </Button>
+        {generationStatus && (
+          <Badge variant={generationStatus.includes("complete") ? "success" : "secondary"}>
+            {generationStatus}
+          </Badge>
+        )}
+      </div>
 
       <TabsContent value="edit">
         <Form {...form}>
