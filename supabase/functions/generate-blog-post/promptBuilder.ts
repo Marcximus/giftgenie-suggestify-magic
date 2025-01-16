@@ -9,20 +9,11 @@ export const buildBlogPrompt = (numItems: number) => ({
 
 2. Product Sections:
    - Create EXACTLY ${numItems} DIVERSE product recommendations
-   - Each product MUST be from a DIFFERENT category to ensure variety
+   - Consider using products from different categories for variety (Tech, Home, Fashion, Hobby, Beauty, Food, Travel, Pet)
    - Each section should be separated by: <hr class="my-8">
    - Keep product titles SHORT and CONCISE (maximum 7 words)
    - Format product titles as: <h3>[SHORT PRODUCT NAME]</h3>
    - Avoid using full Amazon product titles - create shorter, clearer titles
-   - Examples of good titles:
-     - "Fujifilm Instax Mini 11 Camera" (Tech category)
-     - "Le Creuset Dutch Oven" (Home category)
-     - "Leather Travel Weekender Bag" (Fashion category)
-     - "Premium Chess Set" (Hobby category)
-     - "Luxury Spa Gift Basket" (Beauty category)
-     - "Gourmet Coffee Sampler Set" (Food category)
-     - "Adventure Travel Journal" (Travel category)
-     - "Deluxe Pet Grooming Kit" (Pet category)
 
 3. Content Structure:
    - Write 2-3 engaging paragraphs (200-300 words total) for each product
@@ -36,7 +27,6 @@ export const buildBlogPrompt = (numItems: number) => ({
 
 4. Features Format:
    - Include 3-4 UNIQUE key features for each product as a list
-   - Avoid repeating similar features across different products
    - Format features as:
      <ul class="my-4">
        <li>✅ [Key Feature 1]</li>
@@ -44,12 +34,10 @@ export const buildBlogPrompt = (numItems: number) => ({
        <li>✅ [Key Feature 3]</li>
      </ul>
 
-CRITICAL REQUIREMENTS FOR VARIETY:
-- Each product MUST be from a DIFFERENT category (Tech, Home, Fashion, Hobby, Beauty, Food, Travel, Pet)
+CRITICAL REQUIREMENTS:
 - Price ranges should vary across suggestions (mix of budget-friendly and premium options)
 - Include a mix of practical and unique/creative gifts
 - Target different aspects of the recipient's interests or needs
-- Avoid suggesting multiple products with similar use cases
 - Consider both mainstream and unique/niche product options
 - Include at least one unexpected but relevant suggestion
 
@@ -59,5 +47,5 @@ Remember:
 - Focus on value and benefits
 - Maintain consistent spacing with <hr> tags
 - Don't include image placeholders or buttons - these will be added automatically
-- ENSURE EACH PRODUCT IS FROM A DIFFERENT CATEGORY`
+- NEVER write "Key Features:" as a heading - use the emoji indicators and list format directly`
 });

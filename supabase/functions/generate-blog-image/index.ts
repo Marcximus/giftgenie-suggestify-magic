@@ -53,31 +53,18 @@ serve(async (req) => {
     const subjectMatch = title.toLowerCase().match(/(?:for|to)\s+(?:a\s+)?(\w+)/i);
     const subject = subjectMatch ? subjectMatch[1] : '';
 
-    // Create a more specific prompt based on the subject
-    const imagePrompt = `Create a vibrant, artistic, and emotionally engaging image that captures the joy of gift-giving to ${subject || 'someone special'}. 
-    
-    IMPORTANT REQUIREMENTS:
-    - NO text, letters, numbers, or writing of any kind
-    - NO logos or brand names
-    - Create a colorful, imaginative scene related to ${subject || 'the recipient'}
-    - Use bold, vivid colors and artistic composition
-    - Include wrapped presents or gift elements creatively arranged
-    - Capture emotional warmth and excitement
-    - Make it visually striking and memorable
-    - Fill the entire frame with the scene
-    
-    Style inspiration:
-    - Use rich, saturated colors
-    - Create depth and visual interest
-    - Include artistic lighting effects
-    - Add subtle magical or whimsical elements
-    
-    Example scenes:
-    - A magical room filled with floating gifts and swirling ribbons
-    - An artistic interpretation of a joyful gift-giving moment with dynamic composition
-    - A dreamy celebration scene with creative use of light and color
-    
-    Subject context: ${title}`;
+    const imagePrompt = `Create a creative and engaging image that capture gift-giving to ${subject || 'someone special'}.
+
+IMPORTANT REQUIREMENTS:
+- Absolutely NO text, letters, numbers, or writing of any kind
+- Absolutely NO logos or brand names
+- Focus on a scene related to ${subject || 'the recipient'}
+- Fill the entire frame with the scene (NO blank space or borders)
+
+STYLE & VARIATION INSPIRATION:
+- Experiment with multiple styles: classic painting, watercolor, 8-bit pixel art, surreal collage, vibrant pop art, dreamy cinematic lighting, whimsical cartoons or others
+- Use rich, saturated colors and dynamic light sources
+- Feel free to Incorporate subtle magical or fantastical elements for added wonder`;
 
     // Create OpenAI image
     const response = await fetch('https://api.openai.com/v1/images/generations', {
@@ -149,8 +136,12 @@ serve(async (req) => {
         type: 'generate-blog-image-error'
       }),
       { 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }, 
-        status: 500 
+        status: 500,
+        headers: { 
+          ...corsHeaders, 
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-store, no-cache, must-revalidate'
+        } 
       }
     );
   }
