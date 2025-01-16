@@ -1,102 +1,50 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { TabsContent, Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useForm } from "react-hook-form";
+import { BlogPostFormData, EMPTY_FORM_DATA } from "./types/BlogPostTypes";
 import { Form } from "@/components/ui/form";
-import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/components/ui/use-toast";
-import { BlogPostPreview } from "./BlogPostPreview";
-import { useAIContent } from "@/hooks/useAIContent";
 import { BlogPostBasicInfo } from "./form/BlogPostBasicInfo";
+import { BlogPostImageSection } from "./form/BlogPostImageSection";
 import { BlogPostContent } from "./form/BlogPostContent";
 import { BlogPostSEO } from "./form/BlogPostSEO";
-import { BlogPostFormData, EMPTY_FORM_DATA } from "./types/BlogPostTypes";
-import { BlogPostImageSection } from "./form/BlogPostImageSection";
 import { BlogPostFormActions } from "./form/BlogPostFormActions";
-import { useAltTextGeneration } from "./form/useAltTextGeneration";
-import { useSlugGeneration } from "./form/useSlugGeneration";
-import { useForm } from "react-hook-form";
+import { useToast } from "@/components/ui/use-toast";
+import { useNavigate } from "react-router-dom";
 
 interface Props {
   initialData?: BlogPostFormData;
 }
 
-const BlogPostForm = ({ initialData = EMPTY_FORM_DATA }: Props) => {
-  const [activeTab, setActiveTab] = useState("edit");
+export function BlogPostForm({ initialData = EMPTY_FORM_DATA }: Props) {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const navigate = useNavigate();
+  const [isGeneratingAltText, setIsGeneratingAltText] = useState(false);
   const { toast } = useToast();
-  const { generateContent, getFormFieldFromType } = useAIContent();
-  const { generateUniqueSlug, generateSlug } = useSlugGeneration();
-  
-  const form = useForm<BlogPostFormData>({
+  const navigate = useNavigate();
+
+  const {
+    control,
+    handleSubmit,
+    getValues,
+    setValue,
+    reset
+  } = useForm<BlogPostFormData>({
     defaultValues: initialData
   });
 
-  const { isGeneratingAltText, generateAltText } = useAltTextGeneration(form);
-
-  const handleAIGenerate = async (type: 'excerpt' | 'seo-title' | 'seo-description' | 'seo-keywords' | 'improve-content') => {
-    const currentTitle = form.getValues('title');
-    const currentContent = form.getValues('content');
-    
-    if (!currentTitle && !currentContent) {
-      toast({
-        title: "Error",
-        description: "Please provide some content or a title first.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    const generatedContent = await generateContent(
-      type,
-      currentContent,
-      currentTitle
-    );
-
-    if (generatedContent) {
-      const formField = getFormFieldFromType(type);
-      form.setValue(formField, generatedContent, {
-        shouldValidate: true,
-        shouldDirty: true
-      });
-      toast({
-        title: "Success",
-        description: "Content generated successfully!",
-      });
-    }
-  };
-
-  const onSubmit = async (isDraft: boolean = false) => {
+  const onSubmit = async (data: BlogPostFormData, isDraft: boolean = false) => {
     setIsSubmitting(true);
     try {
       const currentTime = new Date().toISOString();
-      const publishedAt = isDraft ? null : currentTime;
-      
-      const formData = form.getValues();
-      const uniqueSlug = await generateUniqueSlug(formData.slug);
-      
-      if (uniqueSlug !== formData.slug) {
-        form.setValue('slug', uniqueSlug, {
-          shouldValidate: true,
-          shouldDirty: true
-        });
-        toast({
-          title: "Notice",
-          description: "A similar slug already existed. Generated a unique one.",
-        });
-      }
-
-      const dataToSubmit = {
-        ...formData,
+      const submitData = {
+        ...data,
         updated_at: currentTime,
-        published_at: publishedAt,
+        published_at: isDraft ? null : currentTime
       };
 
       if (initialData?.id) {
         const { error } = await supabase
           .from("blog_posts")
-          .update(dataToSubmit)
+          .update(submitData)
           .eq("id", initialData.id);
 
         if (error) throw error;
@@ -108,7 +56,7 @@ const BlogPostForm = ({ initialData = EMPTY_FORM_DATA }: Props) => {
         const { error } = await supabase
           .from("blog_posts")
           .insert([{
-            ...dataToSubmit,
+            ...submitData,
             created_at: currentTime,
           }]);
 
@@ -131,52 +79,134 @@ const BlogPostForm = ({ initialData = EMPTY_FORM_DATA }: Props) => {
     }
   };
 
+  const generateSlug = (title: string): string => {
+    return title
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/(^-|-$)/g, "");
+  };
+
+  const generateAltText = async () => {
+    setIsGeneratingAltText(true);
+    try {
+      const title = getValues('title');
+      const imageUrl = getValues('image_url');
+      
+      if (!imageUrl) {
+        toast({
+          title: "Error",
+          description: "Please upload an image first",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const { data, error } = await supabase.functions.invoke('generate-alt-text', {
+        body: { title, imageUrl }
+      });
+
+      if (error) throw error;
+
+      if (data?.altText) {
+        setValue('image_alt_text', data.altText, {
+          shouldValidate: true,
+          shouldDirty: true
+        });
+        toast({
+          title: "Success",
+          description: "Alt text generated successfully",
+        });
+      }
+    } catch (error: any) {
+      console.error('Error generating alt text:', error);
+      toast({
+        title: "Error",
+        description: "Failed to generate alt text",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGeneratingAltText(false);
+    }
+  };
+
+  const handleAIGenerate = async (type: "excerpt" | "seo-title" | "seo-description" | "seo-keywords" | "improve-content") => {
+    try {
+      const title = getValues('title');
+      const content = getValues('content');
+
+      if (!title && !content) {
+        toast({
+          title: "Error",
+          description: "Please provide some content or a title first",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const { data, error } = await supabase.functions.invoke('generate-blog-content', {
+        body: { type, title, content }
+      });
+
+      if (error) throw error;
+
+      if (data?.content) {
+        const fieldMap: Record<typeof type, keyof BlogPostFormData> = {
+          'excerpt': 'excerpt',
+          'seo-title': 'meta_title',
+          'seo-description': 'meta_description',
+          'seo-keywords': 'meta_keywords',
+          'improve-content': 'content'
+        };
+
+        setValue(fieldMap[type], data.content, {
+          shouldValidate: true,
+          shouldDirty: true
+        });
+
+        toast({
+          title: "Success",
+          description: "Content generated successfully",
+        });
+      }
+    } catch (error: any) {
+      console.error('Error generating content:', error);
+      toast({
+        title: "Error",
+        description: "Failed to generate content",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
-    <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-      <TabsList className="grid w-full grid-cols-2">
-        <TabsTrigger value="edit">Edit</TabsTrigger>
-        <TabsTrigger value="preview">Preview</TabsTrigger>
-      </TabsList>
+    <Form {...{ control }}>
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+        <BlogPostBasicInfo
+          control={control}
+          generateSlug={generateSlug}
+        />
 
-      <TabsContent value="edit">
-        <Form {...form}>
-          <form className="space-y-6 text-left">
-            <BlogPostBasicInfo 
-              form={form}
-              generateSlug={generateSlug}
-            />
+        <BlogPostImageSection
+          control={control}
+          isGeneratingAltText={isGeneratingAltText}
+          generateAltText={generateAltText}
+        />
 
-            <BlogPostImageSection
-              form={form}
-              isGeneratingAltText={isGeneratingAltText}
-              generateAltText={generateAltText}
-            />
+        <BlogPostContent
+          control={control}
+          handleAIGenerate={handleAIGenerate}
+        />
 
-            <BlogPostContent 
-              form={form}
-              handleAIGenerate={handleAIGenerate}
-            />
+        <BlogPostSEO
+          control={control}
+          handleAIGenerate={handleAIGenerate}
+        />
 
-            <Separator />
-
-            <BlogPostSEO 
-              form={form}
-              handleAIGenerate={handleAIGenerate}
-            />
-
-            <BlogPostFormActions
-              onSubmit={onSubmit}
-              isSubmitting={isSubmitting}
-            />
-          </form>
-        </Form>
-      </TabsContent>
-
-      <TabsContent value="preview" className="text-left">
-        <BlogPostPreview data={form.getValues()} />
-      </TabsContent>
-    </Tabs>
+        <BlogPostFormActions
+          onSubmit={onSubmit}
+          isSubmitting={isSubmitting}
+        />
+      </form>
+    </Form>
   );
-};
-
-export default BlogPostForm;
+}

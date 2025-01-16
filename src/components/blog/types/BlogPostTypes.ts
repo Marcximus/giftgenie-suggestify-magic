@@ -1,4 +1,5 @@
-import { Json } from "@/integrations/supabase/types";
+// Define our own Json type
+export type Json = string | number | boolean | null | Json[] | { [key: string]: Json };
 
 export interface AffiliateLink {
   productUrl: string;
@@ -19,13 +20,13 @@ export interface BlogPostFormData {
   image_alt_text: string | null;
   meta_title: string | null;
   meta_description: string | null;
-  meta_keywords: string | null; // Store as comma-separated string in DB
+  meta_keywords: string | null;
   created_at?: string;
   updated_at?: string;
   published_at: string | null;
-  affiliate_links: Json;
-  images: Json | null;
-  related_posts: Json | null;
+  affiliate_links: string; // Store as JSON string
+  images: string | null; // Store as JSON string
+  related_posts: string | null; // Store as JSON string
 }
 
 export const EMPTY_FORM_DATA: BlogPostFormData = {

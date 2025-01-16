@@ -1,18 +1,16 @@
-import { Json } from "@/integrations/supabase/types";
 import { AffiliateLink } from '../types/BlogPostTypes';
 
 export const formUtils = {
-  parseAffiliateLinks(json: Json): AffiliateLink[] {
+  parseAffiliateLinks(json: string): AffiliateLink[] {
     try {
-      const parsed = typeof json === 'string' ? JSON.parse(json) : json;
-      return Array.isArray(parsed) ? parsed : [];
+      return JSON.parse(json) || [];
     } catch {
       return [];
     }
   },
 
-  stringifyAffiliateLinks(links: AffiliateLink[]): Json {
-    return JSON.stringify(links) as Json;
+  stringifyAffiliateLinks(links: AffiliateLink[]): string {
+    return JSON.stringify(links || []);
   },
 
   parseKeywords(keywordsStr: string | null): string[] {
