@@ -11,6 +11,7 @@ import {
 import { PublishedPostsTab } from "@/components/blog/admin/PublishedPostsTab";
 import { QueueTab } from "@/components/blog/admin/QueueTab";
 import { ScheduledPostsTab } from "@/components/blog/admin/ScheduledPostsTab";
+import { StatsOverview } from "@/components/blog/admin/StatsOverview";
 
 const BlogAdmin = () => {
   const { toast } = useToast();
@@ -51,6 +52,10 @@ const BlogAdmin = () => {
             </Button>
           </Link>
         </div>
+      </div>
+
+      <div className="mb-8">
+        <StatsOverview />
       </div>
 
       <Tabs defaultValue="posts" className="space-y-4">
