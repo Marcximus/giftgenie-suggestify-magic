@@ -1,5 +1,4 @@
 import { Tables } from "@/integrations/supabase/types";
-import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { QueueItemStatus } from "./QueueItemStatus";
 import { QueueItemActions } from "./QueueItemActions";
@@ -7,20 +6,13 @@ import { Button } from "@/components/ui/button";
 import { Play } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 
-export const QueueTable = () => {
-  const { toast } = useToast();
-  const { data: queueItems, refetch } = useQuery({
-    queryKey: ['blog-queue'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('blog_post_queue')
-        .select('*')
-        .order('scheduled_time', { ascending: true });
+interface QueueTableProps {
+  items: Tables<"blog_post_queue">[];
+  onDeleteItem: (id: string) => Promise<void>;
+}
 
-      if (error) throw error;
-      return data as Tables<"blog_post_queue">[];
-    }
-  });
+export const QueueTable = ({ items, onDeleteItem }: QueueTableProps) => {
+  const { toast } = useToast();
 
   const handleManualTrigger = async () => {
     try {
@@ -32,8 +24,6 @@ export const QueueTable = () => {
         title: "Success",
         description: "Blog post generation started",
       });
-      
-      refetch();
     } catch (error: any) {
       console.error('Error triggering blog generation:', error);
       toast({
@@ -64,19 +54,22 @@ export const QueueTable = () => {
             </tr>
           </thead>
           <tbody>
-            {queueItems?.map((item, index) => (
+            {items.map((item) => (
               <tr key={item.id} className="border-b">
                 <td className="p-4 align-middle">{item.title}</td>
                 <td className="p-4 align-middle">
-                  <QueueItemStatus status={item.status} />
+                  <QueueItemStatus status={item.status || 'pending'} />
                 </td>
                 <td className="p-4 align-middle">
                   {item.scheduled_time ? 
-                    new Date(item.scheduled_time).toLocaleTimeString() : 
+                    new Date(`1970-01-01T${item.scheduled_time}`).toLocaleTimeString() : 
                     'Not scheduled'}
                 </td>
                 <td className="p-4 align-middle">
-                  <QueueItemActions item={item} onUpdate={refetch} />
+                  <QueueItemActions 
+                    item={item} 
+                    onDelete={onDeleteItem}
+                  />
                 </td>
               </tr>
             ))}
