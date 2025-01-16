@@ -40,6 +40,24 @@ export const BulkUploadDialog = ({ onSuccess }: { onSuccess: () => void }) => {
     return null;
   };
 
+  const findNextAvailableDate = async (startDate: Date, existingSchedules: any[]) => {
+    let currentDate = new Date(startDate);
+    
+    while (true) {
+      const dateStr = currentDate.toISOString().split('T')[0];
+      const postsOnDate = existingSchedules.filter(
+        item => item.scheduled_date === dateStr
+      ).length;
+
+      if (postsOnDate < 3) {
+        return dateStr;
+      }
+      
+      // Move to next day
+      currentDate.setDate(currentDate.getDate() + 1);
+    }
+  };
+
   const handleUpload = async () => {
     if (!titles.trim()) {
       toast({
@@ -71,45 +89,40 @@ export const BulkUploadDialog = ({ onSuccess }: { onSuccess: () => void }) => {
       const existingScheduleMap = new Map();
 
       for (const title of titleList) {
-        // Find the next available date
-        while (true) {
-          const dateStr = currentDate.toISOString().split('T')[0];
-          const postsOnDate = existingSchedules?.filter(
-            item => item.scheduled_date === dateStr
-          ).length || 0;
-
-          if (postsOnDate < 3) {
-            // Get existing times for this date
-            const existingTimesForDate = existingSchedules
-              ?.filter(item => item.scheduled_date === dateStr)
-              .map(item => item.scheduled_time) || [];
-            
-            // Add any times we've already scheduled in this batch
-            const batchTimesForDate = existingScheduleMap.get(dateStr) || [];
-            const allExistingTimes = [...existingTimesForDate, ...batchTimesForDate];
-            
-            // Get a random available time
-            const scheduledTime = await getRandomTimeForDate(dateStr, allExistingTimes);
-            
-            if (scheduledTime) {
-              // Update our tracking of scheduled times
-              if (!existingScheduleMap.has(dateStr)) {
-                existingScheduleMap.set(dateStr, []);
-              }
-              existingScheduleMap.get(dateStr).push(scheduledTime);
-              
-              scheduledPosts.push({
-                title,
-                status: "pending",
-                scheduled_date: dateStr,
-                scheduled_time: scheduledTime
-              });
-              
-              break;
-            }
+        // Find the next available date that has less than 3 posts
+        const dateStr = await findNextAvailableDate(currentDate, [
+          ...(existingSchedules || []),
+          ...scheduledPosts
+        ]);
+        
+        // Get existing times for this date
+        const existingTimesForDate = existingSchedules
+          ?.filter(item => item.scheduled_date === dateStr)
+          .map(item => item.scheduled_time) || [];
+        
+        // Add any times we've already scheduled in this batch
+        const batchTimesForDate = existingScheduleMap.get(dateStr) || [];
+        const allExistingTimes = [...existingTimesForDate, ...batchTimesForDate];
+        
+        // Get a random available time
+        const scheduledTime = await getRandomTimeForDate(dateStr, allExistingTimes);
+        
+        if (scheduledTime) {
+          // Update our tracking of scheduled times
+          if (!existingScheduleMap.has(dateStr)) {
+            existingScheduleMap.set(dateStr, []);
           }
+          existingScheduleMap.get(dateStr).push(scheduledTime);
           
-          // Move to next day if no slots available
+          scheduledPosts.push({
+            title,
+            status: "pending",
+            scheduled_date: dateStr,
+            scheduled_time: scheduledTime
+          });
+          
+          // Update currentDate to the next day to try spreading out posts
+          currentDate = new Date(dateStr);
           currentDate.setDate(currentDate.getDate() + 1);
         }
       }
