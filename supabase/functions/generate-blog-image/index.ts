@@ -53,19 +53,20 @@ serve(async (req) => {
     const subjectMatch = title.toLowerCase().match(/(?:for|to)\s+(?:a\s+)?(\w+)/i);
     const subject = subjectMatch ? subjectMatch[1] : '';
 
-    const imagePrompt = `Create a creative and engaging image that capture gift-giving to ${subject || 'someone special'}.
+    const imagePrompt = `Create a visually engaging scene that directly relates to ${title || 'gift-giving'}, focusing specifically on ${subject || 'the recipient'}.
 
 IMPORTANT REQUIREMENTS:
 - Absolutely NO text, letters, numbers, or writing of any kind
 - Absolutely NO logos or brand names
-- Focus on a scene related to ${subject || 'the recipient'}
+- Create a scene that clearly connects to the subject: ${subject || 'the recipient'}
 - Fill the entire frame with the scene (NO blank space or borders)
+- Ensure every element in the image relates to the title: ${title}
 
 STYLE & VARIATION INSPIRATION:
 - Experiment with multiple styles: classic painting, watercolor, 8-bit pixel art, surreal collage, vibrant pop art, dreamy cinematic lighting, whimsical cartoons or others
 - Use rich, saturated colors and dynamic light sources
-- Enhance the scene with magical elements that fit the theme: ethereal glowing orbs, gentle floating sparkles, shimmering auras, mystical light beams, or delicate swirling mists
-- When appropriate to the subject, include enchanted creatures like graceful fairies, friendly dragons, playful spirits, or other whimsical beings that complement the gift-giving scene`;
+- Enhance the scene with magical elements that fit the specific theme: ethereal glowing orbs, gentle floating sparkles, shimmering auras, mystical light beams, or delicate swirling mists
+- When appropriate to the subject and title, include enchanted creatures like graceful fairies, friendly dragons, playful spirits, or other whimsical beings that complement the gift-giving scene`;
 
     // Create OpenAI image
     const response = await fetch('https://api.openai.com/v1/images/generations', {
