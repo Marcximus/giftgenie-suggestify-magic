@@ -73,10 +73,7 @@ export const BlogImageUpload = ({ value, setValue }: BlogImageUploadProps) => {
       }
 
       const { data, error } = await supabase.functions.invoke('generate-blog-image', {
-        body: { 
-          title,
-          prompt: "Create a professional featured image for a gift recommendation blog post" 
-        }
+        body: { title }  // Remove the hardcoded prompt, let the Edge Function handle it
       });
 
       if (error) throw error;
