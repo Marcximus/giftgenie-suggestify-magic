@@ -12,13 +12,13 @@ export const ScheduledPostsTab = () => {
     queryKey: ["blog-post-queue"],
     queryFn: async () => {
       const now = new Date();
-      const currentDate = now.toISOString().split('T')[0]; // Get current date in YYYY-MM-DD format
-      const currentTime = now.toTimeString().split(' ')[0]; // Get current time in HH:MM:SS format
+      const currentDate = now.toISOString().split('T')[0];
+      const currentTime = now.toTimeString().split(' ')[0];
 
       const { data, error } = await supabase
         .from("blog_post_queue")
         .select("*")
-        .eq('status', 'pending') // Only show pending posts
+        .eq('status', 'pending')
         .or(`scheduled_date.gt.${currentDate},and(scheduled_date.eq.${currentDate},scheduled_time.gt.${currentTime})`)
         .order("scheduled_date", { ascending: true })
         .order("scheduled_time", { ascending: true });
@@ -83,6 +83,7 @@ export const ScheduledPostsTab = () => {
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead className="text-left w-14">#</TableHead>
               <TableHead className="text-left">Title</TableHead>
               <TableHead className="text-left">Status</TableHead>
               <TableHead className="text-left">Scheduled Date</TableHead>
@@ -90,8 +91,9 @@ export const ScheduledPostsTab = () => {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {queuedPosts?.map((post) => (
+            {queuedPosts?.map((post, index) => (
               <TableRow key={post.id}>
+                <TableCell className="text-left">{index + 1}</TableCell>
                 <TableCell className="text-left">{post.title}</TableCell>
                 <TableCell className="text-left">
                   <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusBadgeClass(post.status)}`}>
