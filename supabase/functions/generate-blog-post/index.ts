@@ -35,8 +35,14 @@ serve(async (req) => {
       throw new Error('Missing required API configuration');
     }
 
-    const numItemsMatch = title.match(/\b(\d+)\b/);
-    const numItems = numItemsMatch ? parseInt(numItemsMatch[1]) : 5;
+    const numItems = 5; // Default to 5 items unless specified in title
+    const titleNumMatch = title.match(/\b(\d+)\b/);
+    if (titleNumMatch) {
+      const parsedNum = parseInt(titleNumMatch[1]);
+      if (parsedNum > 0 && parsedNum <= 10) { // Limit to reasonable number
+        numItems = parsedNum;
+      }
+    }
     console.log('Number of items to generate:', numItems);
 
     console.log('Making OpenAI request...');
@@ -98,7 +104,6 @@ serve(async (req) => {
   } catch (error) {
     console.error('Error in generate-blog-post function:', error);
     
-    // Return a more detailed error response
     return new Response(
       JSON.stringify({ 
         error: error.message,
