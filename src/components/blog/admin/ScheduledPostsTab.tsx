@@ -18,7 +18,7 @@ export const ScheduledPostsTab = () => {
       const { data, error } = await supabase
         .from("blog_post_queue")
         .select("*")
-        .not('status', 'eq', 'published')
+        .eq('status', 'pending') // Only show pending posts
         .or(`scheduled_date.gt.${currentDate},and(scheduled_date.eq.${currentDate},scheduled_time.gt.${currentTime})`)
         .order("scheduled_date", { ascending: true })
         .order("scheduled_time", { ascending: true });
