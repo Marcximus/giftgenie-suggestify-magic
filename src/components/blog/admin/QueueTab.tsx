@@ -57,32 +57,19 @@ export const QueueTab = () => {
         .map((line) => line.trim())
         .filter((line) => line.length > 0);
 
-      // Get existing queue count
-      const { count } = await supabase
-        .from("blog_post_queue")
-        .select("*", { count: "exact" });
-
-      const maxNewPosts = Math.min(titles.length, 10 - (count || 0));
-
-      if (maxNewPosts <= 0) {
-        toast({
-          title: "Error",
-          description: "Queue is full. Maximum 10 posts allowed in queue.",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      // Get random time slots for new posts
+      // Get random time slots for all titles
       const { data: timeSlots } = await supabase.rpc('get_random_daily_times');
+      if (!timeSlots || timeSlots.length === 0) {
+        throw new Error("Failed to get time slots");
+      }
       
-      const titlesToAdd = titles.slice(0, maxNewPosts);
       const currentDate = new Date();
-
-      const newPosts = titlesToAdd.map((title, index) => {
+      const newPosts = titles.map((title, index) => {
         const postDate = new Date(currentDate);
+        // Distribute posts across days, 3 per day
         postDate.setDate(postDate.getDate() + Math.floor(index / 3));
         
+        // Use modulo to cycle through the time slots
         const timeSlot = timeSlots[index % timeSlots.length];
         
         return {
@@ -144,7 +131,7 @@ export const QueueTab = () => {
           </Button>
         </div>
         <p className="text-sm text-muted-foreground">
-          Upload a .txt file with one title per line. Maximum 10 posts in queue.
+          Upload a .txt file with one title per line. Posts will be scheduled at 3 per day.
         </p>
       </div>
 
@@ -152,23 +139,23 @@ export const QueueTab = () => {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Title</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Scheduled Date</TableHead>
-              <TableHead>Scheduled Time</TableHead>
+              <TableHead className="text-left">Title</TableHead>
+              <TableHead className="text-left">Status</TableHead>
+              <TableHead className="text-left">Scheduled Date</TableHead>
+              <TableHead className="text-left">Scheduled Time</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {queuedPosts?.map((post) => (
               <TableRow key={post.id}>
-                <TableCell>{post.title}</TableCell>
-                <TableCell>{getStatusBadge(post.status)}</TableCell>
-                <TableCell>
+                <TableCell className="text-left">{post.title}</TableCell>
+                <TableCell className="text-left">{getStatusBadge(post.status)}</TableCell>
+                <TableCell className="text-left">
                   {post.scheduled_date
                     ? new Date(post.scheduled_date).toLocaleDateString()
                     : "-"}
                 </TableCell>
-                <TableCell>{post.scheduled_time || "-"}</TableCell>
+                <TableCell className="text-left">{post.scheduled_time || "-"}</TableCell>
               </TableRow>
             ))}
             {(!queuedPosts || queuedPosts.length === 0) && (
