@@ -414,7 +414,7 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
             <BlogPostContent 
               form={form}
               handleAIGenerate={handleAIGenerate}
-              onGenerateFullPost={(fn) => setGenerateFullPostRef(() => fn)}
+              onGenerateFullPost={(fn) => setGenerateFullPostRef(fn)}
             />
 
             <Separator />
