@@ -3,7 +3,8 @@ import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import { TabsContent, Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
+import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage, FormDescription } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
@@ -15,6 +16,7 @@ import { BlogPostContent } from "./form/BlogPostContent";
 import { BlogPostSEO } from "./form/BlogPostSEO";
 import { BlogPostFormData, BlogPostData } from "./types/BlogPostTypes";
 import { AutoFillBlogPost } from "./AutoFillBlogPost";
+import { Wand2 } from "lucide-react";
 
 interface BlogPostFormProps {
   initialData?: BlogPostData;
@@ -224,19 +226,19 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
           <form onSubmit={form.handleSubmit((data) => onSubmit(data, false))} className="space-y-6 text-left">
             <AutoFillBlogPost
               setValue={form.setValue}
-              onGenerateImage={() => {
+              onGenerateImage={async () => {
                 const imageUploadButton = document.querySelector('[aria-label="Generate with AI"]') as HTMLButtonElement;
-                if (imageUploadButton) imageUploadButton.click();
+                if (imageUploadButton) await imageUploadButton.click();
               }}
               onGenerateAltText={generateAltText}
-              onGenerateExcerpt={() => handleAIGenerate('excerpt')}
-              onGenerateFullPost={() => {
+              onGenerateExcerpt={async () => await handleAIGenerate('excerpt')}
+              onGenerateFullPost={async () => {
                 const generateFullPostButton = document.querySelector('[aria-label="Generate Full Post"]') as HTMLButtonElement;
-                if (generateFullPostButton) generateFullPostButton.click();
+                if (generateFullPostButton) await generateFullPostButton.click();
               }}
-              onGenerateAllSEO={() => {
+              onGenerateAllSEO={async () => {
                 const generateAllSEOButton = document.querySelector('[aria-label="Generate All SEO"]') as HTMLButtonElement;
-                if (generateAllSEOButton) generateAllSEOButton.click();
+                if (generateAllSEOButton) await generateAllSEOButton.click();
               }}
               generateSlug={generateSlug}
             />
