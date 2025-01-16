@@ -4,7 +4,7 @@ import { Tables } from "@/integrations/supabase/types";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
-import { Clock, RefreshCw } from "lucide-react";
+import { Clock } from "lucide-react";
 
 export const ScheduledPostsTab = () => {
   const { toast } = useToast();
@@ -14,6 +14,7 @@ export const ScheduledPostsTab = () => {
       const { data, error } = await supabase
         .from("blog_post_queue")
         .select("*")
+        .not('status', 'eq', 'published') // Filter out published posts
         .order("scheduled_date", { ascending: true })
         .order("scheduled_time", { ascending: true });
       
@@ -47,10 +48,10 @@ export const ScheduledPostsTab = () => {
 
   const getStatusBadgeClass = (status: string | null) => {
     switch (status) {
-      case 'published':
-        return 'bg-green-100 text-green-800';
       case 'generating':
         return 'bg-yellow-100 text-yellow-800';
+      case 'error':
+        return 'bg-red-100 text-red-800';
       default:
         return 'bg-gray-100 text-gray-800';
     }
@@ -77,25 +78,25 @@ export const ScheduledPostsTab = () => {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Title</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Scheduled Date</TableHead>
-              <TableHead>Scheduled Time</TableHead>
+              <TableHead className="text-left">Title</TableHead>
+              <TableHead className="text-left">Status</TableHead>
+              <TableHead className="text-left">Scheduled Date</TableHead>
+              <TableHead className="text-left">Scheduled Time</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {queuedPosts?.map((post) => (
               <TableRow key={post.id}>
-                <TableCell>{post.title}</TableCell>
-                <TableCell>
+                <TableCell className="text-left">{post.title}</TableCell>
+                <TableCell className="text-left">
                   <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusBadgeClass(post.status)}`}>
                     {post.status || 'pending'}
                   </span>
                 </TableCell>
-                <TableCell>
+                <TableCell className="text-left">
                   {post.scheduled_date ? new Date(post.scheduled_date).toLocaleDateString() : '-'}
                 </TableCell>
-                <TableCell>
+                <TableCell className="text-left">
                   {post.scheduled_time || '-'}
                 </TableCell>
               </TableRow>
