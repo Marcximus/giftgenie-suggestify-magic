@@ -15,6 +15,31 @@ serve(async (req) => {
   try {
     const { title, prompt } = await req.json();
 
+    // Extract the main subject from the title (e.g., "mum", "dad", "teenager")
+    const subjectMatch = title.toLowerCase().match(/(?:for|to)\s+(?:a\s+)?(\w+)/i);
+    const subject = subjectMatch ? subjectMatch[1] : '';
+
+    // Create a more specific prompt based on the subject
+    const defaultPrompt = `Create a photorealistic lifestyle image that represents gift-giving to ${subject || 'someone special'}. 
+    The image should be a warm, inviting scene without any text, words, or typography.
+    
+    IMPORTANT REQUIREMENTS:
+    - NO text, letters, numbers, or writing of any kind
+    - NO logos or brand names
+    - Show a lifestyle scene related to ${subject || 'the recipient'}
+    - Use warm, inviting colors
+    - Include gift-giving elements or wrapped presents
+    - Make it personal and emotional
+    - Ensure high quality and photorealistic style
+    - Fill the entire frame with the scene
+    
+    Example scenes:
+    - A beautifully decorated living room with wrapped gifts
+    - A touching moment of gift exchange between family members
+    - A celebration scene with presents in the background
+    
+    Subject context: ${title}`;
+
     // Create OpenAI image
     const response = await fetch('https://api.openai.com/v1/images/generations', {
       method: 'POST',
@@ -24,15 +49,19 @@ serve(async (req) => {
       },
       body: JSON.stringify({
         model: "dall-e-3",
-        prompt: prompt || `Create an entertaining, interesting, and funny image for a blog post related to the subject of the title. The image should be visually engaging and fill the entire frame. Do not include any text or typography in the image: ${title}`,
+        prompt: prompt || defaultPrompt,
         n: 1,
         size: "1792x1024",
         quality: "standard",
-        response_format: "b64_json"
+        response_format: "b64_json",
+        style: "natural" // Use natural style for more photorealistic results
       }),
     });
 
     if (!response.ok) {
+      console.error('OpenAI API error status:', response.status);
+      const errorText = await response.text();
+      console.error('OpenAI API error:', errorText);
       throw new Error(`OpenAI API error: ${response.status}`);
     }
 
@@ -58,6 +87,7 @@ serve(async (req) => {
       });
 
     if (uploadError) {
+      console.error('Storage upload error:', uploadError);
       throw new Error(`Failed to upload image: ${uploadError.message}`);
     }
 
