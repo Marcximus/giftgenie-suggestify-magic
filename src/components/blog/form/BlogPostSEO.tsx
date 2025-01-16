@@ -1,11 +1,17 @@
 import { Control } from "react-hook-form";
 import { BlogPostFormData } from "../types/BlogPostTypes";
-import { FormField, FormItem, FormLabel, FormControl, FormDescription } from "@/components/ui/form";
+import { formUtils } from "../utils/formUtils";
+import {
+  FormField,
+  FormItem,
+  FormLabel,
+  FormControl,
+  FormDescription
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Wand2 } from "lucide-react";
-import { convertKeywordsToArray, convertKeywordsToString } from "../utils/blogUtils";
 
 interface Props {
   control: Control<BlogPostFormData>;
@@ -67,8 +73,11 @@ export function BlogPostSEO({ control, handleAIGenerate }: Props) {
             <FormControl>
               <Input
                 {...field}
-                value={convertKeywordsToString(field.value)}
-                onChange={e => field.onChange(convertKeywordsToArray(e.target.value))}
+                value={field.value || ''}
+                onChange={e => {
+                  const keywords = formUtils.parseKeywords(e.target.value);
+                  field.onChange(formUtils.stringifyKeywords(keywords));
+                }}
               />
             </FormControl>
             <FormDescription>
