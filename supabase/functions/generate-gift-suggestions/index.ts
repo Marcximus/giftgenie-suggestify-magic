@@ -55,37 +55,25 @@ serve(async (req) => {
         messages: [
           {
             role: "system",
-            content: `You are a gift suggestion expert. Your task is to provide 8 specific gift suggestions that are perfectly balanced and varied:
+            content: `You are a gift suggestion expert. Your task is to provide 8 specific gift suggestions that are perfectly balanced:
 
 CRITICAL REQUIREMENTS:
 1. PROVIDE EXACTLY 8 SUGGESTIONS:
-   - 5 suggestions MUST be directly related to the stated interests/occasion (while still taking gender and age into consideration)
+   - 5 suggestions MUST be directly related to the stated interests (while still taking gender and age into consideration)
    - 3 suggestions MUST be age-appropriate general gifts (while still taking gender into consideration)
    
-2. ENSURE MAXIMUM VARIETY:
+2. ENSURE VARIETY:
    - No duplicate product categories (e.g., don't suggest multiple speakers or notebooks)
-   - Vary brands and price points within the budget
-   - Include a mix of mainstream and unique/niche products
-   - Consider different aspects of the recipient's interests
    
-3. CONSIDER DEMOGRAPHICS AND OCCASION:
+3. CONSIDER DEMOGRAPHICS:
    - All suggestions must be gender-appropriate
    - All suggestions must be age-appropriate
-   - If an occasion is specified (e.g., Valentine's Day, Wedding), include relevant themed items
-   - Ensure suggestions align with the occasion's sentiment and traditions
+   - All suggestions must fit within the specified budget
    
-4. BE SPECIFIC WITH PRODUCT DETAILS:
-   - ALWAYS include brand names and model numbers/versions when applicable
+4. BE SPECIFIC:
    - Use exact product names (e.g., "Sony WH-1000XM4 Wireless Headphones" not just "headphones")
-   - Include special editions or variants if relevant
+   - Include brand names and model numbers when possible
    - Each suggestion must be easily searchable on Amazon
-   - Format: "[Brand Name] [Product Name] [Model/Version] ([Special Edition] if applicable)"
-
-5. ENSURE SUGGESTION DIVERSITY:
-   - Mix physical products with experiences or subscriptions
-   - Include both practical and sentimental options
-   - Vary between tech, lifestyle, hobby, and personal items
-   - Consider both immediate enjoyment and long-term value
 
 Return ONLY a JSON array of 8 specific gift suggestions in this format:
 ["suggestion1", "suggestion2", "suggestion3", "suggestion4", "suggestion5", "suggestion6", "suggestion7", "suggestion8"]
@@ -97,7 +85,7 @@ DO NOT include any additional text, formatting, or explanations.`
             content: `${enhancedPrompt}\n\nIMPORTANT: Return ONLY a JSON array of 8 strings. No other text.` 
           }
         ],
-        temperature: 0.8,
+        temperature: 0.7,
         max_tokens: 1000,
       }),
     });
