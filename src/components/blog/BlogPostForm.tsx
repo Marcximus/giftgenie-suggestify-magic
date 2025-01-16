@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { useForm, SubmitHandler } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import { TabsContent, Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Form } from "@/components/ui/form";
+import { Button } from "@/components/ui/button";
+import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage, FormDescription } from "@/components/ui/form";
 import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
@@ -12,9 +13,9 @@ import { useAIContent } from "@/hooks/useAIContent";
 import { BlogPostBasicInfo } from "./form/BlogPostBasicInfo";
 import { BlogPostContent } from "./form/BlogPostContent";
 import { BlogPostSEO } from "./form/BlogPostSEO";
-import { GenerateAllButton } from "./form/GenerateAllButton";
-import { FormActions } from "./form/FormActions";
 import { BlogPostFormData, BlogPostData } from "./types/BlogPostTypes";
+import { Input } from "@/components/ui/input";
+import { Wand2 } from "lucide-react";
 
 interface BlogPostFormProps {
   initialData?: BlogPostData;
@@ -27,7 +28,6 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { generateContent, getFormFieldFromType } = useAIContent();
-  const [generateFullPostRef, setGenerateFullPostRef] = useState<(() => Promise<void>) | null>(null);
 
   const form = useForm<BlogPostFormData>({
     defaultValues: initialData || {
@@ -47,13 +47,6 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
       related_posts: [],
     },
   });
-
-  const generateSlug = (title: string) => {
-    return title
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/(^-|-$)+/g, "");
-  };
 
   const generateAltText = async () => {
     const title = form.getValues('title');
@@ -125,11 +118,7 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
     return `${baseSlug}-${timestamp}`;
   };
 
-  const handleSubmit: SubmitHandler<BlogPostFormData> = async (data) => {
-    await submitForm(data, false);
-  };
-
-  const submitForm = async (data: BlogPostFormData, isDraft: boolean = false) => {
+  const onSubmit = async (data: BlogPostFormData, isDraft: boolean = false) => {
     setIsSubmitting(true);
     try {
       const currentTime = new Date().toISOString();
@@ -188,6 +177,13 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
     }
   };
 
+  const generateSlug = (title: string) => {
+    return title
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/(^-|-$)+/g, "");
+  };
+
   const handleAIGenerate = async (type: 'excerpt' | 'seo-title' | 'seo-description' | 'seo-keywords' | 'improve-content') => {
     const currentTitle = form.getValues('title');
     const currentContent = form.getValues('content');
@@ -226,36 +222,64 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
 
       <TabsContent value="edit">
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6 text-left">
-            <div className="flex justify-between items-center">
-              <h2 className="text-2xl font-bold">Create New Blog Post</h2>
-              <GenerateAllButton
-                form={form}
-                generateSlug={generateSlug}
-                generateAltText={generateAltText}
-                handleAIGenerate={handleAIGenerate}
-                generateFullPostRef={generateFullPostRef}
-              />
-            </div>
-
+          <form onSubmit={form.handleSubmit((data) => onSubmit(data, false))} className="space-y-6 text-left">
             <BlogPostBasicInfo 
               form={form} 
               generateSlug={generateSlug}
               initialData={initialData}
             />
 
-            <BlogImageUpload 
-              value={form.watch('image_url') || ''} 
-              setValue={form.setValue}
-              altText={form.watch('image_alt_text')}
-              onGenerateAltText={generateAltText}
-              isGeneratingAltText={isGeneratingAltText}
+            <FormField
+              control={form.control}
+              name="image_url"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Featured Image</FormLabel>
+                  <BlogImageUpload 
+                    value={field.value || ''} 
+                    setValue={form.setValue}
+                  />
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="image_alt_text"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="flex items-center justify-between">
+                    Image Alt Text
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={generateAltText}
+                      disabled={isGeneratingAltText}
+                    >
+                      <Wand2 className="w-4 h-4 mr-2" />
+                      {isGeneratingAltText ? "Generating..." : "Generate Alt Text"}
+                    </Button>
+                  </FormLabel>
+                  <FormControl>
+                    <Input 
+                      {...field} 
+                      placeholder="Descriptive text for the featured image"
+                      value={field.value || ''}
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    Describe the image content for better SEO and accessibility
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
 
             <BlogPostContent 
               form={form}
               handleAIGenerate={handleAIGenerate}
-              onGenerateFullPost={(fn) => setGenerateFullPostRef(fn)}
             />
 
             <Separator />
@@ -265,11 +289,26 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
               handleAIGenerate={handleAIGenerate}
             />
 
-            <FormActions
-              isSubmitting={isSubmitting}
-              onSaveAsDraft={() => submitForm(form.getValues(), true)}
-              initialData={initialData}
-            />
+            <div className="flex gap-4">
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? "Saving..." : initialData ? "Update Post" : "Publish Post"}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                disabled={isSubmitting}
+                onClick={() => onSubmit(form.getValues(), true)}
+              >
+                Save as Draft
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => navigate("/blog/admin")}
+              >
+                Cancel
+              </Button>
+            </div>
           </form>
         </Form>
       </TabsContent>

@@ -12,10 +12,9 @@ import { useToast } from "@/components/ui/use-toast";
 interface BlogPostContentProps {
   form: UseFormReturn<BlogPostFormData>;
   handleAIGenerate: (type: 'excerpt' | 'seo-title' | 'seo-description' | 'seo-keywords' | 'improve-content') => Promise<void>;
-  onGenerateFullPost?: (generateFn: () => Promise<void>) => void;
 }
 
-export const BlogPostContent = ({ form, handleAIGenerate, onGenerateFullPost }: BlogPostContentProps) => {
+export const BlogPostContent = ({ form, handleAIGenerate }: BlogPostContentProps) => {
   const { toast } = useToast();
   const [isGenerating, setIsGenerating] = useState(false);
 
@@ -76,11 +75,6 @@ export const BlogPostContent = ({ form, handleAIGenerate, onGenerateFullPost }: 
       setIsGenerating(false);
     }
   };
-
-  // Register the generateFullPost function with the parent component
-  if (onGenerateFullPost) {
-    onGenerateFullPost(generateFullPost);
-  }
 
   return (
     <>
