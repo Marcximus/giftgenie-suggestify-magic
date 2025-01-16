@@ -72,25 +72,33 @@ export const QueueTab = () => {
         scheduledDate.setDate(scheduledDate.getDate() + 1);
       }
 
-      // Get random time slots for this date
+      // Get multiple random time slots for this date to ensure we get a unique one
       const { data: timeSlots, error: timeSlotsError } = await supabase
         .rpc('get_random_daily_times');
       
       if (timeSlotsError) throw timeSlotsError;
+      console.log('Available time slots:', timeSlots);
 
       // Find which slot is available (morning, afternoon, or evening)
       const existingTimesForDate = existingSchedules
         ?.filter(item => item.scheduled_date === scheduledDate.toISOString().split('T')[0])
         .map(item => item.scheduled_time) || [];
 
-      const availableSlot = timeSlots.find((slot) => {
-        const timeStr = `${String(slot.hour).padStart(2, '0')}:${String(slot.minute).padStart(2, '0')}`;
-        return !existingTimesForDate.includes(timeStr);
-      });
+      console.log('Existing times for date:', existingTimesForDate);
+
+      // Convert time slots to proper format and filter out existing times
+      const formattedTimeSlots = timeSlots.map(slot => ({
+        ...slot,
+        timeStr: `${String(slot.hour).padStart(2, '0')}:${String(slot.minute).padStart(2, '0')}`
+      }));
+
+      const availableSlot = formattedTimeSlots.find(slot => 
+        !existingTimesForDate.includes(`${slot.timeStr}:00`)
+      );
 
       if (!availableSlot) throw new Error("No available time slots for this date");
 
-      const scheduledTime = `${String(availableSlot.hour).padStart(2, '0')}:${String(availableSlot.minute).padStart(2, '0')}`;
+      console.log('Selected time slot:', availableSlot);
 
       const { error } = await supabase
         .from("blog_post_queue")
@@ -98,7 +106,7 @@ export const QueueTab = () => {
           title, 
           status: "pending",
           scheduled_date: scheduledDate.toISOString().split('T')[0],
-          scheduled_time: scheduledTime
+          scheduled_time: `${availableSlot.timeStr}:00`
         }]);
 
       if (error) throw error;
