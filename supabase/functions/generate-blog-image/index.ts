@@ -15,12 +15,46 @@ serve(async (req) => {
   try {
     const { title, prompt } = await req.json();
 
-    // Extract the main subject from the title (e.g., "mum", "dad", "teenager")
+    // If it's an alt text generation request
+    if (prompt?.toLowerCase().includes('alt text')) {
+      const altTextResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${Deno.env.get('OPENAI_API_KEY')}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: "gpt-4o",
+          messages: [{
+            role: "system",
+            content: "Generate a concise, descriptive alt text for an image. Focus on the main elements and purpose of the image."
+          }, {
+            role: "user",
+            content: `Generate alt text for a blog post image about: ${title}`
+          }],
+          max_tokens: 100,
+        }),
+      });
+
+      if (!altTextResponse.ok) {
+        const error = await altTextResponse.text();
+        console.error('OpenAI API error (alt text):', error);
+        throw new Error(`OpenAI API error (alt text): ${altTextResponse.status}`);
+      }
+
+      const altTextData = await altTextResponse.json();
+      return new Response(
+        JSON.stringify({ altText: altTextData.choices[0].message.content.trim() }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Extract the main subject from the title
     const subjectMatch = title.toLowerCase().match(/(?:for|to)\s+(?:a\s+)?(\w+)/i);
     const subject = subjectMatch ? subjectMatch[1] : '';
 
     // Create a more specific prompt based on the subject
-    const defaultPrompt = `Create a vibrant, artistic, and emotionally engaging image that captures the joy of gift-giving to ${subject || 'someone special'}. 
+    const imagePrompt = `Create a vibrant, artistic, and emotionally engaging image that captures the joy of gift-giving to ${subject || 'someone special'}. 
     
     IMPORTANT REQUIREMENTS:
     - NO text, letters, numbers, or writing of any kind
@@ -54,19 +88,18 @@ serve(async (req) => {
       },
       body: JSON.stringify({
         model: "dall-e-3",
-        prompt: prompt || defaultPrompt,
+        prompt: prompt || imagePrompt,
         n: 1,
         size: "1792x1024",
         quality: "standard",
         response_format: "b64_json",
-        style: "vivid" // Use vivid style for more artistic and engaging results
+        style: "vivid"
       }),
     });
 
     if (!response.ok) {
-      console.error('OpenAI API error status:', response.status);
-      const errorText = await response.text();
-      console.error('OpenAI API error:', errorText);
+      const error = await response.text();
+      console.error('OpenAI API error:', error);
       throw new Error(`OpenAI API error: ${response.status}`);
     }
 
@@ -101,47 +134,24 @@ serve(async (req) => {
       .from('blog-images')
       .getPublicUrl(fileName);
 
-    // Generate alt text if requested
-    let altText = null;
-    if (prompt?.toLowerCase().includes('alt text')) {
-      const altTextResponse = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${Deno.env.get('OPENAI_API_KEY')}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: "gpt-4",
-          messages: [{
-            role: "system",
-            content: "Generate a concise, descriptive alt text for an image. Focus on the main elements and purpose of the image."
-          }, {
-            role: "user",
-            content: `Generate alt text for a blog post image about: ${title}`
-          }],
-          max_tokens: 100,
-        }),
-      });
-
-      if (altTextResponse.ok) {
-        const altTextData = await altTextResponse.json();
-        altText = altTextData.choices[0].message.content.trim();
-      }
-    }
-
     return new Response(
-      JSON.stringify({ 
-        imageUrl: publicUrl,
-        altText 
-      }),
+      JSON.stringify({ imageUrl: publicUrl }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
   } catch (error) {
     console.error('Error in generate-blog-image function:', error);
     return new Response(
-      JSON.stringify({ error: error.message }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+      JSON.stringify({ 
+        error: error.message,
+        timestamp: new Date().toISOString(),
+        details: error.stack,
+        type: 'generate-blog-image-error'
+      }),
+      { 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }, 
+        status: 500 
+      }
     );
   }
 });
