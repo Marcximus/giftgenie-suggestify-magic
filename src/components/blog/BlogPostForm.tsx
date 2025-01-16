@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, SubmitHandler } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import { TabsContent, Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -15,7 +15,8 @@ import { BlogPostContent } from "./form/BlogPostContent";
 import { BlogPostSEO } from "./form/BlogPostSEO";
 import { BlogPostFormData, BlogPostData } from "./types/BlogPostTypes";
 import { Input } from "@/components/ui/input";
-import { Wand2 } from "lucide-react";
+import { Wand2, Loader2 } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
 
 interface BlogPostFormProps {
   initialData?: BlogPostData;
@@ -24,6 +25,9 @@ interface BlogPostFormProps {
 const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGeneratingAltText, setIsGeneratingAltText] = useState(false);
+  const [isGeneratingAll, setIsGeneratingAll] = useState(false);
+  const [generationProgress, setGenerationProgress] = useState(0);
+  const [generationStatus, setGenerationStatus] = useState("");
   const [activeTab, setActiveTab] = useState("edit");
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -47,6 +51,13 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
       related_posts: [],
     },
   });
+
+  const generateSlug = (title: string) => {
+    return title
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/(^-|-$)+/g, "");
+  };
 
   const generateAltText = async () => {
     const title = form.getValues('title');
@@ -118,7 +129,11 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
     return `${baseSlug}-${timestamp}`;
   };
 
-  const onSubmit = async (data: BlogPostFormData, isDraft: boolean = false) => {
+  const handleSubmit: SubmitHandler<BlogPostFormData> = async (data, event) => {
+    await submitForm(data, false);
+  };
+
+  const submitForm = async (data: BlogPostFormData, isDraft: boolean = false) => {
     setIsSubmitting(true);
     try {
       const currentTime = new Date().toISOString();
@@ -177,13 +192,6 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
     }
   };
 
-  const generateSlug = (title: string) => {
-    return title
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/(^-|-$)+/g, "");
-  };
-
   const handleAIGenerate = async (type: 'excerpt' | 'seo-title' | 'seo-description' | 'seo-keywords' | 'improve-content') => {
     const currentTitle = form.getValues('title');
     const currentContent = form.getValues('content');
@@ -213,6 +221,99 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
     }
   };
 
+  const generateAll = async () => {
+    setIsGeneratingAll(true);
+    setGenerationProgress(0);
+    
+    try {
+      // 1. Fetch next queued title
+      setGenerationStatus("Fetching next queued title...");
+      const { data: queuedPost, error: queueError } = await supabase
+        .from("blog_post_queue")
+        .select("*")
+        .eq("status", "pending")
+        .order("scheduled_date", { ascending: true })
+        .order("scheduled_time", { ascending: true })
+        .limit(1)
+        .single();
+
+      if (queueError) throw queueError;
+      if (!queuedPost) {
+        toast({
+          title: "Error",
+          description: "No queued posts found",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // 2. Set title and generate slug
+      setGenerationProgress(10);
+      form.setValue("title", queuedPost.title);
+      form.setValue("slug", generateSlug(queuedPost.title));
+      form.setValue("author", "Get The Gift Team");
+
+      // 3. Generate featured image
+      setGenerationStatus("Generating featured image...");
+      setGenerationProgress(20);
+      const { data: imageData, error: imageError } = await supabase.functions.invoke('generate-blog-image', {
+        body: { title: queuedPost.title }
+      });
+      if (imageError) throw imageError;
+      if (imageData?.imageUrl) {
+        form.setValue("image_url", imageData.imageUrl);
+      }
+
+      // 4. Generate alt text
+      setGenerationStatus("Generating alt text...");
+      setGenerationProgress(35);
+      await generateAltText();
+
+      // 5. Generate excerpt
+      setGenerationStatus("Generating excerpt...");
+      setGenerationProgress(50);
+      await handleAIGenerate('excerpt');
+
+      // 6. Generate full post content
+      setGenerationStatus("Generating full post content...");
+      setGenerationProgress(65);
+      await handleAIGenerate('improve-content');
+
+      // 7. Generate SEO content
+      setGenerationStatus("Generating SEO content...");
+      setGenerationProgress(80);
+      await handleAIGenerate('seo-title');
+      await handleAIGenerate('seo-description');
+      await handleAIGenerate('seo-keywords');
+
+      // 8. Update queue status
+      setGenerationStatus("Updating queue status...");
+      setGenerationProgress(90);
+      const { error: updateError } = await supabase
+        .from("blog_post_queue")
+        .update({ status: "generated" })
+        .eq("id", queuedPost.id);
+
+      if (updateError) throw updateError;
+
+      setGenerationProgress(100);
+      setGenerationStatus("Generation complete!");
+      toast({
+        title: "Success",
+        description: "All content generated successfully! Review and publish when ready.",
+      });
+    } catch (error: any) {
+      console.error("Error in generateAll:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to generate content",
+        variant: "destructive"
+      });
+    } finally {
+      setIsGeneratingAll(false);
+    }
+  };
+
   return (
     <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
       <TabsList className="grid w-full grid-cols-2">
@@ -222,7 +323,36 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
 
       <TabsContent value="edit">
         <Form {...form}>
-          <form onSubmit={form.handleSubmit((data) => onSubmit(data, false))} className="space-y-6 text-left">
+          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6 text-left">
+            <div className="flex justify-between items-center">
+              <h2 className="text-2xl font-bold">Create New Blog Post</h2>
+              <Button
+                type="button"
+                onClick={generateAll}
+                disabled={isGeneratingAll}
+                className="w-[200px]"
+              >
+                {isGeneratingAll ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Generating...
+                  </>
+                ) : (
+                  <>
+                    <Wand2 className="w-4 h-4 mr-2" />
+                    Generate All From Queue
+                  </>
+                )}
+              </Button>
+            </div>
+
+            {isGeneratingAll && (
+              <div className="space-y-2">
+                <Progress value={generationProgress} className="w-full" />
+                <p className="text-sm text-muted-foreground">{generationStatus}</p>
+              </div>
+            )}
+
             <BlogPostBasicInfo 
               form={form} 
               generateSlug={generateSlug}
@@ -297,7 +427,7 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
                 type="button"
                 variant="outline"
                 disabled={isSubmitting}
-                onClick={() => onSubmit(form.getValues(), true)}
+                onClick={() => submitForm(form.getValues(), true)}
               >
                 Save as Draft
               </Button>
