@@ -3,7 +3,8 @@ import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import { TabsContent, Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
+import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage, FormDescription } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
@@ -70,7 +71,7 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
       .order("scheduled_date", { ascending: true })
       .order("scheduled_time", { ascending: true })
       .limit(1)
-      .single();
+      .maybeSingle();
 
     if (error) {
       console.error('Error fetching queued title:', error);
@@ -78,6 +79,41 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
     }
 
     return queuedPost;
+  };
+
+  const generateAltText = async () => {
+    const title = form.getValues('title');
+    if (!title) {
+      toast({
+        title: "Error",
+        description: "Please provide a title first",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-blog-content', {
+        body: { type: 'alt-text', title }
+      });
+
+      if (error) throw error;
+
+      if (data?.content) {
+        form.setValue('image_alt_text', data.content, { shouldDirty: true });
+        toast({
+          title: "Success",
+          description: "Alt text generated successfully!",
+        });
+      }
+    } catch (error: any) {
+      console.error('Error generating alt text:', error);
+      toast({
+        title: "Error",
+        description: "Failed to generate alt text",
+        variant: "destructive"
+      });
+    }
   };
 
   const generateAll = async () => {
@@ -108,11 +144,7 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
 
       // Step 3: Generate Alt Text (40%)
       setGenerationStep("Generating alt text...");
-      const altTextButton = document.querySelector('button:has(.Wand2):not(:first-of-type)') as HTMLButtonElement;
-      if (altTextButton) {
-        await altTextButton.click();
-        await new Promise(resolve => setTimeout(resolve, 2000));
-      }
+      await generateAltText();
       setGenerationProgress(40);
 
       // Step 4: Generate Excerpt (50%)
@@ -150,6 +182,90 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
     } finally {
       setIsGenerating(false);
       setGenerationStep("");
+    }
+  };
+
+  const generateUniqueSlug = async (baseSlug: string): Promise<string> => {
+    const { data: existingPost, error } = await supabase
+      .from("blog_posts")
+      .select("slug")
+      .eq("slug", baseSlug)
+      .maybeSingle();
+    
+    if (error) {
+      console.error("Error checking slug uniqueness:", error);
+      toast({
+        title: "Error",
+        description: "Failed to verify slug uniqueness",
+        variant: "destructive",
+      });
+      throw error;
+    }
+
+    if (!existingPost) {
+      return baseSlug;
+    }
+
+    const timestamp = new Date().getTime();
+    return `${baseSlug}-${timestamp}`;
+  };
+
+  const onSubmit = async (data: BlogPostFormData, isDraft: boolean = false) => {
+    setIsSubmitting(true);
+    try {
+      const currentTime = new Date().toISOString();
+      const publishedAt = isDraft ? null : currentTime;
+      
+      const uniqueSlug = await generateUniqueSlug(data.slug);
+      if (uniqueSlug !== data.slug) {
+        data.slug = uniqueSlug;
+        toast({
+          title: "Notice",
+          description: "A similar slug already existed. Generated a unique one.",
+        });
+      }
+
+      if (initialData?.id) {
+        const { error } = await supabase
+          .from("blog_posts")
+          .update({
+            ...data,
+            updated_at: currentTime,
+            published_at: publishedAt,
+          })
+          .eq("id", initialData.id);
+
+        if (error) throw error;
+        toast({
+          title: "Success",
+          description: isDraft ? "Draft saved successfully" : "Blog post updated successfully",
+        });
+      } else {
+        const { error } = await supabase
+          .from("blog_posts")
+          .insert([{
+            ...data,
+            created_at: currentTime,
+            updated_at: currentTime,
+            published_at: publishedAt,
+          }]);
+
+        if (error) throw error;
+        toast({
+          title: "Success",
+          description: isDraft ? "Draft saved successfully" : "Blog post created successfully",
+        });
+      }
+      navigate("/blog/admin");
+    } catch (error: any) {
+      console.error("Error saving blog post:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to save blog post",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -191,7 +307,7 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
 
       <TabsContent value="edit">
         <Form {...form}>
-          <form onSubmit={form.handleSubmit((data) => onSubmit(data, false))} className="space-y-6 text-left">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 text-left">
             <div className="flex justify-between items-center">
               <h2 className="text-2xl font-bold">Create New Blog Post</h2>
               <Button
