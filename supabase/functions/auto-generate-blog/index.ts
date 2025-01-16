@@ -19,11 +19,38 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Get the next pending post from the queue
+    // Get today's date in YYYY-MM-DD format
+    const today = new Date().toISOString().split('T')[0];
+    const currentTime = new Date().toTimeString().split(' ')[0];
+
+    console.log(`Checking for posts scheduled for ${today} at or before ${currentTime}`);
+
+    // First, check how many posts have been processed today
+    const { data: processedToday, error: countError } = await supabase
+      .from('blog_post_queue')
+      .select('id')
+      .eq('status', 'completed')
+      .eq('scheduled_date', today);
+
+    if (countError) {
+      throw new Error(`Error checking processed posts: ${countError.message}`);
+    }
+
+    if (processedToday && processedToday.length >= 3) {
+      console.log('Already processed 3 posts today, waiting for tomorrow');
+      return new Response(
+        JSON.stringify({ message: 'Daily post limit reached' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Get the next pending post that's scheduled for today or earlier
     const { data: queueItem, error: queueError } = await supabase
       .from('blog_post_queue')
       .select('*')
       .eq('status', 'pending')
+      .lte('scheduled_date', today) // scheduled for today or earlier
+      .order('scheduled_date', { ascending: true })
       .order('scheduled_time', { ascending: true })
       .limit(1)
       .single();
@@ -32,6 +59,15 @@ serve(async (req) => {
       console.log('No pending posts found:', queueError);
       return new Response(
         JSON.stringify({ message: 'No pending posts found' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Check if it's time to process this post
+    if (queueItem.scheduled_date === today && queueItem.scheduled_time > currentTime) {
+      console.log('Next post is scheduled for later today');
+      return new Response(
+        JSON.stringify({ message: 'Next post scheduled for later' }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
