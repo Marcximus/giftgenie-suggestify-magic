@@ -49,7 +49,9 @@ export const BlogPostContent = ({ post }: BlogPostContentProps) => {
                    [&_hr]:my-8 [&_hr]:border-t [&_hr]:border-gray-200
                    [&_ul]:space-y-2 [&_ul.my-4]:space-y-2
                    [&_p]:whitespace-pre-wrap [&_p]:mb-4
-                   [&_p]:not-first-of-type:mt-4"
+                   [&_p]:not-first-of-type:mt-4
+                   
+                   [&_p:last-of-type]:mb-8"
         dangerouslySetInnerHTML={{ __html: post.content }}
       />
     </div>
