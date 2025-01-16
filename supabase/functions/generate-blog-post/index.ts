@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { processContent } from "../_shared/content-processor.ts";
-import { buildBlogPrompt } from "./openaiPrompt.ts";
+import { buildBlogPrompt } from "./promptBuilder.ts";
+import { validateBlogContent } from "./contentValidator.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -13,8 +14,8 @@ serve(async (req) => {
   }
 
   try {
-    const { title } = await req.json();
-    console.log('Generating blog post for title:', title);
+    const { title, targetAudience, priceRange, occasion } = await req.json();
+    console.log('Generating blog post for:', { title, targetAudience, priceRange, occasion });
 
     // Verify required API keys
     const associateId = Deno.env.get('AMAZON_ASSOCIATE_ID');
@@ -22,11 +23,7 @@ serve(async (req) => {
     const openAiKey = Deno.env.get('OPENAI_API_KEY');
 
     if (!associateId || !rapidApiKey || !openAiKey) {
-      console.error('Missing required API keys:', {
-        hasAssociateId: !!associateId,
-        hasRapidApiKey: !!rapidApiKey,
-        hasOpenAiKey: !!openAiKey
-      });
+      console.error('Missing required API keys');
       throw new Error('Missing required API configuration');
     }
 
@@ -43,7 +40,7 @@ serve(async (req) => {
       body: JSON.stringify({
         model: "gpt-4o",
         messages: [
-          buildBlogPrompt(numItems),
+          buildBlogPrompt({ numItems, targetAudience, priceRange, occasion }),
           {
             role: "user",
             content: `Create a fun, engaging blog post about: ${title}`
@@ -62,6 +59,13 @@ serve(async (req) => {
     const data = await response.json();
     const rawContent = data.choices[0].message.content;
     console.log('Generated raw content length:', rawContent.length);
+
+    // Validate content before processing
+    const validation = validateBlogContent(rawContent);
+    if (!validation.isValid) {
+      console.error('Content validation failed:', validation.errors);
+      throw new Error(`Content validation failed: ${validation.errors.join(', ')}`);
+    }
 
     // Process content with Amazon product data
     console.log('Processing content with Amazon data...');
