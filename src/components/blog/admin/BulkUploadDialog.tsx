@@ -37,14 +37,71 @@ export const BulkUploadDialog = ({ onSuccess }: { onSuccess: () => void }) => {
         .map(title => title.trim())
         .filter(title => title.length > 0);
 
+      // First, get all existing schedules
+      const { data: existingSchedules, error: countError } = await supabase
+        .from("blog_post_queue")
+        .select("scheduled_date, scheduled_time")
+        .order("scheduled_date", { ascending: true });
+
+      if (countError) throw countError;
+
+      // Process each title and find available slots
+      const scheduledPosts = [];
+      let currentDate = new Date();
+
+      for (const title of titleList) {
+        // Find the next available date
+        while (true) {
+          const dateStr = currentDate.toISOString().split('T')[0];
+          const postsOnDate = existingSchedules?.filter(
+            item => item.scheduled_date === dateStr
+          ).length || 0;
+
+          if (postsOnDate < 3) {
+            // Get random time slots for this date
+            const { data: timeSlots, error: timeSlotsError } = await supabase
+              .rpc('get_random_daily_times');
+            
+            if (timeSlotsError) throw timeSlotsError;
+
+            // Find which slot is available
+            const existingTimesForDate = existingSchedules
+              ?.filter(item => item.scheduled_date === dateStr)
+              .map(item => item.scheduled_time) || [];
+
+            const availableSlot = timeSlots.find((slot) => {
+              const timeStr = `${String(slot.hour).padStart(2, '0')}:${String(slot.minute).padStart(2, '0')}`;
+              return !existingTimesForDate.includes(timeStr);
+            });
+
+            if (availableSlot) {
+              const scheduledTime = `${String(availableSlot.hour).padStart(2, '0')}:${String(availableSlot.minute).padStart(2, '0')}`;
+              
+              scheduledPosts.push({
+                title,
+                status: "pending",
+                scheduled_date: dateStr,
+                scheduled_time: scheduledTime
+              });
+              
+              // Add to existing schedules for next iteration
+              existingSchedules?.push({
+                scheduled_date: dateStr,
+                scheduled_time: scheduledTime
+              });
+              
+              break;
+            }
+          }
+          
+          // Move to next day if no slots available
+          currentDate.setDate(currentDate.getDate() + 1);
+        }
+      }
+
       const { error } = await supabase
         .from("blog_post_queue")
-        .insert(
-          titleList.map(title => ({
-            title,
-            status: "pending"
-          }))
-        );
+        .insert(scheduledPosts);
 
       if (error) throw error;
 
@@ -78,7 +135,7 @@ export const BulkUploadDialog = ({ onSuccess }: { onSuccess: () => void }) => {
         <DialogHeader>
           <DialogTitle>Bulk Upload Blog Titles</DialogTitle>
           <DialogDescription>
-            Enter one blog post title per line. These will be added to the generation queue.
+            Enter one blog post title per line. These will be added to the generation queue and scheduled automatically.
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
