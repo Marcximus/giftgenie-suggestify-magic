@@ -277,7 +277,9 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
       // 6. Generate full post content using the existing generateFullPost function
       setGenerationStatus("Generating full post content...");
       setGenerationProgress(65);
-      await generateFullPost();
+      if (generateFullPostRef) {
+        await generateFullPostRef();
+      }
 
       // 7. Generate SEO content
       setGenerationStatus("Generating SEO content...");
@@ -313,6 +315,8 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
       setIsGeneratingAll(false);
     }
   };
+
+  const [generateFullPostRef, setGenerateFullPostRef] = useState<(() => Promise<void>) | null>(null);
 
   return (
     <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
@@ -410,6 +414,7 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
             <BlogPostContent 
               form={form}
               handleAIGenerate={handleAIGenerate}
+              onGenerateFullPost={(fn) => setGenerateFullPostRef(() => fn)}
             />
 
             <Separator />

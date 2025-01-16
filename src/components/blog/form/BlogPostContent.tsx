@@ -12,9 +12,10 @@ import { useToast } from "@/components/ui/use-toast";
 interface BlogPostContentProps {
   form: UseFormReturn<BlogPostFormData>;
   handleAIGenerate: (type: 'excerpt' | 'seo-title' | 'seo-description' | 'seo-keywords' | 'improve-content') => Promise<void>;
+  onGenerateFullPost?: () => Promise<void>;
 }
 
-export const BlogPostContent = ({ form, handleAIGenerate }: BlogPostContentProps) => {
+export const BlogPostContent = ({ form, handleAIGenerate, onGenerateFullPost }: BlogPostContentProps) => {
   const { toast } = useToast();
   const [isGenerating, setIsGenerating] = useState(false);
 
@@ -76,6 +77,15 @@ export const BlogPostContent = ({ form, handleAIGenerate }: BlogPostContentProps
     }
   };
 
+  // Call the onGenerateFullPost prop if provided, otherwise use local function
+  const handleGenerateFullPost = async () => {
+    if (onGenerateFullPost) {
+      await onGenerateFullPost();
+    } else {
+      await generateFullPost();
+    }
+  };
+
   return (
     <>
       <FormField
@@ -118,7 +128,7 @@ export const BlogPostContent = ({ form, handleAIGenerate }: BlogPostContentProps
                   type="button"
                   variant="outline"
                   size="sm"
-                  onClick={generateFullPost}
+                  onClick={handleGenerateFullPost}
                   disabled={isGenerating}
                 >
                   <Wand2 className="w-4 h-4 mr-2" />
