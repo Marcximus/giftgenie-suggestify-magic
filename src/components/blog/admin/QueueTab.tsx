@@ -30,13 +30,21 @@ export const QueueTab = () => {
   const { data: queueItems, isLoading, refetch: refetchQueue } = useQuery({
     queryKey: ["blog-post-queue"],
     queryFn: async () => {
+      const { data: times } = await supabase.rpc('get_random_daily_times');
       const { data, error } = await supabase
         .from("blog_post_queue")
         .select("*")
         .order("created_at", { ascending: false });
       
       if (error) throw error;
-      return data;
+
+      // Assign time slots to pending items
+      return data.map((item, index) => ({
+        ...item,
+        scheduledTime: times && times[index % 3] ? 
+          `${String(times[index % 3].hour).padStart(2, '0')}:${String(times[index % 3].minute).padStart(2, '0')}` : 
+          null
+      }));
     },
   });
 
@@ -109,18 +117,20 @@ export const QueueTab = () => {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Title</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Created At</TableHead>
-              <TableHead>Retries</TableHead>
-              <TableHead>Actions</TableHead>
+              <TableHead className="w-12 text-left">#</TableHead>
+              <TableHead className="text-left">Title</TableHead>
+              <TableHead className="text-left">Status</TableHead>
+              <TableHead className="text-left">Created At</TableHead>
+              <TableHead className="text-left">Scheduled Time</TableHead>
+              <TableHead className="text-left">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {queueItems?.map((item: any) => (
+            {queueItems?.map((item: any, index: number) => (
               <TableRow key={item.id}>
-                <TableCell>{item.title}</TableCell>
-                <TableCell>
+                <TableCell className="text-left">{index + 1}</TableCell>
+                <TableCell className="text-left">{item.title}</TableCell>
+                <TableCell className="text-left">
                   <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
                     ${item.status === 'completed' ? 'bg-green-100 text-green-800' :
                       item.status === 'processing' ? 'bg-blue-100 text-blue-800' :
@@ -129,11 +139,17 @@ export const QueueTab = () => {
                     {item.status}
                   </span>
                 </TableCell>
-                <TableCell>
+                <TableCell className="text-left">
                   {new Date(item.created_at).toLocaleDateString()}
                 </TableCell>
-                <TableCell>{item.retries || 0}</TableCell>
-                <TableCell>
+                <TableCell className="text-left">
+                  {item.status === 'pending' && item.scheduledTime ? (
+                    <span className="text-gray-600">
+                      {item.scheduledTime}
+                    </span>
+                  ) : '-'}
+                </TableCell>
+                <TableCell className="text-left">
                   <div className="flex gap-2">
                     {item.error_message && (
                       <Button

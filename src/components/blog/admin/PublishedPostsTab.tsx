@@ -75,19 +75,21 @@ export const PublishedPostsTab = () => {
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Title</TableHead>
-            <TableHead>Author</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead>Published</TableHead>
-            <TableHead>Actions</TableHead>
+            <TableHead className="w-12 text-left">#</TableHead>
+            <TableHead className="text-left">Title</TableHead>
+            <TableHead className="text-left">Author</TableHead>
+            <TableHead className="text-left">Status</TableHead>
+            <TableHead className="text-left">Published</TableHead>
+            <TableHead className="text-left">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {posts?.map((post) => (
+          {posts?.map((post, index) => (
             <TableRow key={post.id}>
-              <TableCell>{post.title}</TableCell>
-              <TableCell>{post.author}</TableCell>
-              <TableCell>
+              <TableCell className="text-left">{index + 1}</TableCell>
+              <TableCell className="text-left">{post.title}</TableCell>
+              <TableCell className="text-left">{post.author}</TableCell>
+              <TableCell className="text-left">
                 {post.published_at ? (
                   <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                     Published
@@ -98,12 +100,12 @@ export const PublishedPostsTab = () => {
                   </span>
                 )}
               </TableCell>
-              <TableCell>
+              <TableCell className="text-left">
                 {post.published_at
                   ? new Date(post.published_at).toLocaleDateString()
                   : "-"}
               </TableCell>
-              <TableCell>
+              <TableCell className="text-left">
                 <div className="flex gap-2">
                   <Link to={`/blog/edit/${post.slug}`}>
                     <Button variant="ghost" size="sm">
