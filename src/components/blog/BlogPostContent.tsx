@@ -51,7 +51,10 @@ export const BlogPostContent = ({ post }: BlogPostContentProps) => {
                    [&_p]:whitespace-pre-wrap [&_p]:mb-4
                    [&_p]:not-first-of-type:mt-4
                    
-                   [&_p:last-of-type]:mb-8"
+                   [&_p:last-of-type]:mb-8
+                   
+                   [&_p:has(🎁)]:mt-6 [&_p:has(⭐)]:mt-4 [&_p:has(💝)]:mt-4
+                   [&_p:has(🎁)]:mb-4 [&_p:has(⭐)]:mb-4 [&_p:has(💝)]:mb-4"
         dangerouslySetInnerHTML={{ __html: post.content }}
       />
     </div>
