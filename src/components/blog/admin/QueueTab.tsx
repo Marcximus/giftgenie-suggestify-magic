@@ -31,20 +31,30 @@ export const QueueTab = () => {
     queryKey: ["blog-post-queue"],
     queryFn: async () => {
       const { data: times } = await supabase.rpc('get_random_daily_times');
+      console.log('Random times from DB:', times); // Debug log
+      
       const { data, error } = await supabase
         .from("blog_post_queue")
         .select("*")
         .order("created_at", { ascending: false });
       
       if (error) throw error;
+      console.log('Queue items:', data); // Debug log
 
       // Assign time slots to pending items
-      return data.map((item, index) => ({
-        ...item,
-        scheduledTime: times && times[index % 3] ? 
-          `${String(times[index % 3].hour).padStart(2, '0')}:${String(times[index % 3].minute).padStart(2, '0')}` : 
-          null
-      }));
+      const itemsWithTimes = data.map((item, index) => {
+        const timeSlot = times && times[index % 3];
+        const scheduledTime = timeSlot ? 
+          `${String(timeSlot.hour).padStart(2, '0')}:${String(timeSlot.minute).padStart(2, '0')}` : 
+          null;
+        console.log(`Item ${index}:`, { status: item.status, timeSlot, scheduledTime }); // Debug log
+        return {
+          ...item,
+          scheduledTime
+        };
+      });
+
+      return itemsWithTimes;
     },
   });
 
@@ -143,11 +153,7 @@ export const QueueTab = () => {
                   {new Date(item.created_at).toLocaleDateString()}
                 </TableCell>
                 <TableCell className="text-left">
-                  {item.status === 'pending' && item.scheduledTime ? (
-                    <span className="text-gray-600">
-                      {item.scheduledTime}
-                    </span>
-                  ) : '-'}
+                  {item.scheduledTime || '-'}
                 </TableCell>
                 <TableCell className="text-left">
                   <div className="flex gap-2">
