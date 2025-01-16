@@ -30,31 +30,15 @@ export const QueueTab = () => {
   const { data: queueItems, isLoading, refetch: refetchQueue } = useQuery({
     queryKey: ["blog-post-queue"],
     queryFn: async () => {
-      const { data: times } = await supabase.rpc('get_random_daily_times');
-      console.log('Random times from DB:', times); // Debug log
-      
       const { data, error } = await supabase
         .from("blog_post_queue")
         .select("*")
-        .order("created_at", { ascending: false });
+        .order("scheduled_date", { ascending: true })
+        .order("scheduled_time", { ascending: true });
       
       if (error) throw error;
-      console.log('Queue items:', data); // Debug log
-
-      // Assign time slots to pending items
-      const itemsWithTimes = data.map((item, index) => {
-        const timeSlot = times && times[index % 3];
-        const scheduledTime = timeSlot ? 
-          `${String(timeSlot.hour).padStart(2, '0')}:${String(timeSlot.minute).padStart(2, '0')}` : 
-          null;
-        console.log(`Item ${index}:`, { status: item.status, timeSlot, scheduledTime }); // Debug log
-        return {
-          ...item,
-          scheduledTime
-        };
-      });
-
-      return itemsWithTimes;
+      console.log('Queue items:', data);
+      return data;
     },
   });
 
@@ -88,9 +72,54 @@ export const QueueTab = () => {
     if (!title) return;
 
     try {
+      // First, get the next available date that has less than 3 posts
+      const { data: existingSchedules, error: countError } = await supabase
+        .from("blog_post_queue")
+        .select("scheduled_date, scheduled_time")
+        .order("scheduled_date", { ascending: true });
+
+      if (countError) throw countError;
+
+      // Find the next available date
+      let scheduledDate = new Date();
+      while (true) {
+        const dateStr = scheduledDate.toISOString().split('T')[0];
+        const postsOnDate = existingSchedules?.filter(
+          item => item.scheduled_date === dateStr
+        ).length || 0;
+
+        if (postsOnDate < 3) break;
+        scheduledDate.setDate(scheduledDate.getDate() + 1);
+      }
+
+      // Get random time slots for this date
+      const { data: timeSlots, error: timeSlotsError } = await supabase
+        .rpc('get_random_daily_times');
+      
+      if (timeSlotsError) throw timeSlotsError;
+
+      // Find which slot is available (morning, afternoon, or evening)
+      const existingTimesForDate = existingSchedules
+        ?.filter(item => item.scheduled_date === scheduledDate.toISOString().split('T')[0])
+        .map(item => item.scheduled_time) || [];
+
+      const availableSlot = timeSlots.find((slot, index) => {
+        const timeStr = `${String(slot.hour).padStart(2, '0')}:${String(slot.minute).padStart(2, '0')}`;
+        return !existingTimesForDate.includes(timeStr);
+      });
+
+      if (!availableSlot) throw new Error("No available time slots for this date");
+
+      const scheduledTime = `${String(availableSlot.hour).padStart(2, '0')}:${String(availableSlot.minute).padStart(2, '0')}`;
+
       const { error } = await supabase
         .from("blog_post_queue")
-        .insert([{ title, status: "pending" }]);
+        .insert([{ 
+          title, 
+          status: "pending",
+          scheduled_date: scheduledDate.toISOString().split('T')[0],
+          scheduled_time: scheduledTime
+        }]);
 
       if (error) throw error;
 
@@ -131,6 +160,7 @@ export const QueueTab = () => {
               <TableHead className="text-left">Title</TableHead>
               <TableHead className="text-left">Status</TableHead>
               <TableHead className="text-left">Created At</TableHead>
+              <TableHead className="text-left">Scheduled Date</TableHead>
               <TableHead className="text-left">Scheduled Time</TableHead>
               <TableHead className="text-left">Actions</TableHead>
             </TableRow>
@@ -153,7 +183,10 @@ export const QueueTab = () => {
                   {new Date(item.created_at).toLocaleDateString()}
                 </TableCell>
                 <TableCell className="text-left">
-                  {item.scheduledTime || '-'}
+                  {item.scheduled_date ? new Date(item.scheduled_date).toLocaleDateString() : '-'}
+                </TableCell>
+                <TableCell className="text-left">
+                  {item.scheduled_time || '-'}
                 </TableCell>
                 <TableCell className="text-left">
                   <div className="flex gap-2">

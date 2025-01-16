@@ -84,6 +84,8 @@ export type Database = {
           id: string
           processed_at: string | null
           retries: number | null
+          scheduled_date: string | null
+          scheduled_time: string | null
           status: string | null
           title: string
         }
@@ -93,6 +95,8 @@ export type Database = {
           id?: string
           processed_at?: string | null
           retries?: number | null
+          scheduled_date?: string | null
+          scheduled_time?: string | null
           status?: string | null
           title: string
         }
@@ -102,6 +106,8 @@ export type Database = {
           id?: string
           processed_at?: string | null
           retries?: number | null
+          scheduled_date?: string | null
+          scheduled_time?: string | null
           status?: string | null
           title?: string
         }
