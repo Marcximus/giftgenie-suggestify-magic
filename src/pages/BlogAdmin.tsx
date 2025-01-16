@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
 import { Button } from "@/components/ui/button";
-import { Plus, Trash2, RefreshCw } from "lucide-react";
+import { Plus, Trash2, RefreshCw, BookOpen, Clock, CheckCircle2, AlertCircle } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useToast } from "@/components/ui/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/table";
 import { ScheduledPostsTab } from "@/components/blog/admin/ScheduledPostsTab";
 import { BulkTitleUploader } from "@/components/blog/admin/BulkTitleUploader";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 const BlogAdmin = () => {
   const { toast } = useToast();
@@ -43,9 +44,28 @@ const BlogAdmin = () => {
     },
   });
 
+  const { data: queueStats } = useQuery({
+    queryKey: ["queue-stats"],
+    queryFn: async () => {
+      const { data: queueData, error } = await supabase
+        .from("blog_post_queue")
+        .select("status");
+      
+      if (error) throw error;
+
+      const stats = {
+        total: queueData.length,
+        pending: queueData.filter(post => post.status === 'pending').length,
+        generating: queueData.filter(post => post.status === 'generating').length,
+        error: queueData.filter(post => post.status === 'error').length
+      };
+
+      return stats;
+    },
+  });
+
   const handleDelete = async (postId: string) => {
     try {
-      // First, delete associated images
       const { error: imagesError } = await supabase
         .from("blog_post_images")
         .delete()
@@ -53,7 +73,6 @@ const BlogAdmin = () => {
 
       if (imagesError) throw imagesError;
 
-      // Then delete the post
       const { error: postError } = await supabase
         .from("blog_posts")
         .delete()
@@ -108,7 +127,7 @@ const BlogAdmin = () => {
             <Plus className="mr-2 h-4 w-4" /> New Post
           </Button>
         </div>
-        <div className="animate-pulse">
+        <div className="animate-pulse space-y-4">
           <div className="h-12 bg-gray-200 rounded mb-4"></div>
           <div className="h-12 bg-gray-200 rounded mb-4"></div>
           <div className="h-12 bg-gray-200 rounded mb-4"></div>
@@ -133,6 +152,48 @@ const BlogAdmin = () => {
         </div>
       </div>
 
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Posts</CardTitle>
+            <BookOpen className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{posts?.length || 0}</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Queue Size</CardTitle>
+            <Clock className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{queueStats?.total || 0}</div>
+            <p className="text-xs text-muted-foreground">
+              {queueStats?.pending || 0} pending
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">In Progress</CardTitle>
+            <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{queueStats?.generating || 0}</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Failed Posts</CardTitle>
+            <AlertCircle className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{queueStats?.error || 0}</div>
+          </CardContent>
+        </Card>
+      </div>
+
       <Tabs defaultValue="posts" className="space-y-6">
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="posts">Published Posts</TabsTrigger>
@@ -145,19 +206,19 @@ const BlogAdmin = () => {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Title</TableHead>
-                  <TableHead>Author</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Published</TableHead>
-                  <TableHead>Actions</TableHead>
+                  <TableHead className="text-left">Title</TableHead>
+                  <TableHead className="text-left">Author</TableHead>
+                  <TableHead className="text-left">Status</TableHead>
+                  <TableHead className="text-left">Published</TableHead>
+                  <TableHead className="text-left">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {posts?.map((post) => (
                   <TableRow key={post.id}>
-                    <TableCell>{post.title}</TableCell>
-                    <TableCell>{post.author}</TableCell>
-                    <TableCell>
+                    <TableCell className="text-left font-medium">{post.title}</TableCell>
+                    <TableCell className="text-left">{post.author}</TableCell>
+                    <TableCell className="text-left">
                       {post.published_at ? (
                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                           Published
@@ -168,12 +229,12 @@ const BlogAdmin = () => {
                         </span>
                       )}
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="text-left">
                       {post.published_at
                         ? new Date(post.published_at).toLocaleDateString()
                         : "-"}
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="text-left">
                       <div className="flex gap-2">
                         <Link to={`/blog/edit/${post.slug}`}>
                           <Button variant="ghost" size="sm">
