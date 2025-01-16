@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage, FormDescription } from "@/components/ui/form";
 import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { BlogImageUpload } from "./BlogImageUpload";
 import { BlogPostPreview } from "./BlogPostPreview";
 import { useAIContent } from "@/hooks/useAIContent";
@@ -347,7 +347,7 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
           Generate All from Queue
         </Button>
         {generationStatus && (
-          <Badge variant={generationStatus.includes("complete") ? "success" : "secondary"}>
+          <Badge variant={generationStatus.includes("complete") ? "secondary" : "default"}>
             {generationStatus}
           </Badge>
         )}
