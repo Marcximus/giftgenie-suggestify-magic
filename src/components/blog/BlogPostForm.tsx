@@ -80,6 +80,20 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
     return queuedPost;
   };
 
+  const generateAltText = async (title: string) => {
+    try {
+      const response = await supabase.functions.invoke('generate-blog-image', {
+        body: { title, prompt: 'alt text' }
+      });
+      
+      if (response.error) throw response.error;
+      return response.data?.altText || '';
+    } catch (error) {
+      console.error('Error generating alt text:', error);
+      throw error;
+    }
+  };
+
   const generateAll = async () => {
     setIsGenerating(true);
     setGenerationProgress(0);
@@ -108,13 +122,7 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
 
       // Step 3: Generate Alt Text (40%)
       setGenerationStep("Generating alt text...");
-      const currentTitle = form.getValues('title');
-      const response = await fetch('/api/generate-alt-text', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title: currentTitle })
-      });
-      const altText = await response.json();
+      const altText = await generateAltText(queuedPost.title);
       form.setValue('image_alt_text', altText);
       setGenerationProgress(40);
 
