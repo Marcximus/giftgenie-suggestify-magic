@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { FileImport } from "lucide-react";
+import { Import } from "lucide-react";
 import { UseFormReturn } from "react-hook-form";
 import { BlogPostFormData } from "./types/BlogPostTypes";
 
@@ -109,7 +109,7 @@ export const AutoFillBlogPost = ({
         disabled={isProcessing}
         className="w-full"
       >
-        <FileImport className="w-4 h-4 mr-2" />
+        <Import className="w-4 h-4 mr-2" />
         {isProcessing ? "Processing..." : "Import from Queue"}
       </Button>
       {isProcessing && (
