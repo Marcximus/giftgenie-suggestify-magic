@@ -88,22 +88,16 @@ export function buildGiftPrompt(prompt: string, config: PromptConfig): string {
       break;
   }
 
-  // Add occasion-specific context if provided
-  if (occasion) {
-    enhancedPrompt += `
-    CRITICAL: These suggestions are specifically for ${occasion}. Consider:
-    - Traditional gifts associated with ${occasion}
-    - Modern interpretations of classic ${occasion} gifts
-    - Unique and memorable items suitable for the occasion
-    - Items that create lasting memories for this special event
-    - Gifts that align with ${occasion} traditions and customs\n`;
-  }
-
   // Add gender-specific instructions
   if (isMale) {
     enhancedPrompt += `CRITICAL: Ensure all suggestions are specifically appropriate for male recipients.\n`;
   } else if (isFemale) {
     enhancedPrompt += `CRITICAL: Ensure all suggestions are specifically appropriate for female recipients.\n`;
+  }
+
+  // Add occasion-specific context if provided
+  if (occasion) {
+    enhancedPrompt += `CRITICAL: These suggestions are for ${occasion}. Ensure gifts are appropriate for this occasion.\n`;
   }
 
   // Extract any specific interests from the prompt
@@ -114,21 +108,17 @@ export function buildGiftPrompt(prompt: string, config: PromptConfig): string {
   CRITICAL REQUIREMENTS:
   1. Budget: Strictly between $${minBudget} and $${maxBudget}
   ${specificInterest ? `2. Include 2 suggestions that directly relate to their interest in ${specificInterest}` : ''}
-  3. IMPORTANT: Each suggestion MUST include specific brand names and model numbers
-  4. Ensure suggestions are diverse and not commonly repeated
-  5. Focus on current year models and latest versions when applicable
   
   Format Guidelines:
-  - ALWAYS include specific brand names and model numbers
+  - Include specific brand names and model numbers
   - Use complete product names (e.g., "Sony WH-1000XM4 Wireless Noise Cancelling Headphones" instead of just "headphones")
   - Include premium or special editions when available
   - Ensure items are currently available on Amazon
   - Avoid generic descriptions
-  - Include the current year or version number when applicable
   ${isMale || isFemale ? `- Ensure gender-appropriate suggestions` : ''}
 
   Format each suggestion as:
-  "Brand Name Specific Product Model (Premium/Special Edition/Version Number) - [Category] Version"
+  "Brand Name Specific Product Model (Premium/Special Edition) - [Category] Version"
 
   Return ONLY a JSON array of 3-4 specific gift suggestions.`;
 

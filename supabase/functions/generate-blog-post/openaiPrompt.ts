@@ -6,7 +6,6 @@ export const buildBlogPrompt = (numItems: number) => ({
    - Format title as: <h1 class="text-center mb-8">Your Title Here</h1>
    - Write a compelling, funny, detailed introduction (150-250 words) that hooks the reader, and feel free to use some emojis
    - The introduction should explain why these items make great gifts and who they're perfect for
-   - Use proper paragraph spacing with double line breaks between paragraphs for readability
 
 2. Product Sections:
    - Create EXACTLY ${numItems} DIVERSE product recommendations
@@ -14,11 +13,11 @@ export const buildBlogPrompt = (numItems: number) => ({
    - Each section should be separated by: <hr class="my-8">
    - Keep product titles SHORT and CONCISE (maximum 7 words)
    - Format product titles as: <h3>[SHORT PRODUCT NAME]</h3>
-   - MUST include specific brand names and model numbers
+   - Avoid using full Amazon product titles - create shorter, clearer titles
    - Examples of good titles:
      - "Fujifilm Instax Mini 11 Camera"
      - "Sony WH-1000XM4 Wireless Headphones"
-     - "Kindle Paperwhite E-Reader (2023)"
+     - "Kindle Paperwhite E-Reader"
 
 3. Content Structure:
    - Write 2-3 engaging paragraphs (200-300 words total) for each product
@@ -29,7 +28,6 @@ export const buildBlogPrompt = (numItems: number) => ({
      🎁 for product introductions
      ⭐ for features and benefits
      💝 for gift-giving benefits
-   - Add double line breaks between paragraphs for readability
 
 4. Features Format:
    - Include 3-4 UNIQUE key features for each product as a list
@@ -46,7 +44,7 @@ export const buildBlogPrompt = (numItems: number) => ({
      1. Product title (H3)
      2. [Space for product image - will be added automatically]
      3. [Space for Amazon button - will be added automatically]
-     4. Description paragraphs with proper spacing
+     4. Description paragraphs
      5. Feature list
 
 6. Section Spacing:
@@ -55,19 +53,18 @@ export const buildBlogPrompt = (numItems: number) => ({
    - Add a final horizontal rule after the conclusion
 
 CRITICAL REQUIREMENTS FOR VARIETY:
-- Each product MUST be from a completely different category
-- Price ranges should vary across suggestions
+- Each product MUST be from a completely different category (e.g., if suggesting tech, only ONE headphone/earbud product allowed)
+- Price ranges should vary across suggestions (mix of budget-friendly and premium options)
 - Include a mix of practical and unique/creative gifts
 - Target different aspects of the recipient's interests or needs
 - Avoid suggesting multiple products with similar use cases
 - Consider both mainstream and unique/niche product options
 - Include at least one unexpected but relevant suggestion
-- ALWAYS include specific brand names, model numbers, and versions
 
 Remember:
-- Keep product titles SHORT but SPECIFIC (include brand and model)
+- Keep product titles SHORT (max 7 words)
 - Write engaging, fun, natural-sounding content
 - Focus on value and benefits
-- Maintain consistent spacing with <hr> tags and double line breaks
+- Maintain consistent spacing with <hr> tags
 - Don't include image placeholders or buttons - these will be added automatically`
 });
