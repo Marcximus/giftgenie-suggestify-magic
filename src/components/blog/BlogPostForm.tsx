@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, SubmitHandler } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import { TabsContent, Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -210,7 +210,11 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
     return `${baseSlug}-${timestamp}`;
   };
 
-  const onSubmit = async (data: BlogPostFormData, isDraft: boolean = false) => {
+  const handleSubmit: SubmitHandler<BlogPostFormData> = async (data) => {
+    await submitForm(data, false);
+  };
+
+  const submitForm = async (data: BlogPostFormData, isDraft: boolean = false) => {
     setIsSubmitting(true);
     try {
       const currentTime = new Date().toISOString();
@@ -307,7 +311,7 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
 
       <TabsContent value="edit">
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 text-left">
+          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6 text-left">
             <div className="flex justify-between items-center">
               <h2 className="text-2xl font-bold">Create New Blog Post</h2>
               <Button
@@ -399,7 +403,7 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
                 type="button"
                 variant="outline"
                 disabled={isSubmitting}
-                onClick={() => onSubmit(form.getValues(), true)}
+                onClick={() => submitForm(form.getValues(), true)}
               >
                 Save as Draft
               </Button>
