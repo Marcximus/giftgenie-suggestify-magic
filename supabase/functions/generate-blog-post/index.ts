@@ -38,7 +38,7 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: "gpt-4o",
+        model: "gpt-4o-mini",
         messages: [
           buildBlogPrompt({ numItems, targetAudience, priceRange, occasion }),
           {
@@ -47,7 +47,7 @@ serve(async (req) => {
           }
         ],
         temperature: 0.8,
-        max_tokens: 4000,
+        max_tokens: 2500,
       }),
     });
 
