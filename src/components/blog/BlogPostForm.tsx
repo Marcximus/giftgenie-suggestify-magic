@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import { TabsContent, Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage, FormDescription } from "@/components/ui/form";
+import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
@@ -108,7 +108,14 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
 
       // Step 3: Generate Alt Text (40%)
       setGenerationStep("Generating alt text...");
-      await handleAIGenerate('alt-text');
+      const currentTitle = form.getValues('title');
+      const response = await fetch('/api/generate-alt-text', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: currentTitle })
+      });
+      const altText = await response.json();
+      form.setValue('image_alt_text', altText);
       setGenerationProgress(40);
 
       // Step 4: Generate Excerpt (50%)
@@ -231,13 +238,6 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
     } finally {
       setIsSubmitting(false);
     }
-  };
-
-  const generateSlug = (title: string) => {
-    return title
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/(^-|-$)+/g, "");
   };
 
   const handleAIGenerate = async (type: 'excerpt' | 'seo-title' | 'seo-description' | 'seo-keywords' | 'improve-content') => {
