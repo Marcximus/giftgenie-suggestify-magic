@@ -35,7 +35,7 @@ serve(async (req) => {
       throw new Error('Missing required API configuration');
     }
 
-    const numItems = 5; // Default to 5 items unless specified in title
+    let numItems = 5; // Changed from const to let
     const titleNumMatch = title.match(/\b(\d+)\b/);
     if (titleNumMatch) {
       const parsedNum = parseInt(titleNumMatch[1]);
