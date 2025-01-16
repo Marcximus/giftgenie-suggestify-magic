@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { processContent } from "../_shared/content-processor.ts";
 import { buildBlogPrompt } from "./promptBuilder.ts";
 import { validateBlogContent } from "./contentValidator.ts";
@@ -9,13 +10,14 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { title, targetAudience, priceRange, occasion } = await req.json();
-    console.log('Generating blog post for:', { title, targetAudience, priceRange, occasion });
+    const { title } = await req.json();
+    console.log('Generating blog post for:', { title });
 
     // Verify required API keys
     const associateId = Deno.env.get('AMAZON_ASSOCIATE_ID');
@@ -40,7 +42,7 @@ serve(async (req) => {
       body: JSON.stringify({
         model: "gpt-4o-mini",
         messages: [
-          buildBlogPrompt({ numItems, targetAudience, priceRange, occasion }),
+          buildBlogPrompt(numItems),
           {
             role: "user",
             content: `Create a fun, engaging blog post about: ${title}`
@@ -52,20 +54,15 @@ serve(async (req) => {
     });
 
     if (!response.ok) {
-      console.error('OpenAI API error:', response.status, await response.text());
+      console.error('OpenAI API error:', response.status);
+      const errorText = await response.text();
+      console.error('OpenAI error details:', errorText);
       throw new Error(`OpenAI API error: ${response.status}`);
     }
 
     const data = await response.json();
     const rawContent = data.choices[0].message.content;
     console.log('Generated raw content length:', rawContent.length);
-
-    // Validate content before processing
-    const validation = validateBlogContent(rawContent);
-    if (!validation.isValid) {
-      console.error('Content validation failed:', validation.errors);
-      throw new Error(`Content validation failed: ${validation.errors.join(', ')}`);
-    }
 
     // Process content with Amazon product data
     console.log('Processing content with Amazon data...');
@@ -74,23 +71,32 @@ serve(async (req) => {
     console.log('Content processed successfully:', {
       originalLength: rawContent.length,
       processedLength: content.length,
-      numAffiliateLinks: affiliateLinks.length,
-      affiliateLinks: affiliateLinks.map(link => ({
-        title: link.productTitle,
-        hasImage: !!link.imageUrl
-      }))
+      numAffiliateLinks: affiliateLinks.length
     });
 
     return new Response(
       JSON.stringify({ content, affiliateLinks }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { 
+        headers: { 
+          ...corsHeaders, 
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-store, no-cache, must-revalidate'
+        } 
+      }
     );
 
   } catch (error) {
     console.error('Error in generate-blog-post function:', error);
     return new Response(
-      JSON.stringify({ error: error.message }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+      JSON.stringify({ 
+        error: error.message,
+        timestamp: new Date().toISOString(),
+        details: error.stack
+      }),
+      { 
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      }
     );
   }
 });
