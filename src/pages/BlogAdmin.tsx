@@ -2,32 +2,14 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
 import { Button } from "@/components/ui/button";
-import { Plus, Trash2, RefreshCw, BookOpen, Clock, CheckCircle2, AlertCircle } from "lucide-react";
+import { Plus, RefreshCw } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useToast } from "@/components/ui/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { StatsOverview } from "@/components/blog/admin/StatsOverview";
+import { PublishedPostsTab } from "@/components/blog/admin/PublishedPostsTab";
 import { ScheduledPostsTab } from "@/components/blog/admin/ScheduledPostsTab";
 import { BulkTitleUploader } from "@/components/blog/admin/BulkTitleUploader";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 const BlogAdmin = () => {
   const { toast } = useToast();
@@ -159,44 +141,12 @@ const BlogAdmin = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Published Posts</CardTitle>
-            <BookOpen className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{queueStats?.publishedTotal || 0}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Pending Queue</CardTitle>
-            <Clock className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{queueStats?.pending || 0}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">In Progress</CardTitle>
-            <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{queueStats?.generating || 0}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Failed Posts</CardTitle>
-            <AlertCircle className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{queueStats?.error || 0}</div>
-          </CardContent>
-        </Card>
-      </div>
+      <StatsOverview
+        publishedTotal={queueStats?.publishedTotal || 0}
+        pendingCount={queueStats?.pending || 0}
+        generatingCount={queueStats?.generating || 0}
+        errorCount={queueStats?.error || 0}
+      />
 
       <Tabs defaultValue="posts" className="space-y-6">
         <TabsList className="grid w-full grid-cols-3">
@@ -206,78 +156,7 @@ const BlogAdmin = () => {
         </TabsList>
 
         <TabsContent value="posts">
-          <div className="rounded-md border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="text-left w-14">#</TableHead>
-                  <TableHead className="text-left">Title</TableHead>
-                  <TableHead className="text-left">Author</TableHead>
-                  <TableHead className="text-left">Status</TableHead>
-                  <TableHead className="text-left">Published</TableHead>
-                  <TableHead className="text-left">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {posts?.map((post, index) => (
-                  <TableRow key={post.id}>
-                    <TableCell className="text-left font-medium">{index + 1}</TableCell>
-                    <TableCell className="text-left font-medium">{post.title}</TableCell>
-                    <TableCell className="text-left">{post.author}</TableCell>
-                    <TableCell className="text-left">
-                      {post.published_at ? (
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                          Published
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                          Draft
-                        </span>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-left">
-                      {post.published_at
-                        ? new Date(post.published_at).toLocaleDateString()
-                        : "-"}
-                    </TableCell>
-                    <TableCell className="text-left">
-                      <div className="flex gap-2">
-                        <Link to={`/blog/edit/${post.slug}`}>
-                          <Button variant="ghost" size="sm">
-                            Edit
-                          </Button>
-                        </Link>
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button variant="ghost" size="sm">
-                              <Trash2 className="h-4 w-4 text-red-500" />
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Delete Blog Post</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                Are you sure you want to delete "{post.title}"? This action cannot be undone.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction
-                                onClick={() => handleDelete(post.id)}
-                                className="bg-red-500 hover:bg-red-600"
-                              >
-                                Delete
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+          <PublishedPostsTab posts={posts || []} onDelete={handleDelete} />
         </TabsContent>
 
         <TabsContent value="scheduled">
