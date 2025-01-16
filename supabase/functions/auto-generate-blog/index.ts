@@ -64,7 +64,7 @@ serve(async (req) => {
         .replace(/[^a-z0-9]+/g, '-')
         .replace(/(^-|-$)+/g, '');
 
-      // Insert blog post
+      // Insert blog post with "Get The Gift Team" as author
       const { error: insertError } = await supabase
         .from('blog_posts')
         .insert([
@@ -73,7 +73,7 @@ serve(async (req) => {
             slug,
             content,
             excerpt: content.split('\n')[0].slice(0, 200),
-            author: 'AI Writer',
+            author: 'Get The Gift Team',
             affiliate_links: affiliateLinks,
             published_at: new Date().toISOString(),
           }
