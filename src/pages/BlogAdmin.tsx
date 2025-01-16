@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Plus, Trash2, RefreshCw } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useToast } from "@/components/ui/use-toast";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -24,6 +25,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { ScheduledPostsTab } from "@/components/blog/admin/ScheduledPostsTab";
+import { BulkTitleUploader } from "@/components/blog/admin/BulkTitleUploader";
 
 const BlogAdmin = () => {
   const { toast } = useToast();
@@ -129,77 +132,95 @@ const BlogAdmin = () => {
           </Link>
         </div>
       </div>
-      
-      <div className="rounded-md border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Title</TableHead>
-              <TableHead>Author</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Published</TableHead>
-              <TableHead>Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {posts?.map((post) => (
-              <TableRow key={post.id}>
-                <TableCell>{post.title}</TableCell>
-                <TableCell>{post.author}</TableCell>
-                <TableCell>
-                  {post.published_at ? (
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                      Published
-                    </span>
-                  ) : (
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                      Draft
-                    </span>
-                  )}
-                </TableCell>
-                <TableCell>
-                  {post.published_at
-                    ? new Date(post.published_at).toLocaleDateString()
-                    : "-"}
-                </TableCell>
-                <TableCell>
-                  <div className="flex gap-2">
-                    <Link to={`/blog/edit/${post.slug}`}>
-                      <Button variant="ghost" size="sm">
-                        Edit
-                      </Button>
-                    </Link>
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button variant="ghost" size="sm">
-                          <Trash2 className="h-4 w-4 text-red-500" />
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Delete Blog Post</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            Are you sure you want to delete "{post.title}"? This action cannot be undone.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction
-                            onClick={() => handleDelete(post.id)}
-                            className="bg-red-500 hover:bg-red-600"
-                          >
-                            Delete
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
+
+      <Tabs defaultValue="posts" className="space-y-6">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="posts">Published Posts</TabsTrigger>
+          <TabsTrigger value="scheduled">Scheduled Posts</TabsTrigger>
+          <TabsTrigger value="upload">Bulk Upload</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="posts">
+          <div className="rounded-md border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Title</TableHead>
+                  <TableHead>Author</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Published</TableHead>
+                  <TableHead>Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {posts?.map((post) => (
+                  <TableRow key={post.id}>
+                    <TableCell>{post.title}</TableCell>
+                    <TableCell>{post.author}</TableCell>
+                    <TableCell>
+                      {post.published_at ? (
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                          Published
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                          Draft
+                        </span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {post.published_at
+                        ? new Date(post.published_at).toLocaleDateString()
+                        : "-"}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex gap-2">
+                        <Link to={`/blog/edit/${post.slug}`}>
+                          <Button variant="ghost" size="sm">
+                            Edit
+                          </Button>
+                        </Link>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="ghost" size="sm">
+                              <Trash2 className="h-4 w-4 text-red-500" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Delete Blog Post</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Are you sure you want to delete "{post.title}"? This action cannot be undone.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={() => handleDelete(post.id)}
+                                className="bg-red-500 hover:bg-red-600"
+                              >
+                                Delete
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="scheduled">
+          <ScheduledPostsTab />
+        </TabsContent>
+
+        <TabsContent value="upload">
+          <BulkTitleUploader />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
