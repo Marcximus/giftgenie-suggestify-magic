@@ -10,7 +10,7 @@ export const buildBlogPrompt = (numItems: number) => ({
      • Explain why these items make great gifts and who they're perfect for
      • Reference any specific occasion mentioned in the title (Valentine's Day, Wedding, etc.)
      • Be structured in 2-3 paragraphs with proper spacing for readability
-     • Use double line breaks between paragraphs for proper spacing
+     • Use proper paragraph breaks for spacing
 
 2. Product Sections:
    - Create EXACTLY ${numItems} DIVERSE product recommendations
@@ -27,7 +27,7 @@ export const buildBlogPrompt = (numItems: number) => ({
 
 3. Content Structure:
    - Write 2-3 engaging paragraphs (200-300 words total) for each product
-   - Use double line breaks between paragraphs for proper spacing
+   - Use proper paragraph breaks for spacing
    - Start with an introduction paragraph about the product
    - Follow with features and benefits
    - End with why it makes a great gift
@@ -77,7 +77,7 @@ Remember:
 - Include premium or special editions when available
 - Ensure items are currently available on Amazon
 - Avoid generic descriptions
-- Maintain proper paragraph spacing with double line breaks
+- Maintain proper paragraph spacing with single line breaks
 - Don't include image placeholders or buttons - these will be added automatically
 - NEVER write "Key Features:" as a heading - use the emoji indicators and list format directly`
 });
