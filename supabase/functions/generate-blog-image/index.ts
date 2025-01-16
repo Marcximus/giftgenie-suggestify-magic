@@ -64,7 +64,8 @@ IMPORTANT REQUIREMENTS:
 STYLE & VARIATION INSPIRATION:
 - Experiment with multiple styles: classic painting, watercolor, 8-bit pixel art, surreal collage, vibrant pop art, dreamy cinematic lighting, whimsical cartoons or others
 - Use rich, saturated colors and dynamic light sources
-- Feel free to Incorporate subtle magical or fantastical elements for added wonder`;
+- Enhance the scene with magical elements that fit the theme: ethereal glowing orbs, gentle floating sparkles, shimmering auras, mystical light beams, or delicate swirling mists
+- When appropriate to the subject, include enchanted creatures like graceful fairies, friendly dragons, playful spirits, or other whimsical beings that complement the gift-giving scene`;
 
     // Create OpenAI image
     const response = await fetch('https://api.openai.com/v1/images/generations', {
