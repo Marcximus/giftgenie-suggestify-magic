@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
 import { Button } from "@/components/ui/button";
-import { Plus, Trash2, RefreshCw } from "lucide-react";
+import { Plus, Trash2, RefreshCw, Clock } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useToast } from "@/components/ui/use-toast";
 import {
@@ -24,10 +24,18 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
 
 const BlogAdmin = () => {
   const { toast } = useToast();
-  const { data: posts, isLoading, refetch } = useQuery({
+
+  // Query for published posts
+  const { data: posts, isLoading: postsLoading, refetch: refetchPosts } = useQuery({
     queryKey: ["admin-blog-posts"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -40,17 +48,22 @@ const BlogAdmin = () => {
     },
   });
 
+  // Query for queue items
+  const { data: queueItems, isLoading: queueLoading, refetch: refetchQueue } = useQuery({
+    queryKey: ["blog-post-queue"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("blog_post_queue")
+        .select("*")
+        .order("created_at", { ascending: false });
+      
+      if (error) throw error;
+      return data;
+    },
+  });
+
   const handleDelete = async (postId: string) => {
     try {
-      // First, delete associated images
-      const { error: imagesError } = await supabase
-        .from("blog_post_images")
-        .delete()
-        .eq("blog_post_id", postId);
-
-      if (imagesError) throw imagesError;
-
-      // Then delete the post
       const { error: postError } = await supabase
         .from("blog_posts")
         .delete()
@@ -63,12 +76,64 @@ const BlogAdmin = () => {
         description: "Blog post deleted successfully",
       });
       
-      refetch();
+      refetchPosts();
     } catch (error: any) {
       console.error("Error deleting blog post:", error);
       toast({
         title: "Error",
         description: error.message || "Failed to delete blog post",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeleteQueueItem = async (queueId: string) => {
+    try {
+      const { error } = await supabase
+        .from("blog_post_queue")
+        .delete()
+        .eq("id", queueId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Queue item deleted successfully",
+      });
+      
+      refetchQueue();
+    } catch (error: any) {
+      console.error("Error deleting queue item:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete queue item",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const addToQueue = async () => {
+    const title = window.prompt("Enter blog post title:");
+    if (!title) return;
+
+    try {
+      const { error } = await supabase
+        .from("blog_post_queue")
+        .insert([{ title, status: "pending" }]);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Blog post added to queue",
+      });
+      
+      refetchQueue();
+    } catch (error: any) {
+      console.error("Error adding to queue:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to add to queue",
         variant: "destructive",
       });
     }
@@ -96,14 +161,16 @@ const BlogAdmin = () => {
     }
   };
 
-  if (isLoading) {
+  if (postsLoading || queueLoading) {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold">Blog Posts</h1>
-          <Button disabled>
-            <Plus className="mr-2 h-4 w-4" /> New Post
-          </Button>
+          <h1 className="text-3xl font-bold">Blog Management</h1>
+          <div className="flex gap-4">
+            <Button disabled>
+              <Plus className="mr-2 h-4 w-4" /> New Post
+            </Button>
+          </div>
         </div>
         <div className="animate-pulse">
           <div className="h-12 bg-gray-200 rounded mb-4"></div>
@@ -117,7 +184,7 @@ const BlogAdmin = () => {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold">Blog Posts</h1>
+        <h1 className="text-3xl font-bold">Blog Management</h1>
         <div className="flex gap-4">
           <Button onClick={regenerateSitemap} variant="outline">
             <RefreshCw className="mr-2 h-4 w-4" /> Regenerate Sitemap
@@ -129,77 +196,165 @@ const BlogAdmin = () => {
           </Link>
         </div>
       </div>
-      
-      <div className="rounded-md border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Title</TableHead>
-              <TableHead>Author</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Published</TableHead>
-              <TableHead>Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {posts?.map((post) => (
-              <TableRow key={post.id}>
-                <TableCell>{post.title}</TableCell>
-                <TableCell>{post.author}</TableCell>
-                <TableCell>
-                  {post.published_at ? (
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                      Published
-                    </span>
-                  ) : (
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                      Draft
-                    </span>
-                  )}
-                </TableCell>
-                <TableCell>
-                  {post.published_at
-                    ? new Date(post.published_at).toLocaleDateString()
-                    : "-"}
-                </TableCell>
-                <TableCell>
-                  <div className="flex gap-2">
-                    <Link to={`/blog/edit/${post.slug}`}>
-                      <Button variant="ghost" size="sm">
-                        Edit
-                      </Button>
-                    </Link>
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button variant="ghost" size="sm">
-                          <Trash2 className="h-4 w-4 text-red-500" />
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Delete Blog Post</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            Are you sure you want to delete "{post.title}"? This action cannot be undone.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction
-                            onClick={() => handleDelete(post.id)}
-                            className="bg-red-500 hover:bg-red-600"
+
+      <Tabs defaultValue="posts" className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="posts">Published Posts</TabsTrigger>
+          <TabsTrigger value="queue">Generation Queue</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="posts" className="space-y-4">
+          <div className="rounded-md border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Title</TableHead>
+                  <TableHead>Author</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Published</TableHead>
+                  <TableHead>Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {posts?.map((post) => (
+                  <TableRow key={post.id}>
+                    <TableCell>{post.title}</TableCell>
+                    <TableCell>{post.author}</TableCell>
+                    <TableCell>
+                      {post.published_at ? (
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                          Published
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                          Draft
+                        </span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {post.published_at
+                        ? new Date(post.published_at).toLocaleDateString()
+                        : "-"}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex gap-2">
+                        <Link to={`/blog/edit/${post.slug}`}>
+                          <Button variant="ghost" size="sm">
+                            Edit
+                          </Button>
+                        </Link>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="ghost" size="sm">
+                              <Trash2 className="h-4 w-4 text-red-500" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Delete Blog Post</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Are you sure you want to delete "{post.title}"? This action cannot be undone.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={() => handleDelete(post.id)}
+                                className="bg-red-500 hover:bg-red-600"
+                              >
+                                Delete
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="queue" className="space-y-4">
+          <div className="flex justify-end mb-4">
+            <Button onClick={addToQueue}>
+              <Plus className="mr-2 h-4 w-4" /> Add to Queue
+            </Button>
+          </div>
+          
+          <div className="rounded-md border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Title</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Created At</TableHead>
+                  <TableHead>Retries</TableHead>
+                  <TableHead>Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {queueItems?.map((item: any) => (
+                  <TableRow key={item.id}>
+                    <TableCell>{item.title}</TableCell>
+                    <TableCell>
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                        ${item.status === 'completed' ? 'bg-green-100 text-green-800' :
+                          item.status === 'processing' ? 'bg-blue-100 text-blue-800' :
+                          item.status === 'failed' ? 'bg-red-100 text-red-800' :
+                          'bg-yellow-100 text-yellow-800'}`}>
+                        {item.status}
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      {new Date(item.created_at).toLocaleDateString()}
+                    </TableCell>
+                    <TableCell>{item.retries || 0}</TableCell>
+                    <TableCell>
+                      <div className="flex gap-2">
+                        {item.error_message && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => alert(item.error_message)}
                           >
-                            Delete
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
+                            View Error
+                          </Button>
+                        )}
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="ghost" size="sm">
+                              <Trash2 className="h-4 w-4 text-red-500" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Delete Queue Item</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Are you sure you want to delete "{item.title}" from the queue?
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={() => handleDeleteQueueItem(item.id)}
+                                className="bg-red-500 hover:bg-red-600"
+                              >
+                                Delete
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
