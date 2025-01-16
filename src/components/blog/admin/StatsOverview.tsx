@@ -24,6 +24,8 @@ export const StatsOverview = () => {
           .single()
       ]);
 
+      console.log('Stats from DB:', { published, queue, failed });
+
       return {
         published: published?.count || 0,
         queue: queue?.count || 0,
@@ -31,6 +33,8 @@ export const StatsOverview = () => {
       };
     }
   });
+
+  console.log('Rendered stats:', stats);
 
   return (
     <div className="grid gap-4 md:grid-cols-3">
