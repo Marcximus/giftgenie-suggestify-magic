@@ -67,8 +67,6 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
       
       if (queuedPosts) {
         form.setValue('title', queuedPosts.title);
-        const generatedSlug = generateSlug(queuedPosts.title);
-        form.setValue('slug', generatedSlug);
         form.setValue('author', "Get The Gift Team");
         return queuedPosts.title;
       }
