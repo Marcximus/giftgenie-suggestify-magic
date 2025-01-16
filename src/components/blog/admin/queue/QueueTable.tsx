@@ -8,6 +8,10 @@ import {
 } from "@/components/ui/table";
 import { QueueItemStatus } from "./QueueItemStatus";
 import { QueueItemActions } from "./QueueItemActions";
+import { Button } from "@/components/ui/button";
+import { Play } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/components/ui/use-toast";
 
 interface QueueItem {
   id: string;
@@ -25,6 +29,30 @@ interface QueueTableProps {
 }
 
 export const QueueTable = ({ items, onDeleteItem }: QueueTableProps) => {
+  const { toast } = useToast();
+
+  const handleGenerateNow = async (queueId: string) => {
+    try {
+      const { error } = await supabase.functions.invoke('auto-generate-blog', {
+        body: { queueId }
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Blog post generation started",
+      });
+    } catch (error) {
+      console.error('Error triggering generation:', error);
+      toast({
+        title: "Error",
+        description: "Failed to trigger blog post generation",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <div className="rounded-md border">
       <Table>
@@ -57,7 +85,17 @@ export const QueueTable = ({ items, onDeleteItem }: QueueTableProps) => {
                 {item.scheduled_time || '-'}
               </TableCell>
               <TableCell className="text-left">
-                <QueueItemActions item={item} onDelete={onDeleteItem} />
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleGenerateNow(item.id)}
+                    disabled={item.status !== 'pending'}
+                  >
+                    <Play className="w-4 h-4" />
+                  </Button>
+                  <QueueItemActions item={item} onDelete={onDeleteItem} />
+                </div>
               </TableCell>
             </TableRow>
           ))}
