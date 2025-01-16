@@ -20,23 +20,28 @@ serve(async (req) => {
     const subject = subjectMatch ? subjectMatch[1] : '';
 
     // Create a more specific prompt based on the subject
-    const defaultPrompt = `Create a photorealistic lifestyle image that represents gift-giving to ${subject || 'someone special'}. 
-    The image should be a warm, inviting scene without any text, words, or typography.
+    const defaultPrompt = `Create a vibrant, artistic, and emotionally engaging image that captures the joy of gift-giving to ${subject || 'someone special'}. 
     
     IMPORTANT REQUIREMENTS:
     - NO text, letters, numbers, or writing of any kind
     - NO logos or brand names
-    - Show a lifestyle scene related to ${subject || 'the recipient'}
-    - Use warm, inviting colors
-    - Include gift-giving elements or wrapped presents
-    - Make it personal and emotional
-    - Ensure high quality and photorealistic style
+    - Create a colorful, imaginative scene related to ${subject || 'the recipient'}
+    - Use bold, vivid colors and artistic composition
+    - Include wrapped presents or gift elements creatively arranged
+    - Capture emotional warmth and excitement
+    - Make it visually striking and memorable
     - Fill the entire frame with the scene
     
+    Style inspiration:
+    - Use rich, saturated colors
+    - Create depth and visual interest
+    - Include artistic lighting effects
+    - Add subtle magical or whimsical elements
+    
     Example scenes:
-    - A beautifully decorated living room with wrapped gifts
-    - A touching moment of gift exchange between family members
-    - A celebration scene with presents in the background
+    - A magical room filled with floating gifts and swirling ribbons
+    - An artistic interpretation of a joyful gift-giving moment with dynamic composition
+    - A dreamy celebration scene with creative use of light and color
     
     Subject context: ${title}`;
 
@@ -54,7 +59,7 @@ serve(async (req) => {
         size: "1792x1024",
         quality: "standard",
         response_format: "b64_json",
-        style: "natural" // Use natural style for more photorealistic results
+        style: "vivid" // Use vivid style for more artistic and engaging results
       }),
     });
 
