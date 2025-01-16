@@ -27,9 +27,9 @@ export const StatsOverview = () => {
       console.log('Stats from DB:', { published, queue, failed });
 
       return {
-        published: published?.count || 0,
-        queue: queue?.count || 0,
-        failed: failed?.count || 0
+        published: published?.data?.count || 0,
+        queue: queue?.data?.count || 0,
+        failed: failed?.data?.count || 0
       };
     }
   });
