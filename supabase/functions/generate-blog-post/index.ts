@@ -53,7 +53,7 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: "gpt-4o",
+        model: "gpt-4o", // Changed from gpt-4o-mini to gpt-4o for better quality
         messages: [
           buildBlogPrompt(numItems),
           {
@@ -61,7 +61,7 @@ serve(async (req) => {
             content: `Create a fun, engaging blog post about: ${title}`
           }
         ],
-        temperature: 0.7,
+        temperature: 0.7, // Adjusted for more creative but still focused output
         max_tokens: 2500,
       }),
     });
@@ -74,19 +74,7 @@ serve(async (req) => {
     }
 
     const data = await response.json();
-    let rawContent = data.choices[0].message.content;
-    
-    // Process the content to ensure proper paragraph spacing
-    rawContent = rawContent
-      // Ensure emoji indicators start new paragraphs
-      .replace(/([^\n])🎁/g, '$1\n\n🎁')
-      .replace(/([^\n])⭐/g, '$1\n\n⭐')
-      .replace(/([^\n])💝/g, '$1\n\n💝')
-      // Ensure proper spacing after paragraphs
-      .replace(/([.!?])\s+([^🎁⭐💝\n])/g, '$1\n\n$2')
-      // Clean up any excessive newlines
-      .replace(/\n{3,}/g, '\n\n');
-
+    const rawContent = data.choices[0].message.content;
     console.log('Generated raw content length:', rawContent.length);
 
     // Process content with Amazon product data
