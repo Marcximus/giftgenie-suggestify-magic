@@ -21,7 +21,6 @@ export async function processContent(
     if (!parsedSection) return section;
     
     try {
-      console.log('Searching for product:', parsedSection.productName);
       const product = await searchAmazonProduct(parsedSection.productName, apiKey);
       
       if (product?.asin) {
@@ -37,9 +36,7 @@ export async function processContent(
         affiliateLinks.push({
           productTitle: product.title,
           affiliateLink,
-          imageUrl: product.imageUrl,
-          rating: product.rating,
-          totalRatings: product.totalRatings
+          imageUrl: product.imageUrl
         });
         
         return formatProductHtml(

@@ -20,11 +20,3 @@ export interface BlogPostData extends BlogPostFormData {
   created_at: string;
   updated_at: string;
 }
-
-export interface AffiliateLink {
-  productTitle?: string;
-  affiliateLink?: string;
-  imageUrl: string;
-  rating?: number | string;
-  totalRatings?: number | string;
-}

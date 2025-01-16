@@ -15,7 +15,7 @@ serve(async (req) => {
   try {
     const { title, prompt } = await req.json();
 
-    // Create OpenAI image with improved prompt
+    // Create OpenAI image
     const response = await fetch('https://api.openai.com/v1/images/generations', {
       method: 'POST',
       headers: {
@@ -24,7 +24,7 @@ serve(async (req) => {
       },
       body: JSON.stringify({
         model: "dall-e-3",
-        prompt: prompt || `Create an entertaining, interesting, and funny image for a blog post related to the subject of the title. The image should be visually engaging and fill the entire frame with the subject matter. Ensure the composition is balanced and the subject is clearly visible. Use vibrant colors and interesting lighting. Do not include any text or typography in the image. Make it visually appealing for a blog header: ${title}`,
+        prompt: prompt || `Create an entertaining, interesting, and funny image for a blog post related to the subject of the title. The image should be visually engaging and fill the entire frame. Do not include any text or typography in the image: ${title}`,
         n: 1,
         size: "1792x1024",
         quality: "standard",
@@ -48,7 +48,7 @@ serve(async (req) => {
     const buffer = Buffer.from(imageData, 'base64');
     const fileName = `${crypto.randomUUID()}.png`;
 
-    // Upload to Supabase Storage with improved metadata
+    // Upload to Supabase Storage
     const { data: uploadData, error: uploadError } = await supabase.storage
       .from('blog-images')
       .upload(fileName, buffer, {
@@ -66,8 +66,39 @@ serve(async (req) => {
       .from('blog-images')
       .getPublicUrl(fileName);
 
+    // Generate alt text if requested
+    let altText = null;
+    if (prompt?.toLowerCase().includes('alt text')) {
+      const altTextResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${Deno.env.get('OPENAI_API_KEY')}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: "gpt-4",
+          messages: [{
+            role: "system",
+            content: "Generate a concise, descriptive alt text for an image. Focus on the main elements and purpose of the image."
+          }, {
+            role: "user",
+            content: `Generate alt text for a blog post image about: ${title}`
+          }],
+          max_tokens: 100,
+        }),
+      });
+
+      if (altTextResponse.ok) {
+        const altTextData = await altTextResponse.json();
+        altText = altTextData.choices[0].message.content.trim();
+      }
+    }
+
     return new Response(
-      JSON.stringify({ imageUrl: publicUrl }),
+      JSON.stringify({ 
+        imageUrl: publicUrl,
+        altText 
+      }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 

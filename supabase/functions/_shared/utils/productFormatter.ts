@@ -8,9 +8,7 @@ export const formatProductHtml = (
   afterH3: string
 ): string => {
   const reviewData = formatReviewData(product.rating, product.totalRatings);
-  
-  // Add review stars and rating display
-  const reviewHtml = reviewData ? `
+  const reviewInfo = reviewData ? `
     <div class="flex flex-col items-center gap-2 my-6 p-6 bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl shadow-sm">
       <div class="flex items-center gap-2">
         ${Array.from({ length: 5 }, (_, i) => 
@@ -33,11 +31,11 @@ export const formatProductHtml = (
         <img 
           src="${product.imageUrl}" 
           alt="${product.title}"
-          class="w-full aspect-[16/9] object-cover rounded-lg shadow-md mx-auto" 
+          class="w-80 h-80 sm:w-96 sm:h-96 lg:w-[500px] lg:h-[500px] object-contain rounded-lg shadow-md mx-auto" 
           loading="lazy"
         />
       </div>
-      ${reviewHtml}
+      ${reviewInfo}
       <div class="mt-4">
         <a 
           href="${affiliateLink}" 
