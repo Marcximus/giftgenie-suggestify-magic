@@ -53,18 +53,18 @@ serve(async (req) => {
     const subjectMatch = title.toLowerCase().match(/(?:for|to)\s+(?:a\s+)?(\w+)/i);
     const subject = subjectMatch ? subjectMatch[1] : '';
 
-    const imagePrompt = `Create a creative and engaging image that capture gift-giving to ${subject || 'someone special'}.
+    const imagePrompt = `Create a visually creative and engaging scene that directly relates to ${title || 'gift-giving'}, focusing specifically on ${subject || 'the recipient'}.
 
 IMPORTANT REQUIREMENTS:
 - Absolutely NO text, letters, numbers, or writing of any kind
 - Absolutely NO logos or brand names
-- Focus on a scene related to ${subject || 'the recipient'}
+- Create a scene that clearly connects to the subject: ${subject || 'the recipient'}
 - Fill the entire frame with the scene (NO blank space or borders)
+- Ensure every element in the image relates to the title: ${title}
 
 STYLE & VARIATION INSPIRATION:
 - Experiment with multiple styles: classic painting, watercolor, 8-bit pixel art, surreal collage, vibrant pop art, dreamy cinematic lighting, whimsical cartoons or others
-- Use rich, saturated colors and dynamic light sources
-- Feel free to Incorporate subtle magical or fantastical elements for added wonder`;
+- Use rich, saturated colors and dynamic light sources`;
 
     // Create OpenAI image
     const response = await fetch('https://api.openai.com/v1/images/generations', {
