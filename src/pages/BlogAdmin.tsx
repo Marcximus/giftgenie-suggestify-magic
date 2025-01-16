@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
 import { Button } from "@/components/ui/button";
-import { Plus, Trash2, RefreshCw, Clock } from "lucide-react";
+import { Plus, Trash2, RefreshCw } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useToast } from "@/components/ui/use-toast";
 import {
@@ -30,6 +30,8 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs";
+import { BulkUploadDialog } from "@/components/blog/admin/BulkUploadDialog";
+import { ScheduledPostsTab } from "@/components/blog/admin/ScheduledPostsTab";
 
 const BlogAdmin = () => {
   const { toast } = useToast();
@@ -201,6 +203,7 @@ const BlogAdmin = () => {
         <TabsList>
           <TabsTrigger value="posts">Published Posts</TabsTrigger>
           <TabsTrigger value="queue">Generation Queue</TabsTrigger>
+          <TabsTrigger value="scheduled">Scheduled Posts</TabsTrigger>
         </TabsList>
 
         <TabsContent value="posts" className="space-y-4">
@@ -277,9 +280,10 @@ const BlogAdmin = () => {
         </TabsContent>
 
         <TabsContent value="queue" className="space-y-4">
-          <div className="flex justify-end mb-4">
-            <Button onClick={addToQueue}>
-              <Plus className="mr-2 h-4 w-4" /> Add to Queue
+          <div className="flex justify-end mb-4 gap-4">
+            <BulkUploadDialog onSuccess={refetchQueue} />
+            <Button onClick={() => addToQueue()} variant="outline">
+              <Plus className="mr-2 h-4 w-4" /> Add Single Title
             </Button>
           </div>
           
@@ -353,6 +357,10 @@ const BlogAdmin = () => {
               </TableBody>
             </Table>
           </div>
+        </TabsContent>
+
+        <TabsContent value="scheduled">
+          <ScheduledPostsTab />
         </TabsContent>
       </Tabs>
     </div>
