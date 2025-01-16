@@ -5,14 +5,14 @@ interface PromptConfig {
   minBudget: number;
   maxBudget: number;
   ageCategory?: string | null;
-  occasion?: string;
+  occasion?: string | null;
 }
 
 export function buildGiftPrompt(prompt: string, config: PromptConfig): string {
   const { hasEverything, isMale, isFemale, minBudget, maxBudget, ageCategory, occasion } = config;
   const budgetContext = `with a budget between $${minBudget} and $${maxBudget}`;
 
-  let enhancedPrompt = `As a luxury gift expert, suggest 3-4 thoughtful and specific gift ideas ${budgetContext} `;
+  let enhancedPrompt = `As a luxury gift expert, suggest 8 thoughtful and specific gift ideas ${budgetContext} `;
   
   if (hasEverything) {
     enhancedPrompt += `for someone who seemingly has everything. Focus on:
@@ -22,6 +22,16 @@ export function buildGiftPrompt(prompt: string, config: PromptConfig): string {
     - Luxury versions of everyday items
     - Experiential gifts that create memories
     - Personalized or bespoke items\n\n`;
+  }
+
+  // Add occasion-specific instructions
+  if (occasion) {
+    enhancedPrompt += `\nCRITICAL: These suggestions are for ${occasion}. Consider:
+    - Traditional ${occasion} gifts with modern twists
+    - Unique interpretations of classic ${occasion} themes
+    - Special edition or limited ${occasion} collections
+    - Personalized or customizable ${occasion} items
+    - Experience gifts suitable for ${occasion}\n`;
   }
 
   // Add age-specific instructions based on category
@@ -95,11 +105,6 @@ export function buildGiftPrompt(prompt: string, config: PromptConfig): string {
     enhancedPrompt += `CRITICAL: Ensure all suggestions are specifically appropriate for female recipients.\n`;
   }
 
-  // Add occasion-specific context if provided
-  if (occasion) {
-    enhancedPrompt += `CRITICAL: These suggestions are for ${occasion}. Ensure gifts are appropriate for this occasion.\n`;
-  }
-
   // Extract any specific interests from the prompt
   const interestMatch = prompt.toLowerCase().match(/(?:likes?|loves?|enjoys?|into)\s+([^.,!?]+)/i);
   const specificInterest = interestMatch ? interestMatch[1].trim() : null;
@@ -107,20 +112,24 @@ export function buildGiftPrompt(prompt: string, config: PromptConfig): string {
   enhancedPrompt += `
   CRITICAL REQUIREMENTS:
   1. Budget: Strictly between $${minBudget} and $${maxBudget}
-  ${specificInterest ? `2. Include 2 suggestions that directly relate to their interest in ${specificInterest}` : ''}
+  ${specificInterest ? `2. Include 3 suggestions that directly relate to their interest in ${specificInterest}` : ''}
+  3. IMPORTANT: Each suggestion must be from a different product category to ensure variety
+  4. Include at least 2 unique or unexpected suggestions that are still relevant
+  5. Avoid suggesting multiple items with similar use cases
   
   Format Guidelines:
-  - Include specific brand names and model numbers
+  - ALWAYS include specific brand names and model numbers
   - Use complete product names (e.g., "Sony WH-1000XM4 Wireless Noise Cancelling Headphones" instead of just "headphones")
   - Include premium or special editions when available
   - Ensure items are currently available on Amazon
   - Avoid generic descriptions
   ${isMale || isFemale ? `- Ensure gender-appropriate suggestions` : ''}
+  ${occasion ? `- Ensure suggestions are appropriate for ${occasion}` : ''}
 
   Format each suggestion as:
   "Brand Name Specific Product Model (Premium/Special Edition) - [Category] Version"
 
-  Return ONLY a JSON array of 3-4 specific gift suggestions.`;
+  Return ONLY a JSON array of 8 specific gift suggestions.`;
 
   return enhancedPrompt;
 }

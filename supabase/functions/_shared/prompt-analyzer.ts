@@ -5,6 +5,7 @@ export function analyzePrompt(prompt: string) {
     ageCategory: null as string | null,
     gender: null as string | null,
     interests: [] as string[],
+    occasion: null as string | null,
     budget: {
       min: null as number | null,
       max: null as number | null
@@ -45,6 +46,29 @@ export function analyzePrompt(prompt: string) {
     analysis.gender = 'male';
   } else if (femaleTerms.some(term => words.includes(term))) {
     analysis.gender = 'female';
+  }
+
+  // Occasion detection
+  const occasionTerms = {
+    'valentines day': "Valentine's Day",
+    'valentine': "Valentine's Day",
+    'wedding': 'Wedding',
+    'anniversary': 'Anniversary',
+    'birthday': 'Birthday',
+    'christmas': 'Christmas',
+    'mothers day': "Mother's Day",
+    'fathers day': "Father's Day",
+    'graduation': 'Graduation',
+    'housewarming': 'Housewarming',
+    'retirement': 'Retirement'
+  };
+
+  const promptLower = prompt.toLowerCase();
+  for (const [term, occasion] of Object.entries(occasionTerms)) {
+    if (promptLower.includes(term)) {
+      analysis.occasion = occasion;
+      break;
+    }
   }
 
   // Budget detection
