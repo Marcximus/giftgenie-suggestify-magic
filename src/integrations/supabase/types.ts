@@ -77,6 +77,36 @@ export type Database = {
           },
         ]
       }
+      blog_post_queue: {
+        Row: {
+          created_at: string | null
+          error_message: string | null
+          id: string
+          processed_at: string | null
+          retries: number | null
+          status: string | null
+          title: string
+        }
+        Insert: {
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          processed_at?: string | null
+          retries?: number | null
+          status?: string | null
+          title: string
+        }
+        Update: {
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          processed_at?: string | null
+          retries?: number | null
+          status?: string | null
+          title?: string
+        }
+        Relationships: []
+      }
       blog_posts: {
         Row: {
           affiliate_links: Json | null
@@ -217,7 +247,17 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_random_daily_times: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          hour: number
+          minute: number
+        }[]
+      }
+      invoke_blog_generation: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
     }
     Enums: {
       [_ in never]: never
