@@ -1,11 +1,11 @@
 import { useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import BlogPostForm from "@/components/blog/BlogPostForm";
-import { useToast } from "@/hooks/use-toast";
+import { BlogPostForm } from "@/components/blog/BlogPostForm";
+import { useToast } from "@/components/ui/use-toast";
 import { BlogPostFormData } from "@/components/blog/types/BlogPostTypes";
 
-const BlogEdit = () => {
+export default function BlogEdit() {
   const { slug } = useParams<{ slug: string }>();
   const { toast } = useToast();
 
@@ -80,6 +80,4 @@ const BlogEdit = () => {
       <BlogPostForm initialData={post} />
     </div>
   );
-};
-
-export default BlogEdit;
+}

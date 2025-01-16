@@ -1,4 +1,3 @@
-// Define our own Json type
 export type Json = string | number | boolean | null | Json[] | { [key: string]: Json };
 
 export interface AffiliateLink {
@@ -25,8 +24,8 @@ export interface BlogPostFormData {
   updated_at?: string;
   published_at: string | null;
   affiliate_links: string; // Store as JSON string
-  images: string | null; // Store as JSON string
-  related_posts: string | null; // Store as JSON string
+  images: string | null;
+  related_posts: string | null;
 }
 
 export const EMPTY_FORM_DATA: BlogPostFormData = {
