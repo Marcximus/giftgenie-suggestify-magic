@@ -35,11 +35,11 @@ serve(async (req) => {
       throw new Error('Missing required API configuration');
     }
 
-    let numItems = 5; // Changed from const to let
+    let numItems = 5;
     const titleNumMatch = title.match(/\b(\d+)\b/);
     if (titleNumMatch) {
       const parsedNum = parseInt(titleNumMatch[1]);
-      if (parsedNum > 0 && parsedNum <= 10) { // Limit to reasonable number
+      if (parsedNum > 0 && parsedNum <= 10) {
         numItems = parsedNum;
       }
     }
@@ -53,7 +53,7 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: "gpt-4o-mini",
+        model: "gpt-4o", // Changed from gpt-4o-mini to gpt-4o for better quality
         messages: [
           buildBlogPrompt(numItems),
           {
@@ -61,7 +61,7 @@ serve(async (req) => {
             content: `Create a fun, engaging blog post about: ${title}`
           }
         ],
-        temperature: 0.8,
+        temperature: 0.7, // Adjusted for more creative but still focused output
         max_tokens: 2500,
       }),
     });
