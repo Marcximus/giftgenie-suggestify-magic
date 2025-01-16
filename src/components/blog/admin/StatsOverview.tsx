@@ -36,32 +36,32 @@ export const StatsOverview = () => {
     <div className="grid gap-4 md:grid-cols-3">
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-left text-sm font-medium">
+          <CardTitle className="text-sm font-medium w-full text-center">
             Published Posts
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold text-left">{stats?.published || 0}</div>
+          <div className="text-2xl font-bold text-center">{stats?.published || 0}</div>
         </CardContent>
       </Card>
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-left text-sm font-medium">
+          <CardTitle className="text-sm font-medium w-full text-center">
             In Queue
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold text-left">{stats?.queue || 0}</div>
+          <div className="text-2xl font-bold text-center">{stats?.queue || 0}</div>
         </CardContent>
       </Card>
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-left text-sm font-medium">
+          <CardTitle className="text-sm font-medium w-full text-center">
             Failed Posts
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold text-left">{stats?.failed || 0}</div>
+          <div className="text-2xl font-bold text-center">{stats?.failed || 0}</div>
         </CardContent>
       </Card>
     </div>

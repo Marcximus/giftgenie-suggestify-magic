@@ -64,7 +64,10 @@ serve(async (req) => {
         .replace(/[^a-z0-9]+/g, '-')
         .replace(/(^-|-$)+/g, '');
 
-      // Insert blog post with "Get The Gift Team" as author
+      // Generate meta description from first paragraph
+      const firstParagraph = content.split('\n')[0].slice(0, 160);
+      
+      // Insert blog post
       const { error: insertError } = await supabase
         .from('blog_posts')
         .insert([
@@ -72,14 +75,18 @@ serve(async (req) => {
             title: queueItem.title,
             slug,
             content,
-            excerpt: content.split('\n')[0].slice(0, 200),
+            excerpt: firstParagraph,
             author: 'Get The Gift Team',
             affiliate_links: affiliateLinks,
             published_at: new Date().toISOString(),
+            meta_title: queueItem.title,
+            meta_description: firstParagraph,
+            meta_keywords: queueItem.title.toLowerCase().split(' ').join(', '),
           }
         ]);
 
       if (insertError) {
+        console.error('Error inserting blog post:', insertError);
         throw insertError;
       }
 
@@ -92,6 +99,8 @@ serve(async (req) => {
         })
         .eq('id', queueItem.id);
 
+      console.log('Successfully generated and published blog post:', queueItem.title);
+      
       return new Response(
         JSON.stringify({ 
           message: 'Blog post generated successfully',
@@ -103,14 +112,13 @@ serve(async (req) => {
     } catch (error) {
       console.error('Error generating blog post:', error);
       
-      // Update queue item with error
-      const retries = (queueItem.retries || 0) + 1;
+      // Mark as failed without retrying
       await supabase
         .from('blog_post_queue')
         .update({ 
-          status: retries >= 3 ? 'failed' : 'pending',
+          status: 'failed',
           error_message: error.message,
-          retries
+          processed_at: new Date().toISOString()
         })
         .eq('id', queueItem.id);
 
