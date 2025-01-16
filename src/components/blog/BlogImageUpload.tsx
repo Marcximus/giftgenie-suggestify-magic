@@ -11,9 +11,18 @@ import { BlogPostFormData } from "./types/BlogPostTypes";
 interface BlogImageUploadProps {
   value: string;
   setValue: UseFormSetValue<BlogPostFormData>;
+  altText?: string;
+  onGenerateAltText?: () => Promise<void>;
+  isGeneratingAltText?: boolean;
 }
 
-export const BlogImageUpload = ({ value, setValue }: BlogImageUploadProps) => {
+export const BlogImageUpload = ({ 
+  value, 
+  setValue,
+  altText,
+  onGenerateAltText,
+  isGeneratingAltText 
+}: BlogImageUploadProps) => {
   const [isUploading, setIsUploading] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const { toast } = useToast();
@@ -73,7 +82,7 @@ export const BlogImageUpload = ({ value, setValue }: BlogImageUploadProps) => {
       }
 
       const { data, error } = await supabase.functions.invoke('generate-blog-image', {
-        body: { title }  // Remove the hardcoded prompt, let the Edge Function handle it
+        body: { title }
       });
 
       if (error) throw error;
@@ -137,6 +146,23 @@ export const BlogImageUpload = ({ value, setValue }: BlogImageUploadProps) => {
             </>
           )}
         </Button>
+        {onGenerateAltText && (
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onGenerateAltText}
+            disabled={isGeneratingAltText}
+          >
+            {isGeneratingAltText ? (
+              "Generating Alt Text..."
+            ) : (
+              <>
+                <Wand2 className="w-4 h-4 mr-2" />
+                Generate Alt Text
+              </>
+            )}
+          </Button>
+        )}
         {value && (
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <ImageIcon className="w-4 h-4" />
