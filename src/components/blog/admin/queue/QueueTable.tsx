@@ -34,6 +34,24 @@ export const QueueTable = ({ items, onDeleteItem }: QueueTableProps) => {
     }
   };
 
+  const formatDate = (dateStr: string | null) => {
+    if (!dateStr) return 'Not scheduled';
+    return new Date(dateStr).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  };
+
+  const formatTime = (timeStr: string | null) => {
+    if (!timeStr) return '';
+    return new Date(`1970-01-01T${timeStr}`).toLocaleTimeString('en-US', {
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true
+    });
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex justify-end mb-4">
@@ -49,6 +67,7 @@ export const QueueTable = ({ items, onDeleteItem }: QueueTableProps) => {
             <tr className="border-b bg-muted/50">
               <th className="h-12 px-4 text-left align-middle font-medium">Title</th>
               <th className="h-12 px-4 text-left align-middle font-medium">Status</th>
+              <th className="h-12 px-4 text-left align-middle font-medium">Scheduled Date</th>
               <th className="h-12 px-4 text-left align-middle font-medium">Scheduled Time</th>
               <th className="h-12 px-4 text-left align-middle font-medium">Actions</th>
             </tr>
@@ -56,16 +75,17 @@ export const QueueTable = ({ items, onDeleteItem }: QueueTableProps) => {
           <tbody>
             {items.map((item) => (
               <tr key={item.id} className="border-b">
-                <td className="p-4 align-middle">{item.title}</td>
-                <td className="p-4 align-middle">
+                <td className="p-4 align-middle text-left">{item.title}</td>
+                <td className="p-4 align-middle text-left">
                   <QueueItemStatus status={item.status || 'pending'} />
                 </td>
-                <td className="p-4 align-middle">
-                  {item.scheduled_time ? 
-                    new Date(`1970-01-01T${item.scheduled_time}`).toLocaleTimeString() : 
-                    'Not scheduled'}
+                <td className="p-4 align-middle text-left">
+                  {formatDate(item.scheduled_date)}
                 </td>
-                <td className="p-4 align-middle">
+                <td className="p-4 align-middle text-left">
+                  {formatTime(item.scheduled_time)}
+                </td>
+                <td className="p-4 align-middle text-left">
                   <QueueItemActions 
                     item={item} 
                     onDelete={onDeleteItem}
@@ -73,6 +93,13 @@ export const QueueTable = ({ items, onDeleteItem }: QueueTableProps) => {
                 </td>
               </tr>
             ))}
+            {items.length === 0 && (
+              <tr>
+                <td colSpan={5} className="text-center py-4">
+                  No items in queue
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>

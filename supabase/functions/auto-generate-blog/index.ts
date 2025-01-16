@@ -49,7 +49,7 @@ serve(async (req) => {
       .from('blog_post_queue')
       .select('*')
       .eq('status', 'pending')
-      .lte('scheduled_date', today) // scheduled for today or earlier
+      .lte('scheduled_date', today)
       .order('scheduled_date', { ascending: true })
       .order('scheduled_time', { ascending: true })
       .limit(1)
@@ -74,25 +74,49 @@ serve(async (req) => {
 
     console.log('Processing queue item:', queueItem);
 
-    // Step 1: Generate image
+    // Step 1: Generate image with detailed prompt
     const imageResponse = await fetch('https://ckcqttsdpxfbpkzljctl.functions.supabase.co/functions/v1/generate-blog-image', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${supabaseKey}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ title: queueItem.title }),
+      body: JSON.stringify({ 
+        title: queueItem.title,
+        prompt: "Create an entertaining, interesting, and visually appealing image that captures the essence of this blog post topic. The image should be high-quality, engaging, and suitable for a gift-focused blog post. Do not include any text in the image."
+      }),
     });
 
     if (!imageResponse.ok) {
       throw new Error('Failed to generate image');
     }
 
-    const { imageUrl } = await imageResponse.json();
+    const { imageUrl, altText } = await imageResponse.json();
     console.log('Generated image URL:', imageUrl);
 
-    // Step 2-5: Generate content components
-    const contentPromises = ['excerpt', 'seo-title', 'seo-description', 'seo-keywords', 'improve-content'].map(type =>
+    // Step 2-5: Generate content components with enhanced prompts
+    const contentPromises = [
+      {
+        type: 'excerpt',
+        prompt: "Write a compelling 2-3 sentence excerpt that hooks readers and summarizes the key value of this gift guide."
+      },
+      {
+        type: 'seo-title',
+        prompt: "Create an SEO-optimized title that includes relevant keywords while maintaining readability."
+      },
+      {
+        type: 'seo-description',
+        prompt: "Write a detailed meta description that includes key benefits and encourages clicks (150-160 characters)."
+      },
+      {
+        type: 'seo-keywords',
+        prompt: "Generate relevant keywords focusing on gift-giving, specific occasions, and target audiences."
+      },
+      {
+        type: 'improve-content',
+        prompt: "Create a detailed, engaging blog post with emojis, clear sections, and specific product recommendations. Include a compelling introduction (150-250 words), clear headings, and a conclusion with a call to action linking to the main gift finder."
+      }
+    ].map(({ type, prompt }) =>
       fetch('https://ckcqttsdpxfbpkzljctl.functions.supabase.co/functions/v1/generate-blog-content', {
         method: 'POST',
         headers: {
@@ -103,6 +127,7 @@ serve(async (req) => {
           type,
           title: queueItem.title,
           content: type === 'improve-content' ? queueItem.title : undefined,
+          prompt
         }),
       }).then(res => res.json())
     );
@@ -123,7 +148,7 @@ serve(async (req) => {
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/(^-|-$)/g, '');
 
-    // Create the blog post
+    // Create the blog post with enhanced content
     const { error: insertError } = await supabase
       .from('blog_posts')
       .insert({
@@ -133,6 +158,7 @@ serve(async (req) => {
         excerpt: excerptResult.content,
         author: 'Get The Gift Team',
         image_url: imageUrl,
+        image_alt_text: altText,
         meta_title: seoTitleResult.content,
         meta_description: seoDescriptionResult.content,
         meta_keywords: seoKeywordsResult.content,
