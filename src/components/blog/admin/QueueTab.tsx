@@ -22,6 +22,26 @@ export const QueueTab = () => {
     },
   });
 
+  const getRandomTimeForDate = async (dateStr: string, existingTimes: string[]) => {
+    const { data: timeSlots, error: timeSlotsError } = await supabase
+      .rpc('get_random_daily_times');
+    
+    if (timeSlotsError) throw timeSlotsError;
+    
+    // Shuffle the time slots array
+    const shuffledSlots = timeSlots.sort(() => Math.random() - 0.5);
+    
+    // Find an available time slot
+    for (const slot of shuffledSlots) {
+      const timeStr = `${String(slot.hour).padStart(2, '0')}:${String(slot.minute).padStart(2, '0')}:00`;
+      if (!existingTimes.includes(timeStr)) {
+        return timeStr;
+      }
+    }
+    
+    return null;
+  };
+
   const handleDeleteQueueItem = async (queueId: string) => {
     try {
       const { error } = await supabase
@@ -52,7 +72,7 @@ export const QueueTab = () => {
     if (!title) return;
 
     try {
-      // First, get the next available date that has less than 3 posts
+      // First, get all existing schedules
       const { data: existingSchedules, error: countError } = await supabase
         .from("blog_post_queue")
         .select("scheduled_date, scheduled_time")
@@ -62,54 +82,41 @@ export const QueueTab = () => {
 
       // Find the next available date
       let scheduledDate = new Date();
-      while (true) {
+      let scheduledTime: string | null = null;
+      
+      while (!scheduledTime) {
         const dateStr = scheduledDate.toISOString().split('T')[0];
         const postsOnDate = existingSchedules?.filter(
           item => item.scheduled_date === dateStr
         ).length || 0;
 
-        if (postsOnDate < 3) break;
+        if (postsOnDate < 3) {
+          // Get existing times for this date
+          const existingTimesForDate = existingSchedules
+            ?.filter(item => item.scheduled_date === dateStr)
+            .map(item => item.scheduled_time) || [];
+          
+          // Try to get a random available time
+          scheduledTime = await getRandomTimeForDate(dateStr, existingTimesForDate);
+          
+          if (scheduledTime) {
+            const { error } = await supabase
+              .from("blog_post_queue")
+              .insert([{ 
+                title, 
+                status: "pending",
+                scheduled_date: dateStr,
+                scheduled_time: scheduledTime
+              }]);
+
+            if (error) throw error;
+            break;
+          }
+        }
+        
+        // Move to next day if no slots available
         scheduledDate.setDate(scheduledDate.getDate() + 1);
       }
-
-      // Get multiple random time slots for this date to ensure we get a unique one
-      const { data: timeSlots, error: timeSlotsError } = await supabase
-        .rpc('get_random_daily_times');
-      
-      if (timeSlotsError) throw timeSlotsError;
-      console.log('Available time slots:', timeSlots);
-
-      // Find which slot is available (morning, afternoon, or evening)
-      const existingTimesForDate = existingSchedules
-        ?.filter(item => item.scheduled_date === scheduledDate.toISOString().split('T')[0])
-        .map(item => item.scheduled_time) || [];
-
-      console.log('Existing times for date:', existingTimesForDate);
-
-      // Convert time slots to proper format and filter out existing times
-      const formattedTimeSlots = timeSlots.map(slot => ({
-        ...slot,
-        timeStr: `${String(slot.hour).padStart(2, '0')}:${String(slot.minute).padStart(2, '0')}`
-      }));
-
-      const availableSlot = formattedTimeSlots.find(slot => 
-        !existingTimesForDate.includes(`${slot.timeStr}:00`)
-      );
-
-      if (!availableSlot) throw new Error("No available time slots for this date");
-
-      console.log('Selected time slot:', availableSlot);
-
-      const { error } = await supabase
-        .from("blog_post_queue")
-        .insert([{ 
-          title, 
-          status: "pending",
-          scheduled_date: scheduledDate.toISOString().split('T')[0],
-          scheduled_time: `${availableSlot.timeStr}:00`
-        }]);
-
-      if (error) throw error;
 
       toast({
         title: "Success",

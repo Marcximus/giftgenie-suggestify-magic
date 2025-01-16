@@ -20,6 +20,26 @@ export const BulkUploadDialog = ({ onSuccess }: { onSuccess: () => void }) => {
   const [isOpen, setIsOpen] = useState(false);
   const { toast } = useToast();
 
+  const getRandomTimeForDate = async (dateStr: string, existingTimes: string[]) => {
+    const { data: timeSlots, error: timeSlotsError } = await supabase
+      .rpc('get_random_daily_times');
+    
+    if (timeSlotsError) throw timeSlotsError;
+    
+    // Shuffle the time slots array
+    const shuffledSlots = timeSlots.sort(() => Math.random() - 0.5);
+    
+    // Find an available time slot
+    for (const slot of shuffledSlots) {
+      const timeStr = `${String(slot.hour).padStart(2, '0')}:${String(slot.minute).padStart(2, '0')}:00`;
+      if (!existingTimes.includes(timeStr)) {
+        return timeStr;
+      }
+    }
+    
+    return null;
+  };
+
   const handleUpload = async () => {
     if (!titles.trim()) {
       toast({
@@ -48,6 +68,7 @@ export const BulkUploadDialog = ({ onSuccess }: { onSuccess: () => void }) => {
       // Process each title and find available slots
       const scheduledPosts = [];
       let currentDate = new Date();
+      const existingScheduleMap = new Map();
 
       for (const title of titleList) {
         // Find the next available date
@@ -58,34 +79,28 @@ export const BulkUploadDialog = ({ onSuccess }: { onSuccess: () => void }) => {
           ).length || 0;
 
           if (postsOnDate < 3) {
-            // Get random time slots for this date
-            const { data: timeSlots, error: timeSlotsError } = await supabase
-              .rpc('get_random_daily_times');
-            
-            if (timeSlotsError) throw timeSlotsError;
-
-            // Find which slot is available
+            // Get existing times for this date
             const existingTimesForDate = existingSchedules
               ?.filter(item => item.scheduled_date === dateStr)
               .map(item => item.scheduled_time) || [];
-
-            const availableSlot = timeSlots.find((slot) => {
-              const timeStr = `${String(slot.hour).padStart(2, '0')}:${String(slot.minute).padStart(2, '0')}`;
-              return !existingTimesForDate.includes(timeStr);
-            });
-
-            if (availableSlot) {
-              const scheduledTime = `${String(availableSlot.hour).padStart(2, '0')}:${String(availableSlot.minute).padStart(2, '0')}`;
+            
+            // Add any times we've already scheduled in this batch
+            const batchTimesForDate = existingScheduleMap.get(dateStr) || [];
+            const allExistingTimes = [...existingTimesForDate, ...batchTimesForDate];
+            
+            // Get a random available time
+            const scheduledTime = await getRandomTimeForDate(dateStr, allExistingTimes);
+            
+            if (scheduledTime) {
+              // Update our tracking of scheduled times
+              if (!existingScheduleMap.has(dateStr)) {
+                existingScheduleMap.set(dateStr, []);
+              }
+              existingScheduleMap.get(dateStr).push(scheduledTime);
               
               scheduledPosts.push({
                 title,
                 status: "pending",
-                scheduled_date: dateStr,
-                scheduled_time: scheduledTime
-              });
-              
-              // Add to existing schedules for next iteration
-              existingSchedules?.push({
                 scheduled_date: dateStr,
                 scheduled_time: scheduledTime
               });
