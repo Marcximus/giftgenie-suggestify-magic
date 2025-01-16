@@ -16,7 +16,6 @@ import { BlogPostSEO } from "./form/BlogPostSEO";
 import { BlogPostFormData, BlogPostData } from "./types/BlogPostTypes";
 import { Input } from "@/components/ui/input";
 import { Wand2 } from "lucide-react";
-import { AutoFillBlogPost } from "./AutoFillBlogPost";
 
 interface BlogPostFormProps {
   initialData?: BlogPostData;
@@ -224,27 +223,6 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
       <TabsContent value="edit">
         <Form {...form}>
           <form onSubmit={form.handleSubmit((data) => onSubmit(data, false))} className="space-y-6 text-left">
-            <AutoFillBlogPost
-              setValue={form.setValue}
-              onGenerateImage={() => {
-                const imageUploadButton = document.querySelector('button:has(.Wand2)') as HTMLButtonElement;
-                if (imageUploadButton) imageUploadButton.click();
-                return new Promise<void>((resolve) => setTimeout(resolve, 2000));
-              }}
-              onGenerateAltText={generateAltText}
-              onGenerateExcerpt={() => handleAIGenerate('excerpt')}
-              onGenerateFullPost={() => {
-                const generateButton = document.querySelector('button:has(.Wand2)') as HTMLButtonElement;
-                if (generateButton) generateButton.click();
-                return new Promise<void>((resolve) => setTimeout(resolve, 2000));
-              }}
-              onGenerateAllSEO={async () => {
-                await handleAIGenerate('seo-title');
-                await handleAIGenerate('seo-description');
-                await handleAIGenerate('seo-keywords');
-              }}
-            />
-
             <BlogPostBasicInfo 
               form={form} 
               generateSlug={generateSlug}
