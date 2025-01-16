@@ -1,6 +1,5 @@
 import { Control } from "react-hook-form";
 import { BlogPostFormData } from "./types/BlogPostTypes";
-import { formUtils } from "./utils/formUtils";
 import { FormField, FormItem, FormLabel, FormControl } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";

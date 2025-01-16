@@ -110,7 +110,7 @@ export function BlogPostForm({ initialData = EMPTY_FORM_DATA }: Props) {
           />
 
           <BlogPostContent
-            form={form}
+            control={form.control}
             handleAIGenerate={handleAIGenerate}
           />
 
