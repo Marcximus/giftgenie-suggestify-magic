@@ -274,10 +274,10 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
       setGenerationProgress(50);
       await handleAIGenerate('excerpt');
 
-      // 6. Generate full post content
+      // 6. Generate full post content using the existing generateFullPost function
       setGenerationStatus("Generating full post content...");
       setGenerationProgress(65);
-      await handleAIGenerate('improve-content');
+      await generateFullPost();
 
       // 7. Generate SEO content
       setGenerationStatus("Generating SEO content...");
