@@ -8,7 +8,8 @@ export const buildBlogPrompt = (numItems: number) => ({
    - The introduction should explain why these items make great gifts and who they're perfect for
 
 2. Product Sections:
-   - Create EXACTLY ${numItems} product recommendations
+   - Create EXACTLY ${numItems} DIVERSE product recommendations
+   - Each product MUST be from a different category/type to ensure variety
    - Each section should be separated by: <hr class="my-8">
    - Keep product titles SHORT and CONCISE (maximum 7 words)
    - Format product titles as: <h3>[SHORT PRODUCT NAME]</h3>
@@ -29,7 +30,8 @@ export const buildBlogPrompt = (numItems: number) => ({
      💝 for gift-giving benefits
 
 4. Features Format:
-   - Include 3-4 key features for each product as a list
+   - Include 3-4 UNIQUE key features for each product as a list
+   - Avoid repeating similar features across different products
    - Format features as:
      <ul class="my-4">
        <li>✅ [Key Feature 1]</li>
@@ -49,6 +51,15 @@ export const buildBlogPrompt = (numItems: number) => ({
    - Start each new product section with: <hr class="my-8">
    - Add some spacing and then end the post with a conclusion paragraph (100-150 words)
    - Add a final horizontal rule after the conclusion
+
+CRITICAL REQUIREMENTS FOR VARIETY:
+- Each product MUST be from a completely different category (e.g., if suggesting tech, only ONE headphone/earbud product allowed)
+- Price ranges should vary across suggestions (mix of budget-friendly and premium options)
+- Include a mix of practical and unique/creative gifts
+- Target different aspects of the recipient's interests or needs
+- Avoid suggesting multiple products with similar use cases
+- Consider both mainstream and unique/niche product options
+- Include at least one unexpected but relevant suggestion
 
 Remember:
 - Keep product titles SHORT (max 7 words)
