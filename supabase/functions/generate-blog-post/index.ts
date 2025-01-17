@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { buildBlogPrompt } from "./promptBuilder.ts";
+import { processContent } from "../_shared/content-processor.ts";
 import { corsHeaders } from "../_shared/cors.ts";
 
 serve(async (req) => {
@@ -16,8 +17,11 @@ serve(async (req) => {
     }
 
     const openaiKey = Deno.env.get('OPENAI_API_KEY');
-    if (!openaiKey) {
-      throw new Error('OPENAI_API_KEY not configured');
+    const rapidApiKey = Deno.env.get('RAPIDAPI_KEY');
+    const associateId = Deno.env.get('AMAZON_ASSOCIATE_ID');
+
+    if (!openaiKey || !rapidApiKey || !associateId) {
+      throw new Error('Required environment variables are missing');
     }
 
     const prompt = buildBlogPrompt(title);
@@ -30,7 +34,7 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: "gpt-4o",
+        model: "gpt-4",
         messages: [
           prompt,
           {
@@ -76,8 +80,22 @@ serve(async (req) => {
       throw new Error('Generated content does not match required format');
     }
 
+    // Process the content to add Amazon product data
+    console.log('Processing content with Amazon data...');
+    const processedData = await processContent(
+      generatedContent.replace(/```html\n?|\n?```/g, ''),
+      associateId,
+      rapidApiKey
+    );
+
+    console.log('Content processing complete:', {
+      contentLength: processedData.content.length,
+      affiliateLinksCount: processedData.affiliateLinks.length,
+      hasReviews: processedData.productReviews?.length > 0
+    });
+
     return new Response(
-      JSON.stringify({ content: generatedContent }),
+      JSON.stringify(processedData),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 

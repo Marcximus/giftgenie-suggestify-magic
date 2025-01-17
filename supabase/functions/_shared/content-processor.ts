@@ -16,65 +16,64 @@ export async function processContent(
   const sections = content.split('<hr class="my-8">');
   const processedSections = [];
   const affiliateLinks = [];
+  const searchFailures = [];
+  const productReviews = [];
 
   for (const section of sections) {
     if (section.includes('<h3>')) {
       try {
         const titleMatch = section.match(/<h3>(.*?)<\/h3>/);
         if (titleMatch) {
-          const searchTerm = titleMatch[1];
-          console.log('Searching for product:', searchTerm);
+          const searchTerm = titleMatch[1].trim();
+          console.log('Processing product section:', searchTerm);
           
           const product = await searchAmazonProduct(searchTerm, rapidApiKey);
           
           if (product) {
+            console.log('Found product:', {
+              title: product.title,
+              hasPrice: !!product.price,
+              hasRating: !!product.rating,
+              hasImage: !!product.imageUrl
+            });
+
             const affiliateLink = `https://www.amazon.com/dp/${product.asin}?tag=${associateId}`;
             affiliateLinks.push({
               title: product.title,
               url: affiliateLink,
               asin: product.asin
             });
+
+            // Store review data if available
+            if (product.rating && product.totalRatings) {
+              productReviews.push({
+                title: product.title,
+                rating: product.rating,
+                totalRatings: product.totalRatings,
+                asin: product.asin
+              });
+            }
             
-            const productHtml = formatProductHtml(product, affiliateLink);
-            const processedSection = section.replace(
-              /<h3>.*?<\/h3>/,
-              productHtml
-            );
-            processedSections.push(processedSection);
+            // Split section to preserve content before and after the h3 tag
+            const [beforeH3, afterH3] = section.split('</h3>');
+            const productHtml = formatProductHtml(product, affiliateLink, beforeH3, afterH3);
+            processedSections.push(productHtml);
+            
           } else {
             console.warn('No product found for:', searchTerm);
+            searchFailures.push({
+              term: searchTerm,
+              error: 'No product found'
+            });
             processedSections.push(section);
           }
         }
       } catch (error) {
         console.error('Error processing product section:', error);
-        processedSections.push(section);
-      }
-    } else if (section.includes('[LINK')) {
-      try {
-        // Fetch 3 most recent published blog posts
-        const { data: posts, error } = await supabase
-          .from('blog_posts')
-          .select('title, slug')
-          .not('published_at', 'is', null)
-          .order('published_at', { ascending: false })
-          .limit(3);
-
-        if (error) {
-          console.error('Error fetching related posts:', error);
-          processedSections.push(section);
-        } else {
-          let processedSection = section;
-          posts.forEach((post, index) => {
-            processedSection = processedSection.replace(
-              `[LINK ${index + 1} PLACEHOLDER]`,
-              `<a href="/blog/post/${post.slug}" class="text-primary hover:underline">${post.title}</a>`
-            );
-          });
-          processedSections.push(processedSection);
-        }
-      } catch (error) {
-        console.error('Error processing related posts section:', error);
+        searchFailures.push({
+          term: section.match(/<h3>(.*?)<\/h3>/)?.[1] || 'Unknown',
+          error: error.message
+        });
         processedSections.push(section);
       }
     } else {
@@ -82,8 +81,17 @@ export async function processContent(
     }
   }
 
+  console.log('Content processing summary:', {
+    sectionsProcessed: sections.length,
+    productsFound: affiliateLinks.length,
+    reviewsCollected: productReviews.length,
+    searchFailures: searchFailures.length
+  });
+
   return {
     content: processedSections.join('<hr class="my-8">'),
-    affiliateLinks
+    affiliateLinks,
+    searchFailures,
+    productReviews
   };
 }
