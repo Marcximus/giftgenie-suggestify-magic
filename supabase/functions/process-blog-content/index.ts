@@ -105,6 +105,7 @@ serve(async (req) => {
 
               // Format product HTML with image and affiliate link
               const [beforeTitle, afterTitle] = section.split('</h3>');
+
               const productHtml = `${beforeTitle}</h3>
                 <div class="flex flex-col items-center my-8">
                   <div class="relative w-full max-w-2xl mb-6">
@@ -115,24 +116,7 @@ serve(async (req) => {
                       loading="lazy"
                     />
                   </div>
-                  ${product.product_star_rating ? `
-                    <div class="flex flex-col items-center gap-2 my-6 p-6 bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl shadow-sm">
-                      <div class="flex items-center gap-2">
-                        ${Array.from({ length: 5 }, (_, i) => 
-                          `<span class="text-yellow-400 text-xl">
-                            ${i < Math.floor(parseFloat(product.product_star_rating)) ? '★' : '☆'}
-                          </span>`
-                        ).join('')}
-                        <span class="font-semibold text-xl text-gray-800">${parseFloat(product.product_star_rating).toFixed(1)}</span>
-                      </div>
-                      ${product.product_num_ratings ? `
-                        <div class="text-base text-gray-600">
-                          Based on ${parseInt(product.product_num_ratings).toLocaleString()} verified customer reviews
-                        </div>
-                      ` : ''}
-                    </div>
-                  ` : ''}
-                  <div class="mt-4 mb-8">
+                  <div class="product-actions">
                     <a 
                       href="${affiliateLink}" 
                       target="_blank" 
@@ -141,6 +125,21 @@ serve(async (req) => {
                     >
                       View on Amazon
                     </a>
+                    ${product.product_star_rating ? `
+                      <div class="flex items-center gap-2">
+                        ${Array.from({ length: 5 }, (_, i) => 
+                          `<span class="text-yellow-400">
+                            ${i < Math.floor(parseFloat(product.product_star_rating)) ? '★' : '☆'}
+                          </span>`
+                        ).join('')}
+                        <span class="font-medium ml-1">${parseFloat(product.product_star_rating).toFixed(1)}</span>
+                        ${product.product_num_ratings ? `
+                          <span class="text-gray-500">
+                            (${parseInt(product.product_num_ratings).toLocaleString()})
+                          </span>
+                        ` : ''}
+                      </div>
+                    ` : ''}
                   </div>
                 </div>${afterTitle}`;
 
