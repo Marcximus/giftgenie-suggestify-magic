@@ -65,6 +65,7 @@ export const formatProductHtml = (
         />
       </div>
       ${reviewInfo}
+      ${featuresList}
       <div class="mt-4 mb-6">
         <a 
           href="${affiliateLink}" 
@@ -75,6 +76,5 @@ export const formatProductHtml = (
           View on Amazon
         </a>
       </div>
-      ${featuresList}
     </div>`;
 };
