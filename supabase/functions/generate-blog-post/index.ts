@@ -30,17 +30,16 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: "gpt-4o-mini",
+        model: "gpt-4o",
         messages: [
           prompt,
           {
             role: "user",
-            content: `Create a detailed, engaging blog post about: ${title}. 
-                     Include specific product recommendations with detailed features and benefits.
-                     Remember to maintain proper HTML formatting and include all required sections.
-                     
-                     IMPORTANT: Follow the exact format specified in the system message, including all HTML tags and Tailwind classes.
-                     Each product section must be properly formatted with <h3> tags and separated by <hr> tags.`
+            content: `Generate a detailed blog post about: ${title}. 
+                     Follow EXACTLY the format specified in the system message.
+                     Do not deviate from the required structure.
+                     Include all HTML tags and formatting exactly as specified.
+                     Make sure to include all required sections and elements.`
           }
         ],
         temperature: 0.7,
@@ -69,7 +68,10 @@ serve(async (req) => {
     console.log('Generated content preview:', generatedContent.substring(0, 500));
 
     // Validate content structure
-    if (!generatedContent.includes('<h3>') || !generatedContent.includes('<hr class="my-8">')) {
+    if (!generatedContent.includes('<h3>') || 
+        !generatedContent.includes('<hr class="my-8">') ||
+        !generatedContent.includes('<ul class="my-4">') ||
+        !generatedContent.includes('<li>✅')) {
       console.error('Generated content missing required HTML structure');
       throw new Error('Generated content does not match required format');
     }
