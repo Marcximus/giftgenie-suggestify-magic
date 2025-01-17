@@ -3,7 +3,6 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 import { corsHeaders } from '../_shared/cors.ts';
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -12,14 +11,18 @@ serve(async (req) => {
     const { content } = await req.json();
     console.log('Processing blog content, length:', content.length);
 
+    // Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     // Get Amazon Associate ID
     const { data: associateData, error: associateError } = await supabase.functions.invoke('get-amazon-associate-id');
-    if (associateError) throw associateError;
-    const associateId = associateData.associateId;
+    if (associateError) {
+      console.error('Error getting associate ID:', associateError);
+      throw associateError;
+    }
+    const associateId = associateData.AMAZON_ASSOCIATE_ID;
 
     // Split content into sections
     const sections = content.split('<hr class="my-8">');
@@ -55,8 +58,8 @@ serve(async (req) => {
               });
               
               // Format product HTML with image and affiliate link
-              const productHtml = `
-                <h3>${titleMatch[1]}</h3>
+              const [beforeTitle, afterTitle] = section.split('</h3>');
+              const productHtml = `${beforeTitle}</h3>
                 <div class="flex flex-col items-center my-8">
                   <div class="relative w-full max-w-2xl mb-6">
                     <img 
@@ -83,7 +86,7 @@ serve(async (req) => {
                       ` : ''}
                     </div>
                   ` : ''}
-                  <div class="mt-4">
+                  <div class="mt-4 mb-8">
                     <a 
                       href="${affiliateLink}" 
                       target="_blank" 
@@ -93,17 +96,15 @@ serve(async (req) => {
                       View on Amazon
                     </a>
                   </div>
-                </div>`;
+                </div>${afterTitle}`;
 
-              const processedSection = section.replace(
-                /<h3>.*?<\/h3>/,
-                productHtml
-              );
-              processedSections.push(processedSection);
+              processedSections.push(productHtml);
             } else {
               console.warn('No product found for:', searchTerm);
               processedSections.push(section);
             }
+          } else {
+            processedSections.push(section);
           }
         } catch (error) {
           console.error('Error processing product section:', error);
@@ -114,9 +115,13 @@ serve(async (req) => {
       }
     }
 
+    const processedContent = processedSections.join('<hr class="my-8">');
+    console.log('Processed content length:', processedContent.length);
+    console.log('Number of affiliate links:', affiliateLinks.length);
+
     return new Response(
       JSON.stringify({
-        content: processedSections.join('<hr class="my-8">'),
+        content: processedContent,
         affiliateLinks
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
