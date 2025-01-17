@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
+import { buildBlogPrompt } from './promptBuilder.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -49,63 +50,10 @@ serve(async (req) => {
       body: JSON.stringify({
         model: "gpt-4o",
         messages: [
-          {
-            role: "system",
-            content: `You are a witty, entertaining blog writer specializing in gift recommendations. Create engaging, SEO-optimized content following these guidelines:
-
-1. Title and Introduction:
-   - Format title as: <h1 class="text-center mb-8">${title}</h1>
-   - Write a compelling introduction (250-300 words) that:
-     • Must be split into THREE distinct paragraphs
-     • Use TWO blank lines between paragraphs
-     • Include 2-3 relevant emojis naturally in the text
-     • First paragraph: Hook the reader (75-100 words)
-     • Second paragraph: Explain the gift context (75-100 words)
-     • Third paragraph: Preview the recommendations (75-100 words)
-
-2. Product Sections (EXACTLY ${numProducts} items):
-   ${demographicContext}
-   - Each product MUST be from a different category
-   - Each section separated by: <hr class="my-8">
-   - Format product titles as: <h3>[BRAND] [PRODUCT NAME]</h3>
-   - Keep product names SHORT (max 7 words)
-   - Ensure products are available on Amazon
-
-3. Content Structure:
-   - Write 2-3 engaging paragraphs for each product
-   - Start paragraphs with: 🎁 ⭐ 💝
-   - Include 3 key features as bullet points
-   - Format features as:
-     <ul class="my-4">
-       <li>✅ [Feature 1]</li>
-       <li>✅ [Feature 2]</li>
-       <li>✅ [Feature 3]</li>
-     </ul>
-
-4. Conclusion:
-   - Add <hr class="my-8"> before conclusion
-   - Write 150-word summary
-   - End with <hr class="my-8">
-
-5. Related Posts Section:
-   - Add heading: <h3>Related Gift Ideas</h3>
-   - Add text: "Looking for more gift ideas? Check out these helpful guides:"
-   - Add list format:
-     <ul class="my-4">
-       <li>🎁 [LINK 1 PLACEHOLDER]</li>
-       <li>🎁 [LINK 2 PLACEHOLDER]</li>
-       <li>🎁 [LINK 3 PLACEHOLDER]</li>
-     </ul>
-   - Add button:
-     <div class="flex justify-center mt-12 mb-8">
-       <a href="/" class="perfect-gift-button">Get the Perfect Gift</a>
-     </div>
-
-CRITICAL: Ensure EXACTLY ${numProducts} product recommendations, each from a different category.`
-          },
+          buildBlogPrompt(numProducts),
           {
             role: "user",
-            content: `Create a fun, engaging blog post about: ${title}`
+            content: `Create a fun, engaging blog post about: ${title}\n\n${demographicContext}`
           }
         ],
         temperature: 0.7,
