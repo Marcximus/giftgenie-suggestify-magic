@@ -96,6 +96,25 @@ serve(async (req) => {
                 continue;
               }
 
+              // Get detailed product information using ASIN
+              const detailsUrl = `https://${RAPIDAPI_HOST}/product-details?asin=${product.asin}&country=US`;
+              const detailsResponse = await fetch(detailsUrl, {
+                headers: {
+                  'X-RapidAPI-Key': rapidApiKey,
+                  'X-RapidAPI-Host': RAPIDAPI_HOST,
+                }
+              });
+
+              if (!detailsResponse.ok) {
+                console.warn('Failed to get product details:', detailsResponse.status);
+                processedSections.push(section);
+                continue;
+              }
+
+              const detailsData = await detailsResponse.json();
+              console.log('Product details:', detailsData);
+
+              // Use the specific product ASIN for the affiliate link
               const affiliateLink = `https://www.amazon.com/dp/${product.asin}?tag=${associateId}`;
               affiliateLinks.push({
                 title: product.title,
@@ -107,8 +126,8 @@ serve(async (req) => {
               const [beforeTitle, afterTitle] = section.split('</h3>');
 
               const productHtml = `${beforeTitle}</h3>
-                <div class="flex flex-col items-center my-8">
-                  <div class="relative w-full max-w-2xl mb-6">
+                <div class="flex flex-col items-center my-4">
+                  <div class="relative w-full max-w-2xl mb-4">
                     <img 
                       src="${product.product_photo}" 
                       alt="${titleMatch[1]}"
@@ -116,32 +135,33 @@ serve(async (req) => {
                       loading="lazy"
                     />
                   </div>
-                  <div class="product-actions">
-                    <a 
-                      href="${affiliateLink}" 
-                      target="_blank" 
-                      rel="noopener noreferrer" 
-                      class="amazon-button"
-                    >
-                      View on Amazon
-                    </a>
-                    ${product.product_star_rating ? `
-                      <div class="flex items-center gap-2">
-                        ${Array.from({ length: 5 }, (_, i) => 
-                          `<span class="text-yellow-400">
-                            ${i < Math.floor(parseFloat(product.product_star_rating)) ? '★' : '☆'}
-                          </span>`
-                        ).join('')}
-                        <span class="font-medium ml-1">${parseFloat(product.product_star_rating).toFixed(1)}</span>
-                        ${product.product_num_ratings ? `
-                          <span class="text-gray-500">
-                            (${parseInt(product.product_num_ratings).toLocaleString()})
-                          </span>
-                        ` : ''}
-                      </div>
-                    ` : ''}
-                  </div>
-                </div>${afterTitle}`;
+                  ${product.product_star_rating ? `
+                    <div class="flex items-center gap-1.5 mb-3">
+                      ${Array.from({ length: 5 }, (_, i) => 
+                        `<span class="text-yellow-400 text-sm">
+                          ${i < Math.floor(parseFloat(product.product_star_rating)) ? '★' : '☆'}
+                        </span>`
+                      ).join('')}
+                      <span class="text-sm font-medium ml-1">${parseFloat(product.product_star_rating).toFixed(1)}</span>
+                      ${product.product_num_ratings ? `
+                        <span class="text-sm text-gray-500">
+                          (${parseInt(product.product_num_ratings).toLocaleString()})
+                        </span>
+                      ` : ''}
+                    </div>
+                  ` : ''}
+                  <a 
+                    href="${affiliateLink}" 
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    class="amazon-button inline-flex items-center px-4 py-2 bg-[#F97316] hover:bg-[#F97316]/90 text-white rounded-md shadow-sm text-sm transition-all"
+                  >
+                    View on Amazon
+                  </a>
+                </div>
+                <div class="prose prose-sm md:prose-base mt-4">
+                  ${afterTitle.trim()}
+                </div>`;
 
               processedSections.push(productHtml);
               console.log('Successfully processed product section');
