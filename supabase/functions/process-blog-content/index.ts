@@ -2,6 +2,8 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 import { corsHeaders } from '../_shared/cors.ts';
 
+const RAPIDAPI_HOST = 'real-time-amazon-data.p.rapidapi.com';
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -25,6 +27,13 @@ serve(async (req) => {
     const associateId = associateData.AMAZON_ASSOCIATE_ID;
     console.log('Got Amazon Associate ID:', associateId);
 
+    // Get RapidAPI Key
+    const rapidApiKey = Deno.env.get('RAPIDAPI_KEY');
+    if (!rapidApiKey) {
+      throw new Error('RAPIDAPI_KEY not configured');
+    }
+    console.log('RapidAPI Key available:', !!rapidApiKey);
+
     // Split content into sections
     const sections = content.split('<hr class="my-8">');
     console.log('Number of sections split from content:', sections.length);
@@ -43,71 +52,82 @@ serve(async (req) => {
             const searchTerm = titleMatch[1];
             console.log('Found product title:', searchTerm);
             
-            // Search for Amazon product
-            console.log('Invoking get-amazon-products with search term:', searchTerm);
-            const { data: productData, error: productError } = await supabase.functions.invoke('get-amazon-products', {
-              body: { searchTerm }
+            // Direct Amazon API call
+            console.log('Making direct Amazon API request for:', searchTerm);
+            const searchUrl = `https://${RAPIDAPI_HOST}/search?query=${encodeURIComponent(searchTerm)}&country=US&category_id=aps`;
+            
+            const searchResponse = await fetch(searchUrl, {
+              headers: {
+                'X-RapidAPI-Key': rapidApiKey,
+                'X-RapidAPI-Host': RAPIDAPI_HOST,
+              }
             });
 
-            if (productError) {
-              console.error('Error searching product:', productError);
+            console.log('Amazon API response status:', searchResponse.status);
+
+            if (!searchResponse.ok) {
+              const responseText = await searchResponse.text();
+              console.error('Amazon API error:', {
+                status: searchResponse.status,
+                statusText: searchResponse.statusText,
+                body: responseText
+              });
               processedSections.push(section);
               continue;
             }
 
-            console.log('Product search result:', productData);
+            const searchData = await searchResponse.json();
+            console.log('Amazon API response:', searchData);
 
-            if (productData?.product) {
-              const product = productData.product;
+            if (searchData.data?.products?.[0]) {
+              const product = searchData.data.products[0];
               console.log('Processing product:', {
                 title: product.title,
-                hasImage: !!product.imageUrl,
-                hasAsin: !!product.asin,
-                imageUrl: product.imageUrl,
-                asin: product.asin
+                hasImage: !!product.product_photo,
+                hasAsin: !!product.asin
               });
-              
-              if (!product.imageUrl || !product.asin) {
-                console.warn('Product missing required data:', { 
-                  hasImage: !!product.imageUrl, 
-                  hasAsin: !!product.asin 
+
+              if (!product.asin || !product.product_photo) {
+                console.warn('Product missing required data:', {
+                  hasAsin: !!product.asin,
+                  hasImage: !!product.product_photo
                 });
                 processedSections.push(section);
                 continue;
               }
-              
+
               const affiliateLink = `https://www.amazon.com/dp/${product.asin}?tag=${associateId}`;
               affiliateLinks.push({
                 title: product.title,
                 url: affiliateLink,
                 asin: product.asin
               });
-              
+
               // Format product HTML with image and affiliate link
               const [beforeTitle, afterTitle] = section.split('</h3>');
               const productHtml = `${beforeTitle}</h3>
                 <div class="flex flex-col items-center my-8">
                   <div class="relative w-full max-w-2xl mb-6">
                     <img 
-                      src="${product.imageUrl}" 
+                      src="${product.product_photo}" 
                       alt="${titleMatch[1]}"
                       class="w-80 h-80 sm:w-96 sm:h-96 lg:w-[500px] lg:h-[500px] object-contain rounded-lg shadow-md mx-auto" 
                       loading="lazy"
                     />
                   </div>
-                  ${product.rating ? `
+                  ${product.product_star_rating ? `
                     <div class="flex flex-col items-center gap-2 my-6 p-6 bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl shadow-sm">
                       <div class="flex items-center gap-2">
                         ${Array.from({ length: 5 }, (_, i) => 
                           `<span class="text-yellow-400 text-xl">
-                            ${i < Math.floor(product.rating) ? '★' : (i < product.rating ? '★' : '☆')}
+                            ${i < Math.floor(parseFloat(product.product_star_rating)) ? '★' : '☆'}
                           </span>`
                         ).join('')}
-                        <span class="font-semibold text-xl text-gray-800">${product.rating.toFixed(1)}</span>
+                        <span class="font-semibold text-xl text-gray-800">${parseFloat(product.product_star_rating).toFixed(1)}</span>
                       </div>
-                      ${product.totalRatings ? `
+                      ${product.product_num_ratings ? `
                         <div class="text-base text-gray-600">
-                          Based on ${product.totalRatings.toLocaleString()} verified customer reviews
+                          Based on ${parseInt(product.product_num_ratings).toLocaleString()} verified customer reviews
                         </div>
                       ` : ''}
                     </div>
