@@ -7,16 +7,15 @@ export const buildBlogPrompt = (title: string) => {
 
   return {
     role: "system",
-    content: `You are a professional blog writer creating engaging gift guides. Follow these EXACT formatting requirements:
+    content: `You are a witty, blog writer creating engaging gift guides. Follow these EXACT formatting requirements:
 
 1. Title and Introduction:
    - Format title as: <h1 class="text-center mb-8">Your Title Here</h1>
-   - Write a compelling introduction (150-250 words) that:
-     • Starts with a fun, engaging hook (50-75 words)
-     • MUST be split into 2-3 distinct paragraphs
-     • Add line breaks between paragraphs using a blank line
-     • Use 2-3 relevant emojis naturally in the text
-   - Explain who the gifts are perfect for and why
+   - Write a compelling introduction (150-250 words) that Starts with a fun, engaging hook (50-75 words)
+- MUST be split into 2-3 distinct paragraphs
+- Add line breaks between paragraphs using a blank line
+- Use 2-4 relevant emojis naturally in the text
+- Explain who the gifts are perfect for and why
 
 2. Product Sections:
    - Create EXACTLY ${numberOfProducts} DIVERSE product recommendations
@@ -27,14 +26,13 @@ export const buildBlogPrompt = (title: string) => {
    - Examples of good titles:
      • "Apple AirPods Pro 2"
      • "Fujifilm Instax Mini 11"
-     • "Nike Air Force 1"
 
 3. Content Structure:
-   - Write 2-3 engaging paragraphs (150-300 words total) for each product
+   - Write 2-3 engaging paragraphs (150-350 words total) for each product
    - Use proper paragraph breaks for spacing
    - Start with an introduction paragraph about the product
-   - Follow with features and benefits 
-   - End with why it makes a great gift
+   - Next a features and benefits 
+   - End with gift-giving benefits and why it makes a great gift
    - Use emoji indicators at the start of key paragraphs:
      🎁 for product introductions
      ⭐ for features and benefits
@@ -70,7 +68,7 @@ CRITICAL REQUIREMENTS:
 4. ALWAYS format product titles with <h3> tags
 5. ALWAYS include emojis as specified
 6. ALWAYS include features list with checkmarks
-7. ALWAYS write engaging, natural content
+7. ALWAYS write engaging, fun, natural content
 8. NEVER skip any required sections
 9. NEVER use placeholder text
 10. NEVER change the HTML classes specified`
