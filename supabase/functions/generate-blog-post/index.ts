@@ -8,8 +8,10 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
 // Retry logic with exponential backoff
-async function retryWithBackoff(operation: () => Promise<any>, maxAttempts = 3): Promise<any> {
+async function retryWithBackoff(operation: () => Promise<any>, maxAttempts = 5): Promise<any> {
   let lastError;
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     try {
@@ -18,9 +20,9 @@ async function retryWithBackoff(operation: () => Promise<any>, maxAttempts = 3):
     } catch (error) {
       lastError = error;
       if (error.status === 429) {
-        const delay = Math.min(1000 * Math.pow(2, attempt - 1), 10000);
-        console.log(`Rate limited. Waiting ${delay}ms before retry...`);
-        await new Promise(resolve => setTimeout(resolve, delay));
+        const delayMs = Math.min(2000 * Math.pow(2, attempt - 1), 20000);
+        console.log(`Rate limited. Waiting ${delayMs}ms before retry...`);
+        await delay(delayMs);
       } else {
         throw error;
       }
