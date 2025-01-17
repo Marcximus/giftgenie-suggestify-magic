@@ -25,9 +25,11 @@ serve(async (req) => {
       );
     }
 
+    console.log('Starting product search for term:', searchTerm);
     const product = await searchProducts(searchTerm, apiKey);
     
     if (!product) {
+      console.log('No products found for search term:', searchTerm);
       return new Response(
         JSON.stringify({ 
           error: 'No products found',
@@ -40,11 +42,12 @@ serve(async (req) => {
       );
     }
 
-    console.log('Returning product details:', {
+    console.log('Product search successful:', {
       title: product.title,
       asin: product.asin,
       hasPrice: !!product.price,
-      hasImage: !!product.imageUrl
+      hasImage: !!product.imageUrl,
+      imageUrl: product.imageUrl // Log the actual URL for debugging
     });
 
     return new Response(

@@ -66,7 +66,7 @@ const processSearchResults = (searchData: any): AmazonProduct | null => {
     }
   }
 
-  return {
+  const processedProduct = {
     title: product.title,
     description: product.product_description || product.title,
     price: formatPrice(product.product_price),
@@ -76,6 +76,16 @@ const processSearchResults = (searchData: any): AmazonProduct | null => {
     totalRatings: product.product_num_ratings ? parseInt(product.product_num_ratings.toString(), 10) : undefined,
     asin: product.asin
   };
+
+  console.log('Processed product:', {
+    title: processedProduct.title,
+    hasImage: !!processedProduct.imageUrl,
+    imageUrl: processedProduct.imageUrl,
+    hasAsin: !!processedProduct.asin,
+    asin: processedProduct.asin
+  });
+
+  return processedProduct;
 };
 
 const formatPrice = (priceStr: string | null | undefined): number | undefined => {
