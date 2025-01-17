@@ -1,8 +1,7 @@
-import { searchAmazonProduct } from './amazon-api.ts';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 import { parseProductSection } from './utils/sectionParser.ts';
 import { formatProductHtml } from './utils/productFormatter.ts';
 import { ProcessedContent } from './types/ContentTypes.ts';
-import { createClient } from '@supabase/supabase-js';
 
 export async function processContent(
   content: string,
