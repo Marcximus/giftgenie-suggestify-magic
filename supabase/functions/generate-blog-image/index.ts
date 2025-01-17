@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import "https://deno.land/x/xhr@0.1.0/mod.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
+import { Buffer } from "https://deno.land/std@0.168.0/node/buffer.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -7,106 +8,140 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
     const { title, prompt } = await req.json();
-    console.log('Received request:', { title, prompt });
 
-    if (!title) {
-      throw new Error('Title is required');
-    }
+    // If it's an alt text generation request
+    if (prompt?.toLowerCase().includes('alt text')) {
+      const altTextResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${Deno.env.get('OPENAI_API_KEY')}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: "gpt-4o",
+          messages: [{
+            role: "system",
+            content: "Generate a concise, descriptive alt text for an image. Focus on the main elements and purpose of the image."
+          }, {
+            role: "user",
+            content: `Generate alt text for a blog post image about: ${title}`
+          }],
+          max_tokens: 100,
+        }),
+      });
 
-    // If prompt is provided, use it to generate alt text
-    if (prompt === "Generate a descriptive alt text for this blog post's featured image") {
-      const altText = await generateAltText(title);
+      if (!altTextResponse.ok) {
+        const error = await altTextResponse.text();
+        console.error('OpenAI API error (alt text):', error);
+        throw new Error(`OpenAI API error (alt text): ${altTextResponse.status}`);
+      }
+
+      const altTextData = await altTextResponse.json();
       return new Response(
-        JSON.stringify({ altText }),
+        JSON.stringify({ altText: altTextData.choices[0].message.content.trim() }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Otherwise, generate an image
-    const imageUrl = await generateImage(title);
+    // Extract the main subject from the title
+    const subjectMatch = title.toLowerCase().match(/(?:for|to)\s+(?:a\s+)?(\w+)/i);
+    const subject = subjectMatch ? subjectMatch[1] : '';
+
+    const imagePrompt = `Create a creative and engaging scene that directly relates to ${title || 'gift-giving'}, focusing specifically on ${subject || 'the recipient'}.
+
+IMPORTANT REQUIREMENTS:
+- Absolutely NO text, letters, numbers, or writing of any kind
+- Absolutely NO logos or brand names
+- Create a scene that clearly connects to the subject and person mentioned: ${subject || 'the recipient'}
+- Fill the entire frame with the scene (NO blank space or borders)
+- Ensure elements in the image relates to the title, the occasion and the person: ${title}
+
+STYLE & VARIATION INSPIRATION:
+- Chose a random style or combine multiple and experiment with for example classic painting, watercolor, 8-bit pixel art, surreal collage, vibrant pop art, dreamy cinematic lighting, whimsical cartoons, abstract paitings etc`;
+
+    // Create OpenAI image
+    const response = await fetch('https://api.openai.com/v1/images/generations', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${Deno.env.get('OPENAI_API_KEY')}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: "dall-e-3",
+        prompt: prompt || imagePrompt,
+        n: 1,
+        size: "1792x1024",
+        quality: "standard",
+        response_format: "b64_json",
+        style: "vivid"
+      }),
+    });
+
+    if (!response.ok) {
+      const error = await response.text();
+      console.error('OpenAI API error:', error);
+      throw new Error(`OpenAI API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    const imageData = data.data[0].b64_json;
+
+    // Initialize Supabase client
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    // Convert base64 to buffer
+    const buffer = Buffer.from(imageData, 'base64');
+    const fileName = `${crypto.randomUUID()}.png`;
+
+    // Upload to Supabase Storage
+    const { data: uploadData, error: uploadError } = await supabase.storage
+      .from('blog-images')
+      .upload(fileName, buffer, {
+        contentType: 'image/png',
+        cacheControl: '3600',
+        upsert: false
+      });
+
+    if (uploadError) {
+      console.error('Storage upload error:', uploadError);
+      throw new Error(`Failed to upload image: ${uploadError.message}`);
+    }
+
+    // Get public URL
+    const { data: { publicUrl } } = supabase.storage
+      .from('blog-images')
+      .getPublicUrl(fileName);
+
     return new Response(
-      JSON.stringify({ imageUrl }),
+      JSON.stringify({ imageUrl: publicUrl }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
+
   } catch (error) {
     console.error('Error in generate-blog-image function:', error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        error: error.message,
+        timestamp: new Date().toISOString(),
+        details: error.stack,
+        type: 'generate-blog-image-error'
+      }),
       { 
         status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        headers: { 
+          ...corsHeaders, 
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-store, no-cache, must-revalidate'
+        } 
       }
     );
   }
 });
-
-async function generateAltText(title: string) {
-  const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
-  if (!openAIApiKey) throw new Error('OpenAI API key not configured');
-
-  const response = await fetch('https://api.openai.com/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${openAIApiKey}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: "gpt-4o-mini",
-      messages: [
-        {
-          role: "system",
-          content: "You are an expert at writing descriptive, SEO-friendly alt text for blog post images. Generate a concise but descriptive alt text that captures the essence of a blog post's featured image based on the post's title."
-        },
-        {
-          role: "user",
-          content: `Write a descriptive alt text for a blog post titled: "${title}". Keep it under 125 characters.`
-        }
-      ],
-      max_tokens: 100,
-      temperature: 0.7,
-    }),
-  });
-
-  if (!response.ok) {
-    console.error('OpenAI API error:', response.status);
-    throw new Error(`OpenAI API error: ${response.status}`);
-  }
-
-  const data = await response.json();
-  return data.choices[0].message.content.trim();
-}
-
-async function generateImage(title: string) {
-  const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
-  if (!openAIApiKey) throw new Error('OpenAI API key not configured');
-
-  const response = await fetch('https://api.openai.com/v1/images/generations', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${openAIApiKey}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: "dall-e-3",
-      prompt: `Create a beautiful, artistic image for a blog post about ${title}. The image should be visually appealing and relevant to the topic, without any text or watermarks. Style: professional product photography, soft lighting, clean background.`,
-      n: 1,
-      size: "1024x1024",
-      quality: "standard",
-    }),
-  });
-
-  if (!response.ok) {
-    console.error('OpenAI API error:', response.status);
-    throw new Error(`OpenAI API error: ${response.status}`);
-  }
-
-  const data = await response.json();
-  return data.data[0].url;
-}

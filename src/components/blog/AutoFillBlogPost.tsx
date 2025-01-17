@@ -17,8 +17,6 @@ interface AutoFillBlogPostProps {
   generateAllSEO: () => Promise<void>;
 }
 
-const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
-
 export const AutoFillBlogPost = ({
   form,
   generateSlug,
@@ -33,17 +31,10 @@ export const AutoFillBlogPost = ({
   const { toast } = useToast();
 
   const getNextQueuedTitle = async () => {
-    console.log('Fetching next queued title...');
-    
-    const now = new Date();
-    const currentDate = now.toISOString().split('T')[0];
-    const currentTime = now.toTimeString().split(' ')[0];
-
     const { data: queuedPost, error } = await supabase
       .from("blog_post_queue")
       .select("title")
       .eq("status", "pending")
-      .or(`scheduled_date.gt.${currentDate},and(scheduled_date.eq.${currentDate},scheduled_time.gt.${currentTime})`)
       .order("scheduled_date", { ascending: true })
       .order("scheduled_time", { ascending: true })
       .limit(1)
@@ -51,19 +42,18 @@ export const AutoFillBlogPost = ({
 
     if (error) {
       console.error("Error fetching queued post:", error);
-      throw new Error(`Failed to fetch queued post: ${error.message}`);
+      throw error;
     }
 
     if (!queuedPost) {
       throw new Error("No pending posts found in queue");
     }
 
-    console.log('Found queued post:', queuedPost);
     return queuedPost.title;
   };
 
   const updateProgress = (step: number) => {
-    setProgress(step * 14.28); // 7 steps = ~14.28% each
+    setProgress(step * 20); // 5 steps = 20% each
   };
 
   const handleAutoFill = async () => {
@@ -72,81 +62,34 @@ export const AutoFillBlogPost = ({
 
     try {
       // Step 1: Get title and set basic fields
-      console.log('Starting auto-fill process...');
       const title = await getNextQueuedTitle();
-      console.log('Setting form values with title:', title);
-      
       form.setValue("title", title);
       form.setValue("slug", generateSlug(title));
       form.setValue("author", "Get The Gift Team");
       updateProgress(1);
-      await delay(3000); // Wait before starting image generation
 
       // Step 2: Generate image
-      console.log('Generating image...');
-      try {
-        await generateImage();
-        updateProgress(2);
-        await delay(5000); // Longer delay after image generation
-      } catch (error) {
-        console.error('Image generation failed:', error);
-        throw new Error('Failed to generate image. Please try again.');
-      }
+      await generateImage();
+      updateProgress(2);
 
       // Step 3: Generate alt text
-      console.log('Generating alt text...');
-      try {
-        await generateAltText();
-        updateProgress(3);
-        await delay(5000); // Wait before excerpt generation
-      } catch (error) {
-        console.error('Alt text generation failed:', error);
-        throw new Error('Failed to generate alt text. Please try again.');
-      }
+      await generateAltText();
+      updateProgress(3);
 
       // Step 4: Generate excerpt
-      console.log('Generating excerpt...');
-      try {
-        await generateExcerpt();
-        updateProgress(4);
-        await delay(5000); // Wait before full post generation
-      } catch (error) {
-        console.error('Excerpt generation failed:', error);
-        throw new Error('Failed to generate excerpt. Please try again.');
-      }
+      await generateExcerpt();
+      updateProgress(4);
 
-      // Step 5: Generate full post
-      console.log('Generating full post...');
-      try {
-        await generateFullPost();
-        updateProgress(5);
-        await delay(5000); // Wait before SEO generation
-      } catch (error) {
-        console.error('Full post generation failed:', error);
-        throw new Error('Failed to generate full post. Please try again.');
-      }
-
-      // Step 6: Generate SEO content
-      console.log('Generating SEO content...');
-      try {
-        await generateAllSEO();
-        updateProgress(6);
-        await delay(3000); // Wait before final verification
-      } catch (error) {
-        console.error('SEO content generation failed:', error);
-        throw new Error('Failed to generate SEO content. Please try again.');
-      }
-
-      // Step 7: Final verification
-      console.log('Verifying all content...');
-      updateProgress(7);
+      // Step 5: Generate full post and SEO
+      await Promise.all([generateFullPost(), generateAllSEO()]);
+      updateProgress(5);
 
       toast({
         title: "Success",
         description: "All fields have been filled and content generated",
       });
     } catch (error: any) {
-      console.error('Auto-fill error:', error);
+      console.error("Auto-fill error:", error);
       toast({
         title: "Error",
         description: error.message || "Failed to auto-fill blog post",
@@ -154,7 +97,6 @@ export const AutoFillBlogPost = ({
       });
     } finally {
       setIsProcessing(false);
-      setProgress(0);
     }
   };
 
