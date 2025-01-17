@@ -14,6 +14,11 @@ export interface BlogPostFormData {
   image_alt_text: string | null;
   related_posts: any[] | null;
   product_search_failures: any[] | null;
+  processing_status: {
+    product_sections: number;
+    amazon_lookups: number;
+    successful_replacements: number;
+  } | null;
 }
 
 export interface BlogPostData extends BlogPostFormData {

@@ -46,6 +46,11 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
       image_alt_text: "",
       related_posts: [],
       product_search_failures: [],
+      processing_status: {
+        product_sections: 0,
+        amazon_lookups: 0,
+        successful_replacements: 0
+      }
     },
   });
 
