@@ -1,7 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
-import { buildBlogPrompt } from './promptBuilder.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
+import { buildBlogPrompt } from './promptBuilder.ts';
 import { corsHeaders } from '../_shared/cors.ts';
 
 serve(async (req) => {
@@ -87,8 +87,12 @@ serve(async (req) => {
       throw processingError;
     }
 
+    console.log('Content processed successfully');
+    console.log('Final content length:', processedContent.content.length);
+    console.log('Number of affiliate links:', processedContent.affiliateLinks?.length || 0);
+
     return new Response(
-      JSON.stringify({ content: processedContent }),
+      JSON.stringify(processedContent),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
