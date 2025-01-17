@@ -51,6 +51,8 @@ serve(async (req) => {
             
             // Direct integration with RapidAPI Amazon endpoint
             const searchUrl = `https://${RAPIDAPI_HOST}/search?query=${encodeURIComponent(searchTerm)}&country=US&category_id=aps`;
+            console.log('Making request to:', searchUrl);
+            
             const searchResponse = await fetch(searchUrl, {
               headers: {
                 'X-RapidAPI-Key': rapidApiKey,
@@ -59,20 +61,36 @@ serve(async (req) => {
             });
 
             if (!searchResponse.ok) {
-              console.error('Amazon API error:', searchResponse.status);
+              console.error('Amazon API error:', {
+                status: searchResponse.status,
+                statusText: searchResponse.statusText,
+                url: searchUrl
+              });
+              throw new Error(`Amazon API error: ${searchResponse.status}`);
+            }
+
+            const searchData = await searchResponse.json();
+            console.log('Search response:', searchData);
+
+            if (!searchData.data?.products?.[0]) {
+              console.warn('No products found for:', searchTerm);
               searchFailures.push({
                 term: searchTerm,
-                error: `API error: ${searchResponse.status}`,
+                error: 'No products found',
                 timestamp: new Date().toISOString()
               });
               processedSections.push(section);
               continue;
             }
 
-            const searchData = await searchResponse.json();
-            const product = searchData.data?.products?.[0];
+            const product = searchData.data.products[0];
+            console.log('Selected product:', {
+              title: product.title,
+              asin: product.asin,
+              hasImage: !!product.product_photo
+            });
 
-            if (!product?.asin || !product?.product_photo) {
+            if (!product.asin || !product.product_photo) {
               console.warn('Invalid product data for:', searchTerm);
               searchFailures.push({
                 term: searchTerm,
@@ -85,6 +103,8 @@ serve(async (req) => {
 
             // Get detailed product information
             const detailsUrl = `https://${RAPIDAPI_HOST}/product-details?asin=${product.asin}&country=US`;
+            console.log('Fetching product details:', detailsUrl);
+            
             const detailsResponse = await fetch(detailsUrl, {
               headers: {
                 'X-RapidAPI-Key': rapidApiKey,
@@ -95,6 +115,8 @@ serve(async (req) => {
             let rating, totalRatings;
             if (detailsResponse.ok) {
               const detailsData = await detailsResponse.json();
+              console.log('Product details:', detailsData);
+              
               rating = detailsData.data?.product_rating ? 
                 parseFloat(detailsData.data.product_rating) : undefined;
               totalRatings = detailsData.data?.product_num_ratings ? 
@@ -103,15 +125,14 @@ serve(async (req) => {
 
             // Create affiliate link
             const affiliateLink = `https://www.amazon.com/dp/${product.asin}?tag=${associateId}`;
+            console.log('Generated affiliate link:', affiliateLink);
             
             // Add to affiliate links if valid
-            const linkData = {
+            affiliateLinks.push({
               title: product.title,
               url: affiliateLink,
               asin: product.asin
-            };
-
-            affiliateLinks.push(linkData);
+            });
             
             const [beforeTitle, afterTitle] = section.split('</h3>');
             const productHtml = `${beforeTitle}</h3>
