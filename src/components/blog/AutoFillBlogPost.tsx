@@ -17,6 +17,8 @@ interface AutoFillBlogPostProps {
   generateAllSEO: () => Promise<void>;
 }
 
+const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
 export const AutoFillBlogPost = ({
   form,
   generateSlug,
@@ -61,7 +63,24 @@ export const AutoFillBlogPost = ({
   };
 
   const updateProgress = (step: number) => {
-    setProgress(step * 20); // 5 steps = 20% each
+    setProgress(step * 14.28); // 7 steps = ~14.28% each
+  };
+
+  const retryOperation = async <T,>(
+    operation: () => Promise<T>,
+    maxRetries: number = 3,
+    delayMs: number = 2000
+  ): Promise<T> => {
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        return await operation();
+      } catch (error) {
+        console.error(`Attempt ${attempt} failed:`, error);
+        if (attempt === maxRetries) throw error;
+        await delay(delayMs * attempt); // Exponential backoff
+      }
+    }
+    throw new Error('All retry attempts failed');
   };
 
   const handleAutoFill = async () => {
@@ -79,25 +98,38 @@ export const AutoFillBlogPost = ({
       form.setValue("author", "Get The Gift Team");
       updateProgress(1);
 
-      // Step 2: Generate image
+      // Step 2: Generate image with retry
       console.log('Generating image...');
-      await generateImage();
+      await retryOperation(generateImage);
+      await delay(1000); // Add delay between operations
       updateProgress(2);
 
-      // Step 3: Generate alt text
+      // Step 3: Generate alt text with retry
       console.log('Generating alt text...');
-      await generateAltText();
+      await retryOperation(generateAltText);
+      await delay(1000);
       updateProgress(3);
 
-      // Step 4: Generate excerpt
+      // Step 4: Generate excerpt with retry
       console.log('Generating excerpt...');
-      await generateExcerpt();
+      await retryOperation(generateExcerpt);
+      await delay(1000);
       updateProgress(4);
 
-      // Step 5: Generate full post and SEO
-      console.log('Generating full post and SEO...');
-      await Promise.all([generateFullPost(), generateAllSEO()]);
+      // Step 5: Generate full post with retry
+      console.log('Generating full post...');
+      await retryOperation(generateFullPost);
+      await delay(1000);
       updateProgress(5);
+
+      // Step 6: Generate SEO content with retry
+      console.log('Generating SEO content...');
+      await retryOperation(generateAllSEO);
+      updateProgress(6);
+
+      // Step 7: Final verification
+      console.log('Verifying all content...');
+      updateProgress(7);
 
       toast({
         title: "Success",
