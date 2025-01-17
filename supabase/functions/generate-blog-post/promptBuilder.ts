@@ -1,7 +1,14 @@
 export const buildBlogPrompt = (title: string) => {
+  if (!title || typeof title !== 'string') {
+    console.error('Invalid title provided to buildBlogPrompt:', title);
+    throw new Error('Title must be a non-empty string');
+  }
+
   // Extract number of products from title (e.g., "top 10" or "best 10")
-  const numMatch = title.match(/(?:top|best)\s+(\d+)/i);
+  const numMatch = title.toLowerCase().match(/(?:top|best)\s+(\d+)/i);
   const numProducts = numMatch ? parseInt(numMatch[1]) : 8; // Default to 8 if no number found
+  
+  console.log(`Generating prompt for ${numProducts} products from title: ${title}`);
   
   return {
     role: "system",
