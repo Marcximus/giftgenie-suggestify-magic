@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { processContent } from "../_shared/content-processor.ts";
+import "https://deno.land/x/xhr@0.1.0/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -13,17 +13,14 @@ serve(async (req) => {
 
   try {
     const { title } = await req.json();
-    const numItems = 8; // Ensure we get enough product suggestions
+    console.log('Processing blog post for title:', title);
 
-    const openaiApiKey = Deno.env.get('OPENAI_API_KEY');
-    const rapidApiKey = Deno.env.get('RAPIDAPI_KEY');
-    const amazonAssociateId = Deno.env.get('AMAZON_ASSOCIATE_ID');
+    // Extract number of products from title
+    const numMatch = title.match(/top\s+(\d+)/i);
+    const numProducts = numMatch ? parseInt(numMatch[1]) : 8;
+    console.log('Number of products to generate:', numProducts);
 
-    if (!openaiApiKey || !rapidApiKey || !amazonAssociateId) {
-      throw new Error('Required environment variables are not set');
-    }
-
-    // Extract target demographic information from title
+    // Detect demographic information
     const titleLower = title.toLowerCase();
     const isTeenage = titleLower.includes('teen') || titleLower.includes('teenage');
     const isFemale = titleLower.includes('sister') || titleLower.includes('girl') || titleLower.includes('daughter');
@@ -31,7 +28,7 @@ serve(async (req) => {
     // Build demographic-specific prompt
     const demographicContext = isTeenage && isFemale ? `
       CRITICAL: These suggestions are specifically for a teenage girl. Consider:
-      - Current teen trends and interests
+      - Current teen trends and interests (TikTok, Instagram, etc.)
       - Age-appropriate items (13-19 years)
       - Popular brands among teenage girls
       - Social media and technology preferences
@@ -46,7 +43,7 @@ serve(async (req) => {
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${openaiApiKey}`,
+        'Authorization': `Bearer ${Deno.env.get('OPENAI_API_KEY')}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
@@ -66,7 +63,7 @@ serve(async (req) => {
      • Second paragraph: Explain the gift context (75-100 words)
      • Third paragraph: Preview the recommendations (75-100 words)
 
-2. Product Sections (EXACTLY ${numItems} items):
+2. Product Sections (EXACTLY ${numProducts} items):
    ${demographicContext}
    - Each product MUST be from a different category
    - Each section separated by: <hr class="my-8">
@@ -104,7 +101,7 @@ serve(async (req) => {
        <a href="/" class="perfect-gift-button">Get the Perfect Gift</a>
      </div>
 
-CRITICAL: Ensure EXACTLY ${numItems} product recommendations, each from a different category.`
+CRITICAL: Ensure EXACTLY ${numProducts} product recommendations, each from a different category.`
           },
           {
             role: "user",
@@ -112,27 +109,36 @@ CRITICAL: Ensure EXACTLY ${numItems} product recommendations, each from a differ
           }
         ],
         temperature: 0.7,
-        max_tokens: 3000,
+        max_tokens: 3500,
+        presence_penalty: 0.1,
+        frequency_penalty: 0.1,
       }),
     });
 
     if (!response.ok) {
       const error = await response.text();
+      console.error('OpenAI API error:', error);
       throw new Error(`OpenAI API error: ${error}`);
     }
 
     const openaiData = await response.json();
+    console.log('OpenAI response received, processing content...');
+
     const initialContent = openaiData.choices[0].message.content;
+    console.log('Generated content length:', initialContent.length);
 
     // Process the content to add Amazon product information
-    const { content, affiliateLinks } = await processContent(
-      initialContent,
-      amazonAssociateId,
-      rapidApiKey
-    );
+    const { data: processedContent, error: processingError } = await supabase.functions.invoke('process-blog-content', {
+      body: { content: initialContent }
+    });
+
+    if (processingError) {
+      console.error('Content processing error:', processingError);
+      throw processingError;
+    }
 
     return new Response(
-      JSON.stringify({ content, affiliateLinks }),
+      JSON.stringify({ content: processedContent }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
