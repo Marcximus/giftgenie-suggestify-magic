@@ -6,6 +6,7 @@ interface ProductInfo {
   rating?: number;
   totalRatings?: number;
   description?: string;
+  features?: string[];
 }
 
 export const formatProductHtml = (
@@ -21,10 +22,9 @@ export const formatProductHtml = (
 
   console.log('Formatting product HTML:', {
     title: simplifiedTitle,
-    price: product.price,
-    currency: product.currency,
-    rating: product.rating,
-    totalRatings: product.totalRatings
+    hasImage: !!product.imageUrl,
+    hasRating: !!product.rating,
+    hasFeatures: product.features?.length || 0
   });
 
   // Format rating and review count
@@ -37,20 +37,26 @@ export const formatProductHtml = (
           </span>`
         ).join('')}
         <span class="font-semibold text-xl text-gray-800">${product.rating.toFixed(1)}</span>
+        ${product.totalRatings ? `
+          <span class="text-gray-500">
+            (${product.totalRatings.toLocaleString()})
+          </span>
+        ` : ''}
       </div>
-      ${product.totalRatings ? `
-        <div class="text-base text-gray-600">
-          Based on ${product.totalRatings.toLocaleString()} verified customer reviews
-        </div>
-      ` : ''}
     </div>` : '';
 
+  // Format features list if available
+  const featuresList = product.features?.length ? `
+    <ul class="my-4 list-disc pl-6 space-y-2">
+      ${product.features.map(feature => 
+        `<li class="text-gray-700">${feature}</li>`
+      ).join('')}
+    </ul>
+  ` : '';
+
   return `
-    <h3 class="text-xl md:text-2xl font-semibold mt-8 mb-4 text-center">
-      ${simplifiedTitle}
-    </h3>
     <div class="flex flex-col items-center my-8">
-      <div class="relative w-full max-w-2xl mb-6">
+      <div class="w-full max-w-2xl mb-6">
         <img 
           src="${product.imageUrl}" 
           alt="${simplifiedTitle}"
@@ -59,7 +65,7 @@ export const formatProductHtml = (
         />
       </div>
       ${reviewInfo}
-      <div class="mt-4">
+      <div class="mt-4 mb-6">
         <a 
           href="${affiliateLink}" 
           target="_blank" 
@@ -69,5 +75,6 @@ export const formatProductHtml = (
           View on Amazon
         </a>
       </div>
+      ${featuresList}
     </div>`;
 };

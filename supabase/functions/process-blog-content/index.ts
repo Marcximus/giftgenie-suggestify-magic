@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { corsHeaders } from '../_shared/cors.ts';
+import { formatProductHtml } from './productFormatter.ts';
 
 const RAPIDAPI_HOST = 'real-time-amazon-data.p.rapidapi.com';
 
@@ -12,19 +13,16 @@ serve(async (req) => {
     const { content } = await req.json();
     console.log('Processing blog content, length:', content.length);
 
-    // Get RapidAPI Key
     const rapidApiKey = Deno.env.get('RAPIDAPI_KEY');
     if (!rapidApiKey) {
       throw new Error('RAPIDAPI_KEY not configured');
     }
 
-    // Get Amazon Associate ID
     const associateId = Deno.env.get('AMAZON_ASSOCIATE_ID');
     if (!associateId) {
       throw new Error('AMAZON_ASSOCIATE_ID not configured');
     }
 
-    // Split content into sections
     const sections = content.split('<hr class="my-8">');
     console.log('Number of sections:', sections.length);
     
@@ -40,7 +38,7 @@ serve(async (req) => {
             const searchTerm = titleMatch[1];
             console.log('Processing product section:', searchTerm);
             
-            // Search for product
+            // Search for product with simplified term
             const searchUrl = `https://${RAPIDAPI_HOST}/search?query=${encodeURIComponent(searchTerm)}&country=US&category_id=aps`;
             console.log('Making request to:', searchUrl);
             
@@ -61,36 +59,27 @@ serve(async (req) => {
             }
 
             const searchData = await searchResponse.json();
-            console.log('Search response:', searchData);
+            console.log('Search response products:', searchData.data?.products?.length || 0);
 
-            if (!searchData.data?.products?.[0]) {
-              console.warn('No products found for:', searchTerm);
+            // Take the first product that has an ASIN and image
+            const product = searchData.data?.products?.find(p => p.asin && p.product_photo);
+            
+            if (!product) {
+              console.warn('No valid products found for:', searchTerm);
               searchFailures.push({
                 term: searchTerm,
-                error: 'No products found',
+                error: 'No products with required data found',
                 timestamp: new Date().toISOString()
               });
               processedSections.push(section);
               continue;
             }
 
-            const product = searchData.data.products[0];
             console.log('Selected product:', {
               title: product.title,
               asin: product.asin,
               hasImage: !!product.product_photo
             });
-
-            if (!product.asin || !product.product_photo) {
-              console.warn('Invalid product data for:', searchTerm);
-              searchFailures.push({
-                term: searchTerm,
-                error: 'Missing required product data',
-                timestamp: new Date().toISOString()
-              });
-              processedSections.push(section);
-              continue;
-            }
 
             // Get detailed product information
             const detailsUrl = `https://${RAPIDAPI_HOST}/product-details?asin=${product.asin}&country=US`;
@@ -103,78 +92,45 @@ serve(async (req) => {
               }
             });
 
-            let rating, totalRatings;
+            let rating, totalRatings, features;
             if (detailsResponse.ok) {
               const detailsData = await detailsResponse.json();
-              console.log('Product details:', detailsData);
+              console.log('Product details received');
               
               rating = detailsData.data?.product_rating ? 
                 parseFloat(detailsData.data.product_rating) : undefined;
               totalRatings = detailsData.data?.product_num_ratings ? 
                 parseInt(detailsData.data.product_num_ratings, 10) : undefined;
+              features = detailsData.data?.product_features || [];
             }
 
             // Create affiliate link
             const affiliateLink = `https://www.amazon.com/dp/${product.asin}?tag=${associateId}`;
-            console.log('Generated affiliate link:', affiliateLink);
+            console.log('Generated affiliate link for:', product.asin);
             
-            // Add to affiliate links if valid
             affiliateLinks.push({
               title: product.title,
               url: affiliateLink,
               asin: product.asin
             });
 
-            // Split section content at h3 tag
+            // Split section content and process
             const [beforeH3, afterH3] = section.split('</h3>');
-            
-            // Extract features list
-            const featuresList = afterH3.match(/<ul class="my-4">([\s\S]*?)<\/ul>/);
-            const features = featuresList ? featuresList[0] : '';
-            
-            // Get description paragraphs (everything before the features list)
             const description = afterH3.split('<ul')[0];
 
-            const productHtml = `${beforeH3}</h3>
-              <div class="flex flex-col items-center my-8">
-                <div class="w-full max-w-2xl mb-4">
-                  <img 
-                    src="${product.product_photo}" 
-                    alt="${product.title}"
-                    class="w-80 h-80 sm:w-96 sm:h-96 lg:w-[500px] lg:h-[500px] object-contain rounded-lg shadow-md mx-auto" 
-                    loading="lazy"
-                  />
-                </div>
-                ${rating ? `
-                  <div class="flex flex-col items-center gap-2 my-6 p-6 bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl shadow-sm">
-                    <div class="flex items-center gap-2">
-                      ${Array.from({ length: 5 }, (_, i) => 
-                        `<span class="text-yellow-400 text-xl">
-                          ${i < Math.floor(rating) ? '★' : '☆'}
-                        </span>`
-                      ).join('')}
-                      <span class="font-semibold text-xl text-gray-800">${rating.toFixed(1)}</span>
-                      ${totalRatings ? `
-                        <span class="text-gray-500">
-                          (${totalRatings.toLocaleString()})
-                        </span>
-                      ` : ''}
-                    </div>
-                  </div>
-                ` : ''}
-                <a 
-                  href="${affiliateLink}" 
-                  target="_blank" 
-                  rel="noopener noreferrer" 
-                  class="inline-block px-6 py-2 bg-[#F97316] hover:bg-[#F97316]/90 text-white font-medium rounded-md transition-colors text-sm text-center mb-6"
-                >
-                  View on Amazon
-                </a>
-              </div>
-              ${description}
-              ${features}`;
+            // Format the product HTML with all available data
+            const productHtml = formatProductHtml({
+              title: product.title,
+              imageUrl: product.product_photo,
+              price: product.product_price ? parseFloat(product.product_price.replace(/[^0-9.]/g, '')) : undefined,
+              currency: 'USD',
+              rating,
+              totalRatings,
+              description: product.product_description,
+              features
+            }, affiliateLink);
 
-            processedSections.push(productHtml);
+            processedSections.push(`${beforeH3}</h3>${productHtml}${description}`);
             console.log('Successfully processed product section');
           } else {
             processedSections.push(section);
