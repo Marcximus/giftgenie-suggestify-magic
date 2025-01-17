@@ -5,12 +5,7 @@ import { corsHeaders } from "../_shared/cors.ts";
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response(null, { 
-      headers: {
-        ...corsHeaders,
-        'Access-Control-Max-Age': '86400',
-      } 
-    });
+    return new Response(null, { headers: corsHeaders });
   }
 
   try {
@@ -47,7 +42,7 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: "gpt-4o-mini", // Updated to use the correct model
+        model: "gpt-4o-mini", // Using the correct model name
         messages: [
           prompt,
           {
@@ -120,7 +115,6 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Error in generate-blog-post:', error);
-    // Improved error response with more details
     return new Response(
       JSON.stringify({
         error: error.message,
