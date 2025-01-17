@@ -3,7 +3,7 @@ import { buildBlogPrompt } from "./promptBuilder.ts";
 import { corsHeaders } from "../_shared/cors.ts";
 
 serve(async (req) => {
-  // Always handle CORS preflight requests first
+  // Handle CORS preflight requests first
   if (req.method === 'OPTIONS') {
     return new Response(null, { 
       headers: {
@@ -21,18 +21,33 @@ serve(async (req) => {
       throw new Error('Title is required and must be a string');
     }
 
+    // Verify required secrets are available
+    const openaiKey = Deno.env.get('OPENAI_API_KEY');
+    const rapidApiKey = Deno.env.get('RAPIDAPI_KEY');
+    const associateId = Deno.env.get('AMAZON_ASSOCIATE_ID');
+
+    if (!openaiKey || !rapidApiKey || !associateId) {
+      console.error('Missing required environment variables:', {
+        hasOpenAI: !!openaiKey,
+        hasRapidApi: !!rapidApiKey,
+        hasAssociateId: !!associateId
+      });
+      throw new Error('Missing required API keys');
+    }
+
     const prompt = buildBlogPrompt(title);
     console.log('Using prompt system content:', prompt.content.substring(0, 200) + '...');
 
     // Step 1: Generate initial content
+    console.log('Calling OpenAI API...');
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${Deno.env.get('OPENAI_API_KEY')}`,
+        'Authorization': `Bearer ${openaiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: "gpt-4",
+        model: "gpt-4o",
         messages: [
           prompt,
           {
@@ -69,7 +84,10 @@ serve(async (req) => {
         'Authorization': `Bearer ${Deno.env.get('SUPABASE_ANON_KEY')}`,
         ...corsHeaders,
       },
-      body: JSON.stringify({ content: initialContent }),
+      body: JSON.stringify({ 
+        content: initialContent,
+        associateId: associateId 
+      }),
     });
 
     if (!processResponse.ok) {

@@ -22,12 +22,14 @@ export const formatProductHtml = (
 
   console.log('Formatting product HTML:', {
     title: simplifiedTitle,
-    hasImage: !!product.imageUrl,
-    hasRating: !!product.rating,
+    price: product.price,
+    currency: product.currency,
+    rating: product.rating,
+    totalRatings: product.totalRatings,
     hasFeatures: product.features?.length || 0
   });
 
-  // Format rating and review count if available
+  // Format rating and review count
   const reviewInfo = product.rating ? `
     <div class="flex flex-col items-center gap-2 my-4">
       <div class="flex items-center gap-2">

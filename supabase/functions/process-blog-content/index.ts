@@ -10,7 +10,7 @@ serve(async (req) => {
   }
 
   try {
-    const { content } = await req.json();
+    const { content, associateId } = await req.json();
     console.log('Processing blog content, length:', content.length);
 
     const rapidApiKey = Deno.env.get('RAPIDAPI_KEY');
@@ -18,7 +18,6 @@ serve(async (req) => {
       throw new Error('RAPIDAPI_KEY not configured');
     }
 
-    const associateId = Deno.env.get('AMAZON_ASSOCIATE_ID');
     if (!associateId) {
       throw new Error('AMAZON_ASSOCIATE_ID not configured');
     }
