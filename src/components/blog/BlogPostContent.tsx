@@ -32,7 +32,12 @@ export const BlogPostContent = ({ post }: BlogPostContentProps) => {
                    hover:prose-a:text-primary/90
                    
                    [&_div.flex]:justify-center [&_div.flex]:w-full [&_div.flex]:my-4 sm:[&_div.flex]:my-6
-                   [&_a.amazon-button]:inline-block [&_a.amazon-button]:px-6 [&_a.amazon-button]:py-3 
+                   
+                   [&_div.product-actions]:flex [&_div.product-actions]:flex-col [&_div.product-actions]:sm:flex-row
+                   [&_div.product-actions]:items-center [&_div.product-actions]:gap-4 [&_div.product-actions]:justify-center
+                   [&_div.product-actions]:my-4 sm:[&_div.product-actions]:my-6
+                   
+                   [&_a.amazon-button]:inline-flex [&_a.amazon-button]:items-center [&_a.amazon-button]:px-6 [&_a.amazon-button]:py-3 
                    [&_a.amazon-button]:bg-[#F97316] [&_a.amazon-button]:hover:bg-[#F97316]/90 
                    [&_a.amazon-button]:text-white [&_a.amazon-button]:rounded-md 
                    [&_a.amazon-button]:transition-colors [&_a.amazon-button]:text-base
@@ -45,7 +50,18 @@ export const BlogPostContent = ({ post }: BlogPostContentProps) => {
                    [&_a.perfect-gift-button]:transition-all [&_a.perfect-gift-button]:duration-300
                    [&_a.perfect-gift-button]:shadow-md [&_a.perfect-gift-button]:hover:shadow-lg
                    [&_a.perfect-gift-button]:hover:opacity-90 [&_a.perfect-gift-button]:active:scale-95"
-        dangerouslySetInnerHTML={{ __html: post.content }}
+        dangerouslySetInnerHTML={{ 
+          __html: post.content.replace(
+            /<div class="flex flex-col items-center my-8 sm:my-10">/g,
+            '<div class="flex flex-col items-center my-6 sm:my-8">'
+          ).replace(
+            /<div class="mt-4">\s*<a/g,
+            '<div class="product-actions"><a'
+          ).replace(
+            /<\/a>\s*<\/div>\s*<div class="flex flex-col items-center gap-2 my-6/g,
+            '</a><div class="flex items-center gap-2'
+          )
+        }}
       />
     </div>
   );
