@@ -67,6 +67,7 @@ const ProductCardComponent = ({
         price={price}
         rating={rating}
         totalRatings={totalRatings}
+        showTitle={false} // Add this prop to control title visibility
       />
       
       <ProductCardActions 
