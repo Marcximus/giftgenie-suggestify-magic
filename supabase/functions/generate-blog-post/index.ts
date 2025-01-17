@@ -3,7 +3,7 @@ import { buildBlogPrompt } from "./promptBuilder.ts";
 import { corsHeaders } from "../_shared/cors.ts";
 
 serve(async (req) => {
-  // Handle CORS preflight requests first
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { 
       headers: {
@@ -38,7 +38,7 @@ serve(async (req) => {
     const prompt = buildBlogPrompt(title);
     console.log('Using prompt system content:', prompt.content.substring(0, 200) + '...');
 
-    // Step 1: Generate initial content
+    // Step 1: Generate initial content with improved error handling
     console.log('Calling OpenAI API...');
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -47,7 +47,7 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: "gpt-4o",
+        model: "gpt-4o-mini", // Updated to use the correct model
         messages: [
           prompt,
           {
@@ -63,19 +63,24 @@ serve(async (req) => {
     });
 
     if (!response.ok) {
-      const error = await response.text();
-      console.error('OpenAI API error:', error);
-      throw new Error(`OpenAI API error: ${error}`);
+      const errorText = await response.text();
+      console.error('OpenAI API error response:', errorText);
+      throw new Error(`OpenAI API error: ${errorText}`);
     }
 
     const openaiData = await response.json();
     console.log('OpenAI response received, processing content...');
 
+    if (!openaiData.choices?.[0]?.message?.content) {
+      console.error('Invalid OpenAI response format:', openaiData);
+      throw new Error('Invalid response format from OpenAI');
+    }
+
     const initialContent = openaiData.choices[0].message.content;
     console.log('Generated content length:', initialContent.length);
     console.log('Generated content preview:', initialContent.substring(0, 500));
 
-    // Step 2: Process content to add Amazon products
+    // Step 2: Process content to add Amazon products with improved error handling
     console.log('Processing content to add Amazon products...');
     const processResponse = await fetch('https://ckcqttsdpxfbpkzljctl.supabase.co/functions/v1/process-blog-content', {
       method: 'POST',
@@ -91,9 +96,9 @@ serve(async (req) => {
     });
 
     if (!processResponse.ok) {
-      const error = await processResponse.text();
-      console.error('Error processing content:', error);
-      throw new Error(`Failed to process content: ${error}`);
+      const errorText = await processResponse.text();
+      console.error('Error processing content:', errorText);
+      throw new Error(`Failed to process content: ${errorText}`);
     }
 
     const processedData = await processResponse.json();
@@ -115,11 +120,13 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Error in generate-blog-post:', error);
+    // Improved error response with more details
     return new Response(
       JSON.stringify({
         error: error.message,
         timestamp: new Date().toISOString(),
-        type: 'generate-blog-post-error'
+        type: 'generate-blog-post-error',
+        details: error.stack
       }),
       { 
         status: 500,
