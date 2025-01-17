@@ -22,64 +22,21 @@ serve(async (req) => {
   }
 
   try {
-    const { title, prompt } = await req.json();
+    const { title } = await req.json();
+    console.log('Generating image for title:', title);
 
-    // If it's an alt text generation request
-    if (prompt?.toLowerCase().includes('alt text')) {
-      try {
-        const altTextResponse = await fetch('https://api.openai.com/v1/chat/completions', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${Deno.env.get('OPENAI_API_KEY')}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            model: "gpt-4o",
-            messages: [{
-              role: "system",
-              content: "Generate a concise, descriptive alt text for an image. Focus on the main elements and purpose of the image."
-            }, {
-              role: "user",
-              content: `Generate alt text for a blog post image about: ${title}`
-            }],
-            max_tokens: 100,
-          }),
-        });
-
-        if (!altTextResponse.ok) {
-          if (altTextResponse.status === 429) {
-            await handleRateLimit(altTextResponse);
-            throw new Error('Rate limited. Please try again.');
-          }
-          throw new Error(`OpenAI API error: ${altTextResponse.status}`);
-        }
-
-        const altTextData = await altTextResponse.json();
-        return new Response(
-          JSON.stringify({ altText: altTextData.choices[0].message.content.trim() }),
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      } catch (error) {
-        console.error('Alt text generation error:', error);
-        throw error;
-      }
-    }
-
-    // Extract the main subject from the title
-    const subjectMatch = title.toLowerCase().match(/(?:for|to)\s+(?:a\s+)?(\w+)/i);
-    const subject = subjectMatch ? subjectMatch[1] : '';
-
-    const imagePrompt = `Create a creative and engaging scene that directly relates to ${title || 'gift-giving'}, focusing specifically on ${subject || 'the recipient'}.
-
+    // Create a more focused image prompt
+    const imagePrompt = `Create a creative and engaging scene that directly relates to ${title}. 
+    
 IMPORTANT REQUIREMENTS:
 - Absolutely NO text, letters, numbers, or writing of any kind
 - Absolutely NO logos or brand names
-- Create a scene that clearly connects to the subject and person mentioned: ${subject || 'the recipient'}
+- Create a scene that clearly connects to the subject mentioned in the title
 - Fill the entire frame with the scene (NO blank space or borders)
-- Ensure elements in the image relates to the title, the occasion and the person: ${title}
+- Ensure elements in the image relates to the title: ${title}
 
 STYLE & VARIATION INSPIRATION:
-- Chose a random style or combine multiple and experiment with for example classic painting, watercolor, 8-bit pixel art, surreal collage, vibrant pop art, dreamy cinematic lighting, whimsical cartoons, abstract paitings etc`;
+- Choose a random style from: classic painting, watercolor, 8-bit pixel art, surreal collage, vibrant pop art, dreamy cinematic lighting, whimsical cartoons, abstract paintings`;
 
     // Create OpenAI image with retry logic
     let attempts = 0;
@@ -97,7 +54,7 @@ STYLE & VARIATION INSPIRATION:
           },
           body: JSON.stringify({
             model: "dall-e-3",
-            prompt: prompt || imagePrompt,
+            prompt: imagePrompt,
             n: 1,
             size: "1792x1024",
             quality: "standard",
