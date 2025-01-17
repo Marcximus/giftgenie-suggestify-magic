@@ -5,20 +5,13 @@ import { buildBlogPrompt } from "./promptBuilder.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Max-Age': '86400',
 };
 
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response(null, { 
-      headers: {
-        ...corsHeaders,
-        'Access-Control-Max-Age': '86400',
-      }
-    });
+    return new Response(null, { headers: corsHeaders });
   }
 
   try {
@@ -53,7 +46,7 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: "gpt-4o", // Changed from gpt-4o-mini to gpt-4o for better quality
+        model: "gpt-4o",
         messages: [
           buildBlogPrompt(numItems),
           {
@@ -61,7 +54,7 @@ serve(async (req) => {
             content: `Create a fun, engaging blog post about: ${title}`
           }
         ],
-        temperature: 0.7, // Adjusted for more creative but still focused output
+        temperature: 0.7,
         max_tokens: 2500,
       }),
     });

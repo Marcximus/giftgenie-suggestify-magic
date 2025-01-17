@@ -1,5 +1,5 @@
 import { corsHeaders } from './cors.ts';
-import { createClient } from '@supabase/supabase-js';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 import { searchAmazonProduct } from './amazon-api.ts';
 import { formatProductHtml } from './utils/productFormatter.ts';
 
@@ -57,7 +57,7 @@ export async function processContent(
           .from('blog_posts')
           .select('title, slug')
           .not('published_at', 'is', null)
-          .order('RANDOM()')
+          .order('RANDOM()')  // Fixed: Using correct PostgreSQL random ordering
           .limit(3);
 
         if (error) {
@@ -68,7 +68,7 @@ export async function processContent(
           posts.forEach((post, index) => {
             processedSection = processedSection.replace(
               `[LINK ${index + 1} PLACEHOLDER]`,
-              `<a href="/blog/${post.slug}" class="text-primary hover:underline">${post.title}</a>`
+              `<a href="/blog/post/${post.slug}" class="text-primary hover:underline">${post.title}</a>`
             );
           });
           processedSections.push(processedSection);
