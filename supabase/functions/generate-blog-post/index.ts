@@ -1,7 +1,8 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { buildBlogPrompt } from "./promptBuilder.ts";
 import { processContent } from "../_shared/content-processor.ts";
-import { corsHeaders } from "../_shared/cors.ts";
+import { corsHeaders } from '../_shared/cors.ts';
+import { validateContent } from "./contentValidator.ts";
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -27,6 +28,7 @@ serve(async (req) => {
     const prompt = buildBlogPrompt(title);
     console.log('Using prompt system content:', prompt.content.substring(0, 200) + '...');
 
+    // Increased max_tokens to handle longer content
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -43,11 +45,12 @@ serve(async (req) => {
                      Follow EXACTLY the format specified in the system message.
                      Do not deviate from the required structure.
                      Include all HTML tags and formatting exactly as specified.
-                     Make sure to include all required sections and elements.`
+                     Make sure to include all required sections and elements.
+                     IMPORTANT: Generate exactly the number of products specified in the title.`
           }
         ],
         temperature: 0.7,
-        max_tokens: 3500,
+        max_tokens: 4000, // Increased from 3500
         presence_penalty: 0.1,
         frequency_penalty: 0.1,
       }),
@@ -71,13 +74,10 @@ serve(async (req) => {
     console.log('Generated content length:', generatedContent.length);
     console.log('Generated content preview:', generatedContent.substring(0, 500));
 
-    // Validate content structure
-    if (!generatedContent.includes('<h3>') || 
-        !generatedContent.includes('<hr class="my-8">') ||
-        !generatedContent.includes('<ul class="my-4">') ||
-        !generatedContent.includes('<li>✅')) {
-      console.error('Generated content missing required HTML structure');
-      throw new Error('Generated content does not match required format');
+    // Validate content structure and number of products
+    if (!validateContent(generatedContent, title)) {
+      console.error('Generated content validation failed');
+      throw new Error('Generated content does not match required format or product count');
     }
 
     // Process the content to add Amazon product data
@@ -101,6 +101,12 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Error in generate-blog-post:', error);
+    
+    // If we get a token limit error, try splitting the generation
+    if (error.message?.includes('maximum context length')) {
+      console.log('Token limit reached, consider implementing batch processing');
+    }
+    
     return new Response(
       JSON.stringify({
         error: error.message,

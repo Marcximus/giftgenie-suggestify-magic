@@ -32,5 +32,19 @@ export const validateContent = (content: string, title: string): boolean => {
     '<li>✅'
   ];
 
-  return requiredElements.every(element => content.includes(element));
+  const hasAllRequiredElements = requiredElements.every(element => content.includes(element));
+  
+  if (!hasAllRequiredElements) {
+    console.error('Missing required HTML elements in content');
+    return false;
+  }
+
+  // Validate emoji usage
+  const hasEmojis = /[🎁⭐💝]/.test(content);
+  if (!hasEmojis) {
+    console.error('Missing required emojis in content');
+    return false;
+  }
+
+  return true;
 };
