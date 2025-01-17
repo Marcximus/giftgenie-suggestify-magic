@@ -1,3 +1,7 @@
+import { corsHeaders } from '../_shared/cors.ts';
+import { RAPIDAPI_HOST } from './config.ts';
+import type { AmazonProduct } from './types.ts';
+
 const cleanSearchTerm = (searchTerm: string): string => {
   return searchTerm
     .replace(/\([^)]*\)/g, '') // Remove anything in parentheses
@@ -8,7 +12,6 @@ const cleanSearchTerm = (searchTerm: string): string => {
 };
 
 export const simplifySearchTerm = (searchTerm: string): string => {
-  // Remove specific model numbers, sizes, and colors from search term
   const genericSearchTerm = searchTerm
     .replace(/\([^)]*\)/g, '') // Remove anything in parentheses
     .replace(/\b(?:edition|version|series)\b/gi, '') // Remove common suffixes
@@ -19,164 +22,150 @@ export const simplifySearchTerm = (searchTerm: string): string => {
   return genericSearchTerm;
 };
 
-const detectGender = (searchTerm: string): string | null => {
-  const maleTerms = ['male', 'man', 'boy', 'husband', 'boyfriend', 'father', 'dad', 'brother', 'uncle', 'grandfather', 'grandpa', 'his'];
-  const femaleTerms = ['female', 'woman', 'girl', 'wife', 'girlfriend', 'mother', 'mom', 'sister', 'aunt', 'grandmother', 'grandma', 'her'];
-  
-  const words = searchTerm.toLowerCase().split(/\s+/);
-  if (maleTerms.some(term => words.includes(term))) return 'male';
-  if (femaleTerms.some(term => words.includes(term))) return 'female';
-  return null;
-};
-
-const detectAgeGroup = (searchTerm: string): string => {
-  // Check for months first
-  if (searchTerm.match(/\b(?:0|1|2|3|4|5|6|7|8|9|10|11|12)\s*months?\s*old\b/)) {
-    return 'infant';
-  }
-
-  // Extract age from the search term
-  const ageMatch = searchTerm.match(/\b(\d+)(?:\s*-\s*\d+)?\s*years?\s*old\b/);
-  if (ageMatch) {
-    const age = parseInt(ageMatch[1]);
-    
-    if (age <= 2) return 'infant';
-    if (age <= 7) return 'child';
-    if (age <= 12) return 'preteen';
-    if (age <= 20) return 'teen';
-    if (age <= 30) return 'youngAdult';
-    if (age <= 64) return 'adult';
-    return 'senior';
-  }
-
-  // Check for age-related keywords
-  if (searchTerm.includes('baby') || searchTerm.includes('infant') || searchTerm.includes('toddler')) {
-    return 'infant';
-  }
-  if (searchTerm.match(/\b(?:kid|child|elementary)\b/)) {
-    return 'child';
-  }
-  if (searchTerm.match(/\b(?:tween|preteen)\b/)) {
-    return 'preteen';
-  }
-  if (searchTerm.match(/\b(?:teen|teenager|adolescent)\b/)) {
-    return 'teen';
-  }
-  if (searchTerm.match(/\b(?:college|university|young\s*adult|twenties)\b/)) {
-    return 'youngAdult';
-  }
-  if (searchTerm.match(/\b(?:senior|elderly|retired|retirement)\b/)) {
-    return 'senior';
-  }
-
-  return 'adult';
-};
-
 export const getFallbackSearchTerms = (searchTerm: string): string[] => {
   const words = searchTerm.split(' ')
     .filter(word => !['with', 'and', 'in', 'for', 'by', 'the', 'a', 'an'].includes(word.toLowerCase()))
     .filter(word => word.length > 2);
   
-  const gender = detectGender(searchTerm);
-  const ageGroup = detectAgeGroup(searchTerm);
   const searchTerms = [];
   
-  // Add gender and age-specific qualifiers
-  const genderPrefix = gender === 'male' ? 'mens ' : gender === 'female' ? 'womens ' : '';
-  const agePrefix = ageGroup === 'infant' ? 'baby ' :
-                   ageGroup === 'child' ? 'kids ' :
-                   ageGroup === 'preteen' ? 'tween ' :
-                   ageGroup === 'teen' ? 'teen ' :
-                   ageGroup === 'youngAdult' ? 'young adult ' :
-                   ageGroup === 'senior' ? 'senior ' : '';
-  
-  // Generate varied search combinations
   if (words.length > 2) {
-    // Use different word combinations
-    searchTerms.push(genderPrefix + agePrefix + words.slice(0, 3).join(' '));
-    searchTerms.push(genderPrefix + agePrefix + words.slice(-3).join(' '));
-    searchTerms.push(genderPrefix + agePrefix + [words[0], words[words.length - 1]].join(' '));
+    searchTerms.push(words.slice(0, 3).join(' '));
+    searchTerms.push([words[0], words[words.length - 1]].join(' '));
+  } else {
+    searchTerms.push(words.join(' '));
   }
   
-  // Add interest-based variations
-  const interests = ['gaming', 'sports', 'music', 'art', 'technology', 'reading', 'crafts', 'cooking'];
-  const interestWord = words.find(word => interests.includes(word.toLowerCase()));
-  if (interestWord) {
-    searchTerms.push(genderPrefix + agePrefix + interestWord);
-  }
-  
-  // Add random variation to prevent repetitive results
-  const randomIndex = Math.floor(Math.random() * words.length);
-  searchTerms.push(genderPrefix + agePrefix + words[randomIndex]);
-  
-  console.log('Generated fallback search terms:', searchTerms);
-  return [...new Set(searchTerms)]; // Remove duplicates
+  return [...new Set(searchTerms)];
 };
 
-export const performSearch = async (
-  term: string,
-  apiKey: string,
-  rapidApiHost: string
-) => {
-  const cleanedTerm = cleanSearchTerm(term);
-  const ageGroup = detectAgeGroup(term);
-  console.log('Searching with cleaned term:', cleanedTerm, 'Age group:', ageGroup);
-
-  // Map age groups to appropriate Amazon categories
-  const categoryId = ageGroup === 'infant' ? 'baby-products' :
-                    ageGroup === 'child' ? 'toys-games' :
-                    ageGroup === 'preteen' ? 'toys-games' :
-                    ageGroup === 'teen' ? 'teen-gaming' :
-                    ageGroup === 'youngAdult' ? 'young-adult' :
-                    ageGroup === 'senior' ? 'health-personal-care' : 'aps';
-
-  // Add randomization to search results
-  const page = Math.floor(Math.random() * 3) + 1; // Random page between 1-3
-
-  const searchParams = new URLSearchParams({
-    query: cleanedTerm,
-    country: 'US',
-    category_id: categoryId,
-    sort_by: 'RELEVANCE',
-    page: page.toString()
-  });
-
-  const url = `https://${rapidApiHost}/search?${searchParams.toString()}`;
-  console.log('Making API request to:', url);
-  console.log('Request headers:', {
-    'X-RapidAPI-Key': 'present',
-    'X-RapidAPI-Host': rapidApiHost
-  });
-
-  const searchResponse = await fetch(url, {
-    headers: {
-      'X-RapidAPI-Key': apiKey,
-      'X-RapidAPI-Host': rapidApiHost,
-    }
-  });
-
-  if (!searchResponse.ok) {
-    const errorText = await searchResponse.text();
-    console.error('API Error Response:', {
-      status: searchResponse.status,
-      statusText: searchResponse.statusText,
-      body: errorText,
-      headers: Object.fromEntries(searchResponse.headers.entries())
-    });
-
-    if (searchResponse.status === 429) {
-      throw new Error('rate limit exceeded');
-    }
-    throw new Error(`Amazon Search API error: ${searchResponse.status}`);
+export const searchProducts = async (
+  searchTerm: string,
+  apiKey: string
+): Promise<AmazonProduct | null> => {
+  if (!searchTerm || typeof searchTerm !== 'string' || searchTerm.trim().length === 0) {
+    console.error('Invalid or missing search term:', searchTerm);
+    throw new Error('Search term is required and must be a non-empty string');
   }
 
-  const searchData = await searchResponse.json();
-  console.log('Search response data:', {
-    title: searchData.data?.products?.[0]?.title,
-    price: searchData.data?.products?.[0]?.price,
-    totalResults: searchData.data?.products?.length || 0,
-    ageGroup,
-    categoryId
+  console.log('Starting product search with term:', searchTerm);
+  const cleanedTerm = cleanSearchTerm(searchTerm);
+  console.log('Cleaned search term:', cleanedTerm);
+
+  // Try with exact search term first
+  let product = await trySearch(cleanedTerm, apiKey);
+  if (product) return product;
+
+  // Try with simplified search term
+  const simplifiedTerm = simplifySearchTerm(cleanedTerm);
+  console.log('Trying simplified term:', simplifiedTerm);
+  product = await trySearch(simplifiedTerm, apiKey);
+  if (product) return product;
+
+  // Try fallback terms
+  const fallbackTerms = getFallbackSearchTerms(cleanedTerm);
+  console.log('Trying fallback terms:', fallbackTerms);
+  
+  for (const term of fallbackTerms) {
+    product = await trySearch(term, apiKey);
+    if (product) return product;
+  }
+
+  console.log('No products found after all attempts');
+  return null;
+};
+
+const trySearch = async (
+  term: string,
+  apiKey: string
+): Promise<AmazonProduct | null> => {
+  try {
+    const url = new URL(`https://${RAPIDAPI_HOST}/search`);
+    url.searchParams.append('query', term);
+    url.searchParams.append('country', 'US');
+    url.searchParams.append('category_id', 'aps');
+
+    console.log('Making API request to:', url.toString());
+    console.log('API Key present:', !!apiKey);
+
+    const response = await fetch(url, {
+      headers: {
+        'X-RapidAPI-Key': apiKey,
+        'X-RapidAPI-Host': RAPIDAPI_HOST,
+      }
+    });
+
+    if (!response.ok) {
+      const responseText = await response.text();
+      console.error('Search API error:', {
+        status: response.status,
+        statusText: response.statusText,
+        body: responseText,
+        headers: Object.fromEntries(response.headers.entries())
+      });
+
+      if (response.status === 429) {
+        throw new Error('Rate limit exceeded');
+      }
+      
+      if (response.status === 403) {
+        throw new Error('API subscription error: Please check the RapidAPI subscription status');
+      }
+
+      throw new Error(`Amazon API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    console.log('Raw API response:', JSON.stringify(data, null, 2));
+
+    if (!data.data?.products?.[0]) {
+      console.log('No products found for term:', term);
+      return null;
+    }
+
+    const firstProduct = data.data.products[0];
+    console.log('First product data:', JSON.stringify(firstProduct, null, 2));
+
+    if (!firstProduct.asin) {
+      console.log('No ASIN found in first product, searching for product with ASIN');
+      const productWithAsin = data.data.products.find((p: any) => p.asin);
+      if (!productWithAsin) {
+        console.log('No product with ASIN found');
+        return null;
+      }
+      console.log('Found product with ASIN:', productWithAsin.asin);
+      return formatProduct(productWithAsin);
+    }
+
+    return formatProduct(firstProduct);
+  } catch (error) {
+    console.error('Error in product search:', error);
+    throw error;
+  }
+};
+
+const formatProduct = (product: any): AmazonProduct => {
+  console.log('Formatting product:', {
+    title: product.title,
+    hasImage: !!product.product_photo,
+    hasAsin: !!product.asin
   });
-  return searchData;
+
+  return {
+    title: product.title,
+    description: product.product_description || product.title,
+    price: formatPrice(product.product_price),
+    currency: 'USD',
+    imageUrl: product.product_photo || product.thumbnail,
+    rating: product.product_star_rating ? parseFloat(product.product_star_rating) : undefined,
+    totalRatings: product.product_num_ratings ? parseInt(product.product_num_ratings.toString(), 10) : undefined,
+    asin: product.asin
+  };
+};
+
+const formatPrice = (priceStr: string | null | undefined): number | undefined => {
+  if (!priceStr) return undefined;
+  const cleanPrice = priceStr.replace(/[^0-9.]/g, '');
+  const price = parseFloat(cleanPrice);
+  return isNaN(price) ? undefined : price;
 };
