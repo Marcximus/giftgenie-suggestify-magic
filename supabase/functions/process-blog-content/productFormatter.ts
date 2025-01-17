@@ -13,38 +13,45 @@ export const formatProductHtml = (
   product: ProductInfo,
   affiliateLink: string
 ) => {
-  // Format rating and review count
+  // Format rating stars
+  const formatStars = (rating: number) => {
+    return Array.from({ length: 5 }, (_, i) => 
+      `<span class="text-yellow-400 text-lg">
+        ${i < Math.floor(rating) ? '★' : (i < rating ? '★' : '☆')}
+      </span>`
+    ).join('');
+  };
+
+  // Format review information
   const reviewInfo = product.rating ? `
-    <div class="flex flex-col items-center gap-2 my-6 p-6 bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl shadow-sm">
-      <div class="flex items-center gap-2">
-        ${Array.from({ length: 5 }, (_, i) => 
-          `<span class="text-yellow-400 text-xl">
-            ${i < Math.floor(product.rating!) ? '★' : (i < product.rating ? '★' : '☆')}
-          </span>`
-        ).join('')}
-        <span class="font-semibold text-xl text-gray-800">${product.rating.toFixed(1)}</span>
+    <div class="review-info">
+      <div class="flex items-center justify-center gap-2">
+        ${formatStars(product.rating)}
+        <span class="font-semibold text-lg text-gray-800">${product.rating.toFixed(1)}</span>
       </div>
       ${product.totalRatings ? `
-        <div class="text-base text-gray-600">
+        <div class="text-base text-gray-600 text-center">
           Based on ${product.totalRatings.toLocaleString()} verified customer reviews
         </div>
       ` : ''}
     </div>` : '';
 
-  // Format features list if available
+  // Format features list
   const featuresList = product.features?.length ? `
-    <ul class="my-4 list-disc pl-6 space-y-2">
+    <ul class="list-disc pl-6 space-y-2 my-4">
       ${product.features.map(feature => 
         `<li class="text-gray-700">${feature}</li>`
       ).join('')}
     </ul>
   ` : '';
 
-  // Format price if available
+  // Format price display
   const priceDisplay = product.price ? `
-    <p class="text-lg font-bold text-primary mb-4">
-      ${product.currency} ${product.price.toFixed(2)}
-    </p>
+    <div class="text-center">
+      <p class="text-lg font-bold text-primary">
+        ${product.currency} ${product.price.toFixed(2)}
+      </p>
+    </div>
   ` : '';
 
   return `
@@ -53,19 +60,19 @@ export const formatProductHtml = (
         <img 
           src="${product.imageUrl}" 
           alt="${product.title}"
-          class="w-80 h-80 sm:w-96 sm:h-96 lg:w-[500px] lg:h-[500px] object-contain rounded-lg shadow-md mx-auto" 
+          class="w-full aspect-[4/3] object-contain rounded-lg shadow-md mx-auto" 
           loading="lazy"
         />
       </div>
       ${priceDisplay}
       ${reviewInfo}
       ${featuresList}
-      <div class="mt-4 mb-6">
+      <div class="product-actions">
         <a 
           href="${affiliateLink}" 
           target="_blank" 
           rel="noopener noreferrer" 
-          class="inline-block px-6 py-3 bg-[#F97316] hover:bg-[#F97316]/90 text-white rounded-lg transition-colors duration-200 text-center font-medium shadow-sm hover:shadow-md"
+          class="amazon-button"
         >
           View on Amazon
         </a>
