@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
-import { Buffer } from "https://deno.land/std@0.168.0/node/buffer.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -76,7 +76,7 @@ STYLE & VARIATION INSPIRATION:
         model: "dall-e-3",
         prompt: prompt || imagePrompt,
         n: 1,
-        size: "1024x1024",
+        size: "1792x1024",
         quality: "standard",
         response_format: "b64_json",
         style: "vivid"
