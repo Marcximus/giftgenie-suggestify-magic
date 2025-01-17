@@ -8,15 +8,17 @@ export const parseProductSection = (section: string): ProductSection | null => {
     return null;
   }
   
-  const [beforeH3, afterH3] = section.split(/<\/h3>/);
+  const [fullMatch, productName] = h3Match;
+  const [beforeH3, afterH3] = section.split(fullMatch);
+
   if (!beforeH3 || !afterH3) {
     console.warn('Could not split section content properly');
     return null;
   }
 
   return {
-    beforeH3,
-    afterH3,
-    productName: h3Match[1].trim()
+    beforeH3: beforeH3,
+    afterH3: afterH3,
+    productName: productName.trim()
   };
 };

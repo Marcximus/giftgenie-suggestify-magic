@@ -25,7 +25,7 @@ export const formatProductHtml = (
       ` : ''}
     </div>` : '';
 
-  return `${beforeH3}</h3>
+  return `${beforeH3}<h3>${product.title}</h3>
     <div class="flex flex-col items-center my-8 sm:my-10">
       <div class="relative w-full max-w-2xl mb-6">
         <img 

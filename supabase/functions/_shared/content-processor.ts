@@ -2,6 +2,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 import { parseProductSection } from './utils/sectionParser.ts';
 import { formatProductHtml } from './utils/productFormatter.ts';
 import { ProcessedContent } from './types/ContentTypes.ts';
+import { searchAmazonProduct } from './amazon-api.ts';
 
 export async function processContent(
   content: string,
@@ -19,11 +20,17 @@ export async function processContent(
   const supabase = createClient(supabaseUrl, supabaseKey);
   
   // Fetch 3 random blog posts
-  const { data: relatedPosts } = await supabase
+  const { data: relatedPosts, error: postsError } = await supabase
     .from('blog_posts')
     .select('title, slug')
+    .not('content', 'eq', '') // Ensure we only get posts with content
+    .lt('published_at', new Date().toISOString()) // Only get previously published posts
     .limit(3)
     .order('random()');
+
+  if (postsError) {
+    console.error('Error fetching related posts:', postsError);
+  }
 
   console.log('Found related posts:', relatedPosts?.length);
 
@@ -44,6 +51,7 @@ export async function processContent(
     if (!parsedSection) return section;
     
     try {
+      console.log('Searching for product:', parsedSection.productName);
       const product = await searchAmazonProduct(parsedSection.productName, apiKey);
       
       if (product?.asin) {
@@ -70,6 +78,7 @@ export async function processContent(
         );
       }
       
+      console.log('No Amazon product found for:', parsedSection.productName);
       return section;
     } catch (error) {
       console.error('Error processing product:', parsedSection.productName, error);
