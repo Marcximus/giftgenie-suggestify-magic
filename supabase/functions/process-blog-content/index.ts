@@ -23,19 +23,25 @@ serve(async (req) => {
       throw associateError;
     }
     const associateId = associateData.AMAZON_ASSOCIATE_ID;
+    console.log('Got Amazon Associate ID:', associateId);
 
     // Split content into sections
     const sections = content.split('<hr class="my-8">');
+    console.log('Number of sections split from content:', sections.length);
+    
     const processedSections = [];
     const affiliateLinks = [];
 
-    for (const section of sections) {
+    for (let i = 0; i < sections.length; i++) {
+      const section = sections[i];
+      console.log(`Processing section ${i + 1}/${sections.length}`);
+      
       if (section.includes('<h3>')) {
         try {
           const titleMatch = section.match(/<h3>(.*?)<\/h3>/);
           if (titleMatch) {
             const searchTerm = titleMatch[1];
-            console.log('Searching for product:', searchTerm);
+            console.log('Found product title:', searchTerm);
             
             // Search for Amazon product
             const { data: productData, error: productError } = await supabase.functions.invoke('get-amazon-products', {
@@ -48,8 +54,16 @@ serve(async (req) => {
               continue;
             }
 
+            console.log('Product search result:', productData?.product ? 'Found' : 'Not found');
+
             if (productData?.product) {
               const product = productData.product;
+              console.log('Processing product:', {
+                title: product.title,
+                hasImage: !!product.imageUrl,
+                hasAsin: !!product.asin
+              });
+              
               const affiliateLink = `https://www.amazon.com/dp/${product.asin}?tag=${associateId}`;
               affiliateLinks.push({
                 title: product.title,
@@ -99,11 +113,13 @@ serve(async (req) => {
                 </div>${afterTitle}`;
 
               processedSections.push(productHtml);
+              console.log('Successfully processed product section');
             } else {
               console.warn('No product found for:', searchTerm);
               processedSections.push(section);
             }
           } else {
+            console.log('No product title found in section');
             processedSections.push(section);
           }
         } catch (error) {
@@ -111,6 +127,7 @@ serve(async (req) => {
           processedSections.push(section);
         }
       } else {
+        console.log('Section does not contain product title');
         processedSections.push(section);
       }
     }
