@@ -1,4 +1,10 @@
 export const buildBlogPrompt = (title: string) => {
+  // Extract number from title (e.g., "Top 10 Best Gifts" -> 10)
+  const numberMatch = title.match(/(?:top\s+)?(\d+)\s+(?:best\s+)?/i);
+  const numberOfProducts = numberMatch ? parseInt(numberMatch[1]) : 8; // Default to 8 if no number found
+  
+  console.log('Extracted number of products from title:', numberOfProducts);
+
   return {
     role: "system",
     content: `You are a professional blog writer creating engaging gift guides. Follow these EXACT formatting requirements:
@@ -13,7 +19,7 @@ export const buildBlogPrompt = (title: string) => {
    - Explain who the gifts are perfect for and why
 
 2. Product Sections:
-   - Create EXACTLY 8 DIVERSE product recommendations
+   - Create EXACTLY ${numberOfProducts} DIVERSE product recommendations
    - Each product MUST be specifically relevant to the target recipient
    - Each section separated by: <hr class="my-8">
    - Keep product titles SHORT and SPECIFIC (max 7 words)
@@ -59,7 +65,7 @@ export const buildBlogPrompt = (title: string) => {
 
 CRITICAL REQUIREMENTS:
 1. NEVER deviate from this exact HTML structure
-2. ALWAYS include exactly 8 product sections
+2. ALWAYS include exactly ${numberOfProducts} product sections
 3. ALWAYS separate sections with <hr class="my-8">
 4. ALWAYS format product titles with <h3> tags
 5. ALWAYS include emojis as specified
