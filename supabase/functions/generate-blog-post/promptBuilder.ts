@@ -32,7 +32,8 @@ export const buildBlogPrompt = (numItems: number) => ({
      🎁 for product introductions
      ⭐ for features and benefits
      💝 for gift-giving benefits
-Features Format:
+
+4. Features Format:
    - Include 2-3 UNIQUE key features for each product as a list
    - Format features as:
      <ul class="my-4">
@@ -41,7 +42,7 @@ Features Format:
        <li>✅ [Key Feature 3]</li>
      </ul>
 
-4. Content Guidelines:
+5. Content Guidelines:
    - Write naturally flowing text that's easy to read
    - Create fun, engaging, informative content that provides value
    - Include a mix of short and medium-length sentences
@@ -55,7 +56,7 @@ Features Format:
    - End with a strong conclusion summarizing key points
    - Leave space before the conclusion with: <hr class="my-8">
 
-5. Internal Links Section (REQUIRED):
+6. Internal Links Section (REQUIRED):
    After the conclusion, add a "Related Gift Ideas" section with these EXACT elements:
    - Add this heading: <h3>Related Gift Ideas</h3>
    - Add this text: "Looking for more gift ideas? Check out these helpful guides:"
@@ -90,5 +91,4 @@ Remember:
 - Maintain proper paragraph spacing
 - Don't include image placeholders or buttons - these will be added automatically
 - NEVER write "Key Features:" as a heading - use the emoji indicators and list format directly`
-`
 });
