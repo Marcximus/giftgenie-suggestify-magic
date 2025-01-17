@@ -6,90 +6,86 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Improved retry logic with longer delays and more attempts
-async function retryWithBackoff<T>(
-  operation: () => Promise<T>,
-  maxAttempts = 5,
-  initialDelay = 2000
-): Promise<T> {
+const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+async function retryWithBackoff(operation: () => Promise<any>, maxAttempts = 5) {
   let lastError;
-  
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     try {
       console.log(`Attempt ${attempt} of ${maxAttempts}`);
       return await operation();
     } catch (error) {
       lastError = error;
-      
       if (error.status === 429) {
-        const delay = initialDelay * Math.pow(2, attempt - 1);
-        console.log(`Rate limited. Waiting ${delay}ms before retry...`);
-        await new Promise(resolve => setTimeout(resolve, delay));
-        continue;
+        const delayMs = Math.min(2000 * Math.pow(2, attempt - 1), 20000);
+        console.log(`Rate limited. Waiting ${delayMs}ms before retry...`);
+        await delay(delayMs);
+      } else {
+        throw error;
       }
-      
-      throw error;
     }
   }
-  
   throw lastError;
 }
 
-async function generateContent(type: string, content: string, title: string): Promise<string> {
-  console.log(`Generating ${type} for title: "${title}"`);
-  
-  let systemPrompt = '';
-  let userPrompt = '';
-
-  switch (type) {
-    case 'excerpt':
-      systemPrompt = 'You are a skilled content writer who creates engaging blog post excerpts. Create a brief, compelling excerpt (max 150 characters) that captures the essence of the blog post and encourages readers to click through.';
-      userPrompt = `Title: ${title}\nContent: ${content}\n\nCreate a brief, engaging excerpt for this blog post.`;
-      break;
-    case 'seo-title':
-      systemPrompt = 'You are an SEO expert who creates optimized meta titles. Create a compelling meta title (50-60 characters) that is both search engine friendly and engaging for readers.';
-      userPrompt = `Blog Title: ${title}\nContent: ${content}\n\nCreate an SEO-optimized meta title.`;
-      break;
-    case 'seo-description':
-      systemPrompt = 'You are an SEO expert who creates optimized meta descriptions. Create a compelling meta description (150-160 characters) that accurately summarizes the content and includes relevant keywords.';
-      userPrompt = `Title: ${title}\nContent: ${content}\n\nCreate an SEO-optimized meta description.`;
-      break;
-    case 'seo-keywords':
-      systemPrompt = 'You are an SEO expert who identifies relevant keywords. Extract or suggest 5-8 relevant keywords or key phrases from the content, separated by commas.';
-      userPrompt = `Title: ${title}\nContent: ${content}\n\nExtract relevant keywords and key phrases.`;
-      break;
-    case 'improve-content':
-      systemPrompt = 'You are a professional content editor who improves blog post content while maintaining the original message and style. Enhance the content by improving clarity, engagement, and readability.';
-      userPrompt = `Title: ${title}\nContent: ${content}\n\nImprove this content while maintaining its core message.`;
-      break;
-    default:
-      throw new Error('Invalid content type specified');
+async function generateContent(type: string, content: string, title: string) {
+  const openAiKey = Deno.env.get('OPENAI_API_KEY');
+  if (!openAiKey) {
+    throw new Error('OpenAI API key not configured');
   }
 
+  let prompt = '';
+  switch (type) {
+    case 'excerpt':
+      prompt = `Write a compelling excerpt (150-200 words) for a blog post titled "${title}" that summarizes the main points and entices readers to click through. The excerpt should be SEO-friendly and include relevant keywords.`;
+      break;
+    case 'seo-title':
+      prompt = `Generate an SEO-optimized meta title (50-60 characters) for a blog post titled "${title}". Include relevant keywords while maintaining readability.`;
+      break;
+    case 'seo-description':
+      prompt = `Write an engaging meta description (150-160 characters) for a blog post titled "${title}". Include key benefits and a call-to-action while optimizing for SEO.`;
+      break;
+    case 'seo-keywords':
+      prompt = `Generate a comma-separated list of 8-10 relevant SEO keywords for a blog post titled "${title}". Include both short and long-tail keywords.`;
+      break;
+    case 'improve-content':
+      prompt = `Improve the following blog post content while maintaining its structure and key points. Make it more engaging, clear, and SEO-friendly:\n\n${content}`;
+      break;
+    default:
+      throw new Error('Invalid content type requested');
+  }
+
+  console.log('Making OpenAI request for:', type);
   const response = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${Deno.env.get('OPENAI_API_KEY')}`,
+      'Authorization': `Bearer ${openAiKey}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
       model: "gpt-4o",
       messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userPrompt }
+        {
+          role: "system",
+          content: "You are an expert blog writer and SEO specialist. Provide concise, engaging, and optimized content."
+        },
+        {
+          role: "user",
+          content: prompt
+        }
       ],
       temperature: 0.7,
-      max_tokens: type === 'improve-content' ? 2000 : 200,
+      max_tokens: 2000,
     }),
   });
 
   if (!response.ok) {
-    console.error(`OpenAI API error: ${response.status}`);
+    console.error('OpenAI API error:', response.status, await response.text());
     throw new Error(`OpenAI API error: ${response.status}`);
   }
 
   const data = await response.json();
-  return data.choices[0].message.content;
+  return data.choices[0].message.content.trim();
 }
 
 serve(async (req) => {
@@ -99,34 +95,44 @@ serve(async (req) => {
 
   try {
     const { type, content, title } = await req.json();
-    console.log(`Processing request for type: ${type}`);
+    console.log('Received request:', { type, title });
+
+    if (!type || !title) {
+      throw new Error('Missing required parameters');
+    }
 
     const generatedContent = await retryWithBackoff(async () => {
-      return await generateContent(type, content, title);
+      return await generateContent(type, content || '', title);
     });
 
-    console.log('Content generated successfully');
+    console.log('Successfully generated content');
     return new Response(
       JSON.stringify({ content: generatedContent }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { 
+        headers: { 
+          ...corsHeaders, 
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-store, no-cache, must-revalidate'
+        }
+      }
     );
 
   } catch (error) {
     console.error('Error in generate-blog-content function:', error);
-    
-    // Enhanced error response
-    const errorResponse = {
-      error: error.message || 'Failed to generate content',
-      timestamp: new Date().toISOString(),
-      details: error.stack,
-      type: 'generate-blog-content-error'
-    };
-
     return new Response(
-      JSON.stringify(errorResponse),
+      JSON.stringify({ 
+        error: error.message,
+        timestamp: new Date().toISOString(),
+        details: error.stack,
+        type: 'generate-blog-content-error'
+      }),
       { 
         status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        headers: { 
+          ...corsHeaders, 
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-store, no-cache, must-revalidate'
+        }
       }
     );
   }
