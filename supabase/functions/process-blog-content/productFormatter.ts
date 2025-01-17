@@ -27,9 +27,9 @@ export const formatProductHtml = (
     hasFeatures: product.features?.length || 0
   });
 
-  // Format rating and review count
+  // Format rating and review count if available
   const reviewInfo = product.rating ? `
-    <div class="flex flex-col items-center gap-2 my-6 p-6 bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl shadow-sm">
+    <div class="flex flex-col items-center gap-2 my-4">
       <div class="flex items-center gap-2">
         ${Array.from({ length: 5 }, (_, i) => 
           `<span class="text-yellow-400 text-xl">
@@ -56,7 +56,7 @@ export const formatProductHtml = (
 
   return `
     <div class="flex flex-col items-center my-8">
-      <div class="w-full max-w-2xl mb-6">
+      <div class="relative w-full max-w-2xl mb-6">
         <img 
           src="${product.imageUrl}" 
           alt="${simplifiedTitle}"
@@ -70,7 +70,7 @@ export const formatProductHtml = (
           href="${affiliateLink}" 
           target="_blank" 
           rel="noopener noreferrer" 
-          class="inline-block px-6 py-2 bg-[#F97316] hover:bg-[#F97316]/90 text-white font-medium rounded-md transition-colors text-sm text-center"
+          class="amazon-button"
         >
           View on Amazon
         </a>

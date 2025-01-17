@@ -23,8 +23,10 @@ serve(async (req) => {
       throw new Error('AMAZON_ASSOCIATE_ID not configured');
     }
 
+    // Split content into sections and count how many product sections we have
     const sections = content.split('<hr class="my-8">');
-    console.log('Number of sections:', sections.length);
+    const productSections = sections.filter(section => section.includes('<h3>'));
+    console.log('Total product sections found:', productSections.length);
     
     const processedSections = [];
     const affiliateLinks = [];
@@ -62,7 +64,7 @@ serve(async (req) => {
             console.log('Search response products:', searchData.data?.products?.length || 0);
 
             // Take the first product that has an ASIN and image
-            const product = searchData.data?.products?.find(p => p.asin && p.product_photo);
+            const product = searchData.data?.products?.find(p => p.asin && (p.product_photo || p.thumbnail));
             
             if (!product) {
               console.warn('No valid products found for:', searchTerm);
@@ -78,7 +80,7 @@ serve(async (req) => {
             console.log('Selected product:', {
               title: product.title,
               asin: product.asin,
-              hasImage: !!product.product_photo
+              hasImage: !!(product.product_photo || product.thumbnail)
             });
 
             // Get detailed product information
@@ -114,20 +116,20 @@ serve(async (req) => {
               asin: product.asin
             });
 
-            // Split section content and process
+            // Split section content
             const [beforeH3, afterH3] = section.split('</h3>');
             const description = afterH3.split('<ul')[0];
 
             // Format the product HTML with all available data
             const productHtml = formatProductHtml({
               title: product.title,
-              imageUrl: product.product_photo,
-              price: product.product_price ? parseFloat(product.product_price.replace(/[^0-9.]/g, '')) : undefined,
+              imageUrl: product.product_photo || product.thumbnail,
+              price: product.price?.current_price ? parseFloat(product.price.current_price.replace(/[^0-9.]/g, '')) : undefined,
               currency: 'USD',
               rating,
               totalRatings,
-              description: product.product_description,
-              features
+              description: product.product_description || '',
+              features: features || []
             }, affiliateLink);
 
             processedSections.push(`${beforeH3}</h3>${productHtml}${description}`);
