@@ -24,7 +24,7 @@ serve(async (req) => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: "gpt-4o",
+          model: "gpt-4",
           messages: [{
             role: "system",
             content: "Generate a concise, descriptive alt text for an image. Focus on the main elements and purpose of the image."
@@ -76,7 +76,7 @@ STYLE & VARIATION INSPIRATION:
         model: "dall-e-3",
         prompt: prompt || imagePrompt,
         n: 1,
-        size: "1792x1024",
+        size: "1024x1024",
         quality: "standard",
         response_format: "b64_json",
         style: "vivid"
