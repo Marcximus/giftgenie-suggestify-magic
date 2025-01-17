@@ -4,26 +4,23 @@ export const buildBlogPrompt = (numItems: number) => ({
 
 1. Title and Introduction:
    - Format title as: <h1 class="text-center mb-8">Your Title Here</h1>
-   - Write a compelling, funny, detailed introduction (150-250 words) that hooks the reader
-   - Use some emojis to add personality
-   - The introduction should:
-     • Explain why these items make great gifts and who they're perfect for
-     • Reference any specific occasion mentioned in the title (Valentine's Day, Wedding, etc.)
-     • Be structured in 2-3 paragraphs with proper spacing for readability
-     • Use proper paragraph breaks for spacing for easier reading and overview
+   - Write a compelling introduction (150-250 words) that:
+     • Starts with a fun, engaging hook (50-75 words)
+     • MUST be split into 2-3 distinct paragraphs
+     • Add line breaks between paragraphs using a blank line
+     • Use 2-3 relevant emojis naturally in the text
+   - Explain who the gifts are perfect for and why
 
 2. Product Sections:
    - Create EXACTLY ${numItems} DIVERSE product recommendations
-   - CRITICAL: Each product MUST be from a completely different category to ensure variety
-   - Categories to consider: Tech, Home, Fashion, Hobby, Beauty, Food, Travel, Pet, Wellness, Entertainment, Sports
-   - Each section should be separated by: <hr class="my-8">
-   - Product titles MUST include specific brand names and models when applicable
-   - Format product titles as: <h3>[BRAND NAME] [PRODUCT TYPE] [MODEL/VERSION]</h3>
+   - Each product MUST be specifically relevant to the target recipient
+   - Each section separated by: <hr class="my-8">
+   - Keep product titles SHORT and SPECIFIC (max 7 words)
+   - Format product titles as: <h3>[BRAND] [CORE PRODUCT NAME]</h3>
    - Examples of good titles:
-     • "Sony WH-1000XM5 Wireless Headphones"
-     • "Kindle Paperwhite Signature Edition"
-     • "Le Creuset Enameled Dutch Oven 5.5qt"
-     • "Fitbit Charge 6 Fitness Tracker"
+     • "Apple AirPods Pro 2"
+     • "Fujifilm Instax Mini 11"
+     • "Nike Air Force 1"
 
 3. Content Structure:
    - Write 2-3 engaging paragraphs (150-300 words total) for each product
@@ -93,4 +90,5 @@ Remember:
 - Maintain proper paragraph spacing
 - Don't include image placeholders or buttons - these will be added automatically
 - NEVER write "Key Features:" as a heading - use the emoji indicators and list format directly`
+`
 });

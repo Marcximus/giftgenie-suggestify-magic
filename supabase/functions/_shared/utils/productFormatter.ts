@@ -1,13 +1,25 @@
 import { ProductInfo } from '../types/ContentTypes.ts';
 import { formatReviewData } from '../reviewUtils.ts';
 
+const simplifyTitle = (title: string): string => {
+  // Remove everything in parentheses
+  let simplified = title.replace(/\([^)]*\)/g, '');
+  // Remove everything after commas
+  simplified = simplified.split(',')[0];
+  // Limit to first 7 words
+  simplified = simplified.split(' ').slice(0, 7).join(' ');
+  return simplified.trim();
+};
+
 export const formatProductHtml = (
   product: ProductInfo,
   affiliateLink: string,
   beforeH3: string,
   afterH3: string
 ): string => {
+  const simplifiedTitle = simplifyTitle(product.title);
   const reviewData = formatReviewData(product.rating, product.totalRatings);
+  
   const reviewInfo = reviewData ? `
     <div class="flex flex-col items-center gap-2 my-6 p-6 bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl shadow-sm">
       <div class="flex items-center gap-2">
@@ -25,12 +37,12 @@ export const formatProductHtml = (
       ` : ''}
     </div>` : '';
 
-  return `${beforeH3}<h3>${product.title}</h3>
+  return `${beforeH3}<h3>${simplifiedTitle}</h3>
     <div class="flex flex-col items-center my-8 sm:my-10">
       <div class="relative w-full max-w-2xl mb-6">
         <img 
           src="${product.imageUrl}" 
-          alt="${product.title}"
+          alt="${simplifiedTitle}"
           class="w-80 h-80 sm:w-96 sm:h-96 lg:w-[500px] lg:h-[500px] object-contain rounded-lg shadow-md mx-auto" 
           loading="lazy"
         />

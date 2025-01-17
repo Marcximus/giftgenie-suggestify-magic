@@ -1,8 +1,8 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 import { parseProductSection } from './utils/sectionParser.ts';
 import { formatProductHtml } from './utils/productFormatter.ts';
-import { ProcessedContent } from './types/ContentTypes.ts';
 import { searchAmazonProduct } from './amazon-api.ts';
+import { ProcessedContent } from './types/ContentTypes.ts';
 
 export async function processContent(
   content: string,
@@ -12,7 +12,6 @@ export async function processContent(
   console.log('Processing content with length:', content.length);
   
   const affiliateLinks: ProcessedContent['affiliateLinks'] = [];
-  content = content.replace(/View on Amazon\n/g, '');
   
   // Create Supabase client
   const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
@@ -23,26 +22,31 @@ export async function processContent(
   const { data: relatedPosts, error: postsError } = await supabase
     .from('blog_posts')
     .select('title, slug')
-    .not('content', 'eq', '') // Ensure we only get posts with content
-    .lt('published_at', new Date().toISOString()) // Only get previously published posts
+    .not('content', 'eq', '')
+    .lt('published_at', new Date().toISOString())
     .limit(3)
     .order('random()');
 
   if (postsError) {
     console.error('Error fetching related posts:', postsError);
+    throw postsError;
   }
 
-  console.log('Found related posts:', relatedPosts?.length);
+  if (!relatedPosts?.length) {
+    console.warn('No related posts found');
+    return { content, affiliateLinks };
+  }
+
+  console.log('Found related posts:', relatedPosts.length);
 
   // Replace link placeholders with actual blog post links
-  if (relatedPosts && relatedPosts.length > 0) {
-    relatedPosts.forEach((post, index) => {
-      const placeholder = `[LINK ${index + 1} PLACEHOLDER]`;
-      const link = `<a href="/blog/post/${post.slug}" class="text-primary hover:text-primary/90">${post.title}</a>`;
-      content = content.replace(placeholder, link);
-    });
-  }
+  relatedPosts.forEach((post, index) => {
+    const placeholder = `[LINK ${index + 1} PLACEHOLDER]`;
+    const link = `<a href="/blog/post/${post.slug}" class="text-primary hover:text-primary/90">${post.title}</a>`;
+    content = content.replace(placeholder, link);
+  });
   
+  // Split content into sections and process each
   const sections = content.split('<hr class="my-8">');
   console.log('Found sections:', sections.length);
   
@@ -58,9 +62,7 @@ export async function processContent(
         console.log('Found Amazon product:', {
           title: product.title,
           asin: product.asin,
-          hasImage: !!product.imageUrl,
-          rating: product.rating,
-          totalRatings: product.totalRatings
+          hasImage: !!product.imageUrl
         });
 
         const affiliateLink = `https://www.amazon.com/dp/${product.asin}/ref=nosim?tag=${associateId}`;
