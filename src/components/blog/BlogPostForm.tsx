@@ -5,7 +5,6 @@ import { TabsContent, Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage, FormDescription } from "@/components/ui/form";
 import { Separator } from "@/components/ui/separator";
-import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { BlogImageUpload } from "./BlogImageUpload";
@@ -15,7 +14,7 @@ import { BlogPostBasicInfo } from "./form/BlogPostBasicInfo";
 import { BlogPostContent } from "./form/BlogPostContent";
 import { BlogPostSEO } from "./form/BlogPostSEO";
 import { BlogPostFormData, BlogPostData } from "./types/BlogPostTypes";
-import { AutoFillBlogPost } from "./AutoFillBlogPost";
+import { Input } from "@/components/ui/input";
 import { Wand2 } from "lucide-react";
 
 interface BlogPostFormProps {
@@ -224,26 +223,6 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
       <TabsContent value="edit">
         <Form {...form}>
           <form onSubmit={form.handleSubmit((data) => onSubmit(data, false))} className="space-y-6 text-left">
-            <AutoFillBlogPost
-              form={form}
-              generateSlug={generateSlug}
-              generateImage={async () => {
-                const imageUploadButton = document.querySelector('[aria-label="Generate with AI"]') as HTMLButtonElement;
-                if (imageUploadButton) imageUploadButton.click();
-              }}
-              generateAltText={generateAltText}
-              generateExcerpt={async () => handleAIGenerate('excerpt')}
-              generateFullPost={async () => {
-                const generateButton = document.querySelector('[aria-label="Generate Full Post"]') as HTMLButtonElement;
-                if (generateButton) generateButton.click();
-              }}
-              generateAllSEO={async () => {
-                await handleAIGenerate('seo-title');
-                await handleAIGenerate('seo-description');
-                await handleAIGenerate('seo-keywords');
-              }}
-            />
-
             <BlogPostBasicInfo 
               form={form} 
               generateSlug={generateSlug}
