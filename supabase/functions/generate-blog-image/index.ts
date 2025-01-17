@@ -24,7 +24,7 @@ serve(async (req) => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: "gpt-4",
+          model: "gpt-4o",
           messages: [{
             role: "system",
             content: "Generate a concise, descriptive alt text for an image. Focus on the main elements and purpose of the image."
@@ -59,7 +59,7 @@ IMPORTANT REQUIREMENTS:
 - Absolutely NO text, letters, numbers, or writing of any kind
 - Absolutely NO logos or brand names
 - Create a scene that clearly connects to the subject and person mentioned: ${subject || 'the recipient'}
-- Fill the entire frame with the scene (NO blank space or borders)
+- The picture should be a rectangular horizontally oriented (16:9) that fills the entire frame with NO blank space or borders
 - Ensure elements in the image relates to the title, the occasion and the person: ${title}
 
 STYLE & VARIATION INSPIRATION:
