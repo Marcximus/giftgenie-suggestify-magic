@@ -13,6 +13,7 @@ export interface BlogPostFormData {
   affiliate_links: any[] | null;
   image_alt_text: string | null;
   related_posts: any[] | null;
+  product_search_failures: any[] | null;
 }
 
 export interface BlogPostData extends BlogPostFormData {

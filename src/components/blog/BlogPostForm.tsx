@@ -45,6 +45,7 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
       affiliate_links: [],
       image_alt_text: "",
       related_posts: [],
+      product_search_failures: [],
     },
   });
 
