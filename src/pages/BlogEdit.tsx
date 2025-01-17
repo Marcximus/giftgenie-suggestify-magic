@@ -53,6 +53,7 @@ const BlogEdit = () => {
         images: Array.isArray(data.images) ? data.images : [],
         affiliate_links: Array.isArray(data.affiliate_links) ? data.affiliate_links : [],
         related_posts: Array.isArray(data.related_posts) ? data.related_posts : [],
+        product_search_failures: Array.isArray(data.product_search_failures) ? data.product_search_failures : [],
         excerpt: data.excerpt || null,
         image_url: data.image_url || null,
         published_at: data.published_at || null,
