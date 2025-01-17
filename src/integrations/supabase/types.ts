@@ -26,7 +26,7 @@ export type Database = {
           endpoint: string
           error_message?: string | null
           id?: string
-          status: string
+          status?: string
         }
         Update: {
           cache_hit?: boolean | null
@@ -134,6 +134,7 @@ export type Database = {
           slug: string
           title: string
           updated_at: string | null
+          product_reviews: Json | null;
         }
         Insert: {
           affiliate_links?: Json | null
@@ -155,6 +156,7 @@ export type Database = {
           slug: string
           title: string
           updated_at?: string | null
+          product_reviews?: Json | null;
         }
         Update: {
           affiliate_links?: Json | null
@@ -176,6 +178,7 @@ export type Database = {
           slug?: string
           title?: string
           updated_at?: string | null
+          product_reviews?: Json | null;
         }
         Relationships: []
       }
@@ -307,10 +310,10 @@ export type Tables<
         PublicSchema["Views"])
     ? (PublicSchema["Tables"] &
         PublicSchema["Views"])[PublicTableNameOrOptions] extends {
-        Row: infer R
-      }
-      ? R
-      : never
+      Row: infer R
+    }
+    ? R
+    : never
     : never
 
 export type TablesInsert<

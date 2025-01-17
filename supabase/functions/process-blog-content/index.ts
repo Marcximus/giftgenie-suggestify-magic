@@ -1,8 +1,12 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { corsHeaders } from '../_shared/cors.ts';
 import { formatProductHtml } from './productFormatter.ts';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 
 const RAPIDAPI_HOST = 'real-time-amazon-data.p.rapidapi.com';
+const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -29,6 +33,7 @@ serve(async (req) => {
     const processedSections = [];
     const affiliateLinks = [];
     const searchFailures = [];
+    const productReviews = [];
     let productSectionCount = 0;
     let amazonLookupCount = 0;
     let successfulReplacements = 0;
@@ -106,6 +111,16 @@ serve(async (req) => {
               asin: product.asin
             });
 
+            // Store review data
+            if (rating && totalRatings) {
+              productReviews.push({
+                title: product.title,
+                rating,
+                totalRatings,
+                asin: product.asin
+              });
+            }
+
             // Format the product HTML
             const productHtml = formatProductHtml({
               title: product.title,
@@ -150,15 +165,18 @@ serve(async (req) => {
       searchFailuresCount: searchFailures.length
     });
 
+    // Update the response to include product reviews
     return new Response(
       JSON.stringify({
         content: processedContent,
         affiliateLinks,
         searchFailures,
+        productReviews,
         processingStatus: {
           product_sections: productSectionCount,
           amazon_lookups: amazonLookupCount,
-          successful_replacements: successfulReplacements
+          successful_replacements: successfulReplacements,
+          reviews_added: productReviews.length
         }
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
