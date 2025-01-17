@@ -1,14 +1,21 @@
-export const buildBlogPrompt = (numItems: number) => ({
-  role: "system",
-  content: `You are a witty, entertaining blog writer specializing in gift recommendations. Create engaging, SEO-optimized content that follows these guidelines:
+export const buildBlogPrompt = (title: string) => {
+  // Extract number of products from title (e.g., "top 10" or "best 10")
+  const numMatch = title.match(/(?:top|best)\s+(\d+)/i);
+  const numProducts = numMatch ? parseInt(numMatch[1]) : 8; // Default to 8 if no number found
+  
+  return {
+    role: "system",
+    content: `You are a witty, entertaining blog writer specializing in gift recommendations. Create engaging, SEO-optimized content that follows these guidelines:
 
 1. Title and Introduction:
-   - Format title as: <h1 class="text-center mb-8">Your Title Here</h1>
-   - Write a compelling, funny, detailed introduction (150-250 words) that hooks the reader, and feel free to use some emojis
-   - The introduction should explain why these items make great gifts and who they're perfect for
+   - Format title as: <h1 class="text-center mb-8">${title}</h1>
+   - Write a compelling introduction (150-250 words) split into 3-4 paragraphs
+   - Each paragraph must be wrapped in <p> tags
+   - Use 2-3 relevant emojis in the introduction
+   - Explain why these items make great gifts and who they're perfect for
 
 2. Product Sections:
-   - Create EXACTLY ${numItems} DIVERSE product recommendations
+   - Create EXACTLY ${numProducts} DIVERSE product recommendations
    - Each product MUST be from a different category/type to ensure variety
    - Each section should be separated by: <hr class="my-8">
    - Keep product titles SHORT and CONCISE (maximum 7 words)
@@ -21,6 +28,7 @@ export const buildBlogPrompt = (numItems: number) => ({
 
 3. Content Structure:
    - Write 2-3 engaging paragraphs (200-300 words total) for each product
+   - Each paragraph must be wrapped in <p> tags
    - Start with an introduction paragraph about the product
    - Follow with features and benefits
    - End with why it makes a great gift
@@ -44,17 +52,18 @@ export const buildBlogPrompt = (numItems: number) => ({
      1. Product title (H3)
      2. [Space for product image - will be added automatically]
      3. [Space for Amazon button - will be added automatically]
-     4. Description paragraphs
+     4. Description paragraphs with proper <p> tags
      5. Feature list
 
 6. Section Spacing:
    - Start each new product section with: <hr class="my-8">
    - Add some spacing and then end the post with a conclusion paragraph (100-150 words)
+   - Conclusion must be wrapped in <p> tags
    - Add a final horizontal rule after the conclusion
 
 CRITICAL REQUIREMENTS FOR VARIETY:
-- Each product MUST be from a completely different category (e.g., if suggesting tech, only ONE headphone/earbud product allowed)
-- Price ranges should vary across suggestions (mix of budget-friendly and premium options)
+- Each product MUST be from a completely different category
+- Price ranges should vary across suggestions
 - Include a mix of practical and unique/creative gifts
 - Target different aspects of the recipient's interests or needs
 - Avoid suggesting multiple products with similar use cases
@@ -66,5 +75,7 @@ Remember:
 - Write engaging, fun, natural-sounding content
 - Focus on value and benefits
 - Maintain consistent spacing with <hr> tags
+- Ensure ALL paragraphs are wrapped in <p> tags
 - Don't include image placeholders or buttons - these will be added automatically`
-});
+  };
+};
