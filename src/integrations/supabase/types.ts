@@ -118,12 +118,15 @@ export type Database = {
           affiliate_links: Json | null
           author: string
           content: string
+          content_format_version: string | null
           created_at: string | null
           excerpt: string | null
+          generation_attempts: number | null
           id: string
           image_alt_text: string | null
           image_url: string | null
           images: Json | null
+          last_generation_error: string | null
           meta_description: string | null
           meta_keywords: string | null
           meta_title: string | null
@@ -140,12 +143,15 @@ export type Database = {
           affiliate_links?: Json | null
           author: string
           content: string
+          content_format_version?: string | null
           created_at?: string | null
           excerpt?: string | null
+          generation_attempts?: number | null
           id?: string
           image_alt_text?: string | null
           image_url?: string | null
           images?: Json | null
+          last_generation_error?: string | null
           meta_description?: string | null
           meta_keywords?: string | null
           meta_title?: string | null
@@ -162,12 +168,15 @@ export type Database = {
           affiliate_links?: Json | null
           author?: string
           content?: string
+          content_format_version?: string | null
           created_at?: string | null
           excerpt?: string | null
+          generation_attempts?: number | null
           id?: string
           image_alt_text?: string | null
           image_url?: string | null
           images?: Json | null
+          last_generation_error?: string | null
           meta_description?: string | null
           meta_keywords?: string | null
           meta_title?: string | null

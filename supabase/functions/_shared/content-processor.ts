@@ -18,23 +18,27 @@ export async function processContent(
   const affiliateLinks = [];
   const searchFailures = [];
   const productReviews = [];
+  let productSectionCount = 0;
+  let amazonLookupCount = 0;
+  let successfulReplacements = 0;
 
   for (const section of sections) {
     if (section.includes('<h3>')) {
+      productSectionCount++;
       try {
         const titleMatch = section.match(/<h3>(.*?)<\/h3>/);
         if (titleMatch) {
           const searchTerm = titleMatch[1].trim();
           console.log('Processing product section:', searchTerm);
+          amazonLookupCount++;
           
           const product = await searchAmazonProduct(searchTerm, rapidApiKey);
           
-          if (product) {
+          if (product && product.asin) {
             console.log('Found product:', {
               title: product.title,
-              hasPrice: !!product.price,
-              hasRating: !!product.rating,
-              hasImage: !!product.imageUrl
+              asin: product.asin,
+              hasRating: !!product.rating
             });
 
             const affiliateLink = `https://www.amazon.com/dp/${product.asin}?tag=${associateId}`;
@@ -53,11 +57,12 @@ export async function processContent(
                 asin: product.asin
               });
             }
-            
+
             // Split section to preserve content before and after the h3 tag
             const [beforeH3, afterH3] = section.split('</h3>');
             const productHtml = formatProductHtml(product, affiliateLink, beforeH3, afterH3);
             processedSections.push(productHtml);
+            successfulReplacements++;
             
           } else {
             console.warn('No product found for:', searchTerm);
@@ -67,6 +72,8 @@ export async function processContent(
             });
             processedSections.push(section);
           }
+        } else {
+          processedSections.push(section);
         }
       } catch (error) {
         console.error('Error processing product section:', error);
@@ -81,17 +88,23 @@ export async function processContent(
     }
   }
 
-  console.log('Content processing summary:', {
-    sectionsProcessed: sections.length,
-    productsFound: affiliateLinks.length,
-    reviewsCollected: productReviews.length,
-    searchFailures: searchFailures.length
+  console.log('Processing summary:', {
+    productSections: productSectionCount,
+    amazonLookups: amazonLookupCount,
+    successfulReplacements,
+    affiliateLinksCount: affiliateLinks.length,
+    reviewsCollected: productReviews.length
   });
 
   return {
     content: processedSections.join('<hr class="my-8">'),
     affiliateLinks,
     searchFailures,
-    productReviews
+    productReviews,
+    processingStatus: {
+      product_sections: productSectionCount,
+      amazon_lookups: amazonLookupCount,
+      successful_replacements: successfulReplacements
+    }
   };
 }
