@@ -76,7 +76,7 @@ STYLE & VARIATION INSPIRATION:
         model: "dall-e-3",
         prompt: prompt || imagePrompt,
         n: 1,
-        size: "1792x1024",
+        size: "1024x576",
         quality: "standard",
         response_format: "b64_json",
         style: "vivid"
