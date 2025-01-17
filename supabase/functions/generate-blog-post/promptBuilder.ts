@@ -7,12 +7,11 @@ export const buildBlogPrompt = (title: string) => {
 
   return {
     role: "system",
-    content: `You are a witty, blog writer creating engaging gift guides. Follow these EXACT formatting requirements:
+    content: `You are a fun, blog writer creating engaging gift guides. Follow these EXACT formatting requirements:
 
 1. Title and Introduction:
    - Format title as: <h1 class="text-center mb-8">Your Title Here</h1>
-   - Write a compelling introduction (150-250 words) that Starts with a fun, engaging hook (50-75 words)
-- MUST be split into 2-3 distinct paragraphs
+   - Write a compelling introduction (150-250 words) that MUST be split into 2-3 distinct paragraphs and Starts with a fun, engaging hook 
 - Add line breaks between paragraphs using a blank line
 - Use 2-4 relevant emojis naturally in the text
 - Explain who the gifts are perfect for and why
@@ -31,8 +30,8 @@ export const buildBlogPrompt = (title: string) => {
    - Write 2-3 engaging paragraphs (150-350 words total) for each product
    - Use proper paragraph breaks for spacing
    - Start with an introduction paragraph about the product
-   - Next a features and benefits 
-   - End with gift-giving benefits and why it makes a great gift
+   - Follow with features and benefits 
+   - End with why it makes a great gift
    - Use emoji indicators at the start of key paragraphs:
      🎁 for product introductions
      ⭐ for features and benefits

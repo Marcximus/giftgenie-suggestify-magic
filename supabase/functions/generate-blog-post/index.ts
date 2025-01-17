@@ -25,10 +25,11 @@ serve(async (req) => {
       throw new Error('Required environment variables are missing');
     }
 
+    // Get the prompt from promptBuilder - this is the ONLY prompt we use
     const prompt = buildBlogPrompt(title);
     console.log('Using prompt system content:', prompt.content.substring(0, 200) + '...');
 
-    // Increased max_tokens to handle longer content
+    // Make the OpenAI API call with increased max_tokens
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -38,19 +39,18 @@ serve(async (req) => {
       body: JSON.stringify({
         model: "gpt-4",
         messages: [
-          prompt,
+          prompt, // Use ONLY the prompt from promptBuilder
           {
             role: "user",
             content: `Generate a detailed blog post about: ${title}. 
                      Follow EXACTLY the format specified in the system message.
                      Do not deviate from the required structure.
                      Include all HTML tags and formatting exactly as specified.
-                     Make sure to include all required sections and elements.
                      IMPORTANT: Generate exactly the number of products specified in the title.`
           }
         ],
         temperature: 0.7,
-        max_tokens: 4000, // Increased from 3500
+        max_tokens: 4000,
         presence_penalty: 0.1,
         frequency_penalty: 0.1,
       }),
