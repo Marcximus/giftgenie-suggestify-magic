@@ -1,48 +1,30 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { processContent } from "../_shared/content-processor.ts";
 import { buildBlogPrompt } from "./promptBuilder.ts";
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { corsHeaders } from "../_shared/cors.ts";
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
     const { title } = await req.json();
-    console.log('Generating blog post for:', { title });
+    const numItems = 3; // Number of product suggestions to include
 
-    // Verify required API keys
-    const associateId = Deno.env.get('AMAZON_ASSOCIATE_ID');
+    const openaiApiKey = Deno.env.get('OPENAI_API_KEY');
     const rapidApiKey = Deno.env.get('RAPIDAPI_KEY');
-    const openAiKey = Deno.env.get('OPENAI_API_KEY');
+    const amazonAssociateId = Deno.env.get('AMAZON_ASSOCIATE_ID');
 
-    if (!associateId || !rapidApiKey || !openAiKey) {
-      console.error('Missing required API keys');
-      throw new Error('Missing required API configuration');
+    if (!openaiApiKey || !rapidApiKey || !amazonAssociateId) {
+      throw new Error('Required environment variables are not set');
     }
 
-    let numItems = 5;
-    const titleNumMatch = title.match(/\b(\d+)\b/);
-    if (titleNumMatch) {
-      const parsedNum = parseInt(titleNumMatch[1]);
-      if (parsedNum > 0 && parsedNum <= 10) {
-        numItems = parsedNum;
-      }
-    }
-    console.log('Number of items to generate:', numItems);
-
-    console.log('Making OpenAI request...');
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    // Generate initial blog post content using OpenAI
+    const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${openAiKey}`,
+        'Authorization': `Bearer ${openaiApiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
@@ -59,58 +41,37 @@ serve(async (req) => {
       }),
     });
 
-    if (!response.ok) {
-      console.error('OpenAI API error:', response.status);
-      const errorText = await response.text();
-      console.error('OpenAI error details:', errorText);
-      throw new Error(`OpenAI API error: ${response.status}`);
+    if (!openaiResponse.ok) {
+      const error = await openaiResponse.text();
+      throw new Error(`OpenAI API error: ${error}`);
     }
 
-    const data = await response.json();
-    const rawContent = data.choices[0].message.content;
-    console.log('Generated raw content length:', rawContent.length);
+    const openaiData = await openaiResponse.json();
+    const initialContent = openaiData.choices[0].message.content;
 
-    // Process content with Amazon product data
-    console.log('Processing content with Amazon data...');
-    const { content, affiliateLinks } = await processContent(rawContent, associateId, rapidApiKey);
-    
-    console.log('Content processed successfully:', {
-      originalLength: rawContent.length,
-      processedLength: content.length,
-      numAffiliateLinks: affiliateLinks.length
-    });
+    // Process the content to add Amazon product information
+    const { content, affiliateLinks } = await processContent(
+      initialContent,
+      amazonAssociateId,
+      rapidApiKey
+    );
 
     return new Response(
       JSON.stringify({ content, affiliateLinks }),
-      { 
-        headers: { 
-          ...corsHeaders,
-          'Content-Type': 'application/json',
-          'Cache-Control': 'no-store, no-cache, must-revalidate, private',
-          'Pragma': 'no-cache',
-          'Expires': '0',
-        },
-        status: 200
-      }
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
   } catch (error) {
-    console.error('Error in generate-blog-post function:', error);
-    
+    console.error('Error in generate-blog-post:', error);
     return new Response(
-      JSON.stringify({ 
+      JSON.stringify({
         error: error.message,
         timestamp: new Date().toISOString(),
-        details: error.stack,
         type: 'generate-blog-post-error'
       }),
       { 
         status: 500,
-        headers: { 
-          ...corsHeaders, 
-          'Content-Type': 'application/json',
-          'Cache-Control': 'no-store, no-cache, must-revalidate'
-        } 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       }
     );
   }

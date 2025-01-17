@@ -57,7 +57,7 @@ export async function processContent(
           .from('blog_posts')
           .select('title, slug')
           .not('published_at', 'is', null)
-          .order('RANDOM()')  // Fixed: Using correct PostgreSQL random ordering
+          .order('RANDOM()')
           .limit(3);
 
         if (error) {
