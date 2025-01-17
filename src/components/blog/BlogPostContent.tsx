@@ -6,7 +6,7 @@ interface BlogPostContentProps {
 
 export const BlogPostContent = ({ post }: BlogPostContentProps) => {
   return (
-    <div className="prose prose-sm md:prose-base lg:prose-lg w-full max-w-none animate-fade-in">
+    <article className="prose prose-sm md:prose-base lg:prose-lg w-full max-w-none animate-fade-in">
       <div 
         className="text-left px-4 sm:px-6 lg:px-8
                    prose-p:text-sm md:prose-p:text-base lg:prose-p:text-lg
@@ -46,9 +46,17 @@ export const BlogPostContent = ({ post }: BlogPostContentProps) => {
 
                    [&_div.review-info]:bg-gradient-to-r [&_div.review-info]:from-gray-50 [&_div.review-info]:to-gray-100
                    [&_div.review-info]:rounded-xl [&_div.review-info]:shadow-sm [&_div.review-info]:p-6 [&_div.review-info]:my-6
-                   [&_div.review-info]:flex [&_div.review-info]:flex-col [&_div.review-info]:items-center [&_div.review-info]:gap-2"
-        dangerouslySetInnerHTML={{ __html: post.content }}
-      />
-    </div>
+                   [&_div.review-info]:flex [&_div.review-info]:flex-col [&_div.review-info]:items-center [&_div.review-info]:gap-2
+
+                   [&_p]:text-base [&_p]:text-gray-700 [&_p]:leading-relaxed [&_p]:mb-4
+                   [&_h3]:text-xl [&_h3]:sm:text-2xl [&_h3]:md:text-3xl
+                   [&_h3]:font-semibold [&_h3]:mt-8 [&_h3]:mb-4 [&_h3]:text-center"
+      >
+        <div 
+          className="prose prose-sm md:prose-base lg:prose-lg w-full"
+          dangerouslySetInnerHTML={{ __html: post.content }}
+        />
+      </div>
+    </article>
   );
 };
