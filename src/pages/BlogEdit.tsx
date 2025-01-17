@@ -61,16 +61,22 @@ const BlogEdit = () => {
         meta_description: data.meta_description || null,
         meta_keywords: data.meta_keywords || null,
         image_alt_text: data.image_alt_text || null,
-        // Parse and validate processing_status
-        processing_status: typeof data.processing_status === 'object' && data.processing_status ? {
-          product_sections: Number(data.processing_status.product_sections) || 0,
-          amazon_lookups: Number(data.processing_status.amazon_lookups) || 0,
-          successful_replacements: Number(data.processing_status.successful_replacements) || 0
-        } : {
-          product_sections: 0,
-          amazon_lookups: 0,
-          successful_replacements: 0
-        }
+        // Parse and validate processing_status with proper type checking
+        processing_status: (() => {
+          const status = data.processing_status as { [key: string]: number } | null;
+          if (status && typeof status === 'object' && !Array.isArray(status)) {
+            return {
+              product_sections: Number(status.product_sections) || 0,
+              amazon_lookups: Number(status.amazon_lookups) || 0,
+              successful_replacements: Number(status.successful_replacements) || 0
+            };
+          }
+          return {
+            product_sections: 0,
+            amazon_lookups: 0,
+            successful_replacements: 0
+          };
+        })()
       };
       
       return formattedPost;
