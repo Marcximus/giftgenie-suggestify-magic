@@ -46,6 +46,7 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
       image_alt_text: "",
       related_posts: [],
       product_search_failures: [],
+      product_reviews: [],
       processing_status: {
         product_sections: 0,
         amazon_lookups: 0,

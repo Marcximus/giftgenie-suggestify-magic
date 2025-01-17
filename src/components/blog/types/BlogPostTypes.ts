@@ -14,6 +14,7 @@ export interface BlogPostFormData {
   image_alt_text: string | null;
   related_posts: any[] | null;
   product_search_failures: any[] | null;
+  product_reviews: any[] | null;
   processing_status: {
     product_sections: number;
     amazon_lookups: number;
