@@ -3,8 +3,14 @@ import { buildBlogPrompt } from "./promptBuilder.ts";
 import { corsHeaders } from "../_shared/cors.ts";
 
 serve(async (req) => {
+  // Always handle CORS preflight requests first
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { 
+      headers: {
+        ...corsHeaders,
+        'Access-Control-Max-Age': '86400',
+      } 
+    });
   }
 
   try {
@@ -61,6 +67,7 @@ serve(async (req) => {
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${Deno.env.get('SUPABASE_ANON_KEY')}`,
+        ...corsHeaders,
       },
       body: JSON.stringify({ content: initialContent }),
     });
@@ -80,7 +87,12 @@ serve(async (req) => {
 
     return new Response(
       JSON.stringify(processedData),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { 
+        headers: { 
+          ...corsHeaders, 
+          'Content-Type': 'application/json',
+        } 
+      }
     );
 
   } catch (error) {
@@ -93,7 +105,10 @@ serve(async (req) => {
       }),
       { 
         status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        headers: { 
+          ...corsHeaders, 
+          'Content-Type': 'application/json' 
+        }
       }
     );
   }
