@@ -31,10 +31,17 @@ export const AutoFillBlogPost = ({
   const { toast } = useToast();
 
   const getNextQueuedTitle = async () => {
+    console.log('Fetching next queued title...');
+    
+    const now = new Date();
+    const currentDate = now.toISOString().split('T')[0];
+    const currentTime = now.toTimeString().split(' ')[0];
+
     const { data: queuedPost, error } = await supabase
       .from("blog_post_queue")
       .select("title")
       .eq("status", "pending")
+      .or(`scheduled_date.gt.${currentDate},and(scheduled_date.eq.${currentDate},scheduled_time.gt.${currentTime})`)
       .order("scheduled_date", { ascending: true })
       .order("scheduled_time", { ascending: true })
       .limit(1)
@@ -42,13 +49,14 @@ export const AutoFillBlogPost = ({
 
     if (error) {
       console.error("Error fetching queued post:", error);
-      throw error;
+      throw new Error(`Failed to fetch queued post: ${error.message}`);
     }
 
     if (!queuedPost) {
       throw new Error("No pending posts found in queue");
     }
 
+    console.log('Found queued post:', queuedPost);
     return queuedPost.title;
   };
 
@@ -62,25 +70,32 @@ export const AutoFillBlogPost = ({
 
     try {
       // Step 1: Get title and set basic fields
+      console.log('Starting auto-fill process...');
       const title = await getNextQueuedTitle();
+      console.log('Setting form values with title:', title);
+      
       form.setValue("title", title);
       form.setValue("slug", generateSlug(title));
       form.setValue("author", "Get The Gift Team");
       updateProgress(1);
 
       // Step 2: Generate image
+      console.log('Generating image...');
       await generateImage();
       updateProgress(2);
 
       // Step 3: Generate alt text
+      console.log('Generating alt text...');
       await generateAltText();
       updateProgress(3);
 
       // Step 4: Generate excerpt
+      console.log('Generating excerpt...');
       await generateExcerpt();
       updateProgress(4);
 
       // Step 5: Generate full post and SEO
+      console.log('Generating full post and SEO...');
       await Promise.all([generateFullPost(), generateAllSEO()]);
       updateProgress(5);
 
@@ -89,7 +104,7 @@ export const AutoFillBlogPost = ({
         description: "All fields have been filled and content generated",
       });
     } catch (error: any) {
-      console.error("Auto-fill error:", error);
+      console.error('Auto-fill error:', error);
       toast({
         title: "Error",
         description: error.message || "Failed to auto-fill blog post",
@@ -97,6 +112,7 @@ export const AutoFillBlogPost = ({
       });
     } finally {
       setIsProcessing(false);
+      setProgress(0);
     }
   };
 
