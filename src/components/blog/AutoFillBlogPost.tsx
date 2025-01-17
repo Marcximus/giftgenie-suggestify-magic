@@ -80,36 +80,62 @@ export const AutoFillBlogPost = ({
       form.setValue("slug", generateSlug(title));
       form.setValue("author", "Get The Gift Team");
       updateProgress(1);
-      await delay(2000); // Base delay between operations
+      await delay(3000); // Wait before starting image generation
 
       // Step 2: Generate image
       console.log('Generating image...');
-      await generateImage();
-      updateProgress(2);
-      await delay(3000); // Longer delay after image generation
+      try {
+        await generateImage();
+        updateProgress(2);
+        await delay(5000); // Longer delay after image generation
+      } catch (error) {
+        console.error('Image generation failed:', error);
+        throw new Error('Failed to generate image. Please try again.');
+      }
 
       // Step 3: Generate alt text
       console.log('Generating alt text...');
-      await generateAltText();
-      updateProgress(3);
-      await delay(2000);
+      try {
+        await generateAltText();
+        updateProgress(3);
+        await delay(5000); // Wait before excerpt generation
+      } catch (error) {
+        console.error('Alt text generation failed:', error);
+        throw new Error('Failed to generate alt text. Please try again.');
+      }
 
       // Step 4: Generate excerpt
       console.log('Generating excerpt...');
-      await generateExcerpt();
-      updateProgress(4);
-      await delay(2000);
+      try {
+        await generateExcerpt();
+        updateProgress(4);
+        await delay(5000); // Wait before full post generation
+      } catch (error) {
+        console.error('Excerpt generation failed:', error);
+        throw new Error('Failed to generate excerpt. Please try again.');
+      }
 
       // Step 5: Generate full post
       console.log('Generating full post...');
-      await generateFullPost();
-      updateProgress(5);
-      await delay(3000); // Longer delay after full post generation
+      try {
+        await generateFullPost();
+        updateProgress(5);
+        await delay(5000); // Wait before SEO generation
+      } catch (error) {
+        console.error('Full post generation failed:', error);
+        throw new Error('Failed to generate full post. Please try again.');
+      }
 
       // Step 6: Generate SEO content
       console.log('Generating SEO content...');
-      await generateAllSEO();
-      updateProgress(6);
+      try {
+        await generateAllSEO();
+        updateProgress(6);
+        await delay(3000); // Wait before final verification
+      } catch (error) {
+        console.error('SEO content generation failed:', error);
+        throw new Error('Failed to generate SEO content. Please try again.');
+      }
 
       // Step 7: Final verification
       console.log('Verifying all content...');
