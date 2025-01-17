@@ -13,29 +13,22 @@ export const formatProductHtml = (
   product: ProductInfo,
   affiliateLink: string
 ) => {
-  console.log('Formatting product HTML:', {
-    title: product.title,
-    hasImage: !!product.imageUrl,
-    hasRating: !!product.rating,
-    hasFeatures: product.features?.length || 0
-  });
-
   // Format rating and review count
   const reviewInfo = product.rating ? `
-    <div class="flex flex-col items-center gap-2 my-4">
+    <div class="flex flex-col items-center gap-2 my-6 p-6 bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl shadow-sm">
       <div class="flex items-center gap-2">
         ${Array.from({ length: 5 }, (_, i) => 
           `<span class="text-yellow-400 text-xl">
-            ${i < Math.floor(product.rating!) ? '★' : '☆'}
+            ${i < Math.floor(product.rating!) ? '★' : (i < product.rating ? '★' : '☆')}
           </span>`
         ).join('')}
         <span class="font-semibold text-xl text-gray-800">${product.rating.toFixed(1)}</span>
-        ${product.totalRatings ? `
-          <span class="text-gray-500">
-            (${product.totalRatings.toLocaleString()})
-          </span>
-        ` : ''}
       </div>
+      ${product.totalRatings ? `
+        <div class="text-base text-gray-600">
+          Based on ${product.totalRatings.toLocaleString()} verified customer reviews
+        </div>
+      ` : ''}
     </div>` : '';
 
   // Format features list if available

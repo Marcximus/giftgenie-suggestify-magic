@@ -42,7 +42,11 @@ export const BlogPostContent = ({ post }: BlogPostContentProps) => {
                    [&_a.amazon-button]:text-white [&_a.amazon-button]:rounded-md 
                    [&_a.amazon-button]:transition-colors [&_a.amazon-button]:text-sm
                    [&_a.amazon-button]:shadow-sm [&_a.amazon-button]:hover:shadow-md
-                   [&_a.amazon-button]:active:scale-95"
+                   [&_a.amazon-button]:active:scale-95
+
+                   [&_div.review-info]:bg-gradient-to-r [&_div.review-info]:from-gray-50 [&_div.review-info]:to-gray-100
+                   [&_div.review-info]:rounded-xl [&_div.review-info]:shadow-sm [&_div.review-info]:p-6 [&_div.review-info]:my-6
+                   [&_div.review-info]:flex [&_div.review-info]:flex-col [&_div.review-info]:items-center [&_div.review-info]:gap-2"
         dangerouslySetInnerHTML={{ __html: post.content }}
       />
     </div>
