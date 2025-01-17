@@ -71,6 +71,7 @@ serve(async (req) => {
 
     const initialContent = openaiData.choices[0].message.content;
     console.log('Generated content length:', initialContent.length);
+    console.log('Generated content preview:', initialContent.substring(0, 500));
 
     // Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
