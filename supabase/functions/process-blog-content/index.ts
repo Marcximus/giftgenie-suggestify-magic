@@ -49,6 +49,7 @@ serve(async (req) => {
             const searchTerm = titleMatch[1];
             console.log('Processing product section:', searchTerm);
             
+            // Direct integration with RapidAPI Amazon endpoint
             const searchUrl = `https://${RAPIDAPI_HOST}/search?query=${encodeURIComponent(searchTerm)}&country=US&category_id=aps`;
             const searchResponse = await fetch(searchUrl, {
               headers: {
@@ -82,18 +83,6 @@ serve(async (req) => {
               continue;
             }
 
-            // Validate ASIN format
-            if (!/^[A-Z0-9]{10}$/.test(product.asin)) {
-              console.warn('Invalid ASIN format:', product.asin);
-              searchFailures.push({
-                term: searchTerm,
-                error: 'Invalid ASIN format',
-                timestamp: new Date().toISOString()
-              });
-              processedSections.push(section);
-              continue;
-            }
-
             // Get detailed product information
             const detailsUrl = `https://${RAPIDAPI_HOST}/product-details?asin=${product.asin}&country=US`;
             const detailsResponse = await fetch(detailsUrl, {
@@ -103,88 +92,68 @@ serve(async (req) => {
               }
             });
 
-            if (!detailsResponse.ok) {
-              console.warn('Failed to get product details:', detailsResponse.status);
-              searchFailures.push({
-                term: searchTerm,
-                error: `Details API error: ${detailsResponse.status}`,
-                timestamp: new Date().toISOString()
-              });
-              processedSections.push(section);
-              continue;
+            let rating, totalRatings;
+            if (detailsResponse.ok) {
+              const detailsData = await detailsResponse.json();
+              rating = detailsData.data?.product_rating ? 
+                parseFloat(detailsData.data.product_rating) : undefined;
+              totalRatings = detailsData.data?.product_num_ratings ? 
+                parseInt(detailsData.data.product_num_ratings, 10) : undefined;
             }
 
-            const detailsData = await detailsResponse.json();
-            console.log('Product details:', detailsData);
-
-            // Create affiliate link with validated ASIN
+            // Create affiliate link
             const affiliateLink = `https://www.amazon.com/dp/${product.asin}?tag=${associateId}`;
             
-            // Validate the affiliate link structure
+            // Add to affiliate links if valid
             const linkData = {
               title: product.title,
               url: affiliateLink,
               asin: product.asin
             };
 
-            // Only add valid affiliate links
-            const { data: isValid } = await supabase.rpc('validate_affiliate_link', {
-              link: linkData
-            });
-
-            if (isValid) {
-              affiliateLinks.push(linkData);
-              
-              const [beforeTitle, afterTitle] = section.split('</h3>');
-              const productHtml = `${beforeTitle}</h3>
-                <div class="flex flex-col items-center my-8">
-                  <div class="w-full max-w-2xl mb-4">
-                    <img 
-                      src="${product.product_photo}" 
-                      alt="${product.title}"
-                      class="w-80 h-80 sm:w-96 sm:h-96 lg:w-[500px] lg:h-[500px] object-contain rounded-lg shadow-md mx-auto" 
-                      loading="lazy"
-                    />
-                  </div>
-                  ${product.product_star_rating ? `
-                    <div class="flex items-center gap-2 mb-4">
-                      <div class="flex">
-                        ${Array.from({ length: 5 }, (_, i) => 
-                          `<span class="text-yellow-400">
-                            ${i < Math.floor(parseFloat(product.product_star_rating)) ? '★' : '☆'}
-                          </span>`
-                        ).join('')}
-                      </div>
-                      <span class="font-medium">${parseFloat(product.product_star_rating).toFixed(1)}</span>
-                      ${product.product_num_ratings ? `
-                        <span class="text-gray-500">
-                          (${parseInt(product.product_num_ratings).toLocaleString()})
-                        </span>
-                      ` : ''}
-                    </div>
-                  ` : ''}
-                  <a 
-                    href="${affiliateLink}" 
-                    target="_blank" 
-                    rel="noopener noreferrer" 
-                    class="inline-block px-6 py-2 bg-[#F97316] hover:bg-[#F97316]/90 text-white font-medium rounded-md transition-colors text-sm text-center"
-                  >
-                    View on Amazon
-                  </a>
+            affiliateLinks.push(linkData);
+            
+            const [beforeTitle, afterTitle] = section.split('</h3>');
+            const productHtml = `${beforeTitle}</h3>
+              <div class="flex flex-col items-center my-8">
+                <div class="w-full max-w-2xl mb-4">
+                  <img 
+                    src="${product.product_photo}" 
+                    alt="${product.title}"
+                    class="w-80 h-80 sm:w-96 sm:h-96 lg:w-[500px] lg:h-[500px] object-contain rounded-lg shadow-md mx-auto" 
+                    loading="lazy"
+                  />
                 </div>
-                ${afterTitle}`;
+                ${rating ? `
+                  <div class="flex items-center gap-2 mb-4">
+                    <div class="flex">
+                      ${Array.from({ length: 5 }, (_, i) => 
+                        `<span class="text-yellow-400">
+                          ${i < Math.floor(rating) ? '★' : '☆'}
+                        </span>`
+                      ).join('')}
+                    </div>
+                    <span class="font-medium">${rating.toFixed(1)}</span>
+                    ${totalRatings ? `
+                      <span class="text-gray-500">
+                        (${totalRatings.toLocaleString()})
+                      </span>
+                    ` : ''}
+                  </div>
+                ` : ''}
+                <a 
+                  href="${affiliateLink}" 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  class="inline-block px-6 py-2 bg-[#F97316] hover:bg-[#F97316]/90 text-white font-medium rounded-md transition-colors text-sm text-center"
+                >
+                  View on Amazon
+                </a>
+              </div>
+              ${afterTitle}`;
 
-              processedSections.push(productHtml);
-              console.log('Successfully processed product section');
-            } else {
-              console.warn('Invalid affiliate link structure');
-              searchFailures.push({
-                term: searchTerm,
-                error: 'Invalid affiliate link structure',
-                timestamp: new Date().toISOString()
-              });
-              processedSections.push(section);
-            }
+            processedSections.push(productHtml);
+            console.log('Successfully processed product section');
           } else {
             processedSections.push(section);
           }
