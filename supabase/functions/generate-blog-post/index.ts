@@ -5,27 +5,39 @@ import { buildBlogPrompt } from "./promptBuilder.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Max-Age': '86400',
 };
 
-serve(async (req) => {
-  // Handle CORS preflight requests
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { 
-      headers: {
-        ...corsHeaders,
-        'Access-Control-Max-Age': '86400',
+// Retry logic with exponential backoff
+async function retryWithBackoff(operation: () => Promise<any>, maxAttempts = 3): Promise<any> {
+  let lastError;
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      console.log(`Attempt ${attempt} of ${maxAttempts}`);
+      return await operation();
+    } catch (error) {
+      lastError = error;
+      if (error.status === 429) {
+        const delay = Math.min(1000 * Math.pow(2, attempt - 1), 10000);
+        console.log(`Rate limited. Waiting ${delay}ms before retry...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      } else {
+        throw error;
       }
-    });
+    }
+  }
+  throw lastError;
+}
+
+serve(async (req) => {
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
   }
 
   try {
     const { title } = await req.json();
     console.log('Generating blog post for:', { title });
 
-    // Verify required API keys
     const associateId = Deno.env.get('AMAZON_ASSOCIATE_ID');
     const rapidApiKey = Deno.env.get('RAPIDAPI_KEY');
     const openAiKey = Deno.env.get('OPENAI_API_KEY');
@@ -45,39 +57,40 @@ serve(async (req) => {
     }
     console.log('Number of items to generate:', numItems);
 
-    console.log('Making OpenAI request...');
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openAiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: "gpt-4o", // Changed from gpt-4o-mini to gpt-4o for better quality
-        messages: [
-          buildBlogPrompt(numItems),
-          {
-            role: "user",
-            content: `Create a fun, engaging blog post about: ${title}`
-          }
-        ],
-        temperature: 0.7, // Adjusted for more creative but still focused output
-        max_tokens: 2500,
-      }),
-    });
+    const generateBlogPost = async () => {
+      console.log('Making OpenAI request...');
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${openAiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: "gpt-4o",
+          messages: [
+            buildBlogPrompt(numItems),
+            {
+              role: "user",
+              content: `Create a fun, engaging blog post about: ${title}`
+            }
+          ],
+          temperature: 0.7,
+          max_tokens: 2500,
+        }),
+      });
 
-    if (!response.ok) {
-      console.error('OpenAI API error:', response.status);
-      const errorText = await response.text();
-      console.error('OpenAI error details:', errorText);
-      throw new Error(`OpenAI API error: ${response.status}`);
-    }
+      if (!response.ok) {
+        console.error('OpenAI API error:', response.status);
+        throw new Error(`OpenAI API error: ${response.status}`);
+      }
 
-    const data = await response.json();
-    const rawContent = data.choices[0].message.content;
+      const data = await response.json();
+      return data.choices[0].message.content;
+    };
+
+    const rawContent = await retryWithBackoff(generateBlogPost);
     console.log('Generated raw content length:', rawContent.length);
 
-    // Process content with Amazon product data
     console.log('Processing content with Amazon data...');
     const { content, affiliateLinks } = await processContent(rawContent, associateId, rapidApiKey);
     
@@ -94,16 +107,12 @@ serve(async (req) => {
           ...corsHeaders,
           'Content-Type': 'application/json',
           'Cache-Control': 'no-store, no-cache, must-revalidate, private',
-          'Pragma': 'no-cache',
-          'Expires': '0',
-        },
-        status: 200
+        }
       }
     );
 
   } catch (error) {
     console.error('Error in generate-blog-post function:', error);
-    
     return new Response(
       JSON.stringify({ 
         error: error.message,
@@ -113,11 +122,7 @@ serve(async (req) => {
       }),
       { 
         status: 500,
-        headers: { 
-          ...corsHeaders, 
-          'Content-Type': 'application/json',
-          'Cache-Control': 'no-store, no-cache, must-revalidate'
-        } 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       }
     );
   }
