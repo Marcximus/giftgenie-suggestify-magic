@@ -11,8 +11,8 @@ export const buildBlogPrompt = (title: string) => {
 
 1. Title and Introduction:
    - Format title as: <h1 class="text-center mb-8">Your Title Here</h1>
-   - Write a compelling introduction (150-250 words) that MUST be split into 2-3 distinct paragraphs and Starts with a fun, engaging hook 
-- Add line breaks between paragraphs using a blank line
+   - Write a compelling introduction (150-250 words) that MUST be split into 2-3 distinct paragraphs using line breaks between paragraphs
+- and Starts with a funny, engaging hook 
 - Use 2-4 relevant emojis naturally in the text
 - Explain who the gifts are perfect for and why
 
@@ -57,7 +57,7 @@ export const buildBlogPrompt = (title: string) => {
      • Explain why each item is particularly suitable for that occasion
      • Include occasion-specific use cases or scenarios
      • Reference the occasion in the gift-giving benefits section
-   - End with a strong conclusion summarizing key points
+   - End with a strong SEO optimized conclusion summarizing key points with 200 - 400 words
    - Leave space before the conclusion with: <hr class="my-8">
 
 CRITICAL REQUIREMENTS:
