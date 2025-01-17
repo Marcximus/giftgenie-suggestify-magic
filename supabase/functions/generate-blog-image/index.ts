@@ -9,6 +9,13 @@ const corsHeaders = {
 
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
+const handleRateLimit = async (response: Response) => {
+  const retryAfter = response.headers.get('retry-after');
+  const delayMs = (retryAfter ? parseInt(retryAfter) : 60) * 1000;
+  console.log(`Rate limited by OpenAI, waiting ${delayMs}ms...`);
+  await delay(delayMs);
+};
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -40,16 +47,11 @@ serve(async (req) => {
         });
 
         if (!altTextResponse.ok) {
-          const error = await altTextResponse.text();
-          console.error('OpenAI API error (alt text):', error);
-          
-          // Handle rate limiting
           if (altTextResponse.status === 429) {
-            await delay(2000);
+            await handleRateLimit(altTextResponse);
             throw new Error('Rate limited. Please try again.');
           }
-          
-          throw new Error(`OpenAI API error (alt text): ${altTextResponse.status}`);
+          throw new Error(`OpenAI API error: ${altTextResponse.status}`);
         }
 
         const altTextData = await altTextResponse.json();
@@ -82,9 +84,11 @@ STYLE & VARIATION INSPIRATION:
     // Create OpenAI image with retry logic
     let attempts = 0;
     const maxAttempts = 3;
+    let lastError;
     
     while (attempts < maxAttempts) {
       try {
+        console.log(`Attempt ${attempts + 1} to generate image...`);
         const response = await fetch('https://api.openai.com/v1/images/generations', {
           method: 'POST',
           headers: {
@@ -103,17 +107,11 @@ STYLE & VARIATION INSPIRATION:
         });
 
         if (!response.ok) {
-          const error = await response.text();
-          console.error('OpenAI API error:', error);
-          
           if (response.status === 429) {
+            await handleRateLimit(response);
             attempts++;
-            if (attempts < maxAttempts) {
-              await delay(2000 * attempts); // Exponential backoff
-              continue;
-            }
+            continue;
           }
-          
           throw new Error(`OpenAI API error: ${response.status}`);
         }
 
@@ -153,13 +151,18 @@ STYLE & VARIATION INSPIRATION:
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       } catch (error) {
-        if (attempts === maxAttempts - 1) throw error;
+        console.error(`Attempt ${attempts + 1} failed:`, error);
+        lastError = error;
         attempts++;
-        await delay(2000 * attempts);
+        if (attempts < maxAttempts) {
+          const delayMs = 2000 * Math.pow(2, attempts);
+          console.log(`Waiting ${delayMs}ms before retry...`);
+          await delay(delayMs);
+        }
       }
     }
 
-    throw new Error('Failed to generate image after all attempts');
+    throw lastError || new Error('Failed to generate image after all attempts');
   } catch (error) {
     console.error('Error in generate-blog-image function:', error);
     return new Response(

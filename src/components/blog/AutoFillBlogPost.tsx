@@ -69,32 +69,38 @@ export const AutoFillBlogPost = ({
   const retryOperation = async <T,>(
     operation: () => Promise<T>,
     maxRetries: number = 3,
-    initialDelayMs: number = 2000
+    initialDelayMs: number = 2000,
+    operationName: string
   ): Promise<T> => {
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
         // Add increasing delay between retries
         if (attempt > 1) {
           const delayMs = initialDelayMs * Math.pow(2, attempt - 1);
-          console.log(`Retry attempt ${attempt}, waiting ${delayMs}ms...`);
+          console.log(`${operationName}: Retry attempt ${attempt}, waiting ${delayMs}ms...`);
           await delay(delayMs);
         }
         
-        return await operation();
+        const result = await operation();
+        console.log(`${operationName}: Operation successful`);
+        return result;
       } catch (error: any) {
-        console.error(`Attempt ${attempt} failed:`, error);
+        console.error(`${operationName}: Attempt ${attempt} failed:`, error);
         
         // Special handling for rate limiting
         if (error.message?.includes('rate limit') || error.message?.includes('429')) {
           const delayMs = initialDelayMs * Math.pow(2, attempt);
-          console.log(`Rate limited, waiting ${delayMs}ms before retry...`);
+          console.log(`${operationName}: Rate limited, waiting ${delayMs}ms before retry...`);
           await delay(delayMs);
         }
         
-        if (attempt === maxRetries) throw error;
+        if (attempt === maxRetries) {
+          console.error(`${operationName}: All retry attempts failed`);
+          throw error;
+        }
       }
     }
-    throw new Error('All retry attempts failed');
+    throw new Error(`${operationName}: All retry attempts failed`);
   };
 
   const handleAutoFill = async () => {
@@ -111,35 +117,35 @@ export const AutoFillBlogPost = ({
       form.setValue("slug", generateSlug(title));
       form.setValue("author", "Get The Gift Team");
       updateProgress(1);
-      await delay(1000); // Base delay between operations
+      await delay(2000); // Base delay between operations
 
       // Step 2: Generate image with retry
       console.log('Generating image...');
-      await retryOperation(generateImage, 3, 3000);
+      await retryOperation(generateImage, 3, 5000, "Image Generation");
       updateProgress(2);
-      await delay(2000); // Longer delay after image generation
+      await delay(5000); // Longer delay after image generation
 
       // Step 3: Generate alt text with retry
       console.log('Generating alt text...');
-      await retryOperation(generateAltText, 3, 2000);
+      await retryOperation(generateAltText, 3, 3000, "Alt Text Generation");
       updateProgress(3);
-      await delay(1500);
+      await delay(3000);
 
       // Step 4: Generate excerpt with retry
       console.log('Generating excerpt...');
-      await retryOperation(generateExcerpt, 3, 2000);
+      await retryOperation(generateExcerpt, 3, 3000, "Excerpt Generation");
       updateProgress(4);
-      await delay(1500);
+      await delay(3000);
 
       // Step 5: Generate full post with retry
       console.log('Generating full post...');
-      await retryOperation(generateFullPost, 3, 3000);
+      await retryOperation(generateFullPost, 3, 5000, "Full Post Generation");
       updateProgress(5);
-      await delay(2000); // Longer delay after full post generation
+      await delay(5000); // Longer delay after full post generation
 
       // Step 6: Generate SEO content with retry
       console.log('Generating SEO content...');
-      await retryOperation(generateAllSEO, 3, 2000);
+      await retryOperation(generateAllSEO, 3, 3000, "SEO Content Generation");
       updateProgress(6);
 
       // Step 7: Final verification
