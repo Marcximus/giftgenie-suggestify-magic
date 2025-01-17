@@ -31,12 +31,20 @@ serve(async (req) => {
     console.log('Number of products to generate:', numberOfProducts);
 
     // Get the prompt from promptBuilder
-    const prompt = buildBlogPrompt(title);
-    console.log('Using prompt system content:', prompt.content.substring(0, 200) + '...');
+    const basePrompt = buildBlogPrompt(title);
+    console.log('Using prompt system content:', basePrompt.content.substring(0, 200) + '...');
+
+    // Track suggested products to prevent duplicates
+    const suggestedProducts = new Set<string>();
 
     // Generate content in chunks
     const generateChunk = async (startIndex: number, endIndex: number) => {
       console.log(`Generating products ${startIndex + 1} to ${endIndex}`);
+      
+      // Add context about previously suggested products
+      const previousProducts = Array.from(suggestedProducts).join(', ');
+      const contextPrompt = previousProducts ? 
+        `\n\nIMPORTANT: The following products have already been suggested and MUST NOT be repeated: ${previousProducts}` : '';
       
       const response = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
@@ -47,18 +55,18 @@ serve(async (req) => {
         body: JSON.stringify({
           model: "gpt-4",
           messages: [
-            prompt,
+            basePrompt,
             {
               role: "user",
               content: `Generate products ${startIndex + 1} to ${endIndex} for: ${title}. 
                        Follow EXACTLY the format specified in the system message.
-                       Generate EXACTLY ${endIndex - startIndex} products.`
+                       Generate EXACTLY ${endIndex - startIndex} products.${contextPrompt}`
             }
           ],
           temperature: 0.7,
           max_tokens: 2000,
           presence_penalty: 0.1,
-          frequency_penalty: 0.1,
+          frequency_penalty: 0.3, // Increased to discourage repetition
         }),
       });
 
@@ -69,7 +77,17 @@ serve(async (req) => {
       }
 
       const data = await response.json();
-      return data.choices[0].message.content;
+      const content = data.choices[0].message.content;
+
+      // Extract product titles from the generated content
+      const productTitles = content.match(/<h3>(.*?)<\/h3>/g)?.map(match => 
+        match.replace(/<\/?h3>/g, '').trim()
+      ) || [];
+
+      // Add new products to the tracking set
+      productTitles.forEach(title => suggestedProducts.add(title));
+
+      return content;
     };
 
     // Generate content in chunks of 3 products
@@ -95,6 +113,7 @@ serve(async (req) => {
     ].join('<hr class="my-8">');
 
     console.log('Combined content length:', combinedContent.length);
+    console.log('Unique products generated:', suggestedProducts.size);
 
     // Validate the combined content
     if (!validateContent(combinedContent, title)) {
@@ -113,7 +132,8 @@ serve(async (req) => {
     console.log('Content processing complete:', {
       contentLength: processedData.content.length,
       affiliateLinksCount: processedData.affiliateLinks.length,
-      hasReviews: processedData.productReviews?.length > 0
+      hasReviews: processedData.productReviews?.length > 0,
+      uniqueProductsCount: suggestedProducts.size
     });
 
     return new Response(
