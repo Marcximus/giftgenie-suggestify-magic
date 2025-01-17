@@ -18,6 +18,7 @@ serve(async (req) => {
     const prompt = buildBlogPrompt(title);
     console.log('Using prompt system content:', prompt.content.substring(0, 200) + '...');
 
+    // Step 1: Generate initial content
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -53,8 +54,32 @@ serve(async (req) => {
     console.log('Generated content length:', initialContent.length);
     console.log('Generated content preview:', initialContent.substring(0, 500));
 
+    // Step 2: Process content to add Amazon products
+    console.log('Processing content to add Amazon products...');
+    const processResponse = await fetch('https://ckcqttsdpxfbpkzljctl.supabase.co/functions/v1/process-blog-content', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${Deno.env.get('SUPABASE_ANON_KEY')}`,
+      },
+      body: JSON.stringify({ content: initialContent }),
+    });
+
+    if (!processResponse.ok) {
+      const error = await processResponse.text();
+      console.error('Error processing content:', error);
+      throw new Error(`Failed to process content: ${error}`);
+    }
+
+    const processedData = await processResponse.json();
+    console.log('Content processed successfully:', {
+      contentLength: processedData.content.length,
+      affiliateLinksCount: processedData.affiliateLinks?.length || 0,
+      searchFailuresCount: processedData.searchFailures?.length || 0
+    });
+
     return new Response(
-      JSON.stringify({ content: initialContent }),
+      JSON.stringify(processedData),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
