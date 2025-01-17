@@ -141,17 +141,29 @@ export const performSearch = async (
     page: page.toString()
   });
 
-  const searchResponse = await fetch(
-    `https://${rapidApiHost}/search?${searchParams.toString()}`,
-    {
-      headers: {
-        'X-RapidAPI-Key': apiKey,
-        'X-RapidAPI-Host': rapidApiHost,
-      }
+  const url = `https://${rapidApiHost}/search?${searchParams.toString()}`;
+  console.log('Making API request to:', url);
+  console.log('Request headers:', {
+    'X-RapidAPI-Key': 'present',
+    'X-RapidAPI-Host': rapidApiHost
+  });
+
+  const searchResponse = await fetch(url, {
+    headers: {
+      'X-RapidAPI-Key': apiKey,
+      'X-RapidAPI-Host': rapidApiHost,
     }
-  );
+  });
 
   if (!searchResponse.ok) {
+    const errorText = await searchResponse.text();
+    console.error('API Error Response:', {
+      status: searchResponse.status,
+      statusText: searchResponse.statusText,
+      body: errorText,
+      headers: Object.fromEntries(searchResponse.headers.entries())
+    });
+
     if (searchResponse.status === 429) {
       throw new Error('rate limit exceeded');
     }

@@ -26,6 +26,9 @@ serve(async (req) => {
     }
 
     console.log('Starting product search for term:', searchTerm);
+    console.log('API Key length:', apiKey.length);
+    console.log('API Key first 4 chars:', apiKey.substring(0, 4));
+    
     const product = await searchProducts(searchTerm, apiKey);
     
     if (!product) {
