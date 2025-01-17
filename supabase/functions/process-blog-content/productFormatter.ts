@@ -27,36 +27,21 @@ export const formatProductHtml = (
     totalRatings: product.totalRatings
   });
 
-  // Add product image with responsive dimensions
-  const imageHtml = product.imageUrl ? `
-    <div class="flex justify-center my-4">
-      <img src="${product.imageUrl}" 
-           alt="${simplifiedTitle}" 
-           class="w-full aspect-[4/3] object-contain rounded-lg shadow-md max-w-2xl mx-auto" 
-           loading="lazy" />
-    </div>` : '';
-
-  // Format price with currency
-  const priceDisplay = product.price ? 
-    `<p class="text-center text-sm text-muted-foreground mb-2">
-      Current price: ${product.currency || 'USD'} ${product.price.toFixed(2)}
-    </p>` : '';
-  
   // Format rating and review count
   const reviewInfo = product.rating ? `
-    <div class="flex flex-col items-center gap-2 mb-4">
-      <div class="flex items-center gap-1">
+    <div class="flex flex-col items-center gap-2 my-6 p-6 bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl shadow-sm">
+      <div class="flex items-center gap-2">
         ${Array.from({ length: 5 }, (_, i) => 
-          `<span class="text-yellow-400">
+          `<span class="text-yellow-400 text-xl">
             ${i < Math.floor(product.rating!) ? '★' : '☆'}
           </span>`
         ).join('')}
-        <span class="font-medium ml-1">${product.rating.toFixed(1)}</span>
+        <span class="font-semibold text-xl text-gray-800">${product.rating.toFixed(1)}</span>
       </div>
       ${product.totalRatings ? `
-        <span class="text-sm text-gray-500">
-          (${product.totalRatings.toLocaleString()} reviews)
-        </span>
+        <div class="text-base text-gray-600">
+          Based on ${product.totalRatings.toLocaleString()} verified customer reviews
+        </div>
       ` : ''}
     </div>` : '';
 
@@ -64,15 +49,25 @@ export const formatProductHtml = (
     <h3 class="text-xl md:text-2xl font-semibold mt-8 mb-4 text-center">
       ${simplifiedTitle}
     </h3>
-    ${imageHtml}
-    <div class="flex flex-col items-center">
+    <div class="flex flex-col items-center my-8">
+      <div class="relative w-full max-w-2xl mb-6">
+        <img 
+          src="${product.imageUrl}" 
+          alt="${simplifiedTitle}"
+          class="w-80 h-80 sm:w-96 sm:h-96 lg:w-[500px] lg:h-[500px] object-contain rounded-lg shadow-md mx-auto" 
+          loading="lazy"
+        />
+      </div>
       ${reviewInfo}
-      ${priceDisplay}
-      <a href="${affiliateLink}" 
-         target="_blank" 
-         rel="noopener noreferrer" 
-         class="inline-block px-6 py-2 bg-[#F97316] hover:bg-[#F97316]/90 text-white font-medium rounded-md transition-colors text-sm text-center mb-6">
-        View on Amazon
-      </a>
+      <div class="mt-4">
+        <a 
+          href="${affiliateLink}" 
+          target="_blank" 
+          rel="noopener noreferrer" 
+          class="inline-block px-6 py-2 bg-[#F97316] hover:bg-[#F97316]/90 text-white font-medium rounded-md transition-colors text-sm text-center"
+        >
+          View on Amazon
+        </a>
+      </div>
     </div>`;
 };

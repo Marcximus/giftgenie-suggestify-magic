@@ -1,5 +1,4 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 import { corsHeaders } from '../_shared/cors.ts';
 
 const RAPIDAPI_HOST = 'real-time-amazon-data.p.rapidapi.com';
@@ -13,24 +12,16 @@ serve(async (req) => {
     const { content } = await req.json();
     console.log('Processing blog content, length:', content.length);
 
-    // Initialize Supabase client
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
-
-    // Get Amazon Associate ID
-    const { data: associateData, error: associateError } = await supabase.functions.invoke('get-amazon-associate-id');
-    if (associateError) {
-      console.error('Error getting associate ID:', associateError);
-      throw associateError;
-    }
-    const associateId = associateData.AMAZON_ASSOCIATE_ID;
-    console.log('Got Amazon Associate ID:', associateId);
-
     // Get RapidAPI Key
     const rapidApiKey = Deno.env.get('RAPIDAPI_KEY');
     if (!rapidApiKey) {
       throw new Error('RAPIDAPI_KEY not configured');
+    }
+
+    // Get Amazon Associate ID
+    const associateId = Deno.env.get('AMAZON_ASSOCIATE_ID');
+    if (!associateId) {
+      throw new Error('AMAZON_ASSOCIATE_ID not configured');
     }
 
     // Split content into sections
@@ -49,7 +40,7 @@ serve(async (req) => {
             const searchTerm = titleMatch[1];
             console.log('Processing product section:', searchTerm);
             
-            // Direct integration with RapidAPI Amazon endpoint
+            // Search for product
             const searchUrl = `https://${RAPIDAPI_HOST}/search?query=${encodeURIComponent(searchTerm)}&country=US&category_id=aps`;
             console.log('Making request to:', searchUrl);
             
@@ -133,9 +124,18 @@ serve(async (req) => {
               url: affiliateLink,
               asin: product.asin
             });
+
+            // Split section content at h3 tag
+            const [beforeH3, afterH3] = section.split('</h3>');
             
-            const [beforeTitle, afterTitle] = section.split('</h3>');
-            const productHtml = `${beforeTitle}</h3>
+            // Extract features list
+            const featuresList = afterH3.match(/<ul class="my-4">([\s\S]*?)<\/ul>/);
+            const features = featuresList ? featuresList[0] : '';
+            
+            // Get description paragraphs (everything before the features list)
+            const description = afterH3.split('<ul')[0];
+
+            const productHtml = `${beforeH3}</h3>
               <div class="flex flex-col items-center my-8">
                 <div class="w-full max-w-2xl mb-4">
                   <img 
@@ -146,32 +146,33 @@ serve(async (req) => {
                   />
                 </div>
                 ${rating ? `
-                  <div class="flex items-center gap-2 mb-4">
-                    <div class="flex">
+                  <div class="flex flex-col items-center gap-2 my-6 p-6 bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl shadow-sm">
+                    <div class="flex items-center gap-2">
                       ${Array.from({ length: 5 }, (_, i) => 
-                        `<span class="text-yellow-400">
+                        `<span class="text-yellow-400 text-xl">
                           ${i < Math.floor(rating) ? '★' : '☆'}
                         </span>`
                       ).join('')}
+                      <span class="font-semibold text-xl text-gray-800">${rating.toFixed(1)}</span>
+                      ${totalRatings ? `
+                        <span class="text-gray-500">
+                          (${totalRatings.toLocaleString()})
+                        </span>
+                      ` : ''}
                     </div>
-                    <span class="font-medium">${rating.toFixed(1)}</span>
-                    ${totalRatings ? `
-                      <span class="text-gray-500">
-                        (${totalRatings.toLocaleString()})
-                      </span>
-                    ` : ''}
                   </div>
                 ` : ''}
                 <a 
                   href="${affiliateLink}" 
                   target="_blank" 
                   rel="noopener noreferrer" 
-                  class="inline-block px-6 py-2 bg-[#F97316] hover:bg-[#F97316]/90 text-white font-medium rounded-md transition-colors text-sm text-center"
+                  class="inline-block px-6 py-2 bg-[#F97316] hover:bg-[#F97316]/90 text-white font-medium rounded-md transition-colors text-sm text-center mb-6"
                 >
                   View on Amazon
                 </a>
               </div>
-              ${afterTitle}`;
+              ${description}
+              ${features}`;
 
             processedSections.push(productHtml);
             console.log('Successfully processed product section');
