@@ -44,6 +44,7 @@ serve(async (req) => {
             console.log('Found product title:', searchTerm);
             
             // Search for Amazon product
+            console.log('Invoking get-amazon-products with search term:', searchTerm);
             const { data: productData, error: productError } = await supabase.functions.invoke('get-amazon-products', {
               body: { searchTerm }
             });
@@ -54,15 +55,26 @@ serve(async (req) => {
               continue;
             }
 
-            console.log('Product search result:', productData?.product ? 'Found' : 'Not found');
+            console.log('Product search result:', productData);
 
             if (productData?.product) {
               const product = productData.product;
               console.log('Processing product:', {
                 title: product.title,
                 hasImage: !!product.imageUrl,
-                hasAsin: !!product.asin
+                hasAsin: !!product.asin,
+                imageUrl: product.imageUrl,
+                asin: product.asin
               });
+              
+              if (!product.imageUrl || !product.asin) {
+                console.warn('Product missing required data:', { 
+                  hasImage: !!product.imageUrl, 
+                  hasAsin: !!product.asin 
+                });
+                processedSections.push(section);
+                continue;
+              }
               
               const affiliateLink = `https://www.amazon.com/dp/${product.asin}?tag=${associateId}`;
               affiliateLinks.push({

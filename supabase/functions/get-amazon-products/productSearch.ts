@@ -19,6 +19,7 @@ export const searchProducts = async (
   url.searchParams.append('country', 'US');
 
   console.log('Making request to:', url.toString());
+  console.log('Using RapidAPI key:', apiKey ? 'Present' : 'Missing');
 
   const searchResponse = await fetch(url, {
     headers: {
@@ -28,10 +29,17 @@ export const searchProducts = async (
   });
 
   if (!searchResponse.ok) {
+    const responseText = await searchResponse.text();
+    console.error('Search response error:', {
+      status: searchResponse.status,
+      statusText: searchResponse.statusText,
+      body: responseText
+    });
     handleSearchError(searchResponse.status);
   }
 
   const searchData = await searchResponse.json();
+  console.log('Raw search response:', JSON.stringify(searchData, null, 2));
   return processSearchResults(searchData);
 };
 
@@ -46,7 +54,7 @@ const handleSearchError = (status: number): never => {
 };
 
 const processSearchResults = (searchData: any): AmazonProduct | null => {
-  console.log('Search response received:', {
+  console.log('Processing search response:', {
     hasData: !!searchData.data,
     productsCount: searchData.data?.products?.length || 0
   });
@@ -57,6 +65,7 @@ const processSearchResults = (searchData: any): AmazonProduct | null => {
   }
 
   let product = searchData.data.products[0];
+  console.log('First product data:', JSON.stringify(product, null, 2));
   
   if (!product.asin) {
     product = searchData.data.products.find((p: any) => p.asin);
