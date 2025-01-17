@@ -127,6 +127,7 @@ export type Database = {
           meta_description: string | null
           meta_keywords: string | null
           meta_title: string | null
+          processing_status: Json | null
           product_search_failures: Json | null
           published_at: string | null
           related_posts: Json | null
@@ -147,6 +148,7 @@ export type Database = {
           meta_description?: string | null
           meta_keywords?: string | null
           meta_title?: string | null
+          processing_status?: Json | null
           product_search_failures?: Json | null
           published_at?: string | null
           related_posts?: Json | null
@@ -167,6 +169,7 @@ export type Database = {
           meta_description?: string | null
           meta_keywords?: string | null
           meta_title?: string | null
+          processing_status?: Json | null
           product_search_failures?: Json | null
           published_at?: string | null
           related_posts?: Json | null

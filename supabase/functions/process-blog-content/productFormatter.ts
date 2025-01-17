@@ -13,19 +13,10 @@ export const formatProductHtml = (
   product: ProductInfo,
   affiliateLink: string
 ) => {
-  // Simplify title to first 7 words
-  const simplifiedTitle = product.title
-    .split(' ')
-    .slice(0, 7)
-    .join(' ')
-    .trim();
-
   console.log('Formatting product HTML:', {
-    title: simplifiedTitle,
-    price: product.price,
-    currency: product.currency,
-    rating: product.rating,
-    totalRatings: product.totalRatings,
+    title: product.title,
+    hasImage: !!product.imageUrl,
+    hasRating: !!product.rating,
     hasFeatures: product.features?.length || 0
   });
 
@@ -56,16 +47,24 @@ export const formatProductHtml = (
     </ul>
   ` : '';
 
+  // Format price if available
+  const priceDisplay = product.price ? `
+    <p class="text-lg font-bold text-primary mb-4">
+      ${product.currency} ${product.price.toFixed(2)}
+    </p>
+  ` : '';
+
   return `
     <div class="flex flex-col items-center my-8">
       <div class="relative w-full max-w-2xl mb-6">
         <img 
           src="${product.imageUrl}" 
-          alt="${simplifiedTitle}"
+          alt="${product.title}"
           class="w-80 h-80 sm:w-96 sm:h-96 lg:w-[500px] lg:h-[500px] object-contain rounded-lg shadow-md mx-auto" 
           loading="lazy"
         />
       </div>
+      ${priceDisplay}
       ${reviewInfo}
       ${featuresList}
       <div class="mt-4 mb-6">
@@ -73,7 +72,7 @@ export const formatProductHtml = (
           href="${affiliateLink}" 
           target="_blank" 
           rel="noopener noreferrer" 
-          class="amazon-button"
+          class="inline-block px-6 py-3 bg-[#F97316] hover:bg-[#F97316]/90 text-white rounded-lg transition-colors duration-200 text-center font-medium shadow-sm hover:shadow-md"
         >
           View on Amazon
         </a>

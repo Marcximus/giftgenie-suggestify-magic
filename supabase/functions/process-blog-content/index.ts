@@ -22,24 +22,27 @@ serve(async (req) => {
       throw new Error('AMAZON_ASSOCIATE_ID not configured');
     }
 
-    // Split content into sections and count how many product sections we have
+    // Split content into sections and process product sections
     const sections = content.split('<hr class="my-8">');
-    const productSections = sections.filter(section => section.includes('<h3>'));
-    console.log('Total product sections found:', productSections.length);
+    console.log('Total sections found:', sections.length);
     
     const processedSections = [];
     const affiliateLinks = [];
     const searchFailures = [];
+    let productSectionCount = 0;
+    let amazonLookupCount = 0;
+    let successfulReplacements = 0;
 
     for (const section of sections) {
       if (section.includes('<h3>')) {
+        productSectionCount++;
         try {
           const titleMatch = section.match(/<h3>(.*?)<\/h3>/);
           if (titleMatch) {
-            const searchTerm = titleMatch[1];
+            const searchTerm = titleMatch[1].trim();
             console.log('Processing product section:', searchTerm);
+            amazonLookupCount++;
             
-            // Search for product with simplified term
             const searchUrl = `https://${RAPIDAPI_HOST}/search?query=${encodeURIComponent(searchTerm)}&country=US&category_id=aps`;
             console.log('Making request to:', searchUrl);
             
@@ -51,41 +54,31 @@ serve(async (req) => {
             });
 
             if (!searchResponse.ok) {
-              console.error('Amazon API error:', {
-                status: searchResponse.status,
-                statusText: searchResponse.statusText,
-                url: searchUrl
-              });
               throw new Error(`Amazon API error: ${searchResponse.status}`);
             }
 
             const searchData = await searchResponse.json();
             console.log('Search response products:', searchData.data?.products?.length || 0);
 
-            // Take the first product that has an ASIN and image
             const product = searchData.data?.products?.find(p => p.asin && (p.product_photo || p.thumbnail));
             
             if (!product) {
               console.warn('No valid products found for:', searchTerm);
               searchFailures.push({
                 term: searchTerm,
-                error: 'No products with required data found',
-                timestamp: new Date().toISOString()
+                error: 'No products with required data found'
               });
               processedSections.push(section);
               continue;
             }
 
-            console.log('Selected product:', {
+            console.log('Found product:', {
               title: product.title,
-              asin: product.asin,
-              hasImage: !!(product.product_photo || product.thumbnail)
+              asin: product.asin
             });
 
             // Get detailed product information
             const detailsUrl = `https://${RAPIDAPI_HOST}/product-details?asin=${product.asin}&country=US`;
-            console.log('Fetching product details:', detailsUrl);
-            
             const detailsResponse = await fetch(detailsUrl, {
               headers: {
                 'X-RapidAPI-Key': rapidApiKey,
@@ -96,8 +89,6 @@ serve(async (req) => {
             let rating, totalRatings, features;
             if (detailsResponse.ok) {
               const detailsData = await detailsResponse.json();
-              console.log('Product details received');
-              
               rating = detailsData.data?.product_rating ? 
                 parseFloat(detailsData.data.product_rating) : undefined;
               totalRatings = detailsData.data?.product_num_ratings ? 
@@ -115,15 +106,12 @@ serve(async (req) => {
               asin: product.asin
             });
 
-            // Split section content
-            const [beforeH3, afterH3] = section.split('</h3>');
-            const description = afterH3.split('<ul')[0];
-
-            // Format the product HTML with all available data
+            // Format the product HTML
             const productHtml = formatProductHtml({
               title: product.title,
               imageUrl: product.product_photo || product.thumbnail,
-              price: product.price?.current_price ? parseFloat(product.price.current_price.replace(/[^0-9.]/g, '')) : undefined,
+              price: product.price?.current_price ? 
+                parseFloat(product.price.current_price.replace(/[^0-9.]/g, '')) : undefined,
               currency: 'USD',
               rating,
               totalRatings,
@@ -131,7 +119,11 @@ serve(async (req) => {
               features: features || []
             }, affiliateLink);
 
+            // Split section content and combine with product HTML
+            const [beforeH3, afterH3] = section.split('</h3>');
+            const description = afterH3.split('<ul')[0];
             processedSections.push(`${beforeH3}</h3>${productHtml}${description}`);
+            successfulReplacements++;
             console.log('Successfully processed product section');
           } else {
             processedSections.push(section);
@@ -140,8 +132,7 @@ serve(async (req) => {
           console.error('Error processing product section:', error);
           searchFailures.push({
             term: section.match(/<h3>(.*?)<\/h3>/)?.[1] || 'Unknown',
-            error: error.message,
-            timestamp: new Date().toISOString()
+            error: error.message
           });
           processedSections.push(section);
         }
@@ -151,15 +142,24 @@ serve(async (req) => {
     }
 
     const processedContent = processedSections.join('<hr class="my-8">');
-    console.log('Processed content length:', processedContent.length);
-    console.log('Number of affiliate links:', affiliateLinks.length);
-    console.log('Number of search failures:', searchFailures.length);
+    console.log('Processing summary:', {
+      productSections: productSectionCount,
+      amazonLookups: amazonLookupCount,
+      successfulReplacements,
+      affiliateLinksCount: affiliateLinks.length,
+      searchFailuresCount: searchFailures.length
+    });
 
     return new Response(
       JSON.stringify({
         content: processedContent,
         affiliateLinks,
-        searchFailures
+        searchFailures,
+        processingStatus: {
+          product_sections: productSectionCount,
+          amazon_lookups: amazonLookupCount,
+          successful_replacements: successfulReplacements
+        }
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
