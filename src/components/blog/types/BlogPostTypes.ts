@@ -20,6 +20,9 @@ export interface BlogPostFormData {
     amazon_lookups: number;
     successful_replacements: number;
   } | null;
+  content_format_version: string | null;
+  generation_attempts: number | null;
+  last_generation_error: string | null;
 }
 
 export interface BlogPostData extends BlogPostFormData {

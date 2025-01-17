@@ -51,7 +51,10 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
         product_sections: 0,
         amazon_lookups: 0,
         successful_replacements: 0
-      }
+      },
+      content_format_version: "v1",
+      generation_attempts: 0,
+      last_generation_error: null
     },
   });
 
