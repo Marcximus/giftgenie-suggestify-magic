@@ -31,11 +31,11 @@ export const BlogPostContent = ({ post }: BlogPostContentProps) => {
                    prose-a:text-primary prose-a:font-medium prose-a:no-underline
                    hover:prose-a:text-primary/90
                    
-                   [&_div.flex]:justify-center [&_div.flex]:w-full [&_div.flex]:my-4 sm:[&_div.flex]:my-6
+                   [&_div.flex]:justify-center [&_div.flex]:w-full [&_div.flex]:my-2
                    
-                   [&_div.product-actions]:flex [&_div.product-actions]:flex-row
-                   [&_div.product-actions]:items-center [&_div.product-actions]:gap-4 [&_div.product-actions]:justify-center
-                   [&_div.product-actions]:my-4 sm:[&_div.product-actions]:my-6
+                   [&_div.product-actions]:flex [&_div.product-actions]:flex-col
+                   [&_div.product-actions]:items-center [&_div.product-actions]:gap-2
+                   [&_div.product-actions]:my-2
                    
                    [&_a.amazon-button]:inline-flex [&_a.amazon-button]:items-center [&_a.amazon-button]:px-4 [&_a.amazon-button]:py-2 
                    [&_a.amazon-button]:bg-[#F97316] [&_a.amazon-button]:hover:bg-[#F97316]/90 

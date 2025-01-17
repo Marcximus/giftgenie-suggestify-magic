@@ -52,10 +52,7 @@ serve(async (req) => {
             const searchTerm = titleMatch[1];
             console.log('Found product title:', searchTerm);
             
-            // Direct Amazon API call
-            console.log('Making direct Amazon API request for:', searchTerm);
             const searchUrl = `https://${RAPIDAPI_HOST}/search?query=${encodeURIComponent(searchTerm)}&country=US&category_id=aps`;
-            
             const searchResponse = await fetch(searchUrl, {
               headers: {
                 'X-RapidAPI-Key': rapidApiKey,
@@ -63,21 +60,14 @@ serve(async (req) => {
               }
             });
 
-            console.log('Amazon API response status:', searchResponse.status);
-
             if (!searchResponse.ok) {
-              const responseText = await searchResponse.text();
-              console.error('Amazon API error:', {
-                status: searchResponse.status,
-                statusText: searchResponse.statusText,
-                body: responseText
-              });
+              console.error('Amazon API error:', searchResponse.status);
               processedSections.push(section);
               continue;
             }
 
             const searchData = await searchResponse.json();
-            console.log('Amazon API response:', searchData);
+            console.log('Search response:', searchData);
 
             if (searchData.data?.products?.[0]) {
               const product = searchData.data.products[0];
@@ -88,15 +78,12 @@ serve(async (req) => {
               });
 
               if (!product.asin || !product.product_photo) {
-                console.warn('Product missing required data:', {
-                  hasAsin: !!product.asin,
-                  hasImage: !!product.product_photo
-                });
+                console.warn('Product missing required data');
                 processedSections.push(section);
                 continue;
               }
 
-              // Get detailed product information using ASIN
+              // Get detailed product information
               const detailsUrl = `https://${RAPIDAPI_HOST}/product-details?asin=${product.asin}&country=US`;
               const detailsResponse = await fetch(detailsUrl, {
                 headers: {
@@ -114,7 +101,7 @@ serve(async (req) => {
               const detailsData = await detailsResponse.json();
               console.log('Product details:', detailsData);
 
-              // Use the specific product ASIN for the affiliate link
+              // Use specific product ASIN for the affiliate link
               const affiliateLink = `https://www.amazon.com/dp/${product.asin}?tag=${associateId}`;
               affiliateLinks.push({
                 title: product.title,
@@ -122,12 +109,10 @@ serve(async (req) => {
                 asin: product.asin
               });
 
-              // Format product HTML with image and affiliate link
               const [beforeTitle, afterTitle] = section.split('</h3>');
-
               const productHtml = `${beforeTitle}</h3>
-                <div class="flex flex-col items-center my-4">
-                  <div class="relative w-full max-w-2xl mb-4">
+                <div class="flex flex-col items-center">
+                  <div class="w-full max-w-2xl mb-2">
                     <img 
                       src="${product.product_photo}" 
                       alt="${titleMatch[1]}"
@@ -135,32 +120,36 @@ serve(async (req) => {
                       loading="lazy"
                     />
                   </div>
-                  ${product.product_star_rating ? `
-                    <div class="flex items-center gap-1.5 mb-3">
-                      ${Array.from({ length: 5 }, (_, i) => 
-                        `<span class="text-yellow-400 text-sm">
-                          ${i < Math.floor(parseFloat(product.product_star_rating)) ? '★' : '☆'}
-                        </span>`
-                      ).join('')}
-                      <span class="text-sm font-medium ml-1">${parseFloat(product.product_star_rating).toFixed(1)}</span>
-                      ${product.product_num_ratings ? `
-                        <span class="text-sm text-gray-500">
-                          (${parseInt(product.product_num_ratings).toLocaleString()})
-                        </span>
-                      ` : ''}
-                    </div>
-                  ` : ''}
-                  <a 
-                    href="${affiliateLink}" 
-                    target="_blank" 
-                    rel="noopener noreferrer" 
-                    class="amazon-button inline-flex items-center px-4 py-2 bg-[#F97316] hover:bg-[#F97316]/90 text-white rounded-md shadow-sm text-sm transition-all"
-                  >
-                    View on Amazon
-                  </a>
+                  <div class="product-actions">
+                    ${product.product_star_rating ? `
+                      <div class="flex items-center gap-1">
+                        ${Array.from({ length: 5 }, (_, i) => 
+                          `<span class="text-yellow-400 text-sm">
+                            ${i < Math.floor(parseFloat(product.product_star_rating)) ? '★' : '☆'}
+                          </span>`
+                        ).join('')}
+                        <span class="text-sm font-medium ml-1">${parseFloat(product.product_star_rating).toFixed(1)}</span>
+                        ${product.product_num_ratings ? `
+                          <span class="text-sm text-gray-500">
+                            (${parseInt(product.product_num_ratings).toLocaleString()})
+                          </span>
+                        ` : ''}
+                      </div>
+                    ` : ''}
+                    <a 
+                      href="${affiliateLink}" 
+                      target="_blank" 
+                      rel="noopener noreferrer" 
+                      class="amazon-button"
+                    >
+                      View on Amazon
+                    </a>
+                  </div>
                 </div>
                 <div class="prose prose-sm md:prose-base mt-4">
-                  ${afterTitle.trim()}
+                  ${afterTitle.trim().split('\n').map(paragraph => 
+                    paragraph.trim() ? `<p>${paragraph.trim()}</p>` : ''
+                  ).join('\n')}
                 </div>`;
 
               processedSections.push(productHtml);
@@ -170,7 +159,6 @@ serve(async (req) => {
               processedSections.push(section);
             }
           } else {
-            console.log('No product title found in section');
             processedSections.push(section);
           }
         } catch (error) {
@@ -178,7 +166,6 @@ serve(async (req) => {
           processedSections.push(section);
         }
       } else {
-        console.log('Section does not contain product title');
         processedSections.push(section);
       }
     }
