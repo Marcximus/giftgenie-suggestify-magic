@@ -11,6 +11,12 @@ serve(async (req) => {
     const { searchTerm } = await req.json();
     const apiKey = Deno.env.get('RAPIDAPI_KEY');
 
+    console.log('Edge Function invoked with:', {
+      searchTerm,
+      hasApiKey: !!apiKey,
+      apiKeyFirstChars: apiKey ? apiKey.substring(0, 4) : 'missing'
+    });
+
     if (!apiKey) {
       console.error('RAPIDAPI_KEY not configured');
       return new Response(
@@ -26,8 +32,6 @@ serve(async (req) => {
     }
 
     console.log('Starting product search for term:', searchTerm);
-    console.log('API Key length:', apiKey.length);
-    console.log('API Key first 4 chars:', apiKey.substring(0, 4));
     
     const product = await searchProducts(searchTerm, apiKey);
     
@@ -50,7 +54,7 @@ serve(async (req) => {
       asin: product.asin,
       hasPrice: !!product.price,
       hasImage: !!product.imageUrl,
-      imageUrl: product.imageUrl // Log the actual URL for debugging
+      imageUrl: product.imageUrl
     });
 
     return new Response(

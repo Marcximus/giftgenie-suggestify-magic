@@ -12,70 +12,98 @@ export const searchProducts = async (
     throw new Error('Search term is required and must be a non-empty string');
   }
 
-  console.log('Searching Amazon for:', searchTerm);
+  console.log('Starting Amazon product search with:', {
+    searchTerm,
+    hasApiKey: !!apiKey,
+    apiKeyLength: apiKey?.length
+  });
+
   const cleanedTerm = cleanSearchTerm(searchTerm);
   const url = new URL(`https://${RAPIDAPI_HOST}/search`);
   url.searchParams.append('query', cleanedTerm);
   url.searchParams.append('country', 'US');
+  url.searchParams.append('category_id', 'aps');
 
-  console.log('Making request to:', url.toString());
-  console.log('Using RapidAPI key:', apiKey ? 'Present' : 'Missing');
-
-  const searchResponse = await fetch(url, {
-    headers: {
-      'X-RapidAPI-Key': apiKey,
-      'X-RapidAPI-Host': RAPIDAPI_HOST,
-    }
+  console.log('Making Amazon API request to:', url.toString());
+  console.log('Request headers:', {
+    'X-RapidAPI-Key': apiKey ? `${apiKey.substring(0, 4)}...` : 'missing',
+    'X-RapidAPI-Host': RAPIDAPI_HOST
   });
 
-  if (!searchResponse.ok) {
-    const responseText = await searchResponse.text();
-    console.error('Search response error:', {
-      status: searchResponse.status,
-      statusText: searchResponse.statusText,
-      body: responseText
+  try {
+    const searchResponse = await fetch(url, {
+      headers: {
+        'X-RapidAPI-Key': apiKey,
+        'X-RapidAPI-Host': RAPIDAPI_HOST,
+      }
     });
-    handleSearchError(searchResponse.status);
-  }
 
-  const searchData = await searchResponse.json();
-  console.log('Raw search response:', JSON.stringify(searchData, null, 2));
-  return processSearchResults(searchData);
-};
+    console.log('Amazon API response status:', searchResponse.status);
+    console.log('Amazon API response headers:', Object.fromEntries(searchResponse.headers.entries()));
 
-const handleSearchError = (status: number): never => {
-  console.error('Amazon Search API error:', { status });
-  
-  if (status === 403) {
-    throw new Error('API subscription error: Please check the RapidAPI subscription status');
-  }
-  
-  throw new Error(`Amazon API error: ${status}`);
-};
+    if (!searchResponse.ok) {
+      const responseText = await searchResponse.text();
+      console.error('Amazon Search API error:', {
+        status: searchResponse.status,
+        statusText: searchResponse.statusText,
+        body: responseText,
+        headers: Object.fromEntries(searchResponse.headers.entries())
+      });
 
-const processSearchResults = (searchData: any): AmazonProduct | null => {
-  console.log('Processing search response:', {
-    hasData: !!searchData.data,
-    productsCount: searchData.data?.products?.length || 0
-  });
+      if (searchResponse.status === 429) {
+        throw new Error('Rate limit exceeded for Amazon API');
+      }
+      
+      if (searchResponse.status === 403) {
+        throw new Error('API subscription error: Please check the RapidAPI subscription status');
+      }
 
-  if (!searchData.data?.products?.[0]) {
-    console.log('No products found');
-    return null;
-  }
+      throw new Error(`Amazon API error: ${searchResponse.status}`);
+    }
 
-  let product = searchData.data.products[0];
-  console.log('First product data:', JSON.stringify(product, null, 2));
-  
-  if (!product.asin) {
-    product = searchData.data.products.find((p: any) => p.asin);
-    if (!product) {
-      console.error('No product with ASIN found');
+    const searchData = await searchResponse.json();
+    console.log('Amazon API raw response:', JSON.stringify(searchData, null, 2));
+
+    if (!searchData.data?.products?.[0]) {
+      console.log('No products found in Amazon API response');
       return null;
     }
-  }
 
-  const processedProduct = {
+    const product = searchData.data.products[0];
+    console.log('Selected product data:', {
+      title: product.title,
+      hasImage: !!product.product_photo,
+      hasAsin: !!product.asin,
+      imageUrl: product.product_photo || product.thumbnail
+    });
+
+    if (!product.asin) {
+      console.log('No ASIN found in first product, searching for product with ASIN');
+      const productWithAsin = searchData.data.products.find((p: any) => p.asin);
+      if (!productWithAsin) {
+        console.log('No product with ASIN found in results');
+        return null;
+      }
+      console.log('Found alternative product with ASIN:', productWithAsin.asin);
+      return formatProduct(productWithAsin);
+    }
+
+    return formatProduct(product);
+  } catch (error) {
+    console.error('Error in Amazon product search:', error);
+    throw error;
+  }
+};
+
+const formatProduct = (product: any): AmazonProduct => {
+  console.log('Formatting product data:', {
+    title: product.title,
+    hasImage: !!product.product_photo,
+    hasAsin: !!product.asin,
+    imageUrl: product.product_photo || product.thumbnail
+  });
+
+  const formattedProduct = {
     title: product.title,
     description: product.product_description || product.title,
     price: formatPrice(product.product_price),
@@ -86,15 +114,8 @@ const processSearchResults = (searchData: any): AmazonProduct | null => {
     asin: product.asin
   };
 
-  console.log('Processed product:', {
-    title: processedProduct.title,
-    hasImage: !!processedProduct.imageUrl,
-    imageUrl: processedProduct.imageUrl,
-    hasAsin: !!processedProduct.asin,
-    asin: processedProduct.asin
-  });
-
-  return processedProduct;
+  console.log('Formatted product result:', formattedProduct);
+  return formattedProduct;
 };
 
 const formatPrice = (priceStr: string | null | undefined): number | undefined => {
