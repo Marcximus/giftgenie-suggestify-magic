@@ -63,7 +63,9 @@ IMPORTANT REQUIREMENTS:
 - Ensure elements in the image relates to the title, the occasion and the person: ${title}
 
 STYLE & VARIATION INSPIRATION:
-- Chose a random style or combine multiple and experiment with for example classic painting, watercolor, 8-bit pixel art, surreal collage, vibrant pop art, dreamy cinematic lighting, whimsical cartoons, abstract paitings etc`;
+- Choose a random style or combine multiple and experiment with for example classic painting, watercolor, 8-bit pixel art, surreal collage, vibrant pop art, dreamy cinematic lighting, whimsical cartoons, abstract paintings etc`;
+
+    console.log('Generating image with prompt:', imagePrompt);
 
     // Create OpenAI image
     const response = await fetch('https://api.openai.com/v1/images/generations', {
@@ -78,8 +80,8 @@ STYLE & VARIATION INSPIRATION:
         n: 1,
         size: "1024x576",
         quality: "standard",
-        response_format: "b64_json",
-        style: "vivid"
+        style: "vivid",
+        response_format: "b64_json"
       }),
     });
 
