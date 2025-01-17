@@ -58,6 +58,21 @@ Features Format:
    - End with a strong conclusion summarizing key points
    - Leave space before the conclusion with: <hr class="my-8">
 
+5. Internal Links Section (REQUIRED):
+   After the conclusion, add a "Related Gift Ideas" section with these EXACT elements:
+   - Add this heading: <h3>Related Gift Ideas</h3>
+   - Add this text: "Looking for more gift ideas? Check out these helpful guides:"
+   - Add this list format:
+     <ul class="my-4">
+       <li>🎁 [LINK 1 PLACEHOLDER]</li>
+       <li>🎁 [LINK 2 PLACEHOLDER]</li>
+       <li>🎁 [LINK 3 PLACEHOLDER]</li>
+     </ul>
+   - End with this centered button div:
+     <div class="flex justify-center mt-12 mb-8">
+       <a href="/" class="perfect-gift-button">Get the Perfect Gift</a>
+     </div>
+
 CRITICAL REQUIREMENTS FOR VARIETY:
 - Price ranges should vary across suggestions (mix of budget-friendly and premium options)
 - Include a mix of practical, popular and unique/creative gifts
