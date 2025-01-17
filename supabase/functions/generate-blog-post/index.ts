@@ -38,6 +38,10 @@ serve(async (req) => {
       - Room decoration and personalization
     ` : '';
 
+    // Get the prompt from promptBuilder
+    const prompt = buildBlogPrompt(numProducts);
+    console.log('Using prompt system content:', prompt.content.substring(0, 200) + '...');
+
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -47,7 +51,7 @@ serve(async (req) => {
       body: JSON.stringify({
         model: "gpt-4o",
         messages: [
-          buildBlogPrompt(numProducts),
+          prompt,
           {
             role: "user",
             content: `Create a fun, engaging blog post about: ${title}\n\n${demographicContext}`
@@ -72,6 +76,9 @@ serve(async (req) => {
     const initialContent = openaiData.choices[0].message.content;
     console.log('Generated content length:', initialContent.length);
     console.log('Generated content preview:', initialContent.substring(0, 500));
+    console.log('Content contains <h3> tags:', initialContent.includes('<h3>'));
+    console.log('Content contains <hr> tags:', initialContent.includes('<hr'));
+    console.log('Number of product sections:', (initialContent.match(/<h3>/g) || []).length);
 
     // Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
@@ -91,6 +98,7 @@ serve(async (req) => {
     console.log('Content processed successfully');
     console.log('Final content length:', processedContent.content.length);
     console.log('Number of affiliate links:', processedContent.affiliateLinks?.length || 0);
+    console.log('Final content preview:', processedContent.content.substring(0, 500));
 
     return new Response(
       JSON.stringify(processedContent),
