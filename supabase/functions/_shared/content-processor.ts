@@ -52,12 +52,12 @@ export async function processContent(
       }
     } else if (section.includes('[LINK')) {
       try {
-        // Fetch 3 random published blog posts
+        // Fetch 3 most recent published blog posts
         const { data: posts, error } = await supabase
           .from('blog_posts')
           .select('title, slug')
           .not('published_at', 'is', null)
-          .order('RANDOM()')
+          .order('published_at', { ascending: false })
           .limit(3);
 
         if (error) {
