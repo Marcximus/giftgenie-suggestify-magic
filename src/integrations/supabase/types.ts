@@ -127,6 +127,7 @@ export type Database = {
           meta_description: string | null
           meta_keywords: string | null
           meta_title: string | null
+          product_search_failures: Json | null
           published_at: string | null
           related_posts: Json | null
           slug: string
@@ -146,6 +147,7 @@ export type Database = {
           meta_description?: string | null
           meta_keywords?: string | null
           meta_title?: string | null
+          product_search_failures?: Json | null
           published_at?: string | null
           related_posts?: Json | null
           slug: string
@@ -165,6 +167,7 @@ export type Database = {
           meta_description?: string | null
           meta_keywords?: string | null
           meta_title?: string | null
+          product_search_failures?: Json | null
           published_at?: string | null
           related_posts?: Json | null
           slug?: string
@@ -263,6 +266,12 @@ export type Database = {
       invoke_blog_generation: {
         Args: Record<PropertyKey, never>
         Returns: string
+      }
+      validate_affiliate_link: {
+        Args: {
+          link: Json
+        }
+        Returns: boolean
       }
     }
     Enums: {
