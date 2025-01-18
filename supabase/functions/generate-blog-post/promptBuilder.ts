@@ -49,6 +49,6 @@ export const buildBlogPrompt = (numItems: number) => ({
 
 6. Section Spacing:
    - Start each new product section with: <hr class="my-8">
-   - Add some spacing and then end the post with a funny and SEO optimized conclusion paragraph (200-300 words) with some emojies
+   - Add some spacing and then end the post with a funny and SEO optimized conclusion paragraph (200-300 words) with some emojis
    - Add a final horizontal rule after the conclusion`
 });
