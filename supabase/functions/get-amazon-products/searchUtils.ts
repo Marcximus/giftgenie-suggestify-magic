@@ -1,6 +1,7 @@
 import { corsHeaders } from '../_shared/cors.ts';
 import { RAPIDAPI_HOST } from './config.ts';
 import type { AmazonProduct } from './types.ts';
+import { extractPrice } from './priceUtils.ts';
 
 const cleanSearchTerm = (searchTerm: string): string => {
   return searchTerm
@@ -201,27 +202,31 @@ const trySearch = async (
 };
 
 const formatProduct = (product: any): AmazonProduct => {
-  console.log('Formatting product:', {
+  console.log('Formatting product data:', {
     title: product.title,
+    hasPrice: !!product.product_price,
+    rawPrice: product.product_price,
+    priceType: typeof product.product_price,
     hasImage: !!product.product_photo,
     hasAsin: !!product.asin
+  });
+
+  const price = extractPrice(product.product_price);
+  
+  console.log('Price extraction result:', {
+    rawPrice: product.product_price,
+    extractedPrice: price,
+    wasExtracted: price !== undefined
   });
 
   return {
     title: product.title,
     description: product.product_description || product.title,
-    price: formatPrice(product.product_price),
+    price,
     currency: 'USD',
     imageUrl: product.product_photo || product.thumbnail,
     rating: product.product_star_rating ? parseFloat(product.product_star_rating) : undefined,
     totalRatings: product.product_num_ratings ? parseInt(product.product_num_ratings.toString(), 10) : undefined,
     asin: product.asin
   };
-};
-
-const formatPrice = (priceStr: string | null | undefined): number | undefined => {
-  if (!priceStr) return undefined;
-  const cleanPrice = priceStr.replace(/[^0-9.]/g, '');
-  const price = parseFloat(cleanPrice);
-  return isNaN(price) ? undefined : price;
 };
