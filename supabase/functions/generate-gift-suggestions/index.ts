@@ -75,14 +75,12 @@ CRITICAL REQUIREMENTS:
    - Include brand names and model numbers when possible
    - Each suggestion must be easily searchable on Amazon
 
-Return ONLY a JSON array of 8 specific gift suggestions in this format:
-["suggestion1", "suggestion2", "suggestion3", "suggestion4", "suggestion5", "suggestion6", "suggestion7", "suggestion8"]
-
-DO NOT include any additional text, formatting, or explanations.`
+IMPORTANT: Return ONLY a plain JSON array of 8 strings. Do not include markdown formatting, code blocks, or any other text.
+Example of correct format: ["Product 1", "Product 2", "Product 3", "Product 4", "Product 5", "Product 6", "Product 7", "Product 8"]`
           },
           { 
             role: "user", 
-            content: `${enhancedPrompt}\n\nIMPORTANT: Return ONLY a JSON array of 8 strings. No other text.` 
+            content: `${enhancedPrompt}\n\nIMPORTANT: Return ONLY a JSON array of 8 strings. No markdown, no code blocks, no other text.` 
           }
         ],
         temperature: 0.7,
@@ -101,10 +99,17 @@ DO NOT include any additional text, formatting, or explanations.`
     const content = data.choices[0].message.content.trim();
     console.log('Raw content from OpenAI:', content);
     
+    // Clean the response by removing any markdown or code block syntax
+    const cleanedContent = content
+      .replace(/```json\s*/g, '')
+      .replace(/```\s*/g, '')
+      .trim();
+    
+    console.log('Cleaned content:', cleanedContent);
+    
     let suggestions;
     try {
-      // Try to parse the content directly
-      suggestions = JSON.parse(content);
+      suggestions = JSON.parse(cleanedContent);
       
       if (!Array.isArray(suggestions)) {
         console.error('Invalid response format: not an array', suggestions);
@@ -148,7 +153,7 @@ DO NOT include any additional text, formatting, or explanations.`
       
     } catch (e) {
       console.error('Failed to parse OpenAI response:', e);
-      console.error('Content that failed to parse:', content);
+      console.error('Content that failed to parse:', cleanedContent);
       throw new Error(`Failed to parse gift suggestions: ${e.message}`);
     }
 
