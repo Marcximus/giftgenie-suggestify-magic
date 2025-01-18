@@ -2,6 +2,7 @@ import { FormField, FormItem, FormLabel, FormControl, FormDescription, FormMessa
 import { Input } from "@/components/ui/input";
 import { UseFormReturn } from "react-hook-form";
 import { BlogPostFormData } from "../types/BlogPostTypes";
+import { BlogImageUpload } from "../BlogImageUpload";
 
 interface BlogPostBasicInfoProps {
   form: UseFormReturn<BlogPostFormData>;
@@ -52,6 +53,23 @@ export const BlogPostBasicInfo = ({ form, generateSlug, initialData }: BlogPostB
           )}
         />
       </div>
+
+      <FormField
+        control={form.control}
+        name="image_url"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Featured Image</FormLabel>
+            <FormControl>
+              <BlogImageUpload 
+                value={field.value || ''} 
+                setValue={form.setValue}
+              />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
     </div>
   );
 };
