@@ -2,17 +2,36 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { corsHeaders } from '../_shared/cors.ts';
 import { searchProducts } from './productSearch.ts';
 
+console.log('Loading get-amazon-products function...');
+
 serve(async (req) => {
+  console.log('Received request:', {
+    method: req.method,
+    url: req.url,
+    headers: Object.fromEntries(req.headers.entries())
+  });
+
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    console.log('Handling OPTIONS request');
+    return new Response(null, {
+      status: 204,
+      headers: {
+        ...corsHeaders,
+        'Access-Control-Max-Age': '86400',
+      },
+    });
   }
 
   try {
+    if (req.method !== 'POST') {
+      throw new Error(`Method ${req.method} not allowed`);
+    }
+
     const { searchTerm } = await req.json();
     const apiKey = Deno.env.get('RAPIDAPI_KEY');
 
-    console.log('Edge Function invoked with:', {
+    console.log('Processing request with:', {
       searchTerm,
       hasApiKey: !!apiKey,
       apiKeyFirstChars: apiKey ? apiKey.substring(0, 4) : 'missing'
@@ -27,7 +46,10 @@ serve(async (req) => {
         }),
         { 
           status: 500,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          headers: { 
+            ...corsHeaders, 
+            'Content-Type': 'application/json'
+          }
         }
       );
     }
@@ -44,7 +66,10 @@ serve(async (req) => {
           details: 'No matching products found for the search term'
         }),
         { 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          headers: { 
+            ...corsHeaders, 
+            'Content-Type': 'application/json'
+          },
           status: 404
         }
       );
@@ -54,13 +79,17 @@ serve(async (req) => {
       title: product.title,
       asin: product.asin,
       hasPrice: !!product.price,
-      hasImage: !!product.imageUrl,
-      imageUrl: product.imageUrl
+      hasImage: !!product.imageUrl
     });
 
     return new Response(
       JSON.stringify({ product }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { 
+        headers: { 
+          ...corsHeaders, 
+          'Content-Type': 'application/json'
+        }
+      }
     );
 
   } catch (error) {
@@ -75,7 +104,10 @@ serve(async (req) => {
       }),
       { 
         status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        headers: { 
+          ...corsHeaders, 
+          'Content-Type': 'application/json'
+        }
       }
     );
   }
