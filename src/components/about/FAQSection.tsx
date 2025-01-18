@@ -127,6 +127,61 @@ export const FAQSection = () => {
             If you have additional questions, need more gift inspiration, or want extra help choosing the best gift, feel free to reach out to us. Our team is always happy to provide further guidance!
           </AccordionContent>
         </AccordionItem>
+
+        <AccordionItem value="item-11" className="border rounded-lg px-4 hover:bg-slate-50 transition-colors">
+          <AccordionTrigger className="text-[#7E69AB] hover:no-underline text-sm">
+            <span className="flex items-center gap-2">
+              🌟 How do you ensure the quality of recommended gifts?
+            </span>
+          </AccordionTrigger>
+          <AccordionContent className="text-[#403E43]">
+            We carefully analyze product ratings, reviews, and customer feedback to ensure we only recommend high-quality gifts. Our system also considers factors like product durability, brand reputation, and overall value for money when making suggestions.
+          </AccordionContent>
+        </AccordionItem>
+
+        <AccordionItem value="item-12" className="border rounded-lg px-4 hover:bg-slate-50 transition-colors">
+          <AccordionTrigger className="text-[#7E69AB] hover:no-underline text-sm">
+            <span className="flex items-center gap-2">
+              🎨 Can I find personalized or custom gift ideas?
+            </span>
+          </AccordionTrigger>
+          <AccordionContent className="text-[#403E43]">
+            Yes! Our platform includes suggestions for personalized and custom gifts. Whether you're looking for monogrammed items, custom artwork, or specially crafted presents, we can help you find unique and meaningful gift options that add a personal touch.
+          </AccordionContent>
+        </AccordionItem>
+
+        <AccordionItem value="item-13" className="border rounded-lg px-4 hover:bg-slate-50 transition-colors">
+          <AccordionTrigger className="text-[#7E69AB] hover:no-underline text-sm">
+            <span className="flex items-center gap-2">
+              🌍 Do you offer international shipping information?
+            </span>
+          </AccordionTrigger>
+          <AccordionContent className="text-[#403E43]">
+            While we primarily focus on gift recommendations, most products we suggest are available through major retailers that offer international shipping. We recommend checking the specific retailer's shipping policies and delivery timeframes for your location.
+          </AccordionContent>
+        </AccordionItem>
+
+        <AccordionItem value="item-14" className="border rounded-lg px-4 hover:bg-slate-50 transition-colors">
+          <AccordionTrigger className="text-[#7E69AB] hover:no-underline text-sm">
+            <span className="flex items-center gap-2">
+              📅 How often do you update your gift suggestions?
+            </span>
+          </AccordionTrigger>
+          <AccordionContent className="text-[#403E43]">
+            Our gift database is continuously updated to include the latest products, trending items, and seasonal recommendations. We regularly refresh our suggestions to ensure you have access to current and relevant gift ideas throughout the year.
+          </AccordionContent>
+        </AccordionItem>
+
+        <AccordionItem value="item-15" className="border rounded-lg px-4 hover:bg-slate-50 transition-colors">
+          <AccordionTrigger className="text-[#7E69AB] hover:no-underline text-sm">
+            <span className="flex items-center gap-2">
+              🎊 Do you have special recommendations for milestone events?
+            </span>
+          </AccordionTrigger>
+          <AccordionContent className="text-[#403E43]">
+            Absolutely! We offer specialized gift suggestions for milestone events like graduations, weddings, anniversaries, and significant birthdays. Our recommendations take into account the significance of these special occasions to help you find truly memorable presents.
+          </AccordionContent>
+        </AccordionItem>
       </Accordion>
 
       <p className="text-xs text-[#403E43] mt-8 leading-relaxed italic text-center">
