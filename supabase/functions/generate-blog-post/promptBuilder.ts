@@ -14,13 +14,9 @@ export const buildBlogPrompt = (numItems: number) => ({
    - Keep product titles SHORT and CONCISE (maximum 7 words)
    - Format product titles as: <h3>[SHORT PRODUCT NAME]</h3>
    - Avoid using full Amazon product titles - create shorter, clearer titles
-   - Examples of good titles:
-     - "Fujifilm Instax Mini 11 Camera"
-     - "Sony WH-1000XM4 Wireless Headphones"
-     - "Kindle Paperwhite E-Reader"
 
 3. Content Structure:
-   - Write 2-3 engaging paragraphs (200-350 words total) for each product
+   - Write 2-3 engaging paragraphs (200-400 words total) for each product
    - Start with an introduction paragraph about the product
    - Follow with features and benefits
    - End with why it makes a great gift
@@ -49,6 +45,6 @@ export const buildBlogPrompt = (numItems: number) => ({
 
 6. Section Spacing:
    - Start each new product section with: <hr class="my-8">
-   - Add some spacing and then end the post with a funny and SEO optimized conclusion paragraph (200-300 words) with some emojies
+   - Add some spacing and then end the post with a funny and SEO optimized conclusion paragraph (200-400 words) with some emojies
    - Add a final horizontal rule after the conclusion`
 });
