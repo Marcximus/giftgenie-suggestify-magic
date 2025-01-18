@@ -13,10 +13,12 @@ export const ProductImage = ({ title, imageUrl }: ProductImageProps) => {
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
   
+  // Use a static fallback image instead of generating one
   const genericFallback = 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=300&q=80';
 
   const getOptimizedImageUrl = (url: string, width: number) => {
     if (!url) return genericFallback;
+    // Only optimize Unsplash images, leave others as is
     if (url.includes('unsplash.com')) {
       return `${url}&w=${width}&q=80`;
     }
@@ -25,6 +27,7 @@ export const ProductImage = ({ title, imageUrl }: ProductImageProps) => {
 
   const getTinyPlaceholder = (url: string) => {
     if (!url) return genericFallback;
+    // Only create placeholders for Unsplash images
     if (url.includes('unsplash.com')) {
       return `${url}&w=20&q=10&blur=5`;
     }
@@ -34,18 +37,26 @@ export const ProductImage = ({ title, imageUrl }: ProductImageProps) => {
   const fetchGoogleImage = async (searchTerm: string) => {
     try {
       setIsLoadingFallback(true);
+      console.log('Fetching Google image for:', searchTerm);
+      
       const { data, error } = await supabase.functions.invoke('get-google-image', {
         body: { searchTerm }
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching Google image:', error);
+        throw error;
+      }
+
       if (data?.imageUrl) {
+        console.log('Successfully fetched Google image:', data.imageUrl);
         setCurrentImageUrl(data.imageUrl);
       } else {
+        console.log('No Google image found, using fallback');
         setCurrentImageUrl(genericFallback);
       }
     } catch (error) {
-      console.error('Error fetching Google image:', error);
+      console.error('Error in fetchGoogleImage:', error);
       setCurrentImageUrl(genericFallback);
     } finally {
       setIsLoadingFallback(false);
@@ -55,8 +66,10 @@ export const ProductImage = ({ title, imageUrl }: ProductImageProps) => {
   const handleImageError = async () => {
     setHasError(true);
     if (currentImageUrl !== genericFallback && title) {
+      console.log('Image load failed, attempting to fetch Google image');
       await fetchGoogleImage(title);
     } else {
+      console.log('Using generic fallback image');
       setCurrentImageUrl(genericFallback);
     }
   };
