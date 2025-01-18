@@ -13,10 +13,11 @@ serve(async (req) => {
     const { title } = await req.json();
     console.log('Processing blog post for title:', title);
 
-    // Extract number of products from title
-    const numMatch = title.match(/top\s+(\d+)/i);
-    const numProducts = numMatch ? parseInt(numMatch[1]) : 8;
-    console.log('Number of products to generate:', numProducts);
+    // Extract number from title using regex
+    // This will match patterns like "top 10", "10 best", etc.
+    const numMatch = title.match(/(?:top\s+)?(\d+)(?:\s+best|\s+gift)/i);
+    const numItems = numMatch ? parseInt(numMatch[1]) : 8; // Default to 8 if no number found
+    console.log('Number of items to generate:', numItems);
 
     // Detect demographic information
     const titleLower = title.toLowerCase();
@@ -39,8 +40,9 @@ serve(async (req) => {
     ` : '';
 
     // Get the prompt from promptBuilder
-    const prompt = buildBlogPrompt(numProducts);
+    const prompt = buildBlogPrompt(numItems);
     console.log('Using prompt system content:', prompt.content.substring(0, 200) + '...');
+    console.log('Requested number of items:', numItems);
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -54,7 +56,7 @@ serve(async (req) => {
           prompt,
           {
             role: "user",
-            content: `Create a fun, engaging blog post about: ${title}\n\n${demographicContext}`
+            content: `Create a fun, engaging blog post about: ${title}\n\n${demographicContext}\n\nIMPORTANT: You MUST generate EXACTLY ${numItems} product recommendations, no more, no less.`
           }
         ],
         temperature: 0.7,
@@ -79,6 +81,12 @@ serve(async (req) => {
     console.log('Content contains <h3> tags:', initialContent.includes('<h3>'));
     console.log('Content contains <hr> tags:', initialContent.includes('<hr'));
     console.log('Number of product sections:', (initialContent.match(/<h3>/g) || []).length);
+
+    // Verify the number of product sections matches the requested number
+    const actualProductCount = (initialContent.match(/<h3>/g) || []).length;
+    if (actualProductCount !== numItems) {
+      console.warn(`Warning: Generated ${actualProductCount} products instead of requested ${numItems}`);
+    }
 
     // Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
