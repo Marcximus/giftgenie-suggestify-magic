@@ -15,7 +15,6 @@ import { BlogPostContent } from "./form/BlogPostContent";
 import { BlogPostSEO } from "./form/BlogPostSEO";
 import { BlogPostFormData, BlogPostData } from "./types/BlogPostTypes";
 import { Input } from "@/components/ui/input";
-import { Wand2 } from "lucide-react";
 
 interface BlogPostFormProps {
   initialData?: BlogPostData;
@@ -24,7 +23,6 @@ interface BlogPostFormProps {
 
 const BlogPostForm = ({ initialData, initialTitle }: BlogPostFormProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isGeneratingAltText, setIsGeneratingAltText] = useState(false);
   const [activeTab, setActiveTab] = useState("edit");
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -50,62 +48,16 @@ const BlogPostForm = ({ initialData, initialTitle }: BlogPostFormProps) => {
         image_alt_text: "",
         related_posts: [],
       }),
-      title: initialTitle || "",  // Ensure initialTitle takes precedence
+      title: initialTitle || "",
     },
   });
 
-  // Update form when initialTitle changes
   useEffect(() => {
     if (initialTitle) {
       console.log("Setting form title to:", initialTitle);
       form.setValue('title', initialTitle);
     }
   }, [initialTitle, form]);
-
-  const generateAltText = async () => {
-    const title = form.getValues('title');
-    if (!title) {
-      toast({
-        title: "Error",
-        description: "Please provide a title first",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    setIsGeneratingAltText(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('generate-blog-image', {
-        body: { 
-          title,
-          prompt: "Generate a descriptive alt text for this blog post's featured image" 
-        }
-      });
-
-      if (error) throw error;
-
-      if (data?.altText) {
-        form.setValue('image_alt_text', data.altText, { 
-          shouldDirty: true,
-          shouldTouch: true,
-          shouldValidate: true 
-        });
-        toast({
-          title: "Success",
-          description: "Alt text generated successfully",
-        });
-      }
-    } catch (error: any) {
-      console.error('Generation error:', error);
-      toast({
-        title: "Error",
-        description: error.message || "Failed to generate alt text",
-        variant: "destructive",
-      });
-    } finally {
-      setIsGeneratingAltText(false);
-    }
-  };
 
   const generateUniqueSlug = async (baseSlug: string): Promise<string> => {
     const { data: existingPost, error } = await supabase
@@ -263,19 +215,7 @@ const BlogPostForm = ({ initialData, initialTitle }: BlogPostFormProps) => {
               name="image_alt_text"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="flex items-center justify-between">
-                    Image Alt Text
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={generateAltText}
-                      disabled={isGeneratingAltText}
-                    >
-                      <Wand2 className="w-4 h-4 mr-2" />
-                      {isGeneratingAltText ? "Generating..." : "Generate Alt Text"}
-                    </Button>
-                  </FormLabel>
+                  <FormLabel>Image Alt Text</FormLabel>
                   <FormControl>
                     <Input 
                       {...field} 
