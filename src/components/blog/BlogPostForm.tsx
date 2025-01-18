@@ -19,10 +19,17 @@ interface BlogPostFormProps {
 export const BlogPostForm = ({ onSubmit, initialData, initialTitle }: BlogPostFormProps) => {
   const { toast } = useToast();
   
+  const generateSlug = (title: string) => {
+    return title
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/(^-|-$)/g, '');
+  };
+
   const form = useForm<BlogPostFormData>({
     defaultValues: initialData || ({
       title: initialTitle || "",
-      slug: "",
+      slug: initialTitle ? generateSlug(initialTitle) : "", // Generate slug from initial title
       content: "",
       excerpt: null,
       meta_title: null,
@@ -45,13 +52,6 @@ export const BlogPostForm = ({ onSubmit, initialData, initialTitle }: BlogPostFo
       shouldDirty: false
     });
   }, [form]);
-
-  const generateSlug = (title: string) => {
-    return title
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/(^-|-$)/g, '');
-  };
 
   const handleAIGenerate = async (type: 'excerpt' | 'seo-title' | 'seo-description' | 'seo-keywords' | 'improve-content') => {
     try {
