@@ -9,6 +9,53 @@ import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 
+const getStatusBadgeClass = (status: string | null) => {
+  switch (status) {
+    case 'completed':
+      return 'bg-green-100 text-green-800';
+    case 'failed':
+      return 'bg-red-100 text-red-800';
+    case 'pending':
+      return 'bg-yellow-100 text-yellow-800';
+    default:
+      return 'bg-gray-100 text-gray-800';
+  }
+};
+
+const generateRandomTimes = async () => {
+  const { data: queuedPosts } = await supabase
+    .from("blog_post_queue")
+    .select("*")
+    .is('scheduled_date', null);
+
+  if (!queuedPosts?.length) return;
+
+  const { data: randomTimes } = await supabase
+    .rpc('get_random_daily_times');
+
+  if (!randomTimes?.length) return;
+
+  const today = new Date();
+  const updates = queuedPosts.map((post, index) => {
+    const time = randomTimes[index % randomTimes.length];
+    const date = new Date(today);
+    date.setDate(date.getDate() + index);
+    
+    return {
+      id: post.id,
+      scheduled_date: date.toISOString().split('T')[0],
+      scheduled_time: `${time.hour.toString().padStart(2, '0')}:${time.minute.toString().padStart(2, '0')}`,
+    };
+  });
+
+  for (const update of updates) {
+    await supabase
+      .from("blog_post_queue")
+      .update(update)
+      .eq('id', update.id);
+  }
+};
+
 export const ScheduledPostsTab = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();

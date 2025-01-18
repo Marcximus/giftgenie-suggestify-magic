@@ -12,6 +12,31 @@ import { ScheduledPostsTab } from "@/components/blog/admin/ScheduledPostsTab";
 import { BulkTitleUploader } from "@/components/blog/admin/BulkTitleUploader";
 
 const Blog = () => {
+  const { data: posts, isLoading } = useQuery({
+    queryKey: ["blog-posts"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("blog_posts")
+        .select("*")
+        .order('published_at', { ascending: false });
+      
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const handleDelete = async (id: string) => {
+    const { error } = await supabase
+      .from("blog_posts")
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      console.error('Error deleting post:', error);
+      return;
+    }
+  };
+
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="text-center text-sm text-muted-foreground mt-8 mb-4">
