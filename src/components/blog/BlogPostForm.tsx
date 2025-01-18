@@ -19,9 +19,10 @@ import { Wand2 } from "lucide-react";
 
 interface BlogPostFormProps {
   initialData?: BlogPostData;
+  initialTitle?: string;
 }
 
-const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
+const BlogPostForm = ({ initialData, initialTitle }: BlogPostFormProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGeneratingAltText, setIsGeneratingAltText] = useState(false);
   const [activeTab, setActiveTab] = useState("edit");
@@ -31,7 +32,7 @@ const BlogPostForm = ({ initialData }: BlogPostFormProps) => {
 
   const form = useForm<BlogPostFormData>({
     defaultValues: initialData || {
-      title: "",
+      title: initialTitle || "",
       slug: "",
       content: "",
       excerpt: "",
