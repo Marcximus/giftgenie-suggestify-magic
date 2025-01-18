@@ -17,6 +17,7 @@ export const ProductImage = ({ title, imageUrl }: ProductImageProps) => {
   const genericFallback = 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=300&q=80';
 
   const getOptimizedImageUrl = (url: string, width: number) => {
+    console.log('Optimizing image URL:', url);
     if (!url) return genericFallback;
     // Only optimize Unsplash images, leave others as is
     if (url.includes('unsplash.com')) {
@@ -26,6 +27,7 @@ export const ProductImage = ({ title, imageUrl }: ProductImageProps) => {
   };
 
   const getTinyPlaceholder = (url: string) => {
+    console.log('Getting tiny placeholder for URL:', url);
     if (!url) return genericFallback;
     // Only create placeholders for Unsplash images
     if (url.includes('unsplash.com')) {
@@ -36,8 +38,8 @@ export const ProductImage = ({ title, imageUrl }: ProductImageProps) => {
 
   const fetchGoogleImage = async (searchTerm: string) => {
     try {
+      console.log('Starting Google image fetch for:', searchTerm);
       setIsLoadingFallback(true);
-      console.log('Fetching Google image for:', searchTerm);
       
       const { data, error } = await supabase.functions.invoke('get-google-image', {
         body: { searchTerm }
@@ -64,9 +66,10 @@ export const ProductImage = ({ title, imageUrl }: ProductImageProps) => {
   };
 
   const handleImageError = async () => {
+    console.log('Image load error triggered for URL:', currentImageUrl);
     setHasError(true);
     if (currentImageUrl !== genericFallback && title) {
-      console.log('Image load failed, attempting to fetch Google image');
+      console.log('Attempting to fetch Google image for:', title);
       await fetchGoogleImage(title);
     } else {
       console.log('Using generic fallback image');
@@ -75,6 +78,7 @@ export const ProductImage = ({ title, imageUrl }: ProductImageProps) => {
   };
 
   useEffect(() => {
+    console.log('ProductImage useEffect triggered with URL:', currentImageUrl);
     if (currentImageUrl) {
       const img = new Image();
       
@@ -83,11 +87,14 @@ export const ProductImage = ({ title, imageUrl }: ProductImageProps) => {
         .map(width => `${getOptimizedImageUrl(currentImageUrl, width)} ${width}w`)
         .join(', ');
       
+      console.log('Generated srcset:', srcset);
+      
       img.srcset = srcset;
       img.sizes = '(max-width: 640px) 300px, (max-width: 1024px) 600px, 900px';
       img.src = getOptimizedImageUrl(currentImageUrl, 600);
       
       img.onload = () => {
+        console.log('Image loaded successfully:', img.src);
         setIsLoading(false);
         setHasError(false);
       };
