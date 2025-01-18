@@ -15,6 +15,14 @@ export const ScheduledPostsTab = () => {
       const currentDate = now.toISOString().split('T')[0];
       const currentTime = now.toTimeString().split(' ')[0];
 
+      // First, get all published post titles
+      const { data: publishedPosts } = await supabase
+        .from("blog_posts")
+        .select("title");
+
+      const publishedTitles = new Set(publishedPosts?.map(post => post.title));
+
+      // Then get queued posts that aren't published yet
       const { data, error } = await supabase
         .from("blog_post_queue")
         .select("*")
@@ -24,7 +32,11 @@ export const ScheduledPostsTab = () => {
         .order("scheduled_time", { ascending: true });
       
       if (error) throw error;
-      return data as Tables<"blog_post_queue">[];
+
+      // Filter out posts that are already published
+      return (data as Tables<"blog_post_queue">[]).filter(
+        post => !publishedTitles.has(post.title)
+      );
     },
   });
 
