@@ -10,6 +10,9 @@ const Index = () => {
     try {
       // Implement your search logic here
       console.log('Searching for:', query);
+      // Add your search implementation here
+    } catch (error) {
+      console.error('Search error:', error);
     } finally {
       setIsLoading(false);
     }
