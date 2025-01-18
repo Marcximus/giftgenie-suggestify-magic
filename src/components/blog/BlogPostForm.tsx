@@ -7,7 +7,6 @@ import { BlogPostSEO } from "./form/BlogPostSEO";
 import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
 import { useToast } from "@/components/ui/use-toast";
-import { supabase } from "@/integrations/supabase/client";
 
 const DEFAULT_AUTHOR = "Get The Gift Team";
 
@@ -35,7 +34,7 @@ export const BlogPostForm = ({ onSubmit, initialData, initialTitle }: BlogPostFo
       affiliate_links: [],
       image_alt_text: "",
       related_posts: [],
-      author: DEFAULT_AUTHOR, // Set default author
+      author: DEFAULT_AUTHOR,
     }),
   });
 
@@ -46,6 +45,27 @@ export const BlogPostForm = ({ onSubmit, initialData, initialTitle }: BlogPostFo
       shouldDirty: false
     });
   }, [form]);
+
+  const generateSlug = (title: string) => {
+    return title
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/(^-|-$)/g, '');
+  };
+
+  const handleAIGenerate = async (type: 'excerpt' | 'seo-title' | 'seo-description' | 'seo-keywords' | 'improve-content') => {
+    try {
+      // Implementation of AI generation logic
+      console.log("Generating content for:", type);
+    } catch (error) {
+      console.error("Error generating content:", error);
+      toast({
+        title: "Error",
+        description: "Failed to generate content. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
 
   const onSubmitHandler = async (data: BlogPostFormData) => {
     try {
@@ -65,11 +85,25 @@ export const BlogPostForm = ({ onSubmit, initialData, initialTitle }: BlogPostFo
   };
 
   return (
-    <Form {...form} onSubmit={form.handleSubmit(onSubmitHandler)}>
-      <BlogPostBasicInfo form={form} />
-      <BlogPostContent form={form} handleAIGenerate={onSubmit} />
-      <BlogPostSEO form={form} />
-      <Button type="submit">Save Blog Post</Button>
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmitHandler)} className="space-y-8">
+        <BlogPostBasicInfo 
+          form={form} 
+          generateSlug={generateSlug} 
+          initialData={initialData}
+        />
+        <BlogPostContent 
+          form={form} 
+          handleAIGenerate={handleAIGenerate}
+        />
+        <BlogPostSEO 
+          form={form} 
+          handleAIGenerate={handleAIGenerate}
+        />
+        <Button type="submit">Save Blog Post</Button>
+      </form>
     </Form>
   );
 };
+
+export default BlogPostForm;

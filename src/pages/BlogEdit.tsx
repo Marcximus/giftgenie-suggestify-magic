@@ -1,7 +1,7 @@
 import { useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import BlogPostForm from "@/components/blog/BlogPostForm";
+import { BlogPostForm } from "@/components/blog/BlogPostForm";
 import { useToast } from "@/hooks/use-toast";
 import { BlogPostData } from "@/components/blog/types/BlogPostTypes";
 import { Json } from "@/integrations/supabase/types";
@@ -111,10 +111,15 @@ const BlogEdit = () => {
     );
   }
 
+  const handleSubmit = async (data: BlogPostFormData) => {
+    // Implementation of submit logic
+    console.log("Submitting updated blog post:", data);
+  };
+
   return (
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-3xl font-bold mb-8">Edit Blog Post</h1>
-      <BlogPostForm initialData={post} />
+      <BlogPostForm initialData={post} onSubmit={handleSubmit} />
     </div>
   );
 };
