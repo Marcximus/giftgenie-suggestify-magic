@@ -48,7 +48,8 @@ serve(async (req) => {
           status: 500,
           headers: { 
             ...corsHeaders, 
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'Cache-Control': 'no-store, no-cache, must-revalidate'
           }
         }
       );
@@ -68,7 +69,8 @@ serve(async (req) => {
         { 
           headers: { 
             ...corsHeaders, 
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'Cache-Control': 'no-store, no-cache, must-revalidate'
           },
           status: 404
         }
@@ -88,7 +90,7 @@ serve(async (req) => {
         headers: { 
           ...corsHeaders, 
           'Content-Type': 'application/json',
-          'Cache-Control': 'no-cache'
+          'Cache-Control': 'no-store, no-cache, must-revalidate'
         }
       }
     );
@@ -108,7 +110,7 @@ serve(async (req) => {
         headers: { 
           ...corsHeaders, 
           'Content-Type': 'application/json',
-          'Cache-Control': 'no-cache'
+          'Cache-Control': 'no-store, no-cache, must-revalidate'
         }
       }
     );
