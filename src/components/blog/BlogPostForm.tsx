@@ -71,8 +71,10 @@ const BlogPostForm = ({ initialData, initialTitle }: BlogPostFormProps) => {
     }
 
     // Extract the actual content value if it's wrapped in an object
-    const contentToProcess = typeof content === 'object' && content !== null && '_type' in content && content._type === 'String' 
-      ? (content as { value: string }).value 
+    const contentToProcess = typeof content === 'object' && content !== null 
+      ? ('_type' in content && content._type === 'String' 
+          ? (content as { value: string }).value 
+          : String(content))
       : content;
       
     console.log('Content to process:', contentToProcess.substring(0, 100) + '...');
