@@ -21,55 +21,55 @@ export const FAQSection = () => {
         <AccordionItem value="item-1" className="border rounded-lg px-4 hover:bg-slate-50 transition-colors">
           <AccordionTrigger className="text-[#7E69AB] hover:no-underline text-sm">
             <span className="flex items-center gap-2">
-              🎁 What is Get The Gift, and how does it help me find the perfect gift?
+              👩 What are your best gift ideas for women and moms?
             </span>
           </AccordionTrigger>
           <AccordionContent className="text-[#403E43]">
-            Get The Gift is an online platform designed to provide customized gift ideas and gift inspiration for any occasion. Our system analyzes your recipient's interests to suggest the best gift or perfect present, saving you time and guesswork.
+            We offer a wide range of thoughtful gift suggestions for women and moms, from luxurious self-care items to practical home gadgets. Our AI considers personal interests, hobbies, and lifestyle to recommend perfect presents for birthdays, Christmas, or just because. Whether she's a busy mom, career woman, or both, we'll help you find a meaningful gift she'll love.
           </AccordionContent>
         </AccordionItem>
 
         <AccordionItem value="item-2" className="border rounded-lg px-4 hover:bg-slate-50 transition-colors">
           <AccordionTrigger className="text-[#7E69AB] hover:no-underline text-sm">
             <span className="flex items-center gap-2">
-              🎂 Do you offer gift inspiration for birthdays, anniversaries, and other occasions?
+              👨 How do you curate gift ideas for men and dads?
             </span>
           </AccordionTrigger>
           <AccordionContent className="text-[#403E43]">
-            Absolutely! Whether you need gift ideas for birthdays, holidays, anniversaries, or last-minute presents, Get The Gift has you covered. We specialize in finding the perfect gift for all ages and preferences.
+            Our gift suggestions for men and dads range from tech gadgets to outdoor gear and unique hobby-related items. We understand that finding the right gift for men can be challenging, so we focus on their interests, whether they're tech enthusiasts, sports fans, or DIY lovers, to suggest meaningful and practical presents they'll actually use.
           </AccordionContent>
         </AccordionItem>
 
         <AccordionItem value="item-3" className="border rounded-lg px-4 hover:bg-slate-50 transition-colors">
           <AccordionTrigger className="text-[#7E69AB] hover:no-underline text-sm">
             <span className="flex items-center gap-2">
-              🤖 How does your recommendation process work?
+              💝 What makes your Christmas gift recommendations special?
             </span>
           </AccordionTrigger>
           <AccordionContent className="text-[#403E43]">
-            Our gift inspiration engine takes into account factors like your recipient's age, interests, and budget. We then generate a curated list of the best gift options, ensuring you find the ideal present without endless scrolling.
+            Our Christmas gift suggestions are carefully curated for both him and her, considering seasonal trends and holiday spirit. We help you find those perfect Christmas presents that bring joy and surprise, whether you're shopping for your spouse, parents, or friends. Our recommendations range from cozy winter essentials to festive luxury items.
           </AccordionContent>
         </AccordionItem>
 
         <AccordionItem value="item-4" className="border rounded-lg px-4 hover:bg-slate-50 transition-colors">
           <AccordionTrigger className="text-[#7E69AB] hover:no-underline text-sm">
             <span className="flex items-center gap-2">
-              👥 Are your gift ideas suitable for all age groups and interests?
+              💑 How do you handle romantic gift suggestions for couples?
             </span>
           </AccordionTrigger>
           <AccordionContent className="text-[#403E43]">
-            Yes! We cater to everyone—from tech-savvy teens to cozy homebodies and adventurous grandparents. Our database covers an extensive range of categories, ensuring you'll always discover a present that fits each unique personality.
+            For romantic gifts, we focus on creating memorable experiences and meaningful presents for couples. Whether you're shopping for your girlfriend, boyfriend, wife, or husband, we suggest thoughtful gifts that show your love and appreciation. From romantic date night ideas to personalized keepsakes, we help you find the perfect way to express your feelings.
           </AccordionContent>
         </AccordionItem>
 
         <AccordionItem value="item-5" className="border rounded-lg px-4 hover:bg-slate-50 transition-colors">
           <AccordionTrigger className="text-[#7E69AB] hover:no-underline text-sm">
             <span className="flex items-center gap-2">
-              💰 Can I filter gift suggestions by price or category?
+              👧 What about gift ideas for teenagers?
             </span>
           </AccordionTrigger>
           <AccordionContent className="text-[#403E43]">
-            Certainly. After you receive initial gift ideas, you can refine the results by price range, interest, or event. This way, you're more likely to land on the perfect gift that aligns with both your budget and your recipient's tastes.
+            Finding gifts for teens can be tricky, but we stay up-to-date with the latest trends and interests. For teen girls and boys, we recommend age-appropriate gifts that align with their hobbies, from gaming accessories to fashion items, tech gadgets, and creative supplies. We ensure our suggestions are both cool and practical.
           </AccordionContent>
         </AccordionItem>
 
@@ -180,6 +180,39 @@ export const FAQSection = () => {
           </AccordionTrigger>
           <AccordionContent className="text-[#403E43]">
             Absolutely! We offer specialized gift suggestions for milestone events like graduations, weddings, anniversaries, and significant birthdays. Our recommendations take into account the significance of these special occasions to help you find truly memorable presents.
+          </AccordionContent>
+        </AccordionItem>
+
+        <AccordionItem value="item-16" className="border rounded-lg px-4 hover:bg-slate-50 transition-colors">
+          <AccordionTrigger className="text-[#7E69AB] hover:no-underline text-sm">
+            <span className="flex items-center gap-2">
+              👥 Do you have suggestions for workplace gift exchanges?
+            </span>
+          </AccordionTrigger>
+          <AccordionContent className="text-[#403E43]">
+            Yes! We understand the unique challenges of finding appropriate gifts for coworkers and workplace exchanges. Our suggestions include professional, thoughtful items that maintain workplace boundaries while showing appreciation. We consider various budget ranges and office environments to ensure suitable gift options.
+          </AccordionContent>
+        </AccordionItem>
+
+        <AccordionItem value="item-17" className="border rounded-lg px-4 hover:bg-slate-50 transition-colors">
+          <AccordionTrigger className="text-[#7E69AB] hover:no-underline text-sm">
+            <span className="flex items-center gap-2">
+              🎁 What makes your birthday gift suggestions unique?
+            </span>
+          </AccordionTrigger>
+          <AccordionContent className="text-[#403E43]">
+            Our birthday gift recommendations are personalized based on age, gender, and interests. Whether you're looking for birthday gifts for him or her, we focus on making each suggestion special and memorable. We consider current trends, personal hobbies, and unique preferences to help you find that perfect birthday surprise.
+          </AccordionContent>
+        </AccordionItem>
+
+        <AccordionItem value="item-18" className="border rounded-lg px-4 hover:bg-slate-50 transition-colors">
+          <AccordionTrigger className="text-[#7E69AB] hover:no-underline text-sm">
+            <span className="flex items-center gap-2">
+              🌟 How do you find unique and creative gift ideas?
+            </span>
+          </AccordionTrigger>
+          <AccordionContent className="text-[#403E43]">
+            We constantly research emerging trends, artisanal products, and unique offerings to provide fresh and creative gift ideas. Our suggestions go beyond conventional presents, including handcrafted items, personalized experiences, and innovative products that stand out from typical gift options.
           </AccordionContent>
         </AccordionItem>
       </Accordion>
