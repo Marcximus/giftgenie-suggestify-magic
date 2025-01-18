@@ -65,9 +65,14 @@ const BlogPostForm = ({ initialData, initialTitle }: BlogPostFormProps) => {
     affiliateLinks: any[];
   }> => {
     console.log('Processing blog content...');
+    
+    if (!content) {
+      throw new Error('Content is required for processing');
+    }
+
     // Extract the actual content value if it's wrapped in an object
-    const contentToProcess = typeof content === 'object' && content._type === 'String' 
-      ? content.value 
+    const contentToProcess = typeof content === 'object' && content !== null && '_type' in content && content._type === 'String' 
+      ? (content as { value: string }).value 
       : content;
       
     console.log('Content to process:', contentToProcess.substring(0, 100) + '...');
