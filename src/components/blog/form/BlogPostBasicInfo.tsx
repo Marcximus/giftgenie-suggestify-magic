@@ -2,6 +2,7 @@ import { FormField, FormItem, FormLabel, FormControl, FormDescription, FormMessa
 import { Input } from "@/components/ui/input";
 import { UseFormReturn } from "react-hook-form";
 import { BlogPostFormData } from "../types/BlogPostTypes";
+import { useEffect } from "react";
 
 interface BlogPostBasicInfoProps {
   form: UseFormReturn<BlogPostFormData>;
@@ -10,6 +11,13 @@ interface BlogPostBasicInfoProps {
 }
 
 export const BlogPostBasicInfo = ({ form, generateSlug, initialData }: BlogPostBasicInfoProps) => {
+  useEffect(() => {
+    const currentTitle = form.getValues("title");
+    if (currentTitle && !initialData && !form.getValues("slug")) {
+      form.setValue("slug", generateSlug(currentTitle));
+    }
+  }, [form.getValues("title")]);
+
   return (
     <div className="space-y-6">
       <div className="grid gap-6 md:grid-cols-2">
