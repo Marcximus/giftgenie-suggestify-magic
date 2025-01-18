@@ -21,14 +21,14 @@ interface BlogPostFormProps {
   initialTitle?: string;
 }
 
+const DEFAULT_AUTHOR = "Get The Gift Team";
+
 const BlogPostForm = ({ initialData, initialTitle }: BlogPostFormProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [activeTab, setActiveTab] = useState("edit");
   const navigate = useNavigate();
   const { toast } = useToast();
   const { generateContent, getFormFieldFromType } = useAIContent();
-
-  console.log("BlogPostForm initialTitle:", initialTitle);
 
   const form = useForm<BlogPostFormData>({
     defaultValues: {
@@ -37,7 +37,7 @@ const BlogPostForm = ({ initialData, initialTitle }: BlogPostFormProps) => {
         slug: "",
         content: "",
         excerpt: "",
-        author: "",
+        author: DEFAULT_AUTHOR,
         image_url: "",
         published_at: null,
         meta_title: "",
@@ -49,6 +49,7 @@ const BlogPostForm = ({ initialData, initialTitle }: BlogPostFormProps) => {
         related_posts: [],
       }),
       title: initialTitle || "",
+      author: DEFAULT_AUTHOR, // Always set the default author
     },
   });
 
@@ -193,6 +194,7 @@ const BlogPostForm = ({ initialData, initialTitle }: BlogPostFormProps) => {
               form={form} 
               generateSlug={generateSlug}
               initialData={initialData}
+              defaultAuthor={DEFAULT_AUTHOR}
             />
 
             <FormField

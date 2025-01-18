@@ -8,9 +8,10 @@ interface BlogPostBasicInfoProps {
   form: UseFormReturn<BlogPostFormData>;
   generateSlug: (title: string) => string;
   initialData?: BlogPostFormData;
+  defaultAuthor: string;
 }
 
-export const BlogPostBasicInfo = ({ form, generateSlug, initialData }: BlogPostBasicInfoProps) => {
+export const BlogPostBasicInfo = ({ form, generateSlug, initialData, defaultAuthor }: BlogPostBasicInfoProps) => {
   useEffect(() => {
     const currentTitle = form.getValues("title");
     if (currentTitle && !initialData && !form.getValues("slug")) {
@@ -68,7 +69,7 @@ export const BlogPostBasicInfo = ({ form, generateSlug, initialData }: BlogPostB
           <FormItem>
             <FormLabel>Author</FormLabel>
             <FormControl>
-              <Input {...field} placeholder="Enter author name" />
+              <Input {...field} value={defaultAuthor} readOnly className="bg-gray-100" />
             </FormControl>
             <FormMessage />
           </FormItem>
