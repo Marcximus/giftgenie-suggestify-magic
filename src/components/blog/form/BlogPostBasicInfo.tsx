@@ -25,8 +25,12 @@ export const BlogPostBasicInfo = ({ form, generateSlug, initialData }: BlogPostB
                   {...field} 
                   onChange={(e) => {
                     field.onChange(e);
-                    if (!initialData) {
-                      form.setValue("slug", generateSlug(e.target.value));
+                    // Only auto-generate slug if this is a new post
+                    if (!initialData?.slug) {
+                      form.setValue("slug", generateSlug(e.target.value), {
+                        shouldValidate: true,
+                        shouldDirty: true
+                      });
                     }
                   }}
                 />
