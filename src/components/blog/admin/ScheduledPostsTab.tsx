@@ -27,8 +27,8 @@ export const ScheduledPostsTab = () => {
         .from("blog_post_queue")
         .select("*")
         .eq('status', 'pending')
-        .order('scheduled_date', { ascending: true, nullsLast: true })
-        .order('scheduled_time', { ascending: true, nullsLast: true });
+        .order('scheduled_date', { ascending: true, nullsFirst: false })
+        .order('scheduled_time', { ascending: true, nullsFirst: false });
       
       if (error) throw error;
 
