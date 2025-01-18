@@ -8,18 +8,23 @@ interface ProductCardContentProps {
 }
 
 const formatPrice = (price: string | number | undefined): string => {
+  // If price is undefined or null, return a default message
   if (!price) return 'Price unavailable';
   
+  // If price is already formatted with currency symbol, return as is
   if (typeof price === 'string' && (price.startsWith('$') || price.startsWith('USD'))) {
     return price;
   }
 
+  // Convert string to number if needed
   const numericPrice = typeof price === 'string' ? parseFloat(price) : price;
 
+  // Check if conversion resulted in a valid number
   if (isNaN(numericPrice)) {
     return 'Price unavailable';
   }
 
+  // Format the price with USD and 2 decimal places
   return `USD ${numericPrice.toFixed(2)}`;
 };
 
