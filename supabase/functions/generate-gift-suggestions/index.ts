@@ -43,7 +43,7 @@ serve(async (req) => {
 
     console.log('Enhanced prompt:', enhancedPrompt);
 
-    // Generate suggestions using OpenAI
+    // Generate suggestions using OpenAI with strict JSON formatting
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -55,21 +55,21 @@ serve(async (req) => {
         messages: [
           {
             role: "system",
-            content: `You are a gift suggestion expert. Your task is to provide 8 specific gift suggestions based on the user's request.
+            content: `You are a gift suggestion expert that ONLY returns a JSON array of 8 specific gift suggestions.
+            
+CRITICAL: Your response must be a valid JSON array containing EXACTLY 8 strings.
+DO NOT include any explanatory text, markdown formatting, or other content.
+DO NOT apologize or explain your suggestions.
+DO NOT use backticks or code blocks.
+ONLY return a raw JSON array like this: ["suggestion1", "suggestion2", "suggestion3", "suggestion4", "suggestion5", "suggestion6", "suggestion7", "suggestion8"]
 
-CRITICAL REQUIREMENTS:
-1. ALWAYS return EXACTLY 8 suggestions
-2. Format each suggestion as a specific product (e.g., "Sony WH-1000XM4 Wireless Headphones" not just "headphones")
-3. Include brand names when possible
-4. Make suggestions searchable on Amazon
-5. Ensure suggestions are age and gender appropriate
-6. Stay within the specified budget
-7. Avoid duplicate product categories
-
-RESPONSE FORMAT:
-- Return ONLY a JSON array of 8 strings
-- No markdown, no code blocks, no explanatory text
-- Example: ["Product 1", "Product 2", "Product 3", "Product 4", "Product 5", "Product 6", "Product 7", "Product 8"]`
+Each suggestion must be:
+- A specific product with brand name and model when applicable
+- Searchable on Amazon
+- Within the specified budget range
+- Appropriate for the recipient's age and gender
+- Different from other suggestions (no duplicates)
+- No generic descriptions`
           },
           { 
             role: "user", 
@@ -87,78 +87,47 @@ RESPONSE FORMAT:
     }
 
     const data = await response.json();
-    console.log('OpenAI response:', JSON.stringify(data, null, 2));
+    console.log('OpenAI raw response:', data);
     
     const content = data.choices[0].message.content.trim();
-    console.log('Raw content from OpenAI:', content);
+    console.log('Content from OpenAI:', content);
     
-    // Enhanced cleaning of the response
-    const cleanedContent = content
-      .replace(/```json\s*/g, '')    // Remove ```json
-      .replace(/```\s*/g, '')        // Remove remaining ```
-      .replace(/`/g, '')             // Remove any single backticks
-      .replace(/^\s*\[\s*/, '[')     // Clean up leading whitespace before array
-      .replace(/\s*\]\s*$/, ']')     // Clean up trailing whitespace after array
-      .trim();
+    // Validate and clean the suggestions
+    const suggestions = validateAndCleanSuggestions(content);
+    console.log('Validated suggestions:', suggestions);
     
-    console.log('Cleaned content:', cleanedContent);
-    
-    let suggestions;
-    try {
-      suggestions = JSON.parse(cleanedContent);
-      
-      if (!Array.isArray(suggestions)) {
-        console.error('Invalid response format: not an array', suggestions);
-        throw new Error('Invalid response format: expected array');
-      }
-      
-      if (suggestions.length !== 8) {
-        console.error('Invalid response format: wrong length', suggestions.length);
-        throw new Error('Invalid response format: expected array of 8 suggestions');
-      }
-      
-      if (!suggestions.every(item => typeof item === 'string' && item.trim().length > 0)) {
-        console.error('Invalid response format: invalid items', suggestions);
-        throw new Error('Invalid response format: all items must be non-empty strings');
-      }
-      
-      // Clean up suggestions
-      suggestions = suggestions.map(s => s.trim());
-      
-      // Process suggestions in parallel batches
-      console.log('Processing suggestions in parallel:', suggestions);
-      const processedProducts = await processSuggestionsInBatches(suggestions);
-      console.log('Processed products:', processedProducts);
-      
-      if (!processedProducts.length) {
-        throw new Error('No products found for suggestions');
-      }
-
-      // Log metrics
-      await supabase.from('api_metrics').insert({
-        endpoint: 'generate-gift-suggestions',
-        duration_ms: Math.round(performance.now() - startTime),
-        status: 'success',
-        cache_hit: false
-      });
-
-      return new Response(
-        JSON.stringify({ suggestions: processedProducts }),
-        { 
-          headers: { 
-            ...corsHeaders, 
-            'Content-Type': 'application/json',
-            'Cache-Control': 'no-store, no-cache, must-revalidate'
-          } 
-        }
-      );
-      
-    } catch (e) {
-      console.error('Failed to parse OpenAI response:', e);
-      console.error('Content that failed to parse:', cleanedContent);
-      throw new Error(`Failed to parse gift suggestions: ${e.message}`);
+    if (!suggestions || suggestions.length !== 8) {
+      throw new Error('Invalid number of suggestions received');
     }
 
+    // Process suggestions in parallel batches
+    console.log('Processing suggestions in parallel:', suggestions);
+    const processedProducts = await processSuggestionsInBatches(suggestions);
+    console.log('Processed products:', processedProducts);
+    
+    if (!processedProducts.length) {
+      throw new Error('No products found for suggestions');
+    }
+
+    // Log metrics
+    await supabase.from('api_metrics').insert({
+      endpoint: 'generate-gift-suggestions',
+      duration_ms: Math.round(performance.now() - startTime),
+      status: 'success',
+      cache_hit: false
+    });
+
+    return new Response(
+      JSON.stringify({ suggestions: processedProducts }),
+      { 
+        headers: { 
+          ...corsHeaders, 
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-store, no-cache, must-revalidate'
+        } 
+      }
+    );
+      
   } catch (error) {
     console.error('Error in generate-gift-suggestions function:', error);
     console.error('Stack trace:', error.stack);
