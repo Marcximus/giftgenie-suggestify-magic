@@ -19,28 +19,32 @@ const BlogNew = () => {
       }
 
       const publishedTitles = new Set(publishedPosts?.map(post => post.title));
+      console.log("Published titles:", publishedTitles);
 
       // Get the next scheduled post that isn't published yet
       const { data: nextPost, error: queueError } = await supabase
         .from("blog_post_queue")
         .select("title")
         .eq("status", "pending")
-        .order("scheduled_date", { ascending: true, nullsFirst: false })
-        .order("scheduled_time", { ascending: true, nullsFirst: false })
+        .order("scheduled_date", { ascending: true, nullsFirst: true })  // Changed to include null dates
+        .order("scheduled_time", { ascending: true, nullsFirst: true })  // Changed to include null times
         .limit(1)
-        .maybeSingle();
+        .single();
       
       if (queueError) {
         console.error("Error fetching queued posts:", queueError);
-        throw queueError;
+        return "";  // Return empty string instead of throwing
       }
+
+      console.log("Next post from queue:", nextPost);
 
       // If we found a post and it's not already published, return its title
       if (nextPost && !publishedTitles.has(nextPost.title)) {
-        return nextPost.title; // Return just the title string
+        console.log("Returning title:", nextPost.title);
+        return nextPost.title;
       }
 
-      return null;
+      return "";
     },
   });
 
@@ -56,11 +60,13 @@ const BlogNew = () => {
     );
   }
 
+  console.log("Rendering BlogNew with title:", nextScheduledPost);
+
   return (
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-3xl font-bold mb-8">Create New Blog Post</h1>
       <BlogPostForm 
-        initialTitle={nextScheduledPost || ""} 
+        initialTitle={nextScheduledPost} 
         key={nextScheduledPost} 
       />
     </div>
