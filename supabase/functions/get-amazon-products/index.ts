@@ -9,7 +9,6 @@ serve(async (req) => {
   console.log('Received request:', {
     method: req.method,
     url: req.url,
-    origin: req.headers.get('origin'),
     headers: Object.fromEntries(req.headers.entries())
   });
 
@@ -22,7 +21,6 @@ serve(async (req) => {
         ...corsHeaders,
         'Access-Control-Max-Age': '86400',
         'Cache-Control': 'no-store',
-        'Vary': 'Origin, Access-Control-Request-Headers, Access-Control-Request-Method'
       },
     });
   }
@@ -33,52 +31,61 @@ serve(async (req) => {
     }
 
     const { searchTerm } = await req.json();
-    const apiKey = Deno.env.get('RAPIDAPI_KEY');
+    console.log('Processing search request for term:', searchTerm);
 
-    console.log('Processing request:', {
-      searchTerm,
-      hasApiKey: !!apiKey,
-      origin: req.headers.get('origin')
-    });
-
-    if (!apiKey) {
-      console.error('RAPIDAPI_KEY not configured');
+    if (!searchTerm || typeof searchTerm !== 'string') {
       return new Response(
-        JSON.stringify({ 
-          error: 'API configuration error',
-          details: 'RapidAPI key is not configured',
-          timestamp: new Date().toISOString()
+        JSON.stringify({
+          error: 'Invalid request',
+          details: 'Search term is required and must be a string',
         }),
-        { 
-          status: 500,
-          headers: { 
-            ...corsHeaders, 
+        {
+          status: 400,
+          headers: {
+            ...corsHeaders,
             'Content-Type': 'application/json',
-            'Cache-Control': 'no-store'
-          }
+            'Cache-Control': 'no-store',
+          },
         }
       );
     }
 
-    console.log('Starting product search for term:', searchTerm);
-    
+    const apiKey = Deno.env.get('RAPIDAPI_KEY');
+    if (!apiKey) {
+      console.error('RAPIDAPI_KEY not configured');
+      return new Response(
+        JSON.stringify({
+          error: 'Configuration error',
+          details: 'API key not configured',
+        }),
+        {
+          status: 500,
+          headers: {
+            ...corsHeaders,
+            'Content-Type': 'application/json',
+            'Cache-Control': 'no-store',
+          },
+        }
+      );
+    }
+
+    console.log('Starting product search...');
     const product = await searchProducts(searchTerm, apiKey);
-    
+
     if (!product) {
       console.log('No products found for search term:', searchTerm);
       return new Response(
-        JSON.stringify({ 
-          error: 'No products found',
-          details: 'No matching products found for the search term',
-          timestamp: new Date().toISOString()
+        JSON.stringify({
+          error: 'Not found',
+          details: 'No matching products found',
         }),
-        { 
-          headers: { 
-            ...corsHeaders, 
+        {
+          status: 404,
+          headers: {
+            ...corsHeaders,
             'Content-Type': 'application/json',
-            'Cache-Control': 'no-store'
+            'Cache-Control': 'no-store',
           },
-          status: 404
         }
       );
     }
@@ -86,41 +93,35 @@ serve(async (req) => {
     console.log('Product search successful:', {
       title: product.title,
       asin: product.asin,
-      hasPrice: !!product.price,
-      hasImage: !!product.imageUrl
     });
 
     return new Response(
       JSON.stringify({ product }),
-      { 
-        headers: { 
-          ...corsHeaders, 
+      {
+        headers: {
+          ...corsHeaders,
           'Content-Type': 'application/json',
-          'Cache-Control': 'no-store'
-        }
+          'Cache-Control': 'no-store',
+        },
       }
     );
 
   } catch (error) {
     console.error('Error in get-amazon-products function:', error);
-    console.error('Stack trace:', error.stack);
     
     return new Response(
-      JSON.stringify({ 
-        error: 'Failed to fetch product details',
+      JSON.stringify({
+        error: 'Internal server error',
         details: error.message,
         timestamp: new Date().toISOString(),
-        origin: req.headers.get('origin'),
-        method: req.method,
-        stack: error.stack
       }),
-      { 
+      {
         status: 500,
-        headers: { 
-          ...corsHeaders, 
+        headers: {
+          ...corsHeaders,
           'Content-Type': 'application/json',
-          'Cache-Control': 'no-store'
-        }
+          'Cache-Control': 'no-store',
+        },
       }
     );
   }
