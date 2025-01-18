@@ -39,6 +39,59 @@ export const getFallbackSearchTerms = (searchTerm: string): string[] => {
   return [...new Set(searchTerms)];
 };
 
+// New helper function to score products based on relevance
+const scoreProduct = (product: any, searchTerm: string): number => {
+  let score = 0;
+  const lowerTitle = product.title.toLowerCase();
+  const lowerSearchTerm = searchTerm.toLowerCase();
+
+  // Heavily penalize accessories and replacement parts
+  const accessoryKeywords = [
+    'replacement',
+    'spare',
+    'refill',
+    'accessory',
+    'accessories',
+    'parts',
+    'attachment',
+    'filter',
+    'blade',
+    'cartridge'
+  ];
+
+  // Check if any accessory keywords are present
+  if (accessoryKeywords.some(keyword => lowerTitle.includes(keyword))) {
+    score -= 50;
+  }
+
+  // Boost score for exact match in title
+  if (lowerTitle.includes(lowerSearchTerm)) {
+    score += 30;
+  }
+
+  // Boost score for products that start with the search term
+  if (lowerTitle.startsWith(lowerSearchTerm)) {
+    score += 20;
+  }
+
+  // Penalize very long titles (likely to be variants/accessories)
+  if (product.title.length > 100) {
+    score -= 10;
+  }
+
+  // Boost products with ratings
+  if (product.product_star_rating) {
+    score += parseFloat(product.product_star_rating);
+  }
+
+  // Boost products with more reviews
+  if (product.product_num_ratings) {
+    score += Math.min(10, Math.log(parseInt(product.product_num_ratings)) / Math.log(10));
+  }
+
+  return score;
+};
+
 export const searchProducts = async (
   searchTerm: string,
   apiKey: string
@@ -118,26 +171,35 @@ const trySearch = async (
     const data = await response.json();
     console.log('Raw API response:', JSON.stringify(data, null, 2));
 
-    if (!data.data?.products?.[0]) {
+    if (!data.data?.products?.length) {
       console.log('No products found for term:', term);
       return null;
     }
 
-    const firstProduct = data.data.products[0];
-    console.log('First product data:', JSON.stringify(firstProduct, null, 2));
+    // Score and sort products
+    const scoredProducts = data.data.products
+      .filter((p: any) => p.asin) // Only consider products with ASIN
+      .map((p: any) => ({
+        product: p,
+        score: scoreProduct(p, term)
+      }))
+      .sort((a: any, b: any) => b.score - a.score); // Sort by score descending
 
-    if (!firstProduct.asin) {
-      console.log('No ASIN found in first product, searching for product with ASIN');
-      const productWithAsin = data.data.products.find((p: any) => p.asin);
-      if (!productWithAsin) {
-        console.log('No product with ASIN found');
-        return null;
-      }
-      console.log('Found product with ASIN:', productWithAsin.asin);
-      return formatProduct(productWithAsin);
+    console.log('Scored products:', scoredProducts.map((sp: any) => ({
+      title: sp.product.title,
+      score: sp.score
+    })));
+
+    if (scoredProducts.length === 0) {
+      console.log('No suitable products found after scoring');
+      return null;
     }
 
-    return formatProduct(firstProduct);
+    // Use the highest-scored product
+    const bestProduct = scoredProducts[0].product;
+    console.log('Selected best product:', bestProduct.title, 'with score:', scoredProducts[0].score);
+
+    return formatProduct(bestProduct);
   } catch (error) {
     console.error('Error in product search:', error);
     throw error;
