@@ -13,12 +13,12 @@ export const RelatedPosts = ({ currentPostId, currentPostSlug }: RelatedPostsPro
     queryFn: async () => {
       const { data: posts, error } = await supabase
         .from("blog_posts")
-        .select("title, slug, image_url, excerpt")
+        .select("title, slug, image_url, excerpt, meta_description")
         .neq("id", currentPostId)
         .neq("slug", currentPostSlug)
-        .lt("published_at", new Date().toISOString()) // Only get previously published posts
+        .lt("published_at", new Date().toISOString())
         .order("published_at", { ascending: false })
-        .limit(3);
+        .limit(6); // Increased from 3 to 6 for better internal linking
 
       if (error) {
         console.error("Error fetching related posts:", error);
@@ -32,41 +32,51 @@ export const RelatedPosts = ({ currentPostId, currentPostSlug }: RelatedPostsPro
   if (!relatedPosts?.length) return null;
 
   return (
-    <div className="mt-12 pt-8 border-t">
+    <nav className="mt-12 pt-8 border-t" aria-label="Related gift ideas">
       <h2 className="text-2xl font-bold mb-6 bg-gradient-to-r from-[#9b87f5] via-[#D946EF] to-[#0EA5E9] text-transparent bg-clip-text">
         More Gift Ideas
       </h2>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {relatedPosts.map((post) => (
-          <Link
-            key={post.slug}
-            to={`/blog/post/${post.slug}`}
-            className="group block"
-          >
-            <div className="rounded-lg overflow-hidden shadow-md transition-all duration-300 hover:shadow-xl">
-              {post.image_url && (
-                <div className="aspect-[16/9] relative overflow-hidden">
-                  <img
-                    src={post.image_url}
-                    alt={post.title}
-                    className="object-cover w-full h-full transform transition-transform duration-300 group-hover:scale-105"
-                  />
-                </div>
-              )}
-              <div className="p-4">
-                <h3 className="font-semibold text-lg mb-2 line-clamp-2 group-hover:text-primary transition-colors">
-                  {post.title}
-                </h3>
-                {post.excerpt && (
-                  <p className="text-sm text-muted-foreground line-clamp-2">
-                    {post.excerpt}
-                  </p>
+          <article key={post.slug} className="group">
+            <Link
+              to={`/blog/post/${post.slug}`}
+              className="block"
+              title={`Read more about ${post.title}`}
+              aria-label={`Read more about ${post.title}`}
+            >
+              <div className="rounded-lg overflow-hidden shadow-md transition-all duration-300 hover:shadow-xl">
+                {post.image_url && (
+                  <div className="aspect-[16/9] relative overflow-hidden">
+                    <img
+                      src={post.image_url}
+                      alt={post.title}
+                      className="object-cover w-full h-full transform transition-transform duration-300 group-hover:scale-105"
+                      loading="lazy"
+                      width="400"
+                      height="225"
+                    />
+                  </div>
                 )}
+                <div className="p-4">
+                  <h3 className="font-semibold text-lg mb-2 line-clamp-2 group-hover:text-primary transition-colors">
+                    {post.title}
+                  </h3>
+                  {post.meta_description ? (
+                    <p className="text-sm text-muted-foreground line-clamp-2">
+                      {post.meta_description}
+                    </p>
+                  ) : post.excerpt ? (
+                    <p className="text-sm text-muted-foreground line-clamp-2">
+                      {post.excerpt}
+                    </p>
+                  ) : null}
+                </div>
               </div>
-            </div>
-          </Link>
+            </Link>
+          </article>
         ))}
       </div>
-    </div>
+    </nav>
   );
 };
