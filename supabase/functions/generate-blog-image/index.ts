@@ -98,14 +98,19 @@ STYLE & VARIATION INSPIRATION:
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Convert base64 to buffer
-    const buffer = Buffer.from(imageData, 'base64');
+    // Convert base64 to Uint8Array
+    const binaryString = atob(imageData);
+    const bytes = new Uint8Array(binaryString.length);
+    for (let i = 0; i < binaryString.length; i++) {
+      bytes[i] = binaryString.charCodeAt(i);
+    }
+
     const fileName = `${crypto.randomUUID()}.png`;
 
     // Upload to Supabase Storage
     const { data: uploadData, error: uploadError } = await supabase.storage
       .from('blog-images')
-      .upload(fileName, buffer, {
+      .upload(fileName, bytes, {
         contentType: 'image/png',
         cacheControl: '3600',
         upsert: false
