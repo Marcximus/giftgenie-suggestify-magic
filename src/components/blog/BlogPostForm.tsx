@@ -50,21 +50,18 @@ const BlogPostForm = ({ initialData, initialTitle }: BlogPostFormProps) => {
         image_alt_text: "",
         related_posts: [],
       }),
-      title: initialTitle || "",  // Ensure initialTitle takes precedence
-      author: DEFAULT_AUTHOR, // Always set author to default value
+      title: initialTitle || "",
+      author: DEFAULT_AUTHOR,
     },
   });
 
-  // Update form when initialTitle changes
   useEffect(() => {
     if (initialTitle) {
       form.setValue('title', initialTitle);
-      // Also update the slug when initialTitle is set
       form.setValue('slug', generateSlug(initialTitle));
     }
   }, [initialTitle, form]);
 
-  // Watch the title field to auto-update slug
   useEffect(() => {
     const subscription = form.watch((value, { name }) => {
       if (name === 'title' && !initialData) {

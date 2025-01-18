@@ -52,20 +52,6 @@ export const BlogPostBasicInfo = ({ form, generateSlug, initialData }: BlogPostB
           )}
         />
       </div>
-
-      <FormField
-        control={form.control}
-        name="author"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>Author</FormLabel>
-            <FormControl>
-              <Input {...field} placeholder="Enter author name" />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
     </div>
   );
 };
