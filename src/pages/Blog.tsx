@@ -45,6 +45,11 @@ const Blog = () => {
               </Card>
             ))}
           </div>
+          <footer className="mt-8 text-center">
+            <p className="text-xs text-muted-foreground">
+              Some links may contain affiliate links from Amazon and other vendors
+            </p>
+          </footer>
         </div>
       </>
     );
@@ -94,6 +99,11 @@ const Blog = () => {
             </Link>
           ))}
         </div>
+        <footer className="mt-8 text-center">
+          <p className="text-xs text-muted-foreground">
+            Some links may contain affiliate links from Amazon and other vendors
+          </p>
+        </footer>
       </div>
     </>
   );

@@ -46,6 +46,12 @@ const Index = () => {
               </Suspense>
             )}
           </section>
+          
+          <footer className="mt-8 text-center">
+            <p className="text-xs text-muted-foreground">
+              Some links may contain affiliate links from Amazon and other vendors
+            </p>
+          </footer>
         </div>
       </main>
     </ErrorBoundary>
