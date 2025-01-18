@@ -75,12 +75,12 @@ CRITICAL REQUIREMENTS:
    - Include brand names and model numbers when possible
    - Each suggestion must be easily searchable on Amazon
 
-IMPORTANT: Return ONLY a plain JSON array of 8 strings. Do not include markdown formatting, code blocks, or any other text.
-Example of correct format: ["Product 1", "Product 2", "Product 3", "Product 4", "Product 5", "Product 6", "Product 7", "Product 8"]`
+CRITICAL: Your response must be ONLY a JSON array. Do not include any markdown, code blocks, or explanatory text.
+EXAMPLE FORMAT: ["Product 1", "Product 2", "Product 3", "Product 4", "Product 5", "Product 6", "Product 7", "Product 8"]`
           },
           { 
             role: "user", 
-            content: `${enhancedPrompt}\n\nIMPORTANT: Return ONLY a JSON array of 8 strings. No markdown, no code blocks, no other text.` 
+            content: `${enhancedPrompt}\n\nCRITICAL: Respond with ONLY a JSON array. No markdown, no code blocks, no text before or after.` 
           }
         ],
         temperature: 0.7,
@@ -99,10 +99,13 @@ Example of correct format: ["Product 1", "Product 2", "Product 3", "Product 4", 
     const content = data.choices[0].message.content.trim();
     console.log('Raw content from OpenAI:', content);
     
-    // Clean the response by removing any markdown or code block syntax
+    // Enhanced cleaning of the response
     const cleanedContent = content
-      .replace(/```json\s*/g, '')
-      .replace(/```\s*/g, '')
+      .replace(/```json\s*/g, '')    // Remove ```json
+      .replace(/```\s*/g, '')        // Remove remaining ```
+      .replace(/`/g, '')             // Remove any single backticks
+      .replace(/^\s*\[\s*/, '[')     // Clean up leading whitespace before array
+      .replace(/\s*\]\s*$/, ']')     // Clean up trailing whitespace after array
       .trim();
     
     console.log('Cleaned content:', cleanedContent);
