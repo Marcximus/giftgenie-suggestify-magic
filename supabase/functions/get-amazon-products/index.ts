@@ -1,120 +1,63 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { corsHeaders } from '../_shared/cors.ts';
-import { searchProducts } from './productSearch.ts';
+import { searchAmazonProduct } from './amazonApi.ts';
 
-console.log('Loading get-amazon-products function...');
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
 
 serve(async (req) => {
-  // Add CORS headers to all responses
-  const headers = {
-    ...corsHeaders,
-    'Content-Type': 'application/json',
-    'Cache-Control': 'no-store'
-  };
+  // Handle CORS preflight requests
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
+  }
 
   try {
-    // Handle CORS preflight requests
-    if (req.method === 'OPTIONS') {
-      return new Response(null, {
-        status: 204,
-        headers
-      });
-    }
+    const { searchTerm, priceRange } = await req.json();
+    console.log('Received request for search term:', searchTerm);
 
-    if (req.method !== 'POST') {
-      throw new Error(`Method ${req.method} not allowed`);
-    }
-
-    const requestData = await req.json();
-    console.log('Request payload:', requestData);
-
-    const { searchTerm } = requestData;
-    if (!searchTerm || typeof searchTerm !== 'string') {
-      return new Response(
-        JSON.stringify({
-          error: 'Invalid request',
-          details: 'Search term is required and must be a string',
-        }),
-        {
-          status: 400,
-          headers
-        }
-      );
+    if (!searchTerm) {
+      throw new Error('Search term is required');
     }
 
     const apiKey = Deno.env.get('RAPIDAPI_KEY');
     if (!apiKey) {
-      console.error('RAPIDAPI_KEY not configured');
-      return new Response(
-        JSON.stringify({
-          error: 'Configuration error',
-          details: 'API key not configured',
-        }),
-        {
-          status: 500,
-          headers
-        }
-      );
+      throw new Error('RAPIDAPI_KEY not configured');
     }
 
-    console.log('Starting product search with term:', searchTerm);
-    
-    // Set a timeout for the product search
+    // Set a timeout for the request
     const timeoutPromise = new Promise((_, reject) => {
       setTimeout(() => reject(new Error('Request timeout')), 25000);
     });
 
-    // Race between the product search and the timeout
-    const product = await Promise.race([
-      searchProducts(searchTerm, apiKey),
-      timeoutPromise
-    ]);
+    const searchPromise = searchAmazonProduct(searchTerm, apiKey, priceRange);
+    const product = await Promise.race([searchPromise, timeoutPromise]);
 
     if (!product) {
-      console.log('No products found for search term:', searchTerm);
+      console.log('No product found for search term:', searchTerm);
       return new Response(
-        JSON.stringify({
-          error: 'Not found',
-          details: 'No matching products found',
-        }),
-        {
-          status: 404,
-          headers
-        }
+        JSON.stringify({ error: 'No product found' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 404 }
       );
     }
 
-    console.log('Product search successful:', {
-      title: product.title,
-      asin: product.asin,
-    });
-
+    console.log('Found product:', product);
     return new Response(
       JSON.stringify({ product }),
-      {
-        status: 200,
-        headers
-      }
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
   } catch (error) {
-    console.error('Error in get-amazon-products function:', {
-      error: error.message,
-      stack: error.stack,
-      type: error.name,
-      timestamp: new Date().toISOString()
-    });
-    
+    console.error('Error in get-amazon-products:', error);
+    const status = error.message.includes('RAPIDAPI_KEY') ? 503 : 500;
     return new Response(
-      JSON.stringify({
-        error: 'Internal server error',
-        details: error.message,
-        type: error.name,
-        timestamp: new Date().toISOString(),
+      JSON.stringify({ 
+        error: error.message,
+        details: error.stack
       }),
-      {
-        status: 500,
-        headers
+      { 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status 
       }
     );
   }
