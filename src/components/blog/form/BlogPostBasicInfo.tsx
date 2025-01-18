@@ -23,10 +23,8 @@ export const BlogPostBasicInfo = ({ form, generateSlug, initialData }: BlogPostB
               <FormControl>
                 <Input 
                   {...field} 
-                  onChange={(e) => {
-                    field.onChange(e);
-                    const slug = generateSlug(e.target.value);
-                    form.setValue("slug", slug);
+                  onBlur={() => {
+                    form.setValue("slug", generateSlug(field.value));
                   }}
                 />
               </FormControl>
