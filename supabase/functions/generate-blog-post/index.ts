@@ -1,8 +1,11 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 import { buildBlogPrompt } from './promptBuilder.ts';
-import { corsHeaders } from '../_shared/cors.ts';
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -11,34 +14,13 @@ serve(async (req) => {
 
   try {
     const { title } = await req.json();
-    console.log('Processing blog post for title:', title);
+    console.log('Generating blog post for title:', title);
 
     // Extract number of products from title
-    const numMatch = title.match(/top\s+(\d+)/i);
-    const numProducts = numMatch ? parseInt(numMatch[1]) : 8;
+    const numMatch = title.match(/top\s+(\d+)|best\s+(\d+)/i);
+    const numProducts = numMatch ? parseInt(numMatch[1] || numMatch[2]) : 10;
     console.log('Number of products to generate:', numProducts);
 
-    // Detect demographic information
-    const titleLower = title.toLowerCase();
-    const isTeenage = titleLower.includes('teen') || titleLower.includes('teenage');
-    const isFemale = titleLower.includes('sister') || titleLower.includes('girl') || titleLower.includes('daughter');
-    
-    // Build demographic-specific prompt
-    const demographicContext = isTeenage && isFemale ? `
-      CRITICAL: These suggestions are specifically for a teenage girl. Consider:
-      - Current teen trends and interests (TikTok, Instagram, etc.)
-      - Age-appropriate items (13-19 years)
-      - Popular brands among teenage girls
-      - Social media and technology preferences
-      - Creative expression and personal style
-      - School and study needs
-      - Social activities and hobbies
-      - Beauty and fashion interests
-      - Music and entertainment preferences
-      - Room decoration and personalization
-    ` : '';
-
-    // Get the prompt from promptBuilder
     const prompt = buildBlogPrompt(numProducts);
     console.log('Using prompt system content:', prompt.content.substring(0, 200) + '...');
 
@@ -49,12 +31,12 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: "gpt-4o-mini", // Changed from any potential DALL-E capable model
+        model: "gpt-4",
         messages: [
           prompt,
           {
             role: "user",
-            content: `Create a fun, engaging blog post about: ${title}\n\n${demographicContext}`
+            content: `Create a fun, engaging blog post about: ${title}`
           }
         ],
         temperature: 0.7,
@@ -65,50 +47,33 @@ serve(async (req) => {
     });
 
     if (!response.ok) {
-      const error = await response.text();
-      console.error('OpenAI API error:', error);
-      throw new Error(`OpenAI API error: ${error}`);
+      const errorText = await response.text();
+      console.error('OpenAI API error:', response.status, errorText);
+      throw new Error(`OpenAI API error: ${response.status}\n${errorText}`);
     }
 
     const openaiData = await response.json();
     console.log('OpenAI response received, processing content...');
 
-    const initialContent = openaiData.choices[0].message.content;
-    console.log('Generated content length:', initialContent.length);
-    console.log('Generated content preview:', initialContent.substring(0, 500));
-    console.log('Content contains <h3> tags:', initialContent.includes('<h3>'));
-    console.log('Content contains <hr> tags:', initialContent.includes('<hr'));
-    console.log('Number of product sections:', (initialContent.match(/<h3>/g) || []).length);
+    const content = openaiData.choices[0].message.content;
+    console.log('Generated content length:', content.length);
+    console.log('Content contains <h3> tags:', content.includes('<h3>'));
+    console.log('Content contains <hr> tags:', content.includes('<hr'));
+    console.log('Number of product sections:', (content.match(/<h3>/g) || []).length);
 
-    // Initialize Supabase client
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
-
-    // Process the content to add Amazon product information
-    const { data: processedContent, error: processingError } = await supabase.functions.invoke('process-blog-content', {
-      body: { content: initialContent }
-    });
-
-    if (processingError) {
-      console.error('Content processing error:', processingError);
-      throw processingError;
-    }
-
-    console.log('Content processed successfully');
-    console.log('Final content length:', processedContent.content.length);
-    console.log('Number of affiliate links:', processedContent.affiliateLinks?.length || 0);
-    console.log('Final content preview:', processedContent.content.substring(0, 500));
-
+    // Return the generated content
     return new Response(
-      JSON.stringify(processedContent),
+      JSON.stringify({ 
+        content,
+        affiliateLinks: [] // Will be populated by the process-blog-content function
+      }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
   } catch (error) {
     console.error('Error in generate-blog-post:', error);
     return new Response(
-      JSON.stringify({
+      JSON.stringify({ 
         error: error.message,
         timestamp: new Date().toISOString(),
         type: 'generate-blog-post-error'
