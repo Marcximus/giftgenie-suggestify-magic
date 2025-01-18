@@ -20,7 +20,8 @@ serve(async (req) => {
       headers: {
         ...corsHeaders,
         'Access-Control-Max-Age': '86400',
-        'Cache-Control': 'no-store, no-cache, must-revalidate'
+        'Cache-Control': 'no-store, no-cache, must-revalidate',
+        'Vary': 'Origin'
       },
     });
   }
@@ -52,7 +53,8 @@ serve(async (req) => {
           headers: { 
             ...corsHeaders, 
             'Content-Type': 'application/json',
-            'Cache-Control': 'no-store, no-cache, must-revalidate'
+            'Cache-Control': 'no-store, no-cache, must-revalidate',
+            'Vary': 'Origin'
           }
         }
       );
@@ -74,7 +76,8 @@ serve(async (req) => {
           headers: { 
             ...corsHeaders, 
             'Content-Type': 'application/json',
-            'Cache-Control': 'no-store, no-cache, must-revalidate'
+            'Cache-Control': 'no-store, no-cache, must-revalidate',
+            'Vary': 'Origin'
           },
           status: 404
         }
@@ -94,7 +97,8 @@ serve(async (req) => {
         headers: { 
           ...corsHeaders, 
           'Content-Type': 'application/json',
-          'Cache-Control': 'no-store, no-cache, must-revalidate'
+          'Cache-Control': 'no-store, no-cache, must-revalidate',
+          'Vary': 'Origin'
         }
       }
     );
@@ -107,14 +111,17 @@ serve(async (req) => {
       JSON.stringify({ 
         error: 'Failed to fetch product details',
         details: error.message,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        origin: req.headers.get('origin'),
+        method: req.method
       }),
       { 
         status: 500,
         headers: { 
           ...corsHeaders, 
           'Content-Type': 'application/json',
-          'Cache-Control': 'no-store, no-cache, must-revalidate'
+          'Cache-Control': 'no-store, no-cache, must-revalidate',
+          'Vary': 'Origin'
         }
       }
     );
