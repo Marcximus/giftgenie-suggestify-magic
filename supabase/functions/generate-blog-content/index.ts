@@ -28,8 +28,14 @@ serve(async (req) => {
         userPrompt = `Blog Title: ${title}\nContent: ${content}\n\nCreate an SEO-optimized meta title.`;
         break;
       case 'seo-description':
-        systemPrompt = 'You are an SEO expert who creates optimized meta descriptions. Create a compelling meta description (150-160 characters) that accurately summarizes the content and includes relevant keywords.';
-        userPrompt = `Title: ${title}\nContent: ${content}\n\nCreate an SEO-optimized meta description.`;
+        systemPrompt = `You are an SEO expert who creates optimized meta descriptions. Create a compelling meta description (150-160 characters) that accurately summarizes the content and includes relevant keywords. 
+        
+        IMPORTANT RULES:
+        1. DO NOT include any years or dates (like 2023, 2024, etc.)
+        2. Focus on evergreen content
+        3. Use present tense
+        4. Include a clear call to action`;
+        userPrompt = `Title: ${title}\nContent: ${content}\n\nCreate an SEO-optimized meta description following the rules above.`;
         break;
       case 'seo-keywords':
         systemPrompt = 'You are an SEO expert who identifies relevant keywords. Extract or suggest 5-8 relevant keywords or key phrases from the content, separated by commas.';
@@ -63,7 +69,14 @@ serve(async (req) => {
     }
 
     const data = await response.json();
-    const generatedContent = data.choices[0].message.content;
+    let generatedContent = data.choices[0].message.content;
+
+    // Additional cleanup for meta descriptions to remove any years that might have slipped through
+    if (type === 'seo-description') {
+      generatedContent = generatedContent.replace(/\b(19|20)\d{2}\b/g, '');
+      // Remove any double spaces that might have been created
+      generatedContent = generatedContent.replace(/\s+/g, ' ').trim();
+    }
 
     return new Response(
       JSON.stringify({ content: generatedContent }),
