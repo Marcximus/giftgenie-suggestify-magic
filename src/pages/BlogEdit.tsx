@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import BlogPostForm from "@/components/blog/BlogPostForm";
 import { useToast } from "@/hooks/use-toast";
 import { BlogPostData } from "@/components/blog/types/BlogPostTypes";
+import { Json } from "@/integrations/supabase/types";
 
 const BlogEdit = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -46,13 +47,22 @@ const BlogEdit = () => {
         return null;
       }
 
+      // Helper function to safely parse JSON with a default value
+      const parseJsonWithDefault = <T,>(json: Json | null, defaultValue: T): T => {
+        if (!json) return defaultValue;
+        try {
+          return typeof json === 'string' ? JSON.parse(json) : json as T;
+        } catch {
+          return defaultValue;
+        }
+      };
+
       // Convert the database response to match BlogPostFormData structure
-      // Ensure JSON fields are properly parsed
       const formattedPost: BlogPostData = {
         ...data,
-        images: Array.isArray(data.images) ? data.images : [],
-        affiliate_links: Array.isArray(data.affiliate_links) ? data.affiliate_links : [],
-        related_posts: Array.isArray(data.related_posts) ? data.related_posts : [],
+        images: parseJsonWithDefault(data.images, []),
+        affiliate_links: parseJsonWithDefault(data.affiliate_links, []),
+        related_posts: parseJsonWithDefault(data.related_posts, []),
         excerpt: data.excerpt || null,
         image_url: data.image_url || null,
         published_at: data.published_at || null,
@@ -60,6 +70,17 @@ const BlogEdit = () => {
         meta_description: data.meta_description || null,
         meta_keywords: data.meta_keywords || null,
         image_alt_text: data.image_alt_text || null,
+        content_format_version: data.content_format_version || null,
+        generation_attempts: data.generation_attempts || null,
+        last_generation_error: data.last_generation_error || null,
+        processing_status: parseJsonWithDefault(data.processing_status, {
+          reviews_added: 0,
+          amazon_lookups: 0,
+          product_sections: 0,
+          successful_replacements: 0
+        }),
+        product_reviews: parseJsonWithDefault(data.product_reviews, []),
+        product_search_failures: parseJsonWithDefault(data.product_search_failures, [])
       };
       
       return formattedPost;
