@@ -1,3 +1,5 @@
+import { ProductReview } from "./ProductReview";
+
 interface ProductCardContentProps {
   description: string;
   price: string;
@@ -23,12 +25,11 @@ export const ProductCardContent = ({
           USD {price}
         </p>
         {rating && (
-          <div className="flex items-center gap-1 text-sm text-muted-foreground">
-            <span>{rating}</span>
-            {totalRatings && (
-              <span>({totalRatings})</span>
-            )}
-          </div>
+          <ProductReview 
+            rating={rating} 
+            totalRatings={totalRatings} 
+            className="mt-1"
+          />
         )}
       </div>
     </div>
