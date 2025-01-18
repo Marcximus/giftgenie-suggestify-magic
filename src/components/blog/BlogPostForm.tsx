@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import { TabsContent, Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -30,6 +30,8 @@ const BlogPostForm = ({ initialData, initialTitle }: BlogPostFormProps) => {
   const { toast } = useToast();
   const { generateContent, getFormFieldFromType } = useAIContent();
 
+  console.log("BlogPostForm initialTitle:", initialTitle);
+
   const form = useForm<BlogPostFormData>({
     defaultValues: initialData || {
       title: initialTitle || "",
@@ -48,6 +50,13 @@ const BlogPostForm = ({ initialData, initialTitle }: BlogPostFormProps) => {
       related_posts: [],
     },
   });
+
+  // Update form when initialTitle changes
+  useEffect(() => {
+    if (initialTitle && !initialData) {
+      form.setValue('title', initialTitle);
+    }
+  }, [initialTitle, form, initialData]);
 
   const generateAltText = async () => {
     const title = form.getValues('title');
