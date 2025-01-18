@@ -118,15 +118,21 @@ export type Database = {
           affiliate_links: Json | null
           author: string
           content: string
+          content_format_version: string | null
           created_at: string | null
           excerpt: string | null
+          generation_attempts: number | null
           id: string
           image_alt_text: string | null
           image_url: string | null
           images: Json | null
+          last_generation_error: string | null
           meta_description: string | null
           meta_keywords: string | null
           meta_title: string | null
+          processing_status: Json | null
+          product_reviews: Json | null
+          product_search_failures: Json | null
           published_at: string | null
           related_posts: Json | null
           slug: string
@@ -137,15 +143,21 @@ export type Database = {
           affiliate_links?: Json | null
           author: string
           content: string
+          content_format_version?: string | null
           created_at?: string | null
           excerpt?: string | null
+          generation_attempts?: number | null
           id?: string
           image_alt_text?: string | null
           image_url?: string | null
           images?: Json | null
+          last_generation_error?: string | null
           meta_description?: string | null
           meta_keywords?: string | null
           meta_title?: string | null
+          processing_status?: Json | null
+          product_reviews?: Json | null
+          product_search_failures?: Json | null
           published_at?: string | null
           related_posts?: Json | null
           slug: string
@@ -156,15 +168,21 @@ export type Database = {
           affiliate_links?: Json | null
           author?: string
           content?: string
+          content_format_version?: string | null
           created_at?: string | null
           excerpt?: string | null
+          generation_attempts?: number | null
           id?: string
           image_alt_text?: string | null
           image_url?: string | null
           images?: Json | null
+          last_generation_error?: string | null
           meta_description?: string | null
           meta_keywords?: string | null
           meta_title?: string | null
+          processing_status?: Json | null
+          product_reviews?: Json | null
+          product_search_failures?: Json | null
           published_at?: string | null
           related_posts?: Json | null
           slug?: string
@@ -263,6 +281,12 @@ export type Database = {
       invoke_blog_generation: {
         Args: Record<PropertyKey, never>
         Returns: string
+      }
+      validate_affiliate_link: {
+        Args: {
+          link: Json
+        }
+        Returns: boolean
       }
     }
     Enums: {
