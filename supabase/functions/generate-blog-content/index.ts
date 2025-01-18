@@ -28,8 +28,8 @@ serve(async (req) => {
         userPrompt = `Blog Title: ${title}\nContent: ${content}\n\nCreate an SEO-optimized meta title.`;
         break;
       case 'seo-description':
-        systemPrompt = 'You are an SEO expert who creates optimized meta descriptions. Create a compelling meta description (150-160 characters) that accurately summarizes the content and includes relevant keywords.';
-        userPrompt = `Title: ${title}\nContent: ${content}\n\nCreate an SEO-optimized meta description.`;
+        systemPrompt = 'You are an SEO expert who creates optimized meta descriptions. Create a compelling meta description (150-160 characters) that accurately summarizes the content and includes relevant keywords. DO NOT include any years or dates in the description.';
+        userPrompt = `Title: ${title}\nContent: ${content}\n\nCreate an SEO-optimized meta description without any year references.`;
         break;
       case 'seo-keywords':
         systemPrompt = 'You are an SEO expert who identifies relevant keywords. Extract or suggest 5-8 relevant keywords or key phrases from the content, separated by commas.';
