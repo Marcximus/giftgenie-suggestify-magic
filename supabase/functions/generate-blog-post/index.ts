@@ -16,6 +16,10 @@ serve(async (req) => {
     const { title } = await req.json();
     console.log('Generating blog post for title:', title);
 
+    if (!title || typeof title !== 'string') {
+      throw new Error('Invalid or missing title');
+    }
+
     // Extract number of products from title
     const numMatch = title.match(/top\s+(\d+)|best\s+(\d+)/i);
     const numProducts = numMatch ? parseInt(numMatch[1] || numMatch[2]) : 10;
@@ -24,14 +28,19 @@ serve(async (req) => {
     const prompt = buildBlogPrompt(numProducts);
     console.log('Using prompt system content:', prompt.content.substring(0, 200) + '...');
 
+    const openaiApiKey = Deno.env.get('OPENAI_API_KEY');
+    if (!openaiApiKey) {
+      throw new Error('OpenAI API key not configured');
+    }
+
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${Deno.env.get('OPENAI_API_KEY')}`,
+        'Authorization': `Bearer ${openaiApiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: "gpt-4",
+        model: "gpt-4o",
         messages: [
           prompt,
           {
@@ -61,7 +70,11 @@ serve(async (req) => {
     console.log('Content contains <hr> tags:', content.includes('<hr'));
     console.log('Number of product sections:', (content.match(/<h3>/g) || []).length);
 
-    // Return the generated content
+    // Validate content structure
+    if (!content.includes('<h1') || !content.includes('<h3')) {
+      throw new Error('Generated content is missing required HTML structure');
+    }
+
     return new Response(
       JSON.stringify({ 
         content,
