@@ -20,8 +20,8 @@ serve(async (req) => {
       headers: {
         ...corsHeaders,
         'Access-Control-Max-Age': '86400',
-        'Cache-Control': 'no-store, no-cache, must-revalidate',
-        'Vary': 'Origin'
+        'Cache-Control': 'no-store',
+        'Vary': 'Origin, Access-Control-Request-Headers'
       },
     });
   }
@@ -53,7 +53,7 @@ serve(async (req) => {
           headers: { 
             ...corsHeaders, 
             'Content-Type': 'application/json',
-            'Cache-Control': 'no-store, no-cache, must-revalidate',
+            'Cache-Control': 'no-store',
             'Vary': 'Origin'
           }
         }
@@ -76,7 +76,7 @@ serve(async (req) => {
           headers: { 
             ...corsHeaders, 
             'Content-Type': 'application/json',
-            'Cache-Control': 'no-store, no-cache, must-revalidate',
+            'Cache-Control': 'no-store',
             'Vary': 'Origin'
           },
           status: 404
@@ -97,7 +97,7 @@ serve(async (req) => {
         headers: { 
           ...corsHeaders, 
           'Content-Type': 'application/json',
-          'Cache-Control': 'no-store, no-cache, must-revalidate',
+          'Cache-Control': 'no-store',
           'Vary': 'Origin'
         }
       }
@@ -113,14 +113,15 @@ serve(async (req) => {
         details: error.message,
         timestamp: new Date().toISOString(),
         origin: req.headers.get('origin'),
-        method: req.method
+        method: req.method,
+        stack: error.stack
       }),
       { 
         status: 500,
         headers: { 
           ...corsHeaders, 
           'Content-Type': 'application/json',
-          'Cache-Control': 'no-store, no-cache, must-revalidate',
+          'Cache-Control': 'no-store',
           'Vary': 'Origin'
         }
       }
