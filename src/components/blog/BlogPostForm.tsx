@@ -33,30 +33,34 @@ const BlogPostForm = ({ initialData, initialTitle }: BlogPostFormProps) => {
   console.log("BlogPostForm initialTitle:", initialTitle);
 
   const form = useForm<BlogPostFormData>({
-    defaultValues: initialData || {
-      title: initialTitle || "",
-      slug: "",
-      content: "",
-      excerpt: "",
-      author: "",
-      image_url: "",
-      published_at: null,
-      meta_title: "",
-      meta_description: "",
-      meta_keywords: "",
-      images: [],
-      affiliate_links: [],
-      image_alt_text: "",
-      related_posts: [],
+    defaultValues: {
+      ...(initialData || {
+        title: "",
+        slug: "",
+        content: "",
+        excerpt: "",
+        author: "",
+        image_url: "",
+        published_at: null,
+        meta_title: "",
+        meta_description: "",
+        meta_keywords: "",
+        images: [],
+        affiliate_links: [],
+        image_alt_text: "",
+        related_posts: [],
+      }),
+      title: initialTitle || "",  // Ensure initialTitle takes precedence
     },
   });
 
   // Update form when initialTitle changes
   useEffect(() => {
-    if (initialTitle && !initialData) {
+    if (initialTitle) {
+      console.log("Setting form title to:", initialTitle);
       form.setValue('title', initialTitle);
     }
-  }, [initialTitle, form, initialData]);
+  }, [initialTitle, form]);
 
   const generateAltText = async () => {
     const title = form.getValues('title');

@@ -29,13 +29,9 @@ const BlogNew = () => {
         .order("scheduled_date", { ascending: true, nullsFirst: false })
         .order("scheduled_time", { ascending: true, nullsFirst: false })
         .limit(1)
-        .single();
+        .maybeSingle();  // Changed from single() to maybeSingle()
       
       if (queueError) {
-        if (queueError.code === 'PGRST116') {
-          console.log("No scheduled posts found");
-          return null;
-        }
         console.error("Error fetching queued posts:", queueError);
         throw queueError;
       }
@@ -55,12 +51,24 @@ const BlogNew = () => {
 
   console.log("Next scheduled post data:", nextScheduledPost);
 
+  if (isLoading) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <h1 className="text-3xl font-bold mb-8">Create New Blog Post</h1>
+        <div className="animate-pulse">
+          <div className="h-12 bg-gray-200 rounded mb-4"></div>
+          <div className="h-64 bg-gray-200 rounded"></div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-3xl font-bold mb-8">Create New Blog Post</h1>
       <BlogPostForm 
         initialTitle={nextScheduledPost?.title} 
-        key={nextScheduledPost?.title} // Force re-render when title changes
+        key={nextScheduledPost?.title} 
       />
     </div>
   );
