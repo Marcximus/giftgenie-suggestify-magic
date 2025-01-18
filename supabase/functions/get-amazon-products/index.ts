@@ -9,6 +9,7 @@ serve(async (req) => {
   console.log('Received request:', {
     method: req.method,
     url: req.url,
+    origin: req.headers.get('origin'),
     headers: Object.fromEntries(req.headers.entries())
   });
 
@@ -21,7 +22,7 @@ serve(async (req) => {
         ...corsHeaders,
         'Access-Control-Max-Age': '86400',
         'Cache-Control': 'no-store',
-        'Vary': 'Origin, Access-Control-Request-Headers'
+        'Vary': 'Origin, Access-Control-Request-Headers, Access-Control-Request-Method'
       },
     });
   }
@@ -34,10 +35,10 @@ serve(async (req) => {
     const { searchTerm } = await req.json();
     const apiKey = Deno.env.get('RAPIDAPI_KEY');
 
-    console.log('Processing request with:', {
+    console.log('Processing request:', {
       searchTerm,
       hasApiKey: !!apiKey,
-      apiKeyFirstChars: apiKey ? apiKey.substring(0, 4) : 'missing'
+      origin: req.headers.get('origin')
     });
 
     if (!apiKey) {
@@ -53,8 +54,7 @@ serve(async (req) => {
           headers: { 
             ...corsHeaders, 
             'Content-Type': 'application/json',
-            'Cache-Control': 'no-store',
-            'Vary': 'Origin'
+            'Cache-Control': 'no-store'
           }
         }
       );
@@ -76,8 +76,7 @@ serve(async (req) => {
           headers: { 
             ...corsHeaders, 
             'Content-Type': 'application/json',
-            'Cache-Control': 'no-store',
-            'Vary': 'Origin'
+            'Cache-Control': 'no-store'
           },
           status: 404
         }
@@ -97,8 +96,7 @@ serve(async (req) => {
         headers: { 
           ...corsHeaders, 
           'Content-Type': 'application/json',
-          'Cache-Control': 'no-store',
-          'Vary': 'Origin'
+          'Cache-Control': 'no-store'
         }
       }
     );
@@ -121,8 +119,7 @@ serve(async (req) => {
         headers: { 
           ...corsHeaders, 
           'Content-Type': 'application/json',
-          'Cache-Control': 'no-store',
-          'Vary': 'Origin'
+          'Cache-Control': 'no-store'
         }
       }
     );
