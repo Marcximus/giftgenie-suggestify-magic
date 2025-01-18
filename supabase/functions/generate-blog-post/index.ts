@@ -5,8 +5,14 @@ import { corsHeaders } from '../_shared/cors.ts';
 import { validateContent } from "./contentValidator.ts";
 
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { 
+      headers: {
+        ...corsHeaders,
+        'Access-Control-Max-Age': '86400',
+      } 
+    });
   }
 
   try {
@@ -53,7 +59,7 @@ serve(async (req) => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: "gpt-4",
+          model: "gpt-4o",
           messages: [
             basePrompt,
             {
@@ -66,7 +72,7 @@ serve(async (req) => {
           temperature: 0.7,
           max_tokens: 2000,
           presence_penalty: 0.1,
-          frequency_penalty: 0.3, // Increased to discourage repetition
+          frequency_penalty: 0.3,
         }),
       });
 
@@ -138,7 +144,15 @@ serve(async (req) => {
 
     return new Response(
       JSON.stringify(processedData),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { 
+        headers: { 
+          ...corsHeaders, 
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0',
+        } 
+      }
     );
 
   } catch (error) {
@@ -153,7 +167,11 @@ serve(async (req) => {
       }),
       { 
         status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        headers: { 
+          ...corsHeaders, 
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-store'
+        }
       }
     );
   }
