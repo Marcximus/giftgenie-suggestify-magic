@@ -18,28 +18,29 @@ const BlogNew = () => {
         throw publishedError;
       }
 
-      const publishedTitles = new Set(publishedPosts?.map(post => post.title));
+      const publishedTitles = new Set(publishedPosts?.map(post => post.title.toLowerCase()));
       console.log("Published titles:", publishedTitles);
 
-      // Get the next scheduled post that isn't published yet
-      const { data: nextPost, error: queueError } = await supabase
+      // Get all pending posts from the queue
+      const { data: queuedPosts, error: queueError } = await supabase
         .from("blog_post_queue")
         .select("title")
         .eq("status", "pending")
-        .order("scheduled_date", { ascending: true, nullsFirst: true })  // Changed to include null dates
-        .order("scheduled_time", { ascending: true, nullsFirst: true })  // Changed to include null times
-        .limit(1)
-        .single();
+        .order("scheduled_date", { ascending: true, nullsFirst: true })
+        .order("scheduled_time", { ascending: true, nullsFirst: true });
       
       if (queueError) {
         console.error("Error fetching queued posts:", queueError);
-        return "";  // Return empty string instead of throwing
+        return "";
       }
 
-      console.log("Next post from queue:", nextPost);
+      console.log("All queued posts:", queuedPosts);
 
-      // If we found a post and it's not already published, return its title
-      if (nextPost && !publishedTitles.has(nextPost.title)) {
+      // Find the first post that isn't published yet
+      const nextPost = queuedPosts?.find(post => !publishedTitles.has(post.title.toLowerCase()));
+      console.log("Next unpublished post:", nextPost);
+
+      if (nextPost) {
         console.log("Returning title:", nextPost.title);
         return nextPost.title;
       }
