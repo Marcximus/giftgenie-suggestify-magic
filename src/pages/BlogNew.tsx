@@ -1,7 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
-import { BlogPostForm } from "@/components/blog/BlogPostForm";
+import BlogPostForm from "@/components/blog/BlogPostForm";
 import { supabase } from "@/integrations/supabase/client";
-import { BlogPostFormData } from "@/components/blog/types/BlogPostTypes";
 
 const BlogNew = () => {
   const { data: nextScheduledPost, isLoading } = useQuery({
@@ -62,17 +61,13 @@ const BlogNew = () => {
     );
   }
 
-  const handleSubmit = async (data: BlogPostFormData) => {
-    // Implementation of submit logic
-    console.log("Submitting blog post:", data);
-  };
+  console.log("Rendering BlogNew with title:", nextScheduledPost);
 
   return (
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-3xl font-bold mb-8">Create New Blog Post</h1>
       <BlogPostForm 
         initialTitle={nextScheduledPost} 
-        onSubmit={handleSubmit}
         key={nextScheduledPost} 
       />
     </div>
