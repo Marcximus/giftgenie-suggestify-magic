@@ -1,10 +1,11 @@
 import { FormControl, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Upload, Image as ImageIcon } from "lucide-react";
+import { Upload, Image as ImageIcon, Wand2 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useState } from "react";
 import { UseFormSetValue, useFormContext } from "react-hook-form";
+import { Button } from "@/components/ui/button";
 import { BlogPostFormData } from "./types/BlogPostTypes";
 
 interface BlogImageUploadProps {
@@ -14,6 +15,7 @@ interface BlogImageUploadProps {
 
 export const BlogImageUpload = ({ value, setValue }: BlogImageUploadProps) => {
   const [isUploading, setIsUploading] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
   const { toast } = useToast();
   const form = useFormContext<BlogPostFormData>();
 
@@ -62,6 +64,39 @@ export const BlogImageUpload = ({ value, setValue }: BlogImageUploadProps) => {
     }
   };
 
+  const handleGenerateImage = async () => {
+    setIsGenerating(true);
+    try {
+      const title = form.getValues('title');
+      if (!title) {
+        throw new Error('Please provide a title first');
+      }
+
+      const { data, error } = await supabase.functions.invoke('generate-blog-image', {
+        body: { title }  // Remove the hardcoded prompt, let the Edge Function handle it
+      });
+
+      if (error) throw error;
+
+      if (data?.imageUrl) {
+        setValue('image_url', data.imageUrl);
+        toast({
+          title: "Success",
+          description: "Image generated successfully",
+        });
+      }
+    } catch (error: any) {
+      console.error('Generation error:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to generate image",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
   return (
     <div className="space-y-4">
       <Input value={value} readOnly />
@@ -70,7 +105,7 @@ export const BlogImageUpload = ({ value, setValue }: BlogImageUploadProps) => {
           type="file"
           accept="image/*"
           onChange={handleImageUpload}
-          disabled={isUploading}
+          disabled={isUploading || isGenerating}
           className="hidden"
           id="image-upload"
         />
@@ -87,10 +122,25 @@ export const BlogImageUpload = ({ value, setValue }: BlogImageUploadProps) => {
             </>
           )}
         </label>
+        <Button
+          type="button"
+          variant="secondary"
+          onClick={handleGenerateImage}
+          disabled={isGenerating || isUploading}
+        >
+          {isGenerating ? (
+            "Generating..."
+          ) : (
+            <>
+              <Wand2 className="w-4 h-4 mr-2" />
+              Generate with AI
+            </>
+          )}
+        </Button>
         {value && (
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <ImageIcon className="w-4 h-4" />
-            Image uploaded
+            Image {isGenerating ? 'generating' : 'uploaded'}
           </div>
         )}
       </div>

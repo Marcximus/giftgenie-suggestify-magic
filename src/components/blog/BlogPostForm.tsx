@@ -15,20 +15,22 @@ import { BlogPostContent } from "./form/BlogPostContent";
 import { BlogPostSEO } from "./form/BlogPostSEO";
 import { BlogPostFormData, BlogPostData } from "./types/BlogPostTypes";
 import { Input } from "@/components/ui/input";
+import { Wand2 } from "lucide-react";
 
 interface BlogPostFormProps {
   initialData?: BlogPostData;
   initialTitle?: string;
 }
 
-const DEFAULT_AUTHOR = "Get The Gift Team";
-
 const BlogPostForm = ({ initialData, initialTitle }: BlogPostFormProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isGeneratingAltText, setIsGeneratingAltText] = useState(false);
   const [activeTab, setActiveTab] = useState("edit");
   const navigate = useNavigate();
   const { toast } = useToast();
   const { generateContent, getFormFieldFromType } = useAIContent();
+
+  console.log("BlogPostForm initialTitle:", initialTitle);
 
   const form = useForm<BlogPostFormData>({
     defaultValues: {
@@ -37,7 +39,7 @@ const BlogPostForm = ({ initialData, initialTitle }: BlogPostFormProps) => {
         slug: "",
         content: "",
         excerpt: "",
-        author: DEFAULT_AUTHOR,
+        author: "",
         image_url: "",
         published_at: null,
         meta_title: "",
@@ -48,11 +50,11 @@ const BlogPostForm = ({ initialData, initialTitle }: BlogPostFormProps) => {
         image_alt_text: "",
         related_posts: [],
       }),
-      title: initialTitle || "",
-      author: DEFAULT_AUTHOR,
+      title: initialTitle || "",  // Ensure initialTitle takes precedence
     },
   });
 
+  // Update form when initialTitle changes
   useEffect(() => {
     if (initialTitle) {
       console.log("Setting form title to:", initialTitle);
@@ -60,40 +62,49 @@ const BlogPostForm = ({ initialData, initialTitle }: BlogPostFormProps) => {
     }
   }, [initialTitle, form]);
 
-  const processContent = async (content: string): Promise<{ 
-    content: string; 
-    affiliateLinks: any[];
-  }> => {
-    console.log('Processing blog content...');
-    
-    if (!content) {
-      throw new Error('Content is required for processing');
+  const generateAltText = async () => {
+    const title = form.getValues('title');
+    if (!title) {
+      toast({
+        title: "Error",
+        description: "Please provide a title first",
+        variant: "destructive"
+      });
+      return;
     }
 
-    // Extract the actual content value if it's wrapped in an object
-    const contentToProcess = typeof content === 'object' && content !== null 
-      ? ('_type' in content && content._type === 'String' 
-          ? (content as { value: string }).value 
-          : String(content))
-      : String(content);
-      
-    console.log('Content to process:', contentToProcess.substring(0, 100) + '...');
-    
-    const { data, error } = await supabase.functions.invoke('process-blog-content', {
-      body: { content: contentToProcess }
-    });
+    setIsGeneratingAltText(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-blog-image', {
+        body: { 
+          title,
+          prompt: "Generate a descriptive alt text for this blog post's featured image" 
+        }
+      });
 
-    if (error) {
-      console.error('Error processing content:', error);
-      throw error;
+      if (error) throw error;
+
+      if (data?.altText) {
+        form.setValue('image_alt_text', data.altText, { 
+          shouldDirty: true,
+          shouldTouch: true,
+          shouldValidate: true 
+        });
+        toast({
+          title: "Success",
+          description: "Alt text generated successfully",
+        });
+      }
+    } catch (error: any) {
+      console.error('Generation error:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to generate alt text",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGeneratingAltText(false);
     }
-
-    console.log('Content processed successfully:', {
-      contentLength: data.content.length,
-      numAffiliateLinks: data.affiliateLinks.length
-    });
-
-    return data;
   };
 
   const generateUniqueSlug = async (baseSlug: string): Promise<string> => {
@@ -126,11 +137,6 @@ const BlogPostForm = ({ initialData, initialTitle }: BlogPostFormProps) => {
     try {
       const currentTime = new Date().toISOString();
       const publishedAt = isDraft ? null : currentTime;
-      
-      // Process content to add Amazon products and affiliate links
-      const processedData = await processContent(data.content);
-      data.content = processedData.content;
-      data.affiliate_links = processedData.affiliateLinks;
       
       const uniqueSlug = await generateUniqueSlug(data.slug);
       if (uniqueSlug !== data.slug) {
@@ -235,7 +241,6 @@ const BlogPostForm = ({ initialData, initialTitle }: BlogPostFormProps) => {
               form={form} 
               generateSlug={generateSlug}
               initialData={initialData}
-              defaultAuthor={DEFAULT_AUTHOR}
             />
 
             <FormField
@@ -258,7 +263,19 @@ const BlogPostForm = ({ initialData, initialTitle }: BlogPostFormProps) => {
               name="image_alt_text"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Image Alt Text</FormLabel>
+                  <FormLabel className="flex items-center justify-between">
+                    Image Alt Text
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={generateAltText}
+                      disabled={isGeneratingAltText}
+                    >
+                      <Wand2 className="w-4 h-4 mr-2" />
+                      {isGeneratingAltText ? "Generating..." : "Generate Alt Text"}
+                    </Button>
+                  </FormLabel>
                   <FormControl>
                     <Input 
                       {...field} 

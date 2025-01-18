@@ -278,6 +278,10 @@ export type Database = {
           minute: number
         }[]
       }
+      invoke_blog_generation: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       validate_affiliate_link: {
         Args: {
           link: Json

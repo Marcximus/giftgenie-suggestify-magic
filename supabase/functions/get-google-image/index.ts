@@ -1,60 +1,66 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { corsHeaders } from '../_shared/cors.ts';
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+}
 
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { headers: corsHeaders })
   }
 
   try {
-    const { searchTerm } = await req.json();
-    console.log('Received search term:', searchTerm);
-
-    const apiKey = Deno.env.get('GOOGLE_SEARCH_API_KEY');
-    const searchEngineId = Deno.env.get('GOOGLE_SEARCH_ENGINE_ID');
-
-    if (!apiKey || !searchEngineId) {
-      throw new Error('Missing Google Search API configuration');
+    const { searchTerm } = await req.json()
+    console.log('Searching Google Images for:', searchTerm)
+    
+    if (!searchTerm) {
+      throw new Error('Search term is required')
     }
 
-    console.log('Fetching image from Google Custom Search API');
+    const GOOGLE_API_KEY = Deno.env.get('GOOGLE_SEARCH_API_KEY')
+    const SEARCH_ENGINE_ID = Deno.env.get('GOOGLE_SEARCH_ENGINE_ID')
+
+    if (!GOOGLE_API_KEY || !SEARCH_ENGINE_ID) {
+      throw new Error('Google API configuration is missing')
+    }
+
+    // Clean up search term and add "product" to get more product-focused images
+    const query = `${searchTerm} product`.trim().replace(/\s+/g, '+')
+    
     const response = await fetch(
-      `https://www.googleapis.com/customsearch/v1?key=${apiKey}&cx=${searchEngineId}&q=${encodeURIComponent(searchTerm)}&searchType=image&num=1&safe=active`
-    );
+      `https://www.googleapis.com/customsearch/v1?key=${GOOGLE_API_KEY}&cx=${SEARCH_ENGINE_ID}&searchType=image&q=${query}&num=1`,
+      {
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      }
+    )
 
     if (!response.ok) {
-      console.error('Google API error:', response.status);
-      throw new Error(`Google API error: ${response.status}`);
+      throw new Error('Failed to fetch from Google API')
     }
 
-    const data = await response.json();
-    console.log('Google API response received');
-
-    if (data.items?.[0]?.link) {
-      console.log('Found image:', data.items[0].link);
-      return new Response(
-        JSON.stringify({ imageUrl: data.items[0].link }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    const data = await response.json()
+    const imageUrl = data.items?.[0]?.link || null
+    
+    if (!imageUrl) {
+      throw new Error('No image found')
     }
 
-    console.log('No image found in Google API response');
     return new Response(
-      JSON.stringify({ error: 'No image found' }),
-      { 
-        status: 404,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      }
-    );
-
+      JSON.stringify({ imageUrl }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    )
   } catch (error) {
-    console.error('Error in get-google-image:', error);
+    console.error('Error in get-google-image function:', error)
     return new Response(
       JSON.stringify({ error: error.message }),
       { 
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 500
       }
-    );
+    )
   }
-});
+})

@@ -13,13 +13,10 @@ export const ProductImage = ({ title, imageUrl }: ProductImageProps) => {
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
   
-  // Use a static fallback image instead of generating one
   const genericFallback = 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=300&q=80';
 
   const getOptimizedImageUrl = (url: string, width: number) => {
-    console.log('Optimizing image URL:', url);
     if (!url) return genericFallback;
-    // Only optimize Unsplash images, leave others as is
     if (url.includes('unsplash.com')) {
       return `${url}&w=${width}&q=80`;
     }
@@ -27,9 +24,7 @@ export const ProductImage = ({ title, imageUrl }: ProductImageProps) => {
   };
 
   const getTinyPlaceholder = (url: string) => {
-    console.log('Getting tiny placeholder for URL:', url);
     if (!url) return genericFallback;
-    // Only create placeholders for Unsplash images
     if (url.includes('unsplash.com')) {
       return `${url}&w=20&q=10&blur=5`;
     }
@@ -38,27 +33,19 @@ export const ProductImage = ({ title, imageUrl }: ProductImageProps) => {
 
   const fetchGoogleImage = async (searchTerm: string) => {
     try {
-      console.log('Starting Google image fetch for:', searchTerm);
       setIsLoadingFallback(true);
-      
       const { data, error } = await supabase.functions.invoke('get-google-image', {
         body: { searchTerm }
       });
 
-      if (error) {
-        console.error('Error fetching Google image:', error);
-        throw error;
-      }
-
+      if (error) throw error;
       if (data?.imageUrl) {
-        console.log('Successfully fetched Google image:', data.imageUrl);
         setCurrentImageUrl(data.imageUrl);
       } else {
-        console.log('No Google image found, using fallback');
         setCurrentImageUrl(genericFallback);
       }
     } catch (error) {
-      console.error('Error in fetchGoogleImage:', error);
+      console.error('Error fetching Google image:', error);
       setCurrentImageUrl(genericFallback);
     } finally {
       setIsLoadingFallback(false);
@@ -66,19 +53,15 @@ export const ProductImage = ({ title, imageUrl }: ProductImageProps) => {
   };
 
   const handleImageError = async () => {
-    console.log('Image load error triggered for URL:', currentImageUrl);
     setHasError(true);
     if (currentImageUrl !== genericFallback && title) {
-      console.log('Attempting to fetch Google image for:', title);
       await fetchGoogleImage(title);
     } else {
-      console.log('Using generic fallback image');
       setCurrentImageUrl(genericFallback);
     }
   };
 
   useEffect(() => {
-    console.log('ProductImage useEffect triggered with URL:', currentImageUrl);
     if (currentImageUrl) {
       const img = new Image();
       
@@ -87,14 +70,11 @@ export const ProductImage = ({ title, imageUrl }: ProductImageProps) => {
         .map(width => `${getOptimizedImageUrl(currentImageUrl, width)} ${width}w`)
         .join(', ');
       
-      console.log('Generated srcset:', srcset);
-      
       img.srcset = srcset;
       img.sizes = '(max-width: 640px) 300px, (max-width: 1024px) 600px, 900px';
       img.src = getOptimizedImageUrl(currentImageUrl, 600);
       
       img.onload = () => {
-        console.log('Image loaded successfully:', img.src);
         setIsLoading(false);
         setHasError(false);
       };

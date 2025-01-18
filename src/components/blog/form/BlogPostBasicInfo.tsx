@@ -2,23 +2,14 @@ import { FormField, FormItem, FormLabel, FormControl, FormDescription, FormMessa
 import { Input } from "@/components/ui/input";
 import { UseFormReturn } from "react-hook-form";
 import { BlogPostFormData } from "../types/BlogPostTypes";
-import { useEffect } from "react";
 
 interface BlogPostBasicInfoProps {
   form: UseFormReturn<BlogPostFormData>;
   generateSlug: (title: string) => string;
   initialData?: BlogPostFormData;
-  defaultAuthor: string;
 }
 
-export const BlogPostBasicInfo = ({ form, generateSlug, initialData, defaultAuthor }: BlogPostBasicInfoProps) => {
-  useEffect(() => {
-    const currentTitle = form.getValues("title");
-    if (currentTitle && !initialData && !form.getValues("slug")) {
-      form.setValue("slug", generateSlug(currentTitle));
-    }
-  }, [form.getValues("title")]);
-
+export const BlogPostBasicInfo = ({ form, generateSlug, initialData }: BlogPostBasicInfoProps) => {
   return (
     <div className="space-y-6">
       <div className="grid gap-6 md:grid-cols-2">
@@ -69,7 +60,7 @@ export const BlogPostBasicInfo = ({ form, generateSlug, initialData, defaultAuth
           <FormItem>
             <FormLabel>Author</FormLabel>
             <FormControl>
-              <Input {...field} value={defaultAuthor} readOnly className="bg-gray-100" />
+              <Input {...field} placeholder="Enter author name" />
             </FormControl>
             <FormMessage />
           </FormItem>

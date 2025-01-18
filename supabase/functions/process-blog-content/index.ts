@@ -3,7 +3,6 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 import { corsHeaders } from '../_shared/cors.ts';
 
 const RAPIDAPI_HOST = 'real-time-amazon-data.p.rapidapi.com';
-const MAX_RETRIES = 3;
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -33,169 +32,152 @@ serve(async (req) => {
     if (!rapidApiKey) {
       throw new Error('RAPIDAPI_KEY not configured');
     }
+    console.log('RapidAPI Key available:', !!rapidApiKey);
 
     // Split content into sections
     const sections = content.split('<hr class="my-8">');
-    console.log('Number of sections:', sections.length);
+    console.log('Number of sections split from content:', sections.length);
     
     const processedSections = [];
     const affiliateLinks = [];
-    let amazonLookups = 0;
-    let reviewsAdded = 0;
-    let productSections = 0;
-    let successfulReplacements = 0;
 
-    // Process each section
-    for (const section of sections) {
-      if (!section.includes('<h3>')) {
-        processedSections.push(section);
-        continue;
-      }
-
-      productSections++;
-      const titleMatch = section.match(/<h3>(.*?)<\/h3>/);
-      if (!titleMatch) {
-        processedSections.push(section);
-        continue;
-      }
-
-      const searchTerm = titleMatch[1];
-      console.log('Processing product section:', searchTerm);
-      amazonLookups++;
-
-      // Implement retry logic for Amazon API calls
-      let retryCount = 0;
-      let product = null;
-
-      while (retryCount < MAX_RETRIES && !product) {
+    for (let i = 0; i < sections.length; i++) {
+      const section = sections[i];
+      console.log(`Processing section ${i + 1}/${sections.length}`);
+      
+      if (section.includes('<h3>')) {
         try {
-          const searchUrl = `https://${RAPIDAPI_HOST}/search?query=${encodeURIComponent(searchTerm)}&country=US&category_id=aps`;
-          const searchResponse = await fetch(searchUrl, {
-            headers: {
-              'X-RapidAPI-Key': rapidApiKey,
-              'X-RapidAPI-Host': RAPIDAPI_HOST,
+          const titleMatch = section.match(/<h3>(.*?)<\/h3>/);
+          if (titleMatch) {
+            const searchTerm = titleMatch[1];
+            console.log('Found product title:', searchTerm);
+            
+            const searchUrl = `https://${RAPIDAPI_HOST}/search?query=${encodeURIComponent(searchTerm)}&country=US&category_id=aps`;
+            const searchResponse = await fetch(searchUrl, {
+              headers: {
+                'X-RapidAPI-Key': rapidApiKey,
+                'X-RapidAPI-Host': RAPIDAPI_HOST,
+              }
+            });
+
+            if (!searchResponse.ok) {
+              console.error('Amazon API error:', searchResponse.status);
+              processedSections.push(section);
+              continue;
             }
-          });
 
-          if (!searchResponse.ok) {
-            throw new Error(`Amazon API error: ${searchResponse.status}`);
-          }
+            const searchData = await searchResponse.json();
+            console.log('Search response:', searchData);
 
-          const searchData = await searchResponse.json();
-          if (searchData.data?.products?.[0]) {
-            product = searchData.data.products[0];
+            if (searchData.data?.products?.[0]) {
+              const product = searchData.data.products[0];
+              console.log('Processing product:', {
+                title: product.title,
+                hasImage: !!product.product_photo,
+                hasAsin: !!product.asin
+              });
+
+              if (!product.asin || !product.product_photo) {
+                console.warn('Product missing required data');
+                processedSections.push(section);
+                continue;
+              }
+
+              // Get detailed product information
+              const detailsUrl = `https://${RAPIDAPI_HOST}/product-details?asin=${product.asin}&country=US`;
+              const detailsResponse = await fetch(detailsUrl, {
+                headers: {
+                  'X-RapidAPI-Key': rapidApiKey,
+                  'X-RapidAPI-Host': RAPIDAPI_HOST,
+                }
+              });
+
+              if (!detailsResponse.ok) {
+                console.warn('Failed to get product details:', detailsResponse.status);
+                processedSections.push(section);
+                continue;
+              }
+
+              const detailsData = await detailsResponse.json();
+              console.log('Product details:', detailsData);
+
+              // Use specific product ASIN for the affiliate link
+              const affiliateLink = `https://www.amazon.com/dp/${product.asin}?tag=${associateId}`;
+              affiliateLinks.push({
+                title: product.title,
+                url: affiliateLink,
+                asin: product.asin
+              });
+
+              const [beforeTitle, afterTitle] = section.split('</h3>');
+              const productHtml = `${beforeTitle}</h3>
+                <div class="flex flex-col items-center">
+                  <div class="w-full max-w-2xl mb-2">
+                    <img 
+                      src="${product.product_photo}" 
+                      alt="${titleMatch[1]}"
+                      class="w-80 h-80 sm:w-96 sm:h-96 lg:w-[500px] lg:h-[500px] object-contain rounded-lg shadow-md mx-auto" 
+                      loading="lazy"
+                    />
+                  </div>
+                  <div class="product-actions">
+                    ${product.product_star_rating ? `
+                      <div class="flex items-center gap-1">
+                        ${Array.from({ length: 5 }, (_, i) => 
+                          `<span class="text-yellow-400 text-sm">
+                            ${i < Math.floor(parseFloat(product.product_star_rating)) ? '★' : '☆'}
+                          </span>`
+                        ).join('')}
+                        <span class="text-sm font-medium ml-1">${parseFloat(product.product_star_rating).toFixed(1)}</span>
+                        ${product.product_num_ratings ? `
+                          <span class="text-sm text-gray-500">
+                            (${parseInt(product.product_num_ratings).toLocaleString()})
+                          </span>
+                        ` : ''}
+                      </div>
+                    ` : ''}
+                    <a 
+                      href="${affiliateLink}" 
+                      target="_blank" 
+                      rel="noopener noreferrer" 
+                      class="amazon-button"
+                    >
+                      View on Amazon
+                    </a>
+                  </div>
+                </div>
+                <div class="prose prose-sm md:prose-base mt-4">
+                  ${afterTitle.trim().split('\n').map(paragraph => 
+                    paragraph.trim() ? `<p>${paragraph.trim()}</p>` : ''
+                  ).join('\n')}
+                </div>`;
+
+              processedSections.push(productHtml);
+              console.log('Successfully processed product section');
+            } else {
+              console.warn('No product found for:', searchTerm);
+              processedSections.push(section);
+            }
+          } else {
+            processedSections.push(section);
           }
         } catch (error) {
-          console.error(`Attempt ${retryCount + 1} failed:`, error);
-          retryCount++;
-          if (retryCount === MAX_RETRIES) {
-            console.error('Max retries reached for:', searchTerm);
-            processedSections.push(section);
-            continue;
-          }
-          // Add exponential backoff
-          await new Promise(resolve => setTimeout(resolve, Math.pow(2, retryCount) * 1000));
+          console.error('Error processing product section:', error);
+          processedSections.push(section);
         }
-      }
-
-      if (!product?.asin || !product.product_photo) {
+      } else {
         processedSections.push(section);
-        continue;
       }
-
-      successfulReplacements++;
-      let rating, totalRatings;
-
-      try {
-        const detailsUrl = `https://${RAPIDAPI_HOST}/product-details?asin=${product.asin}&country=US`;
-        const detailsResponse = await fetch(detailsUrl, {
-          headers: {
-            'X-RapidAPI-Key': rapidApiKey,
-            'X-RapidAPI-Host': RAPIDAPI_HOST,
-          }
-        });
-
-        if (detailsResponse.ok) {
-          const detailsData = await detailsResponse.json();
-          if (detailsData.data?.product_rating) {
-            rating = parseFloat(detailsData.data.product_rating);
-            totalRatings = parseInt(detailsData.data.product_num_ratings);
-            reviewsAdded++;
-          }
-        }
-      } catch (error) {
-        console.error('Error fetching product details:', error);
-      }
-
-      const affiliateLink = `https://www.amazon.com/dp/${product.asin}?tag=${associateId}`;
-      affiliateLinks.push({
-        title: product.title,
-        url: affiliateLink,
-        asin: product.asin
-      });
-
-      const [beforeTitle, afterTitle] = section.split('</h3>');
-      const processedSection = `${beforeTitle}</h3>
-        <div class="flex flex-col items-center">
-          <div class="w-full max-w-2xl mb-2">
-            <img 
-              src="${product.product_photo}" 
-              alt="${titleMatch[1]}"
-              class="w-80 h-80 sm:w-96 sm:h-96 lg:w-[500px] lg:h-[500px] object-contain rounded-lg shadow-md mx-auto" 
-              loading="lazy"
-            />
-          </div>
-          <div class="product-actions">
-            ${rating ? `
-              <div class="flex items-center gap-1">
-                ${Array.from({ length: 5 }, (_, i) => 
-                  `<span class="text-yellow-400 text-sm">
-                    ${i < Math.floor(rating) ? '★' : '☆'}
-                  </span>`
-                ).join('')}
-                <span class="text-sm font-medium ml-1">${rating.toFixed(1)}</span>
-                ${totalRatings ? `
-                  <span class="text-sm text-gray-500">
-                    (${totalRatings.toLocaleString()})
-                  </span>
-                ` : ''}
-              </div>
-            ` : ''}
-            <a 
-              href="${affiliateLink}" 
-              target="_blank" 
-              rel="noopener noreferrer" 
-              class="amazon-button"
-            >
-              View on Amazon
-            </a>
-          </div>
-        </div>
-        ${afterTitle}`;
-
-      processedSections.push(processedSection);
     }
 
     const processedContent = processedSections.join('<hr class="my-8">');
-    console.log('Processing complete:', {
-      contentLength: processedContent.length,
-      affiliateLinks: affiliateLinks.length,
-      amazonLookups,
-      reviewsAdded,
-      productSections,
-      successfulReplacements
-    });
+    console.log('Processed content length:', processedContent.length);
+    console.log('Number of affiliate links:', affiliateLinks.length);
 
     return new Response(
       JSON.stringify({
         content: processedContent,
-        affiliateLinks,
-        stats: {
-          amazonLookups,
-          reviewsAdded,
-          productSections,
-          successfulReplacements
-        }
+        affiliateLinks
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
