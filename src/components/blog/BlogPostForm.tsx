@@ -65,8 +65,15 @@ const BlogPostForm = ({ initialData, initialTitle }: BlogPostFormProps) => {
     affiliateLinks: any[];
   }> => {
     console.log('Processing blog content...');
+    // Extract the actual content value if it's wrapped in an object
+    const contentToProcess = typeof content === 'object' && content._type === 'String' 
+      ? content.value 
+      : content;
+      
+    console.log('Content to process:', contentToProcess.substring(0, 100) + '...');
+    
     const { data, error } = await supabase.functions.invoke('process-blog-content', {
-      body: { content }
+      body: { content: contentToProcess }
     });
 
     if (error) {
