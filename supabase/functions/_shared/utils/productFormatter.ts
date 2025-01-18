@@ -37,7 +37,6 @@ export const formatProductHtml = (
       ` : ''}
     </div>` : '';
 
-  // Preserve the original content structure while adding product info
   return `${beforeH3}<h3>${simplifiedTitle}</h3>
     <div class="flex flex-col items-center my-8 sm:my-10">
       <div class="relative w-full max-w-2xl mb-6">

@@ -1,178 +1,121 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { buildBlogPrompt } from "./promptBuilder.ts";
-import { processContent } from "../_shared/content-processor.ts";
+import "https://deno.land/x/xhr@0.1.0/mod.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
+import { buildBlogPrompt } from './promptBuilder.ts';
 import { corsHeaders } from '../_shared/cors.ts';
-import { validateContent } from "./contentValidator.ts";
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response(null, { 
-      headers: {
-        ...corsHeaders,
-        'Access-Control-Max-Age': '86400',
-        'Access-Control-Allow-Methods': 'POST, OPTIONS',
-      } 
-    });
+    return new Response(null, { headers: corsHeaders });
   }
 
   try {
     const { title } = await req.json();
     console.log('Processing blog post for title:', title);
 
-    if (!title || typeof title !== 'string') {
-      throw new Error('Title is required and must be a string');
-    }
-
-    const openaiKey = Deno.env.get('OPENAI_API_KEY');
-    const rapidApiKey = Deno.env.get('RAPIDAPI_KEY');
-    const associateId = Deno.env.get('AMAZON_ASSOCIATE_ID');
-
-    if (!openaiKey || !rapidApiKey || !associateId) {
-      throw new Error('Required environment variables are missing');
-    }
-
     // Extract number of products from title
-    const numberMatch = title.match(/(?:top\s+)?(\d+)\s+(?:best\s+)?/i);
-    const numberOfProducts = numberMatch ? parseInt(numberMatch[1]) : 8;
-    console.log('Number of products to generate:', numberOfProducts);
+    const numMatch = title.match(/top\s+(\d+)/i);
+    const numProducts = numMatch ? parseInt(numMatch[1]) : 8;
+    console.log('Number of products to generate:', numProducts);
+
+    // Detect demographic information
+    const titleLower = title.toLowerCase();
+    const isTeenage = titleLower.includes('teen') || titleLower.includes('teenage');
+    const isFemale = titleLower.includes('sister') || titleLower.includes('girl') || titleLower.includes('daughter');
+    
+    // Build demographic-specific prompt
+    const demographicContext = isTeenage && isFemale ? `
+      CRITICAL: These suggestions are specifically for a teenage girl. Consider:
+      - Current teen trends and interests (TikTok, Instagram, etc.)
+      - Age-appropriate items (13-19 years)
+      - Popular brands among teenage girls
+      - Social media and technology preferences
+      - Creative expression and personal style
+      - School and study needs
+      - Social activities and hobbies
+      - Beauty and fashion interests
+      - Music and entertainment preferences
+      - Room decoration and personalization
+    ` : '';
 
     // Get the prompt from promptBuilder
-    const basePrompt = buildBlogPrompt(title);
-    console.log('Using prompt system content:', basePrompt.content.substring(0, 200) + '...');
+    const prompt = buildBlogPrompt(numProducts);
+    console.log('Using prompt system content:', prompt.content.substring(0, 200) + '...');
 
-    // Track suggested products to prevent duplicates
-    const suggestedProducts = new Set<string>();
-
-    // Generate content in chunks
-    const generateChunk = async (startIndex: number, endIndex: number) => {
-      console.log(`Generating products ${startIndex + 1} to ${endIndex}`);
-      
-      // Add context about previously suggested products
-      const previousProducts = Array.from(suggestedProducts).join(', ');
-      const contextPrompt = previousProducts ? 
-        `\n\nIMPORTANT: The following products have already been suggested and MUST NOT be repeated: ${previousProducts}` : '';
-      
-      const response = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${openaiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: "gpt-4",
-          messages: [
-            basePrompt,
-            {
-              role: "user",
-              content: `Generate products ${startIndex + 1} to ${endIndex} for: ${title}. 
-                       Follow EXACTLY the format specified in the system message.
-                       Generate EXACTLY ${endIndex - startIndex} products.${contextPrompt}`
-            }
-          ],
-          temperature: 0.7,
-          max_tokens: 2000,
-          presence_penalty: 0.1,
-          frequency_penalty: 0.3,
-        }),
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('OpenAI API error response:', errorText);
-        throw new Error(`OpenAI API error: ${errorText}`);
-      }
-
-      const data = await response.json();
-      const content = data.choices[0].message.content;
-
-      // Extract product titles from the generated content
-      const productTitles = content.match(/<h3>(.*?)<\/h3>/g)?.map(match => 
-        match.replace(/<\/?h3>/g, '').trim()
-      ) || [];
-
-      // Add new products to the tracking set
-      productTitles.forEach(title => suggestedProducts.add(title));
-
-      return content;
-    };
-
-    // Generate content in chunks of 3 products
-    const CHUNK_SIZE = 3;
-    const contentChunks = [];
-    
-    for (let i = 0; i < numberOfProducts; i += CHUNK_SIZE) {
-      const endIndex = Math.min(i + CHUNK_SIZE, numberOfProducts);
-      const chunk = await generateChunk(i, endIndex);
-      contentChunks.push(chunk);
-    }
-
-    // Combine chunks
-    const introduction = contentChunks[0].split('<hr class="my-8">')[0];
-    const productSections = contentChunks.flatMap(chunk => {
-      const sections = chunk.split('<hr class="my-8">');
-      return sections.slice(sections[0].includes('<h1') ? 1 : 0);
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${Deno.env.get('OPENAI_API_KEY')}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: "gpt-4o",
+        messages: [
+          prompt,
+          {
+            role: "user",
+            content: `Create a fun, engaging blog post about: ${title}\n\n${demographicContext}`
+          }
+        ],
+        temperature: 0.7,
+        max_tokens: 3500,
+        presence_penalty: 0.1,
+        frequency_penalty: 0.1,
+      }),
     });
 
-    const combinedContent = [
-      introduction,
-      ...productSections
-    ].join('<hr class="my-8">');
-
-    console.log('Combined content length:', combinedContent.length);
-    console.log('Unique products generated:', suggestedProducts.size);
-
-    // Validate the combined content
-    if (!validateContent(combinedContent, title)) {
-      console.error('Generated content validation failed');
-      throw new Error('Generated content does not match required format or product count');
+    if (!response.ok) {
+      const error = await response.text();
+      console.error('OpenAI API error:', error);
+      throw new Error(`OpenAI API error: ${error}`);
     }
 
-    // Process the content to add Amazon product data
-    console.log('Processing content with Amazon data...');
-    const processedData = await processContent(
-      combinedContent.replace(/```html\n?|\n?```/g, ''),
-      associateId,
-      rapidApiKey
-    );
+    const openaiData = await response.json();
+    console.log('OpenAI response received, processing content...');
 
-    console.log('Content processing complete:', {
-      contentLength: processedData.content.length,
-      affiliateLinksCount: processedData.affiliateLinks.length,
-      hasReviews: processedData.productReviews?.length > 0,
-      uniqueProductsCount: suggestedProducts.size
+    const initialContent = openaiData.choices[0].message.content;
+    console.log('Generated content length:', initialContent.length);
+    console.log('Generated content preview:', initialContent.substring(0, 500));
+    console.log('Content contains <h3> tags:', initialContent.includes('<h3>'));
+    console.log('Content contains <hr> tags:', initialContent.includes('<hr'));
+    console.log('Number of product sections:', (initialContent.match(/<h3>/g) || []).length);
+
+    // Initialize Supabase client
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
+    // Process the content to add Amazon product information
+    const { data: processedContent, error: processingError } = await supabase.functions.invoke('process-blog-content', {
+      body: { content: initialContent }
     });
+
+    if (processingError) {
+      console.error('Content processing error:', processingError);
+      throw processingError;
+    }
+
+    console.log('Content processed successfully');
+    console.log('Final content length:', processedContent.content.length);
+    console.log('Number of affiliate links:', processedContent.affiliateLinks?.length || 0);
+    console.log('Final content preview:', processedContent.content.substring(0, 500));
 
     return new Response(
-      JSON.stringify(processedData),
-      { 
-        headers: { 
-          ...corsHeaders, 
-          'Content-Type': 'application/json',
-          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
-          'Pragma': 'no-cache',
-          'Expires': '0',
-        } 
-      }
+      JSON.stringify(processedContent),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
   } catch (error) {
     console.error('Error in generate-blog-post:', error);
-    
     return new Response(
       JSON.stringify({
         error: error.message,
         timestamp: new Date().toISOString(),
-        type: 'generate-blog-post-error',
-        details: error.stack
+        type: 'generate-blog-post-error'
       }),
       { 
         status: 500,
-        headers: { 
-          ...corsHeaders, 
-          'Content-Type': 'application/json',
-          'Cache-Control': 'no-store'
-        }
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       }
     );
   }

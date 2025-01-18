@@ -7,7 +7,7 @@ import { UseFormReturn } from "react-hook-form";
 import { BlogPostFormData } from "../types/BlogPostTypes";
 import { BlogEditor } from "../editor/BlogEditor";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
+import { useToast } from "@/components/ui/use-toast";
 
 interface BlogPostContentProps {
   form: UseFormReturn<BlogPostFormData>;
@@ -56,22 +56,6 @@ export const BlogPostContent = ({ form, handleAIGenerate }: BlogPostContentProps
             shouldValidate: true
           });
         }
-
-        // Store any product search failures
-        if (data.searchFailures?.length > 0) {
-          form.setValue('product_search_failures', data.searchFailures, {
-            shouldDirty: true,
-            shouldTouch: true,
-            shouldValidate: true
-          });
-
-          // Notify user about any failed product searches
-          toast({
-            title: "Warning",
-            description: `${data.searchFailures.length} product searches failed. Check the logs for details.`,
-            variant: "destructive",
-          });
-        }
         
         toast({
           title: "Success",
@@ -82,7 +66,6 @@ export const BlogPostContent = ({ form, handleAIGenerate }: BlogPostContentProps
       }
     } catch (error) {
       console.error('Error generating blog post:', error);
-      setIsGenerating(false);
       toast({
         title: "Error",
         description: "Failed to generate blog post. Please try again.",

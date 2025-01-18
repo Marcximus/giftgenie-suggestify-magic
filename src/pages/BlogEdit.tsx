@@ -53,8 +53,6 @@ const BlogEdit = () => {
         images: Array.isArray(data.images) ? data.images : [],
         affiliate_links: Array.isArray(data.affiliate_links) ? data.affiliate_links : [],
         related_posts: Array.isArray(data.related_posts) ? data.related_posts : [],
-        product_search_failures: Array.isArray(data.product_search_failures) ? data.product_search_failures : [],
-        product_reviews: Array.isArray(data.product_reviews) ? data.product_reviews : [],
         excerpt: data.excerpt || null,
         image_url: data.image_url || null,
         published_at: data.published_at || null,
@@ -62,22 +60,6 @@ const BlogEdit = () => {
         meta_description: data.meta_description || null,
         meta_keywords: data.meta_keywords || null,
         image_alt_text: data.image_alt_text || null,
-        // Parse and validate processing_status with proper type checking
-        processing_status: (() => {
-          const status = data.processing_status as { [key: string]: number } | null;
-          if (status && typeof status === 'object' && !Array.isArray(status)) {
-            return {
-              product_sections: Number(status.product_sections) || 0,
-              amazon_lookups: Number(status.amazon_lookups) || 0,
-              successful_replacements: Number(status.successful_replacements) || 0
-            };
-          }
-          return {
-            product_sections: 0,
-            amazon_lookups: 0,
-            successful_replacements: 0
-          };
-        })()
       };
       
       return formattedPost;

@@ -16,71 +16,65 @@ export async function processContent(
   const sections = content.split('<hr class="my-8">');
   const processedSections = [];
   const affiliateLinks = [];
-  const searchFailures = [];
-  const productReviews = [];
-  let productSectionCount = 0;
-  let amazonLookupCount = 0;
-  let successfulReplacements = 0;
 
   for (const section of sections) {
     if (section.includes('<h3>')) {
-      productSectionCount++;
       try {
         const titleMatch = section.match(/<h3>(.*?)<\/h3>/);
         if (titleMatch) {
-          const searchTerm = titleMatch[1].trim();
-          console.log('Processing product section:', searchTerm);
-          amazonLookupCount++;
+          const searchTerm = titleMatch[1];
+          console.log('Searching for product:', searchTerm);
           
           const product = await searchAmazonProduct(searchTerm, rapidApiKey);
           
-          if (product && product.asin) {
-            console.log('Found product:', {
-              title: product.title,
-              asin: product.asin,
-              hasRating: !!product.rating
-            });
-
+          if (product) {
             const affiliateLink = `https://www.amazon.com/dp/${product.asin}?tag=${associateId}`;
             affiliateLinks.push({
               title: product.title,
               url: affiliateLink,
               asin: product.asin
             });
-
-            // Store review data if available
-            if (product.rating && product.totalRatings) {
-              productReviews.push({
-                title: product.title,
-                rating: product.rating,
-                totalRatings: product.totalRatings,
-                asin: product.asin
-              });
-            }
-
-            // Split section to preserve content before and after the h3 tag
-            const [beforeH3, afterH3] = section.split('</h3>');
-            const productHtml = formatProductHtml(product, affiliateLink, beforeH3, afterH3);
-            processedSections.push(productHtml);
-            successfulReplacements++;
             
+            const productHtml = formatProductHtml(product, affiliateLink);
+            const processedSection = section.replace(
+              /<h3>.*?<\/h3>/,
+              productHtml
+            );
+            processedSections.push(processedSection);
           } else {
             console.warn('No product found for:', searchTerm);
-            searchFailures.push({
-              term: searchTerm,
-              error: 'No product found'
-            });
             processedSections.push(section);
           }
-        } else {
-          processedSections.push(section);
         }
       } catch (error) {
         console.error('Error processing product section:', error);
-        searchFailures.push({
-          term: section.match(/<h3>(.*?)<\/h3>/)?.[1] || 'Unknown',
-          error: error.message
-        });
+        processedSections.push(section);
+      }
+    } else if (section.includes('[LINK')) {
+      try {
+        // Fetch 3 most recent published blog posts
+        const { data: posts, error } = await supabase
+          .from('blog_posts')
+          .select('title, slug')
+          .not('published_at', 'is', null)
+          .order('published_at', { ascending: false })
+          .limit(3);
+
+        if (error) {
+          console.error('Error fetching related posts:', error);
+          processedSections.push(section);
+        } else {
+          let processedSection = section;
+          posts.forEach((post, index) => {
+            processedSection = processedSection.replace(
+              `[LINK ${index + 1} PLACEHOLDER]`,
+              `<a href="/blog/post/${post.slug}" class="text-primary hover:underline">${post.title}</a>`
+            );
+          });
+          processedSections.push(processedSection);
+        }
+      } catch (error) {
+        console.error('Error processing related posts section:', error);
         processedSections.push(section);
       }
     } else {
@@ -88,23 +82,8 @@ export async function processContent(
     }
   }
 
-  console.log('Processing summary:', {
-    productSections: productSectionCount,
-    amazonLookups: amazonLookupCount,
-    successfulReplacements,
-    affiliateLinksCount: affiliateLinks.length,
-    reviewsCollected: productReviews.length
-  });
-
   return {
     content: processedSections.join('<hr class="my-8">'),
-    affiliateLinks,
-    searchFailures,
-    productReviews,
-    processingStatus: {
-      product_sections: productSectionCount,
-      amazon_lookups: amazonLookupCount,
-      successful_replacements: successfulReplacements
-    }
+    affiliateLinks
   };
 }
