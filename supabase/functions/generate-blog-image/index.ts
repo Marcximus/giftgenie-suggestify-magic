@@ -37,8 +37,7 @@ serve(async (req) => {
       });
 
       if (!altTextResponse.ok) {
-        const error = await altTextResponse.text();
-        console.error('OpenAI API error (alt text):', error);
+        console.error('OpenAI API error (alt text):', await altTextResponse.text());
         throw new Error(`OpenAI API error (alt text): ${altTextResponse.status}`);
       }
 
@@ -63,7 +62,9 @@ IMPORTANT REQUIREMENTS:
 - Ensure elements in the image relates to the title, the occasion and the person: ${title}
 
 STYLE & VARIATION INSPIRATION:
-- Chose a random style or combine multiple and experiment with for example classic painting, watercolor, 8-bit pixel art, surreal collage, vibrant pop art, dreamy cinematic lighting, whimsical cartoons, abstract paitings etc`;
+- Choose a random style or combine multiple and experiment with for example classic painting, watercolor, 8-bit pixel art, surreal collage, vibrant pop art, dreamy cinematic lighting, whimsical cartoons, abstract paintings etc`;
+
+    console.log('Generating image with prompt:', imagePrompt);
 
     // Create OpenAI image
     const response = await fetch('https://api.openai.com/v1/images/generations', {
@@ -76,7 +77,7 @@ STYLE & VARIATION INSPIRATION:
         model: "dall-e-3",
         prompt: prompt || imagePrompt,
         n: 1,
-        size: "1024x576",
+        size: "1792x1024",
         quality: "standard",
         response_format: "b64_json",
         style: "vivid"
