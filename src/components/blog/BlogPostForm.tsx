@@ -75,7 +75,7 @@ const BlogPostForm = ({ initialData, initialTitle }: BlogPostFormProps) => {
       ? ('_type' in content && content._type === 'String' 
           ? (content as { value: string }).value 
           : String(content))
-      : content;
+      : String(content);
       
     console.log('Content to process:', contentToProcess.substring(0, 100) + '...');
     
