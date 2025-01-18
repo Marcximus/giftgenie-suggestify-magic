@@ -29,24 +29,30 @@ const BlogAdmin = () => {
   const { data: queueStats } = useQuery({
     queryKey: ["queue-stats"],
     queryFn: async () => {
+      // First, get all published post titles
       const { data: publishedPosts, error: publishedError } = await supabase
         .from("blog_posts")
-        .select("id", { count: 'exact' })
-        .not('published_at', 'is', null);
+        .select("title");
 
       if (publishedError) throw publishedError;
 
+      const publishedTitles = new Set(publishedPosts?.map(post => post.title));
+
+      // Then get queue data and filter out published posts
       const { data: queueData, error: queueError } = await supabase
         .from("blog_post_queue")
-        .select("status");
+        .select("status, title");
       
       if (queueError) throw queueError;
 
+      // Filter out posts that are already published
+      const unpublishedQueueData = queueData.filter(post => !publishedTitles.has(post.title));
+
       const stats = {
         publishedTotal: publishedPosts.length,
-        pending: queueData.filter(post => post.status === 'pending').length,
-        generating: queueData.filter(post => post.status === 'generating').length,
-        error: queueData.filter(post => post.status === 'error').length
+        pending: unpublishedQueueData.filter(post => post.status === 'pending').length,
+        generating: unpublishedQueueData.filter(post => post.status === 'generating').length,
+        error: unpublishedQueueData.filter(post => post.status === 'error').length
       };
 
       return stats;
