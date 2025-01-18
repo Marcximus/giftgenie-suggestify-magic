@@ -22,14 +22,13 @@ export const ScheduledPostsTab = () => {
 
       const publishedTitles = new Set(publishedPosts?.map(post => post.title));
 
-      // Then get queued posts that aren't published yet
+      // Get all pending posts that aren't published yet
       const { data, error } = await supabase
         .from("blog_post_queue")
         .select("*")
         .eq('status', 'pending')
-        .or(`scheduled_date.gt.${currentDate},and(scheduled_date.eq.${currentDate},scheduled_time.gt.${currentTime})`)
-        .order("scheduled_date", { ascending: true })
-        .order("scheduled_time", { ascending: true });
+        .order('scheduled_date', { ascending: true, nullsLast: true })
+        .order('scheduled_time', { ascending: true, nullsLast: true });
       
       if (error) throw error;
 
@@ -104,19 +103,19 @@ export const ScheduledPostsTab = () => {
           </TableHeader>
           <TableBody>
             {queuedPosts?.map((post, index) => (
-              <TableRow key={post.id}>
+              <TableRow key={post.id} className={!post.scheduled_date ? 'bg-gray-50' : undefined}>
                 <TableCell className="text-left">{index + 1}</TableCell>
                 <TableCell className="text-left">{post.title}</TableCell>
                 <TableCell className="text-left">
                   <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusBadgeClass(post.status)}`}>
-                    {post.status || 'pending'}
+                    {!post.scheduled_date ? 'unscheduled' : (post.status || 'pending')}
                   </span>
                 </TableCell>
                 <TableCell className="text-left">
-                  {post.scheduled_date ? new Date(post.scheduled_date).toLocaleDateString() : '-'}
+                  {post.scheduled_date ? new Date(post.scheduled_date).toLocaleDateString() : 'Not scheduled'}
                 </TableCell>
                 <TableCell className="text-left">
-                  {post.scheduled_time || '-'}
+                  {post.scheduled_time || 'Not scheduled'}
                 </TableCell>
               </TableRow>
             ))}
