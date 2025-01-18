@@ -30,8 +30,6 @@ const BlogPostForm = ({ initialData, initialTitle }: BlogPostFormProps) => {
   const { toast } = useToast();
   const { generateContent, getFormFieldFromType } = useAIContent();
 
-  console.log("BlogPostForm initialTitle:", initialTitle);
-
   const form = useForm<BlogPostFormData>({
     defaultValues: {
       ...(initialData || {
@@ -57,10 +55,21 @@ const BlogPostForm = ({ initialData, initialTitle }: BlogPostFormProps) => {
   // Update form when initialTitle changes
   useEffect(() => {
     if (initialTitle) {
-      console.log("Setting form title to:", initialTitle);
       form.setValue('title', initialTitle);
+      // Also update the slug when initialTitle is set
+      form.setValue('slug', generateSlug(initialTitle));
     }
   }, [initialTitle, form]);
+
+  // Watch the title field to auto-update slug
+  useEffect(() => {
+    const subscription = form.watch((value, { name }) => {
+      if (name === 'title' && !initialData) {
+        form.setValue('slug', generateSlug(value.title || ''));
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, [form, initialData]);
 
   const generateAltText = async () => {
     const title = form.getValues('title');
@@ -213,7 +222,7 @@ const BlogPostForm = ({ initialData, initialTitle }: BlogPostFormProps) => {
 
     const generatedContent = await generateContent(
       type,
-      currentContent,
+      currentContent || '',
       currentTitle
     );
 
