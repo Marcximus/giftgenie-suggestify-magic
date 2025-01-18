@@ -49,7 +49,7 @@ const BlogPostForm = ({ initialData, initialTitle }: BlogPostFormProps) => {
         related_posts: [],
       }),
       title: initialTitle || "",
-      author: DEFAULT_AUTHOR, // Always set the default author
+      author: DEFAULT_AUTHOR,
     },
   });
 
@@ -59,6 +59,28 @@ const BlogPostForm = ({ initialData, initialTitle }: BlogPostFormProps) => {
       form.setValue('title', initialTitle);
     }
   }, [initialTitle, form]);
+
+  const processContent = async (content: string): Promise<{ 
+    content: string; 
+    affiliateLinks: any[];
+  }> => {
+    console.log('Processing blog content...');
+    const { data, error } = await supabase.functions.invoke('process-blog-content', {
+      body: { content }
+    });
+
+    if (error) {
+      console.error('Error processing content:', error);
+      throw error;
+    }
+
+    console.log('Content processed successfully:', {
+      contentLength: data.content.length,
+      numAffiliateLinks: data.affiliateLinks.length
+    });
+
+    return data;
+  };
 
   const generateUniqueSlug = async (baseSlug: string): Promise<string> => {
     const { data: existingPost, error } = await supabase
@@ -90,6 +112,11 @@ const BlogPostForm = ({ initialData, initialTitle }: BlogPostFormProps) => {
     try {
       const currentTime = new Date().toISOString();
       const publishedAt = isDraft ? null : currentTime;
+      
+      // Process content to add Amazon products and affiliate links
+      const processedData = await processContent(data.content);
+      data.content = processedData.content;
+      data.affiliate_links = processedData.affiliateLinks;
       
       const uniqueSlug = await generateUniqueSlug(data.slug);
       if (uniqueSlug !== data.slug) {
