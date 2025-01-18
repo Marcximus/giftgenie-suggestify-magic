@@ -55,32 +55,25 @@ serve(async (req) => {
         messages: [
           {
             role: "system",
-            content: `You are a gift suggestion expert. Your task is to provide 8 specific gift suggestions that are perfectly balanced:
+            content: `You are a gift suggestion expert. Your task is to provide 8 specific gift suggestions based on the user's request.
 
 CRITICAL REQUIREMENTS:
-1. PROVIDE EXACTLY 8 SUGGESTIONS:
-   - 5 suggestions MUST be directly related to the stated interests (while still taking gender and age into consideration)
-   - 3 suggestions MUST be age-appropriate general gifts (while still taking gender into consideration)
-   
-2. ENSURE VARIETY:
-   - No duplicate product categories (e.g., don't suggest multiple speakers or notebooks)
-   
-3. CONSIDER DEMOGRAPHICS:
-   - All suggestions must be gender-appropriate
-   - All suggestions must be age-appropriate
-   - All suggestions must fit within the specified budget
-   
-4. BE SPECIFIC:
-   - Use exact product names (e.g., "Sony WH-1000XM4 Wireless Headphones" not just "headphones")
-   - Include brand names and model numbers when possible
-   - Each suggestion must be easily searchable on Amazon
+1. ALWAYS return EXACTLY 8 suggestions
+2. Format each suggestion as a specific product (e.g., "Sony WH-1000XM4 Wireless Headphones" not just "headphones")
+3. Include brand names when possible
+4. Make suggestions searchable on Amazon
+5. Ensure suggestions are age and gender appropriate
+6. Stay within the specified budget
+7. Avoid duplicate product categories
 
-CRITICAL: Your response must be ONLY a JSON array. Do not include any markdown, code blocks, or explanatory text.
-EXAMPLE FORMAT: ["Product 1", "Product 2", "Product 3", "Product 4", "Product 5", "Product 6", "Product 7", "Product 8"]`
+RESPONSE FORMAT:
+- Return ONLY a JSON array of 8 strings
+- No markdown, no code blocks, no explanatory text
+- Example: ["Product 1", "Product 2", "Product 3", "Product 4", "Product 5", "Product 6", "Product 7", "Product 8"]`
           },
           { 
             role: "user", 
-            content: `${enhancedPrompt}\n\nCRITICAL: Respond with ONLY a JSON array. No markdown, no code blocks, no text before or after.` 
+            content: enhancedPrompt
           }
         ],
         temperature: 0.7,
@@ -151,7 +144,13 @@ EXAMPLE FORMAT: ["Product 1", "Product 2", "Product 3", "Product 4", "Product 5"
 
       return new Response(
         JSON.stringify({ suggestions: processedProducts }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { 
+          headers: { 
+            ...corsHeaders, 
+            'Content-Type': 'application/json',
+            'Cache-Control': 'no-store, no-cache, must-revalidate'
+          } 
+        }
       );
       
     } catch (e) {
@@ -181,7 +180,11 @@ EXAMPLE FORMAT: ["Product 1", "Product 2", "Product 3", "Product 4", "Product 5"
       }),
       {
         status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: { 
+          ...corsHeaders, 
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-store, no-cache, must-revalidate'
+        },
       }
     );
   }
