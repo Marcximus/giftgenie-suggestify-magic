@@ -39,7 +39,6 @@ export const getFallbackSearchTerms = (searchTerm: string): string[] => {
   return [...new Set(searchTerms)];
 };
 
-// New helper function to score products based on relevance
 const scoreProduct = (product: any, searchTerm: string): number => {
   let score = 0;
   const lowerTitle = product.title.toLowerCase();
@@ -72,11 +71,6 @@ const scoreProduct = (product: any, searchTerm: string): number => {
   // Boost score for products that start with the search term
   if (lowerTitle.startsWith(lowerSearchTerm)) {
     score += 20;
-  }
-
-  // Penalize very long titles (likely to be variants/accessories)
-  if (product.title.length > 100) {
-    score -= 10;
   }
 
   // Boost products with ratings
