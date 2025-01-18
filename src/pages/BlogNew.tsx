@@ -9,14 +9,16 @@ const BlogNew = () => {
     queryKey: ["next-scheduled-post"],
     queryFn: async () => {
       // First, get all published post titles
-      const { data: publishedPosts } = await supabase
+      const { data: publishedPosts, error: publishedError } = await supabase
         .from("blog_posts")
         .select("title");
 
-      const publishedTitles = new Set(publishedPosts?.map(post => post.title));
+      if (publishedError) throw publishedError;
+      
+      const publishedTitles = new Set(publishedPosts?.map(post => post.title) || []);
 
       // Get the next scheduled post that isn't published yet
-      const { data, error } = await supabase
+      const { data: queuedPosts, error: queueError } = await supabase
         .from("blog_post_queue")
         .select("*")
         .eq('status', 'pending')
@@ -24,10 +26,14 @@ const BlogNew = () => {
         .order('scheduled_time', { ascending: true })
         .limit(1);
       
-      if (error) throw error;
+      if (queueError) throw queueError;
+
+      // Return null if no posts found or all are published
+      if (!queuedPosts || queuedPosts.length === 0) return null;
 
       // Filter out if it's already published
-      return data?.find(post => !publishedTitles.has(post.title));
+      const nextPost = queuedPosts.find(post => !publishedTitles.has(post.title));
+      return nextPost || null;
     },
   });
 
