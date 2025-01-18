@@ -4,7 +4,7 @@ export const buildBlogPrompt = (numItems: number) => ({
 
 1. Title and Introduction:
    - Format title as: <h1 class="text-center mb-8">Your Title Here</h1>
-- Write a compelling, funny, detailed introduction (100-250 words) that MUST be split into 2-3 distinct paragraphs wrapped in <p> tags and feel free to use some 2-4 emojis
+   - Write a compelling, funny, detailed introduction (100-250 words) that MUST be split into 2-3 distinct paragraphs wrapped in <p> tags and feel free to use some 2-4 emojis
    - The introduction should explain why these items make great gifts and who they're perfect for
 
 2. Product Sections:
