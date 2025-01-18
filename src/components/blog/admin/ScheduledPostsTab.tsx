@@ -4,10 +4,15 @@ import { Tables } from "@/integrations/supabase/types";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
-import { Clock } from "lucide-react";
+import { Clock, Pencil, Trash2 } from "lucide-react";
+import { useState } from "react";
+import { Input } from "@/components/ui/input";
 
 export const ScheduledPostsTab = () => {
   const { toast } = useToast();
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingTitle, setEditingTitle] = useState("");
+
   const { data: queuedPosts, isLoading, refetch } = useQuery({
     queryKey: ["blog-post-queue"],
     queryFn: async () => {
@@ -38,6 +43,66 @@ export const ScheduledPostsTab = () => {
       );
     },
   });
+
+  const handleDelete = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from("blog_post_queue")
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Post deleted successfully",
+      });
+
+      refetch();
+    } catch (error: any) {
+      console.error("Error deleting post:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete post",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleEdit = async (id: string) => {
+    if (editingId === id) {
+      try {
+        const { error } = await supabase
+          .from("blog_post_queue")
+          .update({ title: editingTitle })
+          .eq('id', id);
+
+        if (error) throw error;
+
+        toast({
+          title: "Success",
+          description: "Title updated successfully",
+        });
+
+        setEditingId(null);
+        setEditingTitle("");
+        refetch();
+      } catch (error: any) {
+        console.error("Error updating title:", error);
+        toast({
+          title: "Error",
+          description: error.message || "Failed to update title",
+          variant: "destructive",
+        });
+      }
+    } else {
+      const post = queuedPosts?.find(p => p.id === id);
+      if (post) {
+        setEditingId(id);
+        setEditingTitle(post.title);
+      }
+    }
+  };
 
   const generateRandomTimes = async () => {
     try {
@@ -99,13 +164,24 @@ export const ScheduledPostsTab = () => {
               <TableHead className="text-left">Status</TableHead>
               <TableHead className="text-left">Scheduled Date</TableHead>
               <TableHead className="text-left">Scheduled Time</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {queuedPosts?.map((post, index) => (
               <TableRow key={post.id} className={!post.scheduled_date ? 'bg-gray-50' : undefined}>
                 <TableCell className="text-left">{index + 1}</TableCell>
-                <TableCell className="text-left">{post.title}</TableCell>
+                <TableCell className="text-left">
+                  {editingId === post.id ? (
+                    <Input
+                      value={editingTitle}
+                      onChange={(e) => setEditingTitle(e.target.value)}
+                      className="max-w-md"
+                    />
+                  ) : (
+                    post.title
+                  )}
+                </TableCell>
                 <TableCell className="text-left">
                   <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusBadgeClass(post.status)}`}>
                     {!post.scheduled_date ? 'unscheduled' : (post.status || 'pending')}
@@ -116,6 +192,26 @@ export const ScheduledPostsTab = () => {
                 </TableCell>
                 <TableCell className="text-left">
                   {post.scheduled_time || 'Not scheduled'}
+                </TableCell>
+                <TableCell className="text-right space-x-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleEdit(post.id)}
+                  >
+                    <Pencil className="h-4 w-4" />
+                    <span className="sr-only">
+                      {editingId === post.id ? 'Save' : 'Edit'}
+                    </span>
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleDelete(post.id)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    <span className="sr-only">Delete</span>
+                  </Button>
                 </TableCell>
               </TableRow>
             ))}
