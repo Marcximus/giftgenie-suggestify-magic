@@ -5,6 +5,13 @@ import { searchProducts } from './productSearch.ts';
 console.log('Loading get-amazon-products function...');
 
 serve(async (req) => {
+  // Add CORS headers to all responses
+  const headers = {
+    ...corsHeaders,
+    'Content-Type': 'application/json',
+    'Cache-Control': 'no-store'
+  };
+
   try {
     // Log incoming request details
     console.log('Received request:', {
@@ -18,11 +25,7 @@ serve(async (req) => {
       console.log('Handling OPTIONS request');
       return new Response(null, {
         status: 204,
-        headers: {
-          ...corsHeaders,
-          'Access-Control-Max-Age': '86400',
-          'Cache-Control': 'no-store',
-        },
+        headers
       });
     }
 
@@ -42,11 +45,7 @@ serve(async (req) => {
         }),
         {
           status: 400,
-          headers: {
-            ...corsHeaders,
-            'Content-Type': 'application/json',
-            'Cache-Control': 'no-store',
-          },
+          headers
         }
       );
     }
@@ -61,17 +60,23 @@ serve(async (req) => {
         }),
         {
           status: 500,
-          headers: {
-            ...corsHeaders,
-            'Content-Type': 'application/json',
-            'Cache-Control': 'no-store',
-          },
+          headers
         }
       );
     }
 
     console.log('Starting product search with term:', searchTerm);
-    const product = await searchProducts(searchTerm, apiKey);
+    
+    // Set a timeout for the product search
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('Request timeout')), 25000);
+    });
+
+    // Race between the product search and the timeout
+    const product = await Promise.race([
+      searchProducts(searchTerm, apiKey),
+      timeoutPromise
+    ]);
 
     if (!product) {
       console.log('No products found for search term:', searchTerm);
@@ -82,11 +87,7 @@ serve(async (req) => {
         }),
         {
           status: 404,
-          headers: {
-            ...corsHeaders,
-            'Content-Type': 'application/json',
-            'Cache-Control': 'no-store',
-          },
+          headers
         }
       );
     }
@@ -100,11 +101,7 @@ serve(async (req) => {
       JSON.stringify({ product }),
       {
         status: 200,
-        headers: {
-          ...corsHeaders,
-          'Content-Type': 'application/json',
-          'Cache-Control': 'no-store',
-        },
+        headers
       }
     );
 
@@ -112,7 +109,8 @@ serve(async (req) => {
     console.error('Error in get-amazon-products function:', {
       error: error.message,
       stack: error.stack,
-      type: error.name
+      type: error.name,
+      timestamp: new Date().toISOString()
     });
     
     return new Response(
@@ -124,11 +122,7 @@ serve(async (req) => {
       }),
       {
         status: 500,
-        headers: {
-          ...corsHeaders,
-          'Content-Type': 'application/json',
-          'Cache-Control': 'no-store',
-        },
+        headers
       }
     );
   }
