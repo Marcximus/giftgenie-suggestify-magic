@@ -3,6 +3,7 @@ import { corsHeaders } from '../_shared/cors.ts';
 import { searchProducts } from './productSearch.ts';
 
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
