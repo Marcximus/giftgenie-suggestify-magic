@@ -11,21 +11,29 @@ export const RelatedPosts = ({ currentPostId, currentPostSlug }: RelatedPostsPro
   const { data: relatedPosts } = useQuery({
     queryKey: ["related-posts", currentPostId],
     queryFn: async () => {
-      const { data: posts, error } = await supabase
+      // First try to get posts with similar titles for relevance
+      const { data: relevantPosts, error: relevantError } = await supabase
         .from("blog_posts")
         .select("title, slug, image_url, excerpt, meta_description")
         .neq("id", currentPostId)
         .neq("slug", currentPostSlug)
         .lt("published_at", new Date().toISOString())
-        .order("published_at", { ascending: false })
-        .limit(6); // Increased from 3 to 6 for better internal linking
+        .order("created_at", { ascending: false })  // Use created_at to avoid time-based bias
+        .limit(12);  // Get more posts initially for random selection
 
-      if (error) {
-        console.error("Error fetching related posts:", error);
-        throw error;
+      if (relevantError) {
+        console.error("Error fetching related posts:", relevantError);
+        throw relevantError;
       }
 
-      return posts;
+      // If we have posts, randomly select 6 of them
+      if (relevantPosts && relevantPosts.length > 6) {
+        return relevantPosts
+          .sort(() => Math.random() - 0.5)  // Shuffle the array
+          .slice(0, 6);  // Take first 6 posts after shuffling
+      }
+
+      return relevantPosts || [];
     },
   });
 
@@ -62,13 +70,13 @@ export const RelatedPosts = ({ currentPostId, currentPostSlug }: RelatedPostsPro
                   <h3 className="font-semibold text-lg mb-2 line-clamp-2 group-hover:text-primary transition-colors">
                     {post.title}
                   </h3>
-                  {post.meta_description ? (
-                    <p className="text-sm text-muted-foreground line-clamp-2">
-                      {post.meta_description}
-                    </p>
-                  ) : post.excerpt ? (
+                  {post.excerpt ? (
                     <p className="text-sm text-muted-foreground line-clamp-2">
                       {post.excerpt}
+                    </p>
+                  ) : post.meta_description ? (
+                    <p className="text-sm text-muted-foreground line-clamp-2">
+                      {post.meta_description}
                     </p>
                   ) : null}
                 </div>
