@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { BlogPostForm } from "@/components/blog/BlogPostForm";
 import { useToast } from "@/hooks/use-toast";
-import { BlogPostData } from "@/components/blog/types/BlogPostTypes";
+import { BlogPostData, BlogPostFormData } from "@/components/blog/types/BlogPostTypes";
 import { Json } from "@/integrations/supabase/types";
 
 const BlogEdit = () => {

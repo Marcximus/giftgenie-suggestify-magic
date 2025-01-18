@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { BlogPostForm } from "@/components/blog/BlogPostForm";
 import { supabase } from "@/integrations/supabase/client";
+import { BlogPostFormData } from "@/components/blog/types/BlogPostTypes";
 
 const BlogNew = () => {
   const { data: nextScheduledPost, isLoading } = useQuery({
