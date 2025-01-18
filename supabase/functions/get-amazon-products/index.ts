@@ -5,34 +5,35 @@ import { searchProducts } from './productSearch.ts';
 console.log('Loading get-amazon-products function...');
 
 serve(async (req) => {
-  // Log incoming request details
-  console.log('Received request:', {
-    method: req.method,
-    url: req.url,
-    headers: Object.fromEntries(req.headers.entries())
-  });
-
-  // Handle CORS preflight requests
-  if (req.method === 'OPTIONS') {
-    console.log('Handling OPTIONS request');
-    return new Response(null, {
-      status: 204,
-      headers: {
-        ...corsHeaders,
-        'Access-Control-Max-Age': '86400',
-        'Cache-Control': 'no-store',
-      },
-    });
-  }
-
   try {
+    // Log incoming request details
+    console.log('Received request:', {
+      method: req.method,
+      url: req.url,
+      headers: Object.fromEntries(req.headers.entries())
+    });
+
+    // Handle CORS preflight requests
+    if (req.method === 'OPTIONS') {
+      console.log('Handling OPTIONS request');
+      return new Response(null, {
+        status: 204,
+        headers: {
+          ...corsHeaders,
+          'Access-Control-Max-Age': '86400',
+          'Cache-Control': 'no-store',
+        },
+      });
+    }
+
     if (req.method !== 'POST') {
       throw new Error(`Method ${req.method} not allowed`);
     }
 
-    const { searchTerm } = await req.json();
-    console.log('Processing search request for term:', searchTerm);
+    const requestData = await req.json();
+    console.log('Request payload:', requestData);
 
+    const { searchTerm } = requestData;
     if (!searchTerm || typeof searchTerm !== 'string') {
       return new Response(
         JSON.stringify({
@@ -69,7 +70,7 @@ serve(async (req) => {
       );
     }
 
-    console.log('Starting product search...');
+    console.log('Starting product search with term:', searchTerm);
     const product = await searchProducts(searchTerm, apiKey);
 
     if (!product) {
@@ -98,6 +99,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ product }),
       {
+        status: 200,
         headers: {
           ...corsHeaders,
           'Content-Type': 'application/json',
@@ -107,12 +109,17 @@ serve(async (req) => {
     );
 
   } catch (error) {
-    console.error('Error in get-amazon-products function:', error);
+    console.error('Error in get-amazon-products function:', {
+      error: error.message,
+      stack: error.stack,
+      type: error.name
+    });
     
     return new Response(
       JSON.stringify({
         error: 'Internal server error',
         details: error.message,
+        type: error.name,
         timestamp: new Date().toISOString(),
       }),
       {
