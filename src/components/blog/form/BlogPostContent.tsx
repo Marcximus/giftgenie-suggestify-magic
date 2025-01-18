@@ -31,14 +31,24 @@ export const BlogPostContent = ({ form, handleAIGenerate }: BlogPostContentProps
 
     setIsGenerating(true);
     try {
+      // Extract number of items from title (default to 8 if not found)
+      const numMatch = title.toLowerCase().match(/top\s+(\d+)/i);
+      const numItems = numMatch ? parseInt(numMatch[1]) : 8;
+
       const { data, error } = await supabase.functions.invoke('generate-blog-post', {
-        body: { title }
+        body: { 
+          title,
+          numItems // Pass the number of items to generate
+        }
       });
 
       if (error) throw error;
 
       if (data?.content) {
-        form.setValue('content', data.content, { 
+        // Clean up the content by removing ```html and ``` tags
+        const cleanedContent = data.content.replace(/```html\s*|\s*```/g, '');
+        
+        form.setValue('content', cleanedContent, { 
           shouldDirty: true,
           shouldTouch: true,
           shouldValidate: true 
