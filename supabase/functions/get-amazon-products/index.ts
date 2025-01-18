@@ -5,6 +5,7 @@ import { searchProducts } from './productSearch.ts';
 console.log('Loading get-amazon-products function...');
 
 serve(async (req) => {
+  // Log incoming request details
   console.log('Received request:', {
     method: req.method,
     url: req.url,
@@ -19,6 +20,7 @@ serve(async (req) => {
       headers: {
         ...corsHeaders,
         'Access-Control-Max-Age': '86400',
+        'Cache-Control': 'no-store, no-cache, must-revalidate'
       },
     });
   }
@@ -42,7 +44,8 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({ 
           error: 'API configuration error',
-          details: 'RapidAPI key is not configured'
+          details: 'RapidAPI key is not configured',
+          timestamp: new Date().toISOString()
         }),
         { 
           status: 500,
@@ -64,7 +67,8 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({ 
           error: 'No products found',
-          details: 'No matching products found for the search term'
+          details: 'No matching products found for the search term',
+          timestamp: new Date().toISOString()
         }),
         { 
           headers: { 
