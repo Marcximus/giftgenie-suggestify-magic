@@ -20,8 +20,12 @@ interface ProductCardProps extends Product {
 }
 
 export const simplifyTitle = (title: string): string => {
+  // Create a temporary element to decode HTML entities
+  const doc = new DOMParser().parseFromString(title, 'text/html');
+  const decodedTitle = doc.body.textContent || title;
+
   // Clean up any HTML and extra spaces
-  const cleanTitle = title
+  const cleanTitle = decodedTitle
     .replace(/<[^>]*>/g, '') // Remove HTML tags
     .replace(/\s{2,}/g, ' ') // Remove extra spaces
     .trim();
