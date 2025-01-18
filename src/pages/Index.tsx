@@ -1,31 +1,54 @@
-import { useState } from 'react';
-import { SearchBox } from "@/components/SearchBox";
-import { SearchHeader } from "@/components/SearchHeader";
+import { lazy, Suspense } from 'react';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { useSuggestions } from '@/hooks/useSuggestions';
+import { SuggestionSkeleton } from '@/components/SuggestionSkeleton';
+
+const SearchHeader = lazy(() => import('@/components/SearchHeader').then(module => ({ default: module.SearchHeader })));
+const SuggestionsGrid = lazy(() => import('@/components/SuggestionsGrid').then(module => ({ default: module.SuggestionsGrid })));
 
 const Index = () => {
-  const [isLoading, setIsLoading] = useState(false);
-  
-  const handleSearch = async (query: string) => {
-    setIsLoading(true);
-    try {
-      // Implement your search logic here
-      console.log('Searching for:', query);
-      // Add your search implementation here
-    } catch (error) {
-      console.error('Search error:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const {
+    isLoading,
+    suggestions,
+    handleSearch,
+    handleGenerateMore,
+    handleMoreLikeThis,
+    handleStartOver
+  } = useSuggestions();
 
   return (
-    <div className="container mx-auto px-4">
-      <SearchHeader onSearch={handleSearch} isLoading={isLoading} />
-      <SearchBox onSearch={handleSearch} isLoading={isLoading} />
-      <div className="text-center text-sm text-muted-foreground mt-8 mb-4">
-        Some links may contain affiliate links from Amazon and other vendors
-      </div>
-    </div>
+    <ErrorBoundary>
+      <main className="min-h-screen bg-gradient-to-br from-background via-secondary/30 to-primary/5 pb-20">
+        <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-8 md:py-12 max-w-7xl">
+          <header>
+            <h1 className="sr-only">GiftGenie - AI-Powered Gift Suggestions</h1>
+            <Suspense fallback={<div className="h-[200px] animate-pulse bg-gray-100 rounded-lg" />}>
+              <SearchHeader onSearch={handleSearch} isLoading={isLoading} />
+            </Suspense>
+          </header>
+          
+          <section aria-label="Gift Suggestions" className="mt-8">
+            {suggestions.length > 0 && (
+              <Suspense fallback={
+                <div className="grid gap-4 sm:gap-5 md:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                  {[...Array(8)].map((_, i) => (
+                    <SuggestionSkeleton key={i} />
+                  ))}
+                </div>
+              }>
+                <SuggestionsGrid
+                  suggestions={suggestions}
+                  onMoreLikeThis={handleMoreLikeThis}
+                  onGenerateMore={handleGenerateMore}
+                  onStartOver={handleStartOver}
+                  isLoading={isLoading}
+                />
+              </Suspense>
+            )}
+          </section>
+        </div>
+      </main>
+    </ErrorBoundary>
   );
 };
 
