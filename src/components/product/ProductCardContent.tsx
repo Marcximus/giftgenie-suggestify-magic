@@ -7,7 +7,9 @@ interface ProductCardContentProps {
   totalRatings?: number;
 }
 
-const formatPrice = (price: string | number): string => {
+const formatPrice = (price: string | number | undefined): string => {
+  if (!price) return 'Price unavailable';
+  
   if (typeof price === 'string' && (price.startsWith('$') || price.startsWith('USD'))) {
     return price;
   }
@@ -21,7 +23,9 @@ const formatPrice = (price: string | number): string => {
   return `USD ${numericPrice.toFixed(2)}`;
 };
 
-const formatDescription = (description: string): string => {
+const formatDescription = (description: string | undefined): string => {
+  if (!description) return 'No description available';
+
   // Remove any HTML tags that might come from Amazon
   const cleanDescription = description.replace(/<[^>]*>/g, '');
   
@@ -56,7 +60,7 @@ const formatDescription = (description: string): string => {
     finalDescription += '.';
   }
 
-  return finalDescription;
+  return finalDescription || 'No description available';
 };
 
 export const ProductCardContent = ({ 
