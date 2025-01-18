@@ -5,7 +5,6 @@ import { corsHeaders } from '../_shared/cors.ts';
 import { validateAndCleanSuggestions } from '../_shared/suggestion-validator.ts';
 import { processSuggestionsInBatches } from '../_shared/batch-processor.ts';
 import { buildGiftPrompt } from '../_shared/prompt-builder.ts';
-import { analyzePrompt } from '../_shared/prompt-analyzer.ts';
 
 const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
 
@@ -22,28 +21,18 @@ serve(async (req) => {
   );
 
   try {
-    const { prompt, maxBudget } = await req.json();
-    console.log('Processing request with prompt:', prompt, 'maxBudget:', maxBudget);
+    const { prompt } = await req.json();
+    console.log('Processing request with prompt:', prompt);
 
     if (!prompt || typeof prompt !== 'string' || prompt.trim().length < 3) {
       throw new Error('Invalid prompt');
     }
 
-    // Analyze prompt and build enhanced prompt
-    const promptAnalysis = analyzePrompt(prompt);
-    const enhancedPrompt = buildGiftPrompt(prompt, {
-      hasEverything: prompt.toLowerCase().includes('has everything'),
-      isMale: promptAnalysis.gender === 'male',
-      isFemale: promptAnalysis.gender === 'female',
-      minBudget: promptAnalysis.budget.min || 25,
-      maxBudget: maxBudget || promptAnalysis.budget.max || 200,
-      ageCategory: promptAnalysis.ageCategory,
-      occasion: promptAnalysis.occasion
-    });
-
+    // Build the simplified prompt
+    const enhancedPrompt = buildGiftPrompt(prompt);
     console.log('Enhanced prompt:', enhancedPrompt);
 
-    // Generate suggestions using OpenAI with strict JSON formatting
+    // Generate suggestions using OpenAI
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -61,15 +50,7 @@ CRITICAL: Your response must be a valid JSON array containing EXACTLY 8 strings.
 DO NOT include any explanatory text, markdown formatting, or other content.
 DO NOT apologize or explain your suggestions.
 DO NOT use backticks or code blocks.
-ONLY return a raw JSON array like this: ["suggestion1", "suggestion2", "suggestion3", "suggestion4", "suggestion5", "suggestion6", "suggestion7", "suggestion8"]
-
-Each suggestion must be:
-- A specific product with brand name and model when applicable
-- Searchable on Amazon
-- Within the specified budget range
-- Appropriate for the recipient's age and gender
-- Different from other suggestions (no duplicates)
-- No generic descriptions`
+ONLY return a raw JSON array like this: ["suggestion1", "suggestion2", "suggestion3", "suggestion4", "suggestion5", "suggestion6", "suggestion7", "suggestion8"]`
           },
           { 
             role: "user", 
