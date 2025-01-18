@@ -13,13 +13,6 @@ serve(async (req) => {
   };
 
   try {
-    // Log incoming request details
-    console.log('Received request:', {
-      method: req.method,
-      url: req.url,
-      headers: Object.fromEntries(req.headers.entries())
-    });
-
     // Handle CORS preflight requests
     if (req.method === 'OPTIONS') {
       console.log('Handling OPTIONS request');
