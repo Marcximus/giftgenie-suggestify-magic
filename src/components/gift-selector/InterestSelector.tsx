@@ -30,9 +30,6 @@ export const InterestSelector = ({ selectedPerson, selectedAge, onSelect }: Inte
 
   return (
     <div className="space-y-4">
-      <p className="text-sm text-muted-foreground text-center">
-        Select up to 2 interests {selectedInterests.length > 0 && `(${selectedInterests.length}/2 selected)`}
-      </p>
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-w-3xl mx-auto px-4">
         {getInterests(selectedPerson, selectedAge).map((interest) => (
           <Button
