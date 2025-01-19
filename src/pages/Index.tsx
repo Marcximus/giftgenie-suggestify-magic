@@ -47,7 +47,7 @@ const Index = () => {
             )}
           </section>
 
-          <footer className="fixed bottom-4 left-0 right-0 text-center">
+          <footer className="mt-24 mb-4 text-center">
             <p className="text-[10px] text-muted-foreground/70">
               Some links may contain affiliate links from Amazon and other vendors
             </p>
