@@ -16,18 +16,15 @@ export const InterestSelector = ({ selectedPerson, selectedAge, onSelect }: Inte
     
     if (selectedInterests.includes(interest)) {
       newInterests = selectedInterests.filter(i => i !== interest);
+      setSelectedInterests(newInterests);
     } else if (selectedInterests.length < 2) {
       newInterests = [...selectedInterests, interest];
-    } else {
-      return; // Don't allow more than 2 selections
-    }
-    
-    setSelectedInterests(newInterests);
-  };
-
-  const handleContinue = () => {
-    if (selectedInterests.length > 0) {
-      onSelect(selectedInterests.join(' and ')); // Only call onSelect when user clicks continue
+      setSelectedInterests(newInterests);
+      
+      // If this is the second interest selected, trigger the search
+      if (newInterests.length === 2) {
+        onSelect(newInterests.join(' and '));
+      }
     }
   };
 
@@ -51,16 +48,6 @@ export const InterestSelector = ({ selectedPerson, selectedAge, onSelect }: Inte
           </Button>
         ))}
       </div>
-      {selectedInterests.length > 0 && (
-        <div className="flex justify-center mt-4">
-          <Button 
-            onClick={handleContinue}
-            className="w-full max-w-xs"
-          >
-            Continue with {selectedInterests.length} interest{selectedInterests.length > 1 ? 's' : ''}
-          </Button>
-        </div>
-      )}
     </div>
   );
 };
