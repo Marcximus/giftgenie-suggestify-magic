@@ -23,16 +23,18 @@ export const InterestSelector = ({ selectedPerson, selectedAge, onSelect }: Inte
     }
     
     setSelectedInterests(newInterests);
-    
-    if (newInterests.length > 0) {
-      onSelect(newInterests.join(' and ')); // Format interests with "and"
+  };
+
+  const handleContinue = () => {
+    if (selectedInterests.length > 0) {
+      onSelect(selectedInterests.join(' and ')); // Only call onSelect when user clicks continue
     }
   };
 
   return (
     <div className="space-y-4">
       <p className="text-sm text-muted-foreground text-center">
-        Select up to 2 interests
+        Select up to 2 interests {selectedInterests.length > 0 && `(${selectedInterests.length}/2 selected)`}
       </p>
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-w-3xl mx-auto px-4">
         {getInterests(selectedPerson, selectedAge).map((interest) => (
@@ -49,6 +51,16 @@ export const InterestSelector = ({ selectedPerson, selectedAge, onSelect }: Inte
           </Button>
         ))}
       </div>
+      {selectedInterests.length > 0 && (
+        <div className="flex justify-center mt-4">
+          <Button 
+            onClick={handleContinue}
+            className="w-full max-w-xs"
+          >
+            Continue with {selectedInterests.length} interest{selectedInterests.length > 1 ? 's' : ''}
+          </Button>
+        </div>
+      )}
     </div>
   );
 };
