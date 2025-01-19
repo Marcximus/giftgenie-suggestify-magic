@@ -18,7 +18,7 @@ const Index = () => {
 
   return (
     <ErrorBoundary>
-      <main className="min-h-screen bg-gradient-to-br from-background via-secondary/30 to-primary/5 pb-32">
+      <main className="min-h-screen bg-gradient-to-br from-background via-secondary/30 to-primary/5">
         <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-8 md:py-12 max-w-7xl">
           <header>
             <h1 className="sr-only">GiftGenie - AI-Powered Gift Suggestions</h1>
@@ -46,13 +46,13 @@ const Index = () => {
               </Suspense>
             )}
           </section>
-        </div>
 
-        <footer className="fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-sm border-t border-gray-100 py-4 px-4 text-center z-[999]">
-          <p className="text-xs text-muted-foreground">
-            Some links may contain affiliate links from Amazon and other vendors
-          </p>
-        </footer>
+          <footer className="mt-16 mb-8 text-center">
+            <p className="text-xs text-muted-foreground">
+              Some links may contain affiliate links from Amazon and other vendors
+            </p>
+          </footer>
+        </div>
       </main>
     </ErrorBoundary>
   );
