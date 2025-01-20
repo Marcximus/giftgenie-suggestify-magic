@@ -36,7 +36,7 @@ const SuggestionItem = memo(({
       <ProductCard
         title={suggestion.title}
         description={suggestion.description}
-        price={suggestion.amazon_price || suggestion.priceRange?.replace('USD ', '') || 'Check price on Amazon'}
+        price={suggestion.amazon_price?.toString() || suggestion.priceRange?.replace('USD ', '') || 'Check price on Amazon'}
         amazonUrl={suggestion.amazon_url || "#"}
         imageUrl={suggestion.amazon_image_url}
         rating={suggestion.amazon_rating}
