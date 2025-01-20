@@ -1,7 +1,9 @@
 export const extractPrice = (priceStr: string | null | undefined): number | undefined => {
   console.log('Attempting to extract price from:', { 
     rawPrice: priceStr,
-    type: typeof priceStr 
+    type: typeof priceStr,
+    isNull: priceStr === null,
+    isUndefined: priceStr === undefined
   });
   
   if (!priceStr) {
@@ -17,7 +19,8 @@ export const extractPrice = (priceStr: string | null | undefined): number | unde
     console.warn('Failed to parse price:', { 
       original: priceStr, 
       cleaned: cleanPrice,
-      parseResult: price 
+      parseResult: price,
+      isNaN: isNaN(price)
     });
     return undefined;
   }
@@ -25,7 +28,8 @@ export const extractPrice = (priceStr: string | null | undefined): number | unde
   console.log('Successfully extracted price:', { 
     original: priceStr,
     parsed: price,
-    cleaned: cleanPrice 
+    cleaned: cleanPrice,
+    type: typeof price 
   });
   return price;
 };
@@ -38,7 +42,10 @@ export const getPriceFromMultipleSources = (
   console.log('Attempting to get price from multiple sources:', {
     productPrice,
     originalPrice,
-    currentPrice
+    currentPrice,
+    productPriceType: typeof productPrice,
+    originalPriceType: typeof originalPrice,
+    currentPriceType: typeof currentPrice
   });
 
   // Try each price source in order of preference
@@ -48,7 +55,8 @@ export const getPriceFromMultipleSources = (
 
   console.log('Final price determination:', {
     result: price,
-    wasFound: price !== undefined
+    wasFound: price !== undefined,
+    resultType: typeof price
   });
 
   return price;

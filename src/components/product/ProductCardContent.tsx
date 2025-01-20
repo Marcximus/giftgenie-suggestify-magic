@@ -8,16 +8,37 @@ interface ProductCardContentProps {
 }
 
 const formatPrice = (price: string | number | undefined): string => {
+  console.log('Formatting price input:', {
+    price,
+    type: typeof price,
+    isNull: price === null,
+    isUndefined: price === undefined
+  });
+  
   // If price is undefined or null, return a default message
-  if (!price) return 'Price unavailable';
+  if (!price) {
+    console.log('Price is null/undefined, returning default message');
+    return 'Price unavailable';
+  }
   
   // If price is already a string with currency symbol, return as is
   if (typeof price === 'string') {
+    console.log('Processing string price:', {
+      originalPrice: price,
+      hasUSDPrefix: price.startsWith('$') || price.startsWith('USD')
+    });
+    
     if (price.startsWith('$') || price.startsWith('USD')) {
       return price;
     }
     // Try to parse the string as a number
     const numericPrice = parseFloat(price.replace(/[^0-9.]/g, ''));
+    console.log('Parsed string price:', {
+      original: price,
+      parsed: numericPrice,
+      isValid: !isNaN(numericPrice)
+    });
+    
     if (!isNaN(numericPrice)) {
       return `USD ${numericPrice.toFixed(2)}`;
     }
@@ -25,9 +46,17 @@ const formatPrice = (price: string | number | undefined): string => {
 
   // If price is a number, format it
   if (typeof price === 'number' && !isNaN(price)) {
+    console.log('Formatting numeric price:', {
+      price,
+      formatted: `USD ${price.toFixed(2)}`
+    });
     return `USD ${price.toFixed(2)}`;
   }
 
+  console.warn('Price formatting failed:', {
+    originalPrice: price,
+    type: typeof price
+  });
   return 'Price unavailable';
 };
 
@@ -77,6 +106,20 @@ export const ProductCardContent = ({
   rating, 
   totalRatings 
 }: ProductCardContentProps) => {
+  console.log('ProductCardContent received props:', {
+    price,
+    priceType: typeof price,
+    hasPrice: !!price,
+    rating,
+    totalRatings
+  });
+
+  const formattedPrice = formatPrice(price);
+  console.log('Price formatting result:', {
+    input: price,
+    output: formattedPrice
+  });
+
   return (
     <div className="p-3 sm:p-4 pt-2 flex-grow flex flex-col">
       <p className="text-xs sm:text-sm leading-relaxed line-clamp-3 text-muted-foreground mb-auto">
@@ -85,9 +128,9 @@ export const ProductCardContent = ({
       <div className="mt-3 flex items-center justify-between">
         <p 
           className="text-sm sm:text-base font-bold text-primary" 
-          aria-label={`Price: ${formatPrice(price)}`}
+          aria-label={`Price: ${formattedPrice}`}
         >
-          {formatPrice(price)}
+          {formattedPrice}
         </p>
         {rating && (
           <div 
