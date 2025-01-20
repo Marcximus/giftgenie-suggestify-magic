@@ -8,9 +8,9 @@ interface ProductCardContentProps {
   totalRatings?: number;
 }
 
-// Memoize the price formatting component
-const FormattedPrice = memo(({ price }: { price: string | number }) => {
-  const formattedPrice = useMemo(() => {
+// Memoize price formatting logic
+const useFormattedPrice = (price: string | number) => {
+  return useMemo(() => {
     if (price === undefined || price === null) {
       return 'Check price on Amazon';
     }
@@ -32,6 +32,11 @@ const FormattedPrice = memo(({ price }: { price: string | number }) => {
 
     return 'Check price on Amazon';
   }, [price]);
+};
+
+// Memoized price component
+const FormattedPrice = memo(({ price }: { price: string | number }) => {
+  const formattedPrice = useFormattedPrice(price);
 
   return (
     <p 
@@ -45,7 +50,7 @@ const FormattedPrice = memo(({ price }: { price: string | number }) => {
 
 FormattedPrice.displayName = 'FormattedPrice';
 
-// Memoize the rating component
+// Memoized rating component
 const ProductRating = memo(({ rating, totalRatings }: { rating?: number; totalRatings?: number }) => {
   if (!rating) return null;
 
@@ -64,44 +69,48 @@ const ProductRating = memo(({ rating, totalRatings }: { rating?: number; totalRa
 
 ProductRating.displayName = 'ProductRating';
 
-const formatDescription = (description: string | undefined): string => {
-  if (!description) return 'No description available';
-  
-  const cleanDescription = description
-    .replace(/<[^>]*>/g, '')
-    .replace(/\s+/g, ' ')
-    .trim();
+// Memoized description formatter
+const useFormattedDescription = (description: string | undefined) => {
+  return useMemo(() => {
+    if (!description) return 'No description available';
+    
+    const cleanDescription = description
+      .replace(/<[^>]*>/g, '')
+      .replace(/\s+/g, ' ')
+      .trim();
 
-  if (cleanDescription.length < 100) return cleanDescription;
+    if (cleanDescription.length < 100) return cleanDescription;
 
-  const sentences = cleanDescription
-    .split(/[.!?]+/)
-    .filter(s => s.trim().length > 0)
-    .filter(sentence => {
-      const lower = sentence.toLowerCase().trim();
-      return !lower.includes('click here') &&
-             !lower.includes('buy now') &&
-             !lower.includes('limited time') &&
-             !lower.includes('check price') &&
-             sentence.length > 20;
-    })
-    .slice(0, 3);
+    const sentences = cleanDescription
+      .split(/[.!?]+/)
+      .filter(s => s.trim().length > 0)
+      .filter(sentence => {
+        const lower = sentence.toLowerCase().trim();
+        return !lower.includes('click here') &&
+               !lower.includes('buy now') &&
+               !lower.includes('limited time') &&
+               !lower.includes('check price') &&
+               sentence.length > 20;
+      })
+      .slice(0, 3);
 
-  let finalDescription = sentences.join('. ').trim();
-  if (!finalDescription.endsWith('.')) {
-    finalDescription += '.';
-  }
+    let finalDescription = sentences.join('. ').trim();
+    if (!finalDescription.endsWith('.')) {
+      finalDescription += '.';
+    }
 
-  return finalDescription || 'No description available';
+    return finalDescription || 'No description available';
+  }, [description]);
 };
 
-export const ProductCardContent = memo(({ 
+// Main component with optimized rendering
+const ProductCardContent = memo(({ 
   description, 
   price, 
   rating, 
   totalRatings 
 }: ProductCardContentProps) => {
-  const formattedDescription = useMemo(() => formatDescription(description), [description]);
+  const formattedDescription = useFormattedDescription(description);
 
   return (
     <div className="p-3 sm:p-4 pt-2 flex-grow flex flex-col">
@@ -117,3 +126,5 @@ export const ProductCardContent = memo(({
 });
 
 ProductCardContent.displayName = 'ProductCardContent';
+
+export { ProductCardContent };

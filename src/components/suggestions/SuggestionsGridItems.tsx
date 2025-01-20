@@ -3,13 +3,7 @@ import { SuggestionSkeleton } from '../SuggestionSkeleton';
 import { GiftSuggestion } from '@/types/suggestions';
 import { memo, useEffect, useState } from 'react';
 
-interface SuggestionsGridItemsProps {
-  suggestions: GiftSuggestion[];
-  onMoreLikeThis: (title: string) => void;
-  isLoading: boolean;
-}
-
-// Memoize the individual suggestion item to prevent unnecessary re-renders
+// Memoized individual suggestion item
 const SuggestionItem = memo(({ 
   suggestion, 
   index,
@@ -29,11 +23,6 @@ const SuggestionItem = memo(({
     return () => clearTimeout(timer);
   }, [index]);
 
-  // Pre-format the price once during render
-  const price = suggestion.amazon_price 
-    ? Math.floor(suggestion.amazon_price).toString()
-    : suggestion.priceRange?.replace('USD ', '') || 'Check price on Amazon';
-
   if (!isVisible) return null;
 
   return (
@@ -47,7 +36,7 @@ const SuggestionItem = memo(({
       <ProductCard
         title={suggestion.title}
         description={suggestion.description}
-        price={price}
+        price={suggestion.amazon_price || suggestion.priceRange?.replace('USD ', '') || 'Check price on Amazon'}
         amazonUrl={suggestion.amazon_url || "#"}
         imageUrl={suggestion.amazon_image_url}
         rating={suggestion.amazon_rating}
@@ -61,11 +50,16 @@ const SuggestionItem = memo(({
 
 SuggestionItem.displayName = 'SuggestionItem';
 
+// Main component with progressive loading
 const SuggestionsGridItemsComponent = ({
   suggestions,
   onMoreLikeThis,
   isLoading
-}: SuggestionsGridItemsProps) => {
+}: {
+  suggestions: GiftSuggestion[];
+  onMoreLikeThis: (title: string) => void;
+  isLoading: boolean;
+}) => {
   // Show loading skeletons only when no suggestions are available
   if (isLoading && suggestions.length === 0) {
     return (
