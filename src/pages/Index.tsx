@@ -47,7 +47,7 @@ const Index = () => {
             )}
           </section>
 
-          <footer className={`mt-4 sm:mt-12 ${suggestions.length === 0 ? 'mt-32 sm:mt-96' : ''} mb-4 text-center`}>
+          <footer className={`mt-4 sm:mt-12 ${suggestions.length === 0 ? 'mt-48 sm:mt-96' : ''} mb-4 text-center`}>
             <p className="text-[10px] text-muted-foreground/70">
               Some links may contain affiliate links from Amazon and other vendors
             </p>
