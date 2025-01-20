@@ -1,5 +1,6 @@
 import { Star } from "lucide-react";
 import { memo, useMemo } from 'react';
+import { formatPrice } from '@/utils/priceUtils';
 
 interface ProductCardContentProps {
   description: string;
@@ -8,35 +9,9 @@ interface ProductCardContentProps {
   totalRatings?: number;
 }
 
-// Memoize price formatting logic
-const useFormattedPrice = (price: string | number) => {
-  return useMemo(() => {
-    if (price === undefined || price === null) {
-      return 'Check price on Amazon';
-    }
-    
-    if (typeof price === 'number' && !isNaN(price)) {
-      return `USD ${Math.floor(price)}`;
-    }
-    
-    if (typeof price === 'string') {
-      if (price === 'Check price on Amazon') {
-        return price;
-      }
-      
-      const numericPrice = parseFloat(price.replace(/[^0-9.]/g, ''));
-      if (!isNaN(numericPrice)) {
-        return `USD ${Math.floor(numericPrice)}`;
-      }
-    }
-
-    return 'Check price on Amazon';
-  }, [price]);
-};
-
 // Memoized price component
 const FormattedPrice = memo(({ price }: { price: string | number }) => {
-  const formattedPrice = useFormattedPrice(price);
+  const formattedPrice = useMemo(() => formatPrice(price), [price]);
 
   return (
     <p 
