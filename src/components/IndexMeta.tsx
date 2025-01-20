@@ -27,6 +27,35 @@ export const IndexMeta = () => {
             "@type": "Offer",
             "price": "0",
             "priceCurrency": "USD"
+          },
+          "mainEntity": {
+            "@type": "FAQPage",
+            "mainEntity": [
+              {
+                "@type": "Question",
+                "name": "How does Get The Gift work?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "Get The Gift uses advanced AI technology to analyze your requirements and suggest personalized gift ideas. Simply describe who you're buying for and their interests, and our AI will recommend perfect gifts within your budget."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "Are the gift suggestions free?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "Yes, using Get The Gift to find gift suggestions is completely free. We provide detailed recommendations including prices, reviews, and where to buy the gifts."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "How accurate are the product prices and availability?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "We fetch real-time prices and availability from Amazon and other retailers. However, prices and availability can change quickly, so we recommend checking the final price on the retailer's website."
+                }
+              }
+            ]
           }
         })}
       </script>
