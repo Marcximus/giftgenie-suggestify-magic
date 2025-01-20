@@ -20,18 +20,26 @@ interface AmazonProduct {
   asin: string;
 }
 
-const formatPrice = (priceData: any): number | undefined => {
-  console.log('Raw price data from Amazon API:', {
+const extractPrice = (priceData: any): number | undefined => {
+  console.log('Extracting price from:', {
     priceData,
     type: typeof priceData,
-    isNull: priceData === null,
-    isUndefined: priceData === undefined
+    isObject: typeof priceData === 'object',
+    hasCurrentPrice: priceData?.current_price !== undefined,
+    rawValue: priceData?.current_price || priceData
   });
 
-  // If price is already a number, return it
+  // If it's already a valid number, return it
   if (typeof priceData === 'number' && !isNaN(priceData)) {
     console.log('Price is already a valid number:', priceData);
     return priceData;
+  }
+
+  // Handle price object with current_price
+  if (priceData && typeof priceData === 'object' && 'current_price' in priceData) {
+    const currentPrice = extractPrice(priceData.current_price);
+    console.log('Extracted current_price:', currentPrice);
+    return currentPrice;
   }
 
   // Handle string prices
@@ -49,23 +57,6 @@ const formatPrice = (priceData: any): number | undefined => {
     
     if (!isNaN(numericPrice)) {
       return numericPrice;
-    }
-  }
-
-  // Handle object with current_price property
-  if (priceData && typeof priceData === 'object') {
-    console.log('Price is an object:', priceData);
-    
-    if ('current_price' in priceData) {
-      const currentPrice = formatPrice(priceData.current_price);
-      console.log('Extracted current_price:', currentPrice);
-      return currentPrice;
-    }
-    
-    if ('price' in priceData) {
-      const price = formatPrice(priceData.price);
-      console.log('Extracted price property:', price);
-      return price;
     }
   }
 
@@ -142,25 +133,26 @@ async function searchAmazonProduct(
     }
 
     // Extract and format the price
-    const rawPrice = product.price;
-    console.log('Raw price data for product:', {
+    console.log('Raw price data from product:', {
       productTitle: product.title,
-      rawPrice,
-      priceType: typeof rawPrice,
-      priceKeys: rawPrice ? Object.keys(rawPrice) : []
+      priceData: product.price,
+      priceType: typeof product.price,
+      priceKeys: product.price ? Object.keys(product.price) : [],
+      currentPrice: product.price?.current_price,
+      currentPriceType: typeof product.price?.current_price
     });
 
-    const formattedPrice = formatPrice(rawPrice);
-    console.log('Formatted price result:', {
-      raw: rawPrice,
-      formatted: formattedPrice,
-      isValid: formattedPrice !== undefined
+    const extractedPrice = extractPrice(product.price);
+    console.log('Price extraction result:', {
+      raw: product.price,
+      extracted: extractedPrice,
+      isValid: extractedPrice !== undefined
     });
 
     const result: AmazonProduct = {
       title: product.title,
       description: product.product_description || product.title,
-      price: formattedPrice,
+      price: extractedPrice,
       currency: 'USD',
       imageUrl: product.product_photo || product.thumbnail,
       rating: product.product_star_rating ? parseFloat(product.product_star_rating) : undefined,

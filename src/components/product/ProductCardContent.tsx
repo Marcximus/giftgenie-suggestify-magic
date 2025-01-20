@@ -28,11 +28,13 @@ const formatPrice = (price: string | number | undefined): string => {
       hasUSDPrefix: price.startsWith('$') || price.startsWith('USD')
     });
     
+    // Remove any "undefined" that might have been concatenated
+    if (price.includes('undefined')) {
+      return 'Check price on Amazon';
+    }
+    
+    // If it already has a currency symbol, return as is
     if (price.startsWith('$') || price.startsWith('USD')) {
-      // Remove any "undefined" that might have been concatenated
-      if (price.includes('undefined')) {
-        return 'Check price on Amazon';
-      }
       return price;
     }
     
