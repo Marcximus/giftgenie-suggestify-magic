@@ -1,5 +1,5 @@
 import { Star } from "lucide-react";
-import { memo } from 'react';
+import { memo, useMemo } from 'react';
 
 interface ProductCardContentProps {
   description: string;
@@ -10,7 +10,7 @@ interface ProductCardContentProps {
 
 // Memoize the price formatting component
 const FormattedPrice = memo(({ price }: { price: string | number }) => {
-  const formattedPrice = (() => {
+  const formattedPrice = useMemo(() => {
     if (price === undefined || price === null) {
       return 'Check price on Amazon';
     }
@@ -31,7 +31,7 @@ const FormattedPrice = memo(({ price }: { price: string | number }) => {
     }
 
     return 'Check price on Amazon';
-  })();
+  }, [price]);
 
   return (
     <p 
@@ -101,10 +101,12 @@ export const ProductCardContent = memo(({
   rating, 
   totalRatings 
 }: ProductCardContentProps) => {
+  const formattedDescription = useMemo(() => formatDescription(description), [description]);
+
   return (
     <div className="p-3 sm:p-4 pt-2 flex-grow flex flex-col">
       <p className="text-xs sm:text-sm leading-relaxed line-clamp-3 text-muted-foreground mb-auto">
-        {formatDescription(description)}
+        {formattedDescription}
       </p>
       <div className="mt-3 flex items-center justify-between">
         <FormattedPrice price={price} />

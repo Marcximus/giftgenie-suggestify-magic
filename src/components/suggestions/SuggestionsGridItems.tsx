@@ -1,7 +1,7 @@
 import { ProductCard } from '../ProductCard';
 import { SuggestionSkeleton } from '../SuggestionSkeleton';
 import { GiftSuggestion } from '@/types/suggestions';
-import { memo } from 'react';
+import { memo, useEffect, useState } from 'react';
 
 interface SuggestionsGridItemsProps {
   suggestions: GiftSuggestion[];
@@ -19,14 +19,25 @@ const SuggestionItem = memo(({
   index: number;
   onMoreLikeThis: (title: string) => void;
 }) => {
+  const [isVisible, setIsVisible] = useState(false);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsVisible(true);
+    }, index * 100); // Stagger the appearance
+
+    return () => clearTimeout(timer);
+  }, [index]);
+
   // Pre-format the price once during render
   const price = suggestion.amazon_price 
     ? Math.floor(suggestion.amazon_price).toString()
     : suggestion.priceRange?.replace('USD ', '') || 'Check price on Amazon';
 
+  if (!isVisible) return null;
+
   return (
     <div 
-      key={`suggestion-${index}`}
       className="animate-in fade-in slide-in-from-bottom-4"
       style={{ 
         animationDelay: `${index * 100}ms`,
@@ -50,11 +61,12 @@ const SuggestionItem = memo(({
 
 SuggestionItem.displayName = 'SuggestionItem';
 
-export const SuggestionsGridItems = ({
+export const SuggestionsGridItems = memo(({
   suggestions,
   onMoreLikeThis,
   isLoading
 }: SuggestionsGridItemsProps) => {
+  // Show loading skeletons only when no suggestions are available
   if (isLoading && suggestions.length === 0) {
     return (
       <>
@@ -83,6 +95,7 @@ export const SuggestionsGridItems = ({
         />
       ))}
       
+      {/* Show single skeleton for loading more */}
       {isLoading && suggestions.length > 0 && (
         <div 
           className="animate-in fade-in slide-in-from-bottom-4"
@@ -94,4 +107,6 @@ export const SuggestionsGridItems = ({
       )}
     </>
   );
-};
+});
+
+SuggestionsGridItems.displayName = 'SuggestionsGridItems';
