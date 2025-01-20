@@ -1,63 +1,42 @@
-export const extractPrice = (priceStr: string | null | undefined): number | undefined => {
-  console.log('Attempting to extract price from:', { 
-    rawPrice: priceStr,
-    type: typeof priceStr,
-    isNull: priceStr === null,
-    isUndefined: priceStr === undefined
+export const extractPrice = (priceData: any): number | undefined => {
+  console.log('Attempting to extract price from:', {
+    raw: priceData,
+    type: typeof priceData,
+    isObject: typeof priceData === 'object',
+    hasPrice: priceData?.price,
+    hasCurrentPrice: priceData?.current_price
   });
-  
-  if (!priceStr) {
-    console.log('Price is null or undefined');
-    return undefined;
-  }
-  
-  // Remove currency symbol, commas, and any text
-  const cleanPrice = priceStr.replace(/[^0-9.]/g, '');
-  const price = parseFloat(cleanPrice);
-  
-  if (isNaN(price)) {
-    console.warn('Failed to parse price:', { 
-      original: priceStr, 
-      cleaned: cleanPrice,
-      parseResult: price,
-      isNaN: isNaN(price)
-    });
-    return undefined;
+
+  // If it's already a number, return it
+  if (typeof priceData === 'number' && !isNaN(priceData)) {
+    return priceData;
   }
 
-  console.log('Successfully extracted price:', { 
-    original: priceStr,
-    parsed: price,
-    cleaned: cleanPrice,
-    type: typeof price 
-  });
-  return price;
+  // Handle price object with current_price
+  if (priceData && typeof priceData === 'object') {
+    if (priceData.current_price) {
+      const currentPrice = parseFloat(priceData.current_price.toString());
+      if (!isNaN(currentPrice)) return currentPrice;
+    }
+    if (priceData.price) {
+      const price = parseFloat(priceData.price.toString());
+      if (!isNaN(price)) return price;
+    }
+  }
+
+  // Handle string prices
+  if (typeof priceData === 'string') {
+    const cleanPrice = priceData.replace(/[^0-9.]/g, '');
+    const price = parseFloat(cleanPrice);
+    if (!isNaN(price)) return price;
+  }
+
+  return undefined;
 };
 
-export const getPriceFromMultipleSources = (
-  productPrice?: string,
-  originalPrice?: string,
-  currentPrice?: string
-): number | undefined => {
-  console.log('Attempting to get price from multiple sources:', {
-    productPrice,
-    originalPrice,
-    currentPrice,
-    productPriceType: typeof productPrice,
-    originalPriceType: typeof originalPrice,
-    currentPriceType: typeof currentPrice
-  });
-
-  // Try each price source in order of preference
-  const price = extractPrice(productPrice) || 
-                extractPrice(originalPrice) ||
-                extractPrice(currentPrice);
-
-  console.log('Final price determination:', {
-    result: price,
-    wasFound: price !== undefined,
-    resultType: typeof price
-  });
-
-  return price;
+export const formatPriceForDisplay = (price: number | undefined): string => {
+  if (typeof price !== 'number' || isNaN(price)) {
+    return 'Check price on Amazon';
+  }
+  return `USD ${price.toFixed(2)}`;
 };

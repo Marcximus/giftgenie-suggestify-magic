@@ -33,13 +33,16 @@ export const SuggestionsGridItems = ({
   return (
     <>
       {suggestions.map((suggestion, index) => {
-        console.log('Processing suggestion for ProductCard:', {
+        console.log('Processing suggestion:', {
           title: suggestion.title,
-          hasAmazonPrice: suggestion.amazon_price !== undefined,
           amazonPrice: suggestion.amazon_price,
-          priceRange: suggestion.priceRange,
-          finalPrice: suggestion.amazon_price ? suggestion.amazon_price.toString() : suggestion.priceRange
+          priceRange: suggestion.priceRange
         });
+
+        // Don't concatenate strings, pass the raw price value
+        const price = suggestion.amazon_price !== null && suggestion.amazon_price !== undefined
+          ? suggestion.amazon_price.toString()
+          : suggestion.priceRange;
 
         return (
           <div 
@@ -53,7 +56,7 @@ export const SuggestionsGridItems = ({
             <ProductCard
               title={suggestion.title}
               description={suggestion.description}
-              price={suggestion.amazon_price ? suggestion.amazon_price.toString() : suggestion.priceRange}
+              price={price}
               amazonUrl={suggestion.amazon_url || "#"}
               imageUrl={suggestion.amazon_image_url}
               rating={suggestion.amazon_rating}

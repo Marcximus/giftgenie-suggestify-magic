@@ -8,26 +8,18 @@ interface ProductCardContentProps {
 }
 
 const formatPrice = (price: string | number | undefined): string => {
-  console.log('Formatting price input:', {
-    price,
-    type: typeof price,
-    isNull: price === null,
-    isUndefined: price === undefined
-  });
-  
-  // If price is undefined or null, return a default message
+  // If price is undefined or null, return default message
   if (!price) {
-    console.log('Price is null/undefined, returning default message');
     return 'Check price on Amazon';
   }
   
-  // If price is already a string with currency symbol, return as is
+  // If price is already a number, format it
+  if (typeof price === 'number' && !isNaN(price)) {
+    return `USD ${price.toFixed(2)}`;
+  }
+  
+  // If price is a string, try to parse it
   if (typeof price === 'string') {
-    console.log('Processing string price:', {
-      originalPrice: price,
-      hasUSDPrefix: price.startsWith('$') || price.startsWith('USD')
-    });
-    
     // Remove any "undefined" that might have been concatenated
     if (price.includes('undefined')) {
       return 'Check price on Amazon';
@@ -40,37 +32,18 @@ const formatPrice = (price: string | number | undefined): string => {
     
     // Try to parse the string as a number
     const numericPrice = parseFloat(price.replace(/[^0-9.]/g, ''));
-    console.log('Parsed string price:', {
-      original: price,
-      parsed: numericPrice,
-      isValid: !isNaN(numericPrice)
-    });
-    
     if (!isNaN(numericPrice)) {
       return `USD ${numericPrice.toFixed(2)}`;
     }
   }
 
-  // If price is a number, format it
-  if (typeof price === 'number' && !isNaN(price)) {
-    console.log('Formatting numeric price:', {
-      price,
-      formatted: `USD ${price.toFixed(2)}`
-    });
-    return `USD ${price.toFixed(2)}`;
-  }
-
-  console.warn('Price formatting failed:', {
-    originalPrice: price,
-    type: typeof price
-  });
   return 'Check price on Amazon';
 };
 
 const formatDescription = (description: string | undefined): string => {
   if (!description) return 'No description available';
 
-  // Remove any HTML tags that might come from Amazon
+  // Remove any HTML tags
   const cleanDescription = description.replace(/<[^>]*>/g, '');
   
   // Remove multiple spaces and normalize whitespace
@@ -113,19 +86,13 @@ export const ProductCardContent = ({
   rating, 
   totalRatings 
 }: ProductCardContentProps) => {
-  console.log('ProductCardContent received props:', {
+  console.log('ProductCardContent received:', {
     price,
     priceType: typeof price,
-    hasPrice: !!price,
-    rating,
-    totalRatings
+    hasPrice: !!price
   });
 
   const formattedPrice = formatPrice(price);
-  console.log('Price formatting result:', {
-    input: price,
-    output: formattedPrice
-  });
 
   return (
     <div className="p-3 sm:p-4 pt-2 flex-grow flex flex-col">
