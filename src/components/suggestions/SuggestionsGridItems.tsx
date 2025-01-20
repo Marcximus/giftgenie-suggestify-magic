@@ -39,10 +39,10 @@ export const SuggestionsGridItems = ({
           priceRange: suggestion.priceRange
         });
 
-        // Ensure price is always a string
-        const price = suggestion.amazon_price !== null && suggestion.amazon_price !== undefined
+        // Only convert to string if we have a valid price
+        const price = suggestion.amazon_price 
           ? suggestion.amazon_price.toString()
-          : suggestion.priceRange;
+          : suggestion.priceRange?.replace('USD ', '') || 'Check price on Amazon';
 
         return (
           <div 

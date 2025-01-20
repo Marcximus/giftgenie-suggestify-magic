@@ -26,14 +26,14 @@ const formatPrice = (price: string | number | undefined): string => {
   
   // If price is a string, try to parse it
   if (typeof price === 'string') {
-    // If it already has a currency symbol, return as is
-    if (price.startsWith('$') || price.startsWith('USD')) {
+    // If it's our default message, return as is
+    if (price === 'Check price on Amazon') {
       return price;
     }
     
-    // Remove any "undefined" that might have been concatenated
-    if (price.includes('undefined')) {
-      return 'Check price on Amazon';
+    // If it already has USD, return as is
+    if (price.includes('USD')) {
+      return price;
     }
     
     // Try to parse the string as a number
