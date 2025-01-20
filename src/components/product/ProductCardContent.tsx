@@ -21,8 +21,7 @@ const formatPrice = (price: string | number | undefined): string => {
   
   // If price is already a number, format it
   if (typeof price === 'number' && !isNaN(price)) {
-    // Remove .00 by using Math.floor if the number has no decimal points
-    return `USD ${price % 1 === 0 ? Math.floor(price) : price.toFixed(2)}`;
+    return `USD ${Math.floor(price)}`;
   }
   
   // If price is a string, try to parse it
@@ -36,14 +35,14 @@ const formatPrice = (price: string | number | undefined): string => {
     if (price.includes('USD')) {
       const numericPrice = parseFloat(price.replace(/[^0-9.]/g, ''));
       if (!isNaN(numericPrice)) {
-        return `USD ${numericPrice % 1 === 0 ? Math.floor(numericPrice) : numericPrice.toFixed(2)}`;
+        return `USD ${Math.floor(numericPrice)}`;
       }
     }
     
     // Try to parse the string as a number
     const numericPrice = parseFloat(price.replace(/[^0-9.]/g, ''));
     if (!isNaN(numericPrice)) {
-      return `USD ${numericPrice % 1 === 0 ? Math.floor(numericPrice) : numericPrice.toFixed(2)}`;
+      return `USD ${Math.floor(numericPrice)}`;
     }
   }
 
@@ -111,7 +110,7 @@ export const ProductCardContent = ({
       </p>
       <div className="mt-3 flex items-center justify-between">
         <p 
-          className="text-sm sm:text-base font-bold text-[#9b87f5]" 
+          className="text-sm sm:text-base font-bold bg-gradient-to-r from-[#9b87f5] to-[#847bd1] bg-clip-text text-transparent" 
           aria-label={`Price: ${formattedPrice}`}
         >
           {formattedPrice}
