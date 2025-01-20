@@ -30,8 +30,8 @@ export const BreadcrumbNav = () => {
       <BreadcrumbItem key={path}>
         {!isLast ? (
           <>
-            <BreadcrumbLink as={Link} to={path}>
-              {formattedSegment}
+            <BreadcrumbLink asChild>
+              <Link to={path}>{formattedSegment}</Link>
             </BreadcrumbLink>
             <BreadcrumbSeparator />
           </>
@@ -46,8 +46,8 @@ export const BreadcrumbNav = () => {
     <Breadcrumb className="mb-4 px-4">
       <BreadcrumbList>
         <BreadcrumbItem>
-          <BreadcrumbLink as={Link} to="/">
-            Home
+          <BreadcrumbLink asChild>
+            <Link to="/">Home</Link>
           </BreadcrumbLink>
           {pathSegments.length > 0 && <BreadcrumbSeparator />}
         </BreadcrumbItem>
