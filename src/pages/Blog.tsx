@@ -7,18 +7,35 @@ import { Helmet } from "react-helmet";
 import { toast } from "@/components/ui/use-toast";
 
 const Blog = () => {
+  console.log("Blog component initialized");
+  console.log("Supabase client config:", {
+    url: supabase.config.supabaseUrl,
+    hasAuth: !!supabase.auth,
+    headers: supabase.rest.headers
+  });
+
   const { data: posts, isLoading, error } = useQuery({
     queryKey: ["blog-posts"],
     queryFn: async () => {
-      console.log("Fetching blog posts...");
+      console.log("Starting blog posts fetch...");
+      console.log("Request headers:", supabase.rest.headers);
+      
       try {
-        const { data, error } = await supabase
+        console.log("Initiating Supabase query...");
+        const { data, error, status, statusText } = await supabase
           .from("blog_posts")
           .select("*")
           .order("published_at", { ascending: false });
         
+        console.log("Supabase response status:", status, statusText);
+        
         if (error) {
-          console.error("Supabase error:", error);
+          console.error("Supabase error details:", {
+            message: error.message,
+            details: error.details,
+            hint: error.hint,
+            code: error.code
+          });
           toast({
             title: "Error loading blog posts",
             description: error.message,
@@ -27,24 +44,44 @@ const Blog = () => {
           throw error;
         }
 
-        console.log("Successfully fetched blog posts:", data?.length || 0);
+        console.log("Successfully fetched blog posts:", {
+          count: data?.length || 0,
+          firstPost: data?.[0]?.title || 'No posts'
+        });
         return data as Tables<"blog_posts">[];
-      } catch (error) {
-        console.error("Failed to fetch blog posts:", error);
+      } catch (error: any) {
+        console.error("Detailed fetch error:", {
+          message: error.message,
+          stack: error.stack,
+          name: error.name,
+          cause: error.cause
+        });
         throw error;
       }
     },
     retry: 3,
-    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+    retryDelay: (attemptIndex) => {
+      const delay = Math.min(1000 * 2 ** attemptIndex, 30000);
+      console.log(`Retry attempt ${attemptIndex + 1}, waiting ${delay}ms`);
+      return delay;
+    },
+    onError: (error: any) => {
+      console.error("Query error handler:", {
+        message: error.message,
+        stack: error.stack,
+        name: error.name
+      });
+    }
   });
 
   if (error) {
-    console.error("Query error:", error);
+    console.error("Rendering error state:", error);
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-red-600 mb-4">Error Loading Blog Posts</h1>
           <p className="text-gray-600">Please try refreshing the page</p>
+          <p className="text-sm text-gray-500 mt-2">{error.message}</p>
         </div>
       </div>
     );
