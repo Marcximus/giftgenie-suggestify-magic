@@ -39,8 +39,10 @@ export const SuggestionsGridItems = ({
           priceRange: suggestion.priceRange
         });
 
-        // Pass the raw price value without formatting
-        const price = suggestion.amazon_price ?? suggestion.priceRange;
+        // Ensure price is always a string
+        const price = suggestion.amazon_price !== null && suggestion.amazon_price !== undefined
+          ? suggestion.amazon_price.toString()
+          : suggestion.priceRange;
 
         return (
           <div 
