@@ -2,6 +2,8 @@ import { lazy, Suspense } from 'react';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { useSuggestions } from '@/hooks/useSuggestions';
 import { SuggestionSkeleton } from '@/components/SuggestionSkeleton';
+import { IndexMeta } from '@/components/IndexMeta';
+import { BreadcrumbNav } from '@/components/BreadcrumbNav';
 
 const SearchHeader = lazy(() => import('@/components/SearchHeader').then(module => ({ default: module.SearchHeader })));
 const SuggestionsGrid = lazy(() => import('@/components/SuggestionsGrid').then(module => ({ default: module.SuggestionsGrid })));
@@ -18,8 +20,10 @@ const Index = () => {
 
   return (
     <ErrorBoundary>
+      <IndexMeta />
       <main className="min-h-screen bg-gradient-to-br from-background via-secondary/30 to-primary/5">
         <div className="container mx-auto px-2 sm:px-4 py-2 sm:py-8 md:py-12 max-w-7xl">
+          <BreadcrumbNav />
           <header>
             <h1 className="sr-only">GiftGenie - AI-Powered Gift Suggestions</h1>
             <Suspense fallback={<div className="h-[200px] animate-pulse bg-gray-100 rounded-lg" />}>
