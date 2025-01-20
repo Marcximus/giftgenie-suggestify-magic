@@ -18,7 +18,7 @@ const formatPrice = (price: string | number | undefined): string => {
   // If price is undefined or null, return a default message
   if (!price) {
     console.log('Price is null/undefined, returning default message');
-    return 'Price unavailable';
+    return 'Check price on Amazon';
   }
   
   // If price is already a string with currency symbol, return as is
@@ -29,8 +29,13 @@ const formatPrice = (price: string | number | undefined): string => {
     });
     
     if (price.startsWith('$') || price.startsWith('USD')) {
+      // Remove any "undefined" that might have been concatenated
+      if (price.includes('undefined')) {
+        return 'Check price on Amazon';
+      }
       return price;
     }
+    
     // Try to parse the string as a number
     const numericPrice = parseFloat(price.replace(/[^0-9.]/g, ''));
     console.log('Parsed string price:', {
@@ -57,7 +62,7 @@ const formatPrice = (price: string | number | undefined): string => {
     originalPrice: price,
     type: typeof price
   });
-  return 'Price unavailable';
+  return 'Check price on Amazon';
 };
 
 const formatDescription = (description: string | undefined): string => {

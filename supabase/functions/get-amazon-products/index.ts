@@ -20,6 +20,39 @@ interface AmazonProduct {
   asin: string;
 }
 
+const formatPrice = (price: any): number | undefined => {
+  console.log('Formatting raw price:', price);
+  
+  if (!price) {
+    console.log('Price is null/undefined/empty');
+    return undefined;
+  }
+
+  if (typeof price === 'number') {
+    console.log('Price is already a number:', price);
+    return price;
+  }
+
+  if (typeof price === 'string') {
+    // Remove currency symbols and other non-numeric characters except decimal point
+    const cleanPrice = price.replace(/[^0-9.]/g, '');
+    const numericPrice = parseFloat(cleanPrice);
+    
+    console.log('Parsed string price:', {
+      original: price,
+      cleaned: cleanPrice,
+      parsed: numericPrice
+    });
+    
+    if (!isNaN(numericPrice)) {
+      return numericPrice;
+    }
+  }
+
+  console.log('Failed to parse price:', price);
+  return undefined;
+};
+
 async function searchAmazonProduct(
   searchTerm: string,
   apiKey: string,
@@ -37,7 +70,6 @@ async function searchAmazonProduct(
   try {
     console.log('Making request to Amazon API with params:', searchParams.toString());
     
-    // First, search for the product
     const searchResponse = await fetch(
       `https://${RAPIDAPI_HOST}/search?${searchParams.toString()}`,
       {
@@ -63,7 +95,8 @@ async function searchAmazonProduct(
       totalProducts: searchData.data?.products?.length || 0,
       firstProduct: searchData.data?.products?.[0] ? {
         title: searchData.data.products[0].title,
-        asin: searchData.data.products[0].asin
+        asin: searchData.data.products[0].asin,
+        price: searchData.data.products[0].price
       } : null
     });
 
@@ -74,10 +107,8 @@ async function searchAmazonProduct(
 
     let product = searchData.data.products[0];
     
-    // Ensure we have an ASIN
     if (!product.asin) {
       console.log('First product has no ASIN, searching for product with ASIN...');
-      // If no ASIN found in first result, try next products
       const productWithAsin = searchData.data.products.find((p: any) => p.asin);
       if (!productWithAsin) {
         console.error('No product with ASIN found in results');
@@ -87,10 +118,17 @@ async function searchAmazonProduct(
       console.log('Found alternative product with ASIN:', product.asin);
     }
 
+    // Format the price before returning
+    const formattedPrice = formatPrice(product.price?.current_price);
+    console.log('Formatted price:', {
+      original: product.price?.current_price,
+      formatted: formattedPrice
+    });
+
     const result = {
       title: product.title,
       description: product.product_description || product.title,
-      price: product.price?.current_price,
+      price: formattedPrice,
       currency: product.price?.currency || 'USD',
       imageUrl: product.product_photo || product.thumbnail,
       rating: product.product_star_rating ? parseFloat(product.product_star_rating) : undefined,
@@ -102,7 +140,8 @@ async function searchAmazonProduct(
       title: result.title,
       asin: result.asin,
       hasImage: !!result.imageUrl,
-      hasPrice: !!result.price
+      hasPrice: result.price !== undefined,
+      price: result.price
     });
 
     return result;
@@ -117,7 +156,6 @@ async function searchAmazonProduct(
 }
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, {
       headers: corsHeaders
