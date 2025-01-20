@@ -25,7 +25,7 @@ async function searchAmazonProduct(
   apiKey: string,
   priceRange?: string
 ): Promise<AmazonProduct | null> {
-  console.log('Searching Amazon for:', searchTerm, { priceRange });
+  console.log('Starting Amazon search with term:', searchTerm, { priceRange });
   
   const searchParams = new URLSearchParams({
     query: searchTerm.trim(),
@@ -35,6 +35,8 @@ async function searchAmazonProduct(
   });
 
   try {
+    console.log('Making request to Amazon API with params:', searchParams.toString());
+    
     // First, search for the product
     const searchResponse = await fetch(
       `https://${RAPIDAPI_HOST}/search?${searchParams.toString()}`,
@@ -46,15 +48,27 @@ async function searchAmazonProduct(
       }
     );
 
+    console.log('Amazon API response status:', searchResponse.status);
+
     if (!searchResponse.ok) {
-      console.error('Amazon Search API error:', searchResponse.status);
+      console.error('Amazon Search API error:', {
+        status: searchResponse.status,
+        statusText: searchResponse.statusText
+      });
       throw new Error(`Amazon API error: ${searchResponse.status}`);
     }
 
     const searchData = await searchResponse.json();
-    console.log('Search response:', searchData);
+    console.log('Search response data:', {
+      totalProducts: searchData.data?.products?.length || 0,
+      firstProduct: searchData.data?.products?.[0] ? {
+        title: searchData.data.products[0].title,
+        asin: searchData.data.products[0].asin
+      } : null
+    });
 
     if (!searchData.data?.products?.[0]) {
+      console.error('No products found in search results');
       throw new Error('No products found');
     }
 
@@ -62,15 +76,18 @@ async function searchAmazonProduct(
     
     // Ensure we have an ASIN
     if (!product.asin) {
+      console.log('First product has no ASIN, searching for product with ASIN...');
       // If no ASIN found in first result, try next products
       const productWithAsin = searchData.data.products.find((p: any) => p.asin);
       if (!productWithAsin) {
+        console.error('No product with ASIN found in results');
         throw new Error('No product with ASIN found');
       }
       product = productWithAsin;
+      console.log('Found alternative product with ASIN:', product.asin);
     }
 
-    return {
+    const result = {
       title: product.title,
       description: product.product_description || product.title,
       price: product.price?.current_price,
@@ -80,8 +97,21 @@ async function searchAmazonProduct(
       totalRatings: product.product_num_ratings ? parseInt(product.product_num_ratings, 10) : undefined,
       asin: product.asin,
     };
+
+    console.log('Successfully processed product:', {
+      title: result.title,
+      asin: result.asin,
+      hasImage: !!result.imageUrl,
+      hasPrice: !!result.price
+    });
+
+    return result;
   } catch (error) {
-    console.error('Error searching Amazon:', error);
+    console.error('Error searching Amazon:', {
+      error: error.message,
+      searchTerm,
+      stack: error.stack
+    });
     throw error;
   }
 }
@@ -90,17 +120,18 @@ serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, {
-      headers: {
-        ...corsHeaders,
-        'Content-Length': '0',
-      }
+      headers: corsHeaders
     });
   }
 
   try {
+    console.log('Received request:', req.method);
     const { searchTerm, priceRange } = await req.json();
     
+    console.log('Request payload:', { searchTerm, priceRange });
+
     if (!searchTerm) {
+      console.error('Missing search term in request');
       return new Response(
         JSON.stringify({ error: 'Search term is required' }),
         { 
@@ -127,6 +158,7 @@ serve(async (req) => {
     const product = await searchAmazonProduct(searchTerm, apiKey, priceRange);
     
     if (!product) {
+      console.log('No product found for search term:', searchTerm);
       return new Response(
         JSON.stringify({ error: 'No product found' }),
         { 
@@ -136,6 +168,7 @@ serve(async (req) => {
       );
     }
 
+    console.log('Successfully found product, returning response');
     return new Response(
       JSON.stringify({ product }),
       { 
@@ -145,7 +178,10 @@ serve(async (req) => {
     );
 
   } catch (error) {
-    console.error('Error processing request:', error);
+    console.error('Error processing request:', {
+      error: error.message,
+      stack: error.stack
+    });
     
     return new Response(
       JSON.stringify({
