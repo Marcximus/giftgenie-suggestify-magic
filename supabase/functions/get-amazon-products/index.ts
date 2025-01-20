@@ -20,28 +20,31 @@ interface AmazonProduct {
   asin: string;
 }
 
-const formatPrice = (price: any): number | undefined => {
-  console.log('Formatting raw price:', price);
-  
-  if (!price) {
-    console.log('Price is null/undefined/empty');
-    return undefined;
+const formatPrice = (priceData: any): number | undefined => {
+  console.log('Raw price data from Amazon API:', {
+    priceData,
+    type: typeof priceData,
+    isNull: priceData === null,
+    isUndefined: priceData === undefined
+  });
+
+  // If price is already a number, return it
+  if (typeof priceData === 'number' && !isNaN(priceData)) {
+    console.log('Price is already a valid number:', priceData);
+    return priceData;
   }
 
-  if (typeof price === 'number') {
-    console.log('Price is already a number:', price);
-    return price;
-  }
-
-  if (typeof price === 'string') {
+  // Handle string prices
+  if (typeof priceData === 'string') {
     // Remove currency symbols and other non-numeric characters except decimal point
-    const cleanPrice = price.replace(/[^0-9.]/g, '');
+    const cleanPrice = priceData.replace(/[^0-9.]/g, '');
     const numericPrice = parseFloat(cleanPrice);
     
     console.log('Parsed string price:', {
-      original: price,
+      original: priceData,
       cleaned: cleanPrice,
-      parsed: numericPrice
+      parsed: numericPrice,
+      isValid: !isNaN(numericPrice)
     });
     
     if (!isNaN(numericPrice)) {
@@ -49,7 +52,24 @@ const formatPrice = (price: any): number | undefined => {
     }
   }
 
-  console.log('Failed to parse price:', price);
+  // Handle object with current_price property
+  if (priceData && typeof priceData === 'object') {
+    console.log('Price is an object:', priceData);
+    
+    if ('current_price' in priceData) {
+      const currentPrice = formatPrice(priceData.current_price);
+      console.log('Extracted current_price:', currentPrice);
+      return currentPrice;
+    }
+    
+    if ('price' in priceData) {
+      const price = formatPrice(priceData.price);
+      console.log('Extracted price property:', price);
+      return price;
+    }
+  }
+
+  console.log('Failed to extract valid price from:', priceData);
   return undefined;
 };
 
@@ -91,12 +111,15 @@ async function searchAmazonProduct(
     }
 
     const searchData = await searchResponse.json();
-    console.log('Search response data:', {
-      totalProducts: searchData.data?.products?.length || 0,
+    console.log('Raw Amazon API response:', {
+      hasData: !!searchData.data,
+      productsCount: searchData.data?.products?.length || 0,
       firstProduct: searchData.data?.products?.[0] ? {
         title: searchData.data.products[0].title,
         asin: searchData.data.products[0].asin,
-        price: searchData.data.products[0].price
+        rawPrice: searchData.data.products[0].price,
+        priceStructure: searchData.data.products[0].price ? 
+          Object.keys(searchData.data.products[0].price) : []
       } : null
     });
 
@@ -118,25 +141,34 @@ async function searchAmazonProduct(
       console.log('Found alternative product with ASIN:', product.asin);
     }
 
-    // Format the price before returning
-    const formattedPrice = formatPrice(product.price?.current_price);
-    console.log('Formatted price:', {
-      original: product.price?.current_price,
-      formatted: formattedPrice
+    // Extract and format the price
+    const rawPrice = product.price;
+    console.log('Raw price data for product:', {
+      productTitle: product.title,
+      rawPrice,
+      priceType: typeof rawPrice,
+      priceKeys: rawPrice ? Object.keys(rawPrice) : []
     });
 
-    const result = {
+    const formattedPrice = formatPrice(rawPrice);
+    console.log('Formatted price result:', {
+      raw: rawPrice,
+      formatted: formattedPrice,
+      isValid: formattedPrice !== undefined
+    });
+
+    const result: AmazonProduct = {
       title: product.title,
       description: product.product_description || product.title,
       price: formattedPrice,
-      currency: product.price?.currency || 'USD',
+      currency: 'USD',
       imageUrl: product.product_photo || product.thumbnail,
       rating: product.product_star_rating ? parseFloat(product.product_star_rating) : undefined,
       totalRatings: product.product_num_ratings ? parseInt(product.product_num_ratings, 10) : undefined,
       asin: product.asin,
     };
 
-    console.log('Successfully processed product:', {
+    console.log('Final processed product:', {
       title: result.title,
       asin: result.asin,
       hasImage: !!result.imageUrl,
