@@ -20,48 +20,26 @@ interface AmazonProduct {
   asin: string;
 }
 
-const extractPrice = (priceData: any): number | undefined => {
+const extractPrice = (priceStr: string | null | undefined): number | undefined => {
   console.log('Extracting price from:', {
-    priceData,
-    type: typeof priceData,
-    isObject: typeof priceData === 'object',
-    hasCurrentPrice: priceData?.current_price !== undefined,
-    rawValue: priceData?.current_price || priceData
+    raw: priceStr,
+    type: typeof priceStr
   });
 
-  // If it's already a valid number, return it
-  if (typeof priceData === 'number' && !isNaN(priceData)) {
-    console.log('Price is already a valid number:', priceData);
-    return priceData;
-  }
+  if (!priceStr) return undefined;
 
-  // Handle price object with current_price
-  if (priceData && typeof priceData === 'object' && 'current_price' in priceData) {
-    const currentPrice = extractPrice(priceData.current_price);
-    console.log('Extracted current_price:', currentPrice);
-    return currentPrice;
-  }
-
-  // Handle string prices
-  if (typeof priceData === 'string') {
-    // Remove currency symbols and other non-numeric characters except decimal point
-    const cleanPrice = priceData.replace(/[^0-9.]/g, '');
-    const numericPrice = parseFloat(cleanPrice);
-    
-    console.log('Parsed string price:', {
-      original: priceData,
-      cleaned: cleanPrice,
-      parsed: numericPrice,
-      isValid: !isNaN(numericPrice)
-    });
-    
-    if (!isNaN(numericPrice)) {
-      return numericPrice;
-    }
-  }
-
-  console.log('Failed to extract valid price from:', priceData);
-  return undefined;
+  // Remove currency symbols and other non-numeric characters except decimal point
+  const cleanPrice = priceStr.replace(/[^0-9.]/g, '');
+  const price = parseFloat(cleanPrice);
+  
+  console.log('Price extraction result:', {
+    original: priceStr,
+    cleaned: cleanPrice,
+    parsed: price,
+    isValid: !isNaN(price)
+  });
+  
+  return isNaN(price) ? undefined : price;
 };
 
 async function searchAmazonProduct(
@@ -91,8 +69,6 @@ async function searchAmazonProduct(
       }
     );
 
-    console.log('Amazon API response status:', searchResponse.status);
-
     if (!searchResponse.ok) {
       console.error('Amazon Search API error:', {
         status: searchResponse.status,
@@ -104,14 +80,7 @@ async function searchAmazonProduct(
     const searchData = await searchResponse.json();
     console.log('Raw Amazon API response:', {
       hasData: !!searchData.data,
-      productsCount: searchData.data?.products?.length || 0,
-      firstProduct: searchData.data?.products?.[0] ? {
-        title: searchData.data.products[0].title,
-        asin: searchData.data.products[0].asin,
-        rawPrice: searchData.data.products[0].price,
-        priceStructure: searchData.data.products[0].price ? 
-          Object.keys(searchData.data.products[0].price) : []
-      } : null
+      productsCount: searchData.data?.products?.length || 0
     });
 
     if (!searchData.data?.products?.[0]) {
@@ -132,31 +101,46 @@ async function searchAmazonProduct(
       console.log('Found alternative product with ASIN:', product.asin);
     }
 
-    // Extract and format the price
-    console.log('Raw price data from product:', {
-      productTitle: product.title,
-      priceData: product.price,
-      priceType: typeof product.price,
-      priceKeys: product.price ? Object.keys(product.price) : [],
-      currentPrice: product.price?.current_price,
-      currentPriceType: typeof product.price?.current_price
-    });
+    // Get detailed product information using ASIN
+    const detailsResponse = await fetch(
+      `https://${RAPIDAPI_HOST}/product-details?asin=${product.asin}&country=US`,
+      {
+        headers: {
+          'X-RapidAPI-Key': apiKey,
+          'X-RapidAPI-Host': RAPIDAPI_HOST,
+        }
+      }
+    );
 
-    const extractedPrice = extractPrice(product.price);
-    console.log('Price extraction result:', {
-      raw: product.price,
-      extracted: extractedPrice,
-      isValid: extractedPrice !== undefined
+    let detailsData;
+    if (detailsResponse.ok) {
+      detailsData = await detailsResponse.json();
+      console.log('Product details response:', {
+        title: detailsData.data?.product_title,
+        price: detailsData.data?.product_price,
+        originalPrice: detailsData.data?.product_original_price
+      });
+    }
+
+    // Extract price from product details or search result
+    const price = detailsData?.data?.product_price 
+      ? extractPrice(detailsData.data.product_price)
+      : extractPrice(product.product_price);
+
+    console.log('Final price extraction:', {
+      detailsPrice: detailsData?.data?.product_price,
+      searchPrice: product.product_price,
+      extractedPrice: price
     });
 
     const result: AmazonProduct = {
-      title: product.title,
-      description: product.product_description || product.title,
-      price: extractedPrice,
+      title: detailsData?.data?.product_title || product.title,
+      description: detailsData?.data?.product_description || product.product_description || product.title,
+      price: price,
       currency: 'USD',
-      imageUrl: product.product_photo || product.thumbnail,
-      rating: product.product_star_rating ? parseFloat(product.product_star_rating) : undefined,
-      totalRatings: product.product_num_ratings ? parseInt(product.product_num_ratings, 10) : undefined,
+      imageUrl: detailsData?.data?.product_photo || product.product_photo || product.thumbnail,
+      rating: detailsData?.data?.product_star_rating ? parseFloat(detailsData.data.product_star_rating) : undefined,
+      totalRatings: detailsData?.data?.product_num_ratings ? parseInt(detailsData.data.product_num_ratings, 10) : undefined,
       asin: product.asin,
     };
 
