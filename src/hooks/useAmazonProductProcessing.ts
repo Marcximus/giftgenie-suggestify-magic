@@ -7,9 +7,9 @@ import { generateCustomDescription } from '@/utils/descriptionUtils';
 import { logApiMetrics } from '@/utils/metricsUtils';
 import { toast } from "@/components/ui/use-toast";
 
-const BATCH_SIZE = 3; // Process 3 products at a time
-const STAGGER_DELAY = 200; // 200ms delay between batches
-const MAX_CONCURRENT = 3; // Maximum concurrent API calls
+const BATCH_SIZE = 4; // Increased from 3 to 4 for faster processing
+const STAGGER_DELAY = 100; // Reduced from 200ms to 100ms
+const MAX_CONCURRENT = 4; // Increased from 3 to 4
 
 export const useAmazonProductProcessing = () => {
   const { getAmazonProduct } = useAmazonProducts();
@@ -29,7 +29,7 @@ export const useAmazonProductProcessing = () => {
         return cachedData as GiftSuggestion;
       }
 
-      // Run these operations in parallel using Promise.all
+      // Run these operations in parallel using Promise.all for better performance
       const [amazonProduct, customDescription] = await Promise.all([
         getAmazonProduct(suggestion.title, suggestion.priceRange),
         generateCustomDescription(suggestion.title, suggestion.description),
@@ -79,7 +79,7 @@ export const useAmazonProductProcessing = () => {
       batches.push(suggestions.slice(i, i + BATCH_SIZE));
     }
     
-    // Process each batch in parallel
+    // Process each batch in parallel with optimized concurrency
     for (const batch of batches) {
       console.log(`Processing batch of ${batch.length} suggestions`);
       
@@ -97,7 +97,7 @@ export const useAmazonProductProcessing = () => {
       
       results.push(...batchResults);
       
-      // Add a small delay between batches to prevent rate limiting
+      // Add a smaller delay between batches to prevent rate limiting while maintaining speed
       if (batches.indexOf(batch) < batches.length - 1) {
         await new Promise(resolve => setTimeout(resolve, STAGGER_DELAY));
       }

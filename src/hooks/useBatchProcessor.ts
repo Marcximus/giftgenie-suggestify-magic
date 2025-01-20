@@ -43,7 +43,7 @@ export const useBatchProcessor = <T, R>() => {
           const batchPromises = batch.map(async (item, index) => {
             const globalIndex = i + index;
             try {
-              if (index > 0) await sleep(staggerDelay);
+              if (index > 0) await sleep(staggerDelay / 2); // Reduced delay for faster processing
               const result = await processFn(item);
               processedItems.add(globalIndex);
               setProcessingQueue(prev => prev.filter((_, idx) => !processedItems.has(idx)));
@@ -66,7 +66,7 @@ export const useBatchProcessor = <T, R>() => {
               results.push(result);
               processedItems.add(globalIndex);
               setProcessingQueue(prev => prev.filter((_, idx) => !processedItems.has(idx)));
-              if (staggerDelay > 0) await sleep(staggerDelay);
+              if (staggerDelay > 0) await sleep(staggerDelay / 2);
             } catch (error) {
               errors.push({ error, item });
               onError(error, item);
@@ -76,7 +76,7 @@ export const useBatchProcessor = <T, R>() => {
 
         // Add a small delay between batches to prevent rate limiting
         if (i + batchSize < items.length) {
-          await sleep(AMAZON_CONFIG.BASE_RETRY_DELAY);
+          await sleep(AMAZON_CONFIG.BASE_RETRY_DELAY / 2);
         }
       }
     } finally {
