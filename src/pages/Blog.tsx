@@ -8,17 +8,11 @@ import { toast } from "@/components/ui/use-toast";
 
 const Blog = () => {
   console.log("Blog component initialized");
-  console.log("Supabase client config:", {
-    url: supabase.config.supabaseUrl,
-    hasAuth: !!supabase.auth,
-    headers: supabase.rest.headers
-  });
 
   const { data: posts, isLoading, error } = useQuery({
     queryKey: ["blog-posts"],
     queryFn: async () => {
       console.log("Starting blog posts fetch...");
-      console.log("Request headers:", supabase.rest.headers);
       
       try {
         console.log("Initiating Supabase query...");
@@ -64,13 +58,6 @@ const Blog = () => {
       const delay = Math.min(1000 * 2 ** attemptIndex, 30000);
       console.log(`Retry attempt ${attemptIndex + 1}, waiting ${delay}ms`);
       return delay;
-    },
-    onError: (error: any) => {
-      console.error("Query error handler:", {
-        message: error.message,
-        stack: error.stack,
-        name: error.name
-      });
     }
   });
 
@@ -81,7 +68,7 @@ const Blog = () => {
         <div className="text-center">
           <h1 className="text-2xl font-bold text-red-600 mb-4">Error Loading Blog Posts</h1>
           <p className="text-gray-600">Please try refreshing the page</p>
-          <p className="text-sm text-gray-500 mt-2">{error.message}</p>
+          <p className="text-sm text-gray-500 mt-2">{(error as Error).message}</p>
         </div>
       </div>
     );
