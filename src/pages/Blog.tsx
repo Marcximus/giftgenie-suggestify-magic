@@ -4,20 +4,51 @@ import { Tables } from "@/integrations/supabase/types";
 import { Card } from "@/components/ui/card";
 import { Link } from "react-router-dom";
 import { Helmet } from "react-helmet";
+import { toast } from "@/components/ui/use-toast";
 
 const Blog = () => {
-  const { data: posts, isLoading } = useQuery({
+  const { data: posts, isLoading, error } = useQuery({
     queryKey: ["blog-posts"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("blog_posts")
-        .select("*")
-        .order("published_at", { ascending: false });
-      
-      if (error) throw error;
-      return data as Tables<"blog_posts">[];
+      console.log("Fetching blog posts...");
+      try {
+        const { data, error } = await supabase
+          .from("blog_posts")
+          .select("*")
+          .order("published_at", { ascending: false });
+        
+        if (error) {
+          console.error("Supabase error:", error);
+          toast({
+            title: "Error loading blog posts",
+            description: error.message,
+            variant: "destructive",
+          });
+          throw error;
+        }
+
+        console.log("Successfully fetched blog posts:", data?.length || 0);
+        return data as Tables<"blog_posts">[];
+      } catch (error) {
+        console.error("Failed to fetch blog posts:", error);
+        throw error;
+      }
     },
+    retry: 3,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
+
+  if (error) {
+    console.error("Query error:", error);
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-red-600 mb-4">Error Loading Blog Posts</h1>
+          <p className="text-gray-600">Please try refreshing the page</p>
+        </div>
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (
