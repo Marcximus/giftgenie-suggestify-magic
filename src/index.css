@@ -37,7 +37,7 @@
   }
   
   body {
-    @apply bg-background text-foreground antialiased pb-12 sm:pb-28;
+    @apply bg-background text-foreground antialiased pb-8 sm:pb-28;
     font-feature-settings: "rlig" 1, "calt" 1;
   }
   

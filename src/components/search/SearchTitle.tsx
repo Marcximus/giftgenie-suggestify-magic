@@ -11,7 +11,7 @@ export const SearchTitle = () => {
       <p className="text-[0.7rem] sm:text-xs md:text-sm text-muted-foreground animate-in fade-in slide-in-from-top-4 duration-700 delay-150 px-2">
         Find the perfect gift with the power of AI
         <br />
-        <span className="text-blue-500">Type below</span> and let internet magic find the absolute top ideas:
+        <span className="text-blue-500">Type below</span> and let internet magic find the best gift ideas:
       </p>
     </div>
   );
