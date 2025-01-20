@@ -13,6 +13,24 @@ export const BlogPostMeta = ({ post }: BlogPostMetaProps) => {
   const publishDate = post.published_at ? new Date(post.published_at).toISOString() : "";
   const modifyDate = post.updated_at ? new Date(post.updated_at).toISOString() : publishDate;
 
+  // Prepare product data with ratings if available
+  const productData = firstProduct ? {
+    "@type": "Product",
+    "name": firstProduct.productTitle,
+    "image": firstProduct.imageUrl,
+    "url": firstProduct.affiliateLink,
+    "description": firstProduct.description,
+    ...(firstProduct.rating && {
+      "aggregateRating": {
+        "@type": "AggregateRating",
+        "ratingValue": firstProduct.rating,
+        "ratingCount": firstProduct.totalRatings || 0,
+        "bestRating": "5",
+        "worstRating": "1"
+      }
+    })
+  } : null;
+
   return (
     <Helmet>
       <title>{post.meta_title || post.title} - Get The Gift Blog</title>
@@ -78,14 +96,8 @@ export const BlogPostMeta = ({ post }: BlogPostMetaProps) => {
             "@type": "WebPage",
             "@id": `https://getthegift.ai/blog/post/${post.slug}`
           },
-          ...(firstProduct && {
-            "about": {
-              "@type": "Product",
-              "name": firstProduct.productTitle,
-              "image": firstProduct.imageUrl,
-              "url": firstProduct.affiliateLink,
-              "description": firstProduct.description
-            }
+          ...(productData && {
+            "about": productData
           })
         })}
       </script>
