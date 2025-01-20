@@ -1,25 +1,24 @@
 export const extractPrice = (priceData: any): number | undefined => {
-  console.log('Attempting to extract price from:', {
+  console.log('Extracting price from:', {
     raw: priceData,
     type: typeof priceData,
     isObject: typeof priceData === 'object',
-    hasPrice: priceData?.price,
-    hasCurrentPrice: priceData?.current_price
+    hasCurrentPrice: priceData?.current_price !== undefined
   });
 
-  // If it's already a number, return it
+  // If it's already a valid number, return it
   if (typeof priceData === 'number' && !isNaN(priceData)) {
     return priceData;
   }
 
   // Handle price object with current_price
   if (priceData && typeof priceData === 'object') {
-    if (priceData.current_price) {
-      const currentPrice = parseFloat(priceData.current_price.toString());
+    if ('current_price' in priceData) {
+      const currentPrice = parseFloat(String(priceData.current_price));
       if (!isNaN(currentPrice)) return currentPrice;
     }
-    if (priceData.price) {
-      const price = parseFloat(priceData.price.toString());
+    if ('price' in priceData) {
+      const price = parseFloat(String(priceData.price));
       if (!isNaN(price)) return price;
     }
   }
@@ -31,6 +30,7 @@ export const extractPrice = (priceData: any): number | undefined => {
     if (!isNaN(price)) return price;
   }
 
+  console.log('Failed to extract valid price from:', priceData);
   return undefined;
 };
 

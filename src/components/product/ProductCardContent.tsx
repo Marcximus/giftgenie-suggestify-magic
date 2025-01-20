@@ -2,14 +2,20 @@ import { Star } from "lucide-react";
 
 interface ProductCardContentProps {
   description: string;
-  price: string;
+  price: string | number;
   rating?: number;
   totalRatings?: number;
 }
 
 const formatPrice = (price: string | number | undefined): string => {
+  console.log('Formatting price:', {
+    price,
+    type: typeof price,
+    isNumber: typeof price === 'number'
+  });
+
   // If price is undefined or null, return default message
-  if (!price) {
+  if (price === undefined || price === null) {
     return 'Check price on Amazon';
   }
   
@@ -89,7 +95,7 @@ export const ProductCardContent = ({
   console.log('ProductCardContent received:', {
     price,
     priceType: typeof price,
-    hasPrice: !!price
+    hasPrice: price !== undefined
   });
 
   const formattedPrice = formatPrice(price);
