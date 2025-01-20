@@ -12,7 +12,7 @@ interface SuggestionsGridItemsProps {
 // Memoize the individual suggestion item to prevent unnecessary re-renders
 const SuggestionItem = memo(({ 
   suggestion, 
-  index, 
+  index,
   onMoreLikeThis 
 }: { 
   suggestion: GiftSuggestion; 
@@ -61,7 +61,7 @@ const SuggestionItem = memo(({
 
 SuggestionItem.displayName = 'SuggestionItem';
 
-export const SuggestionsGridItems = memo(({
+const SuggestionsGridItemsComponent = ({
   suggestions,
   onMoreLikeThis,
   isLoading
@@ -107,6 +107,8 @@ export const SuggestionsGridItems = memo(({
       )}
     </>
   );
-});
+};
 
-SuggestionsGridItems.displayName = 'SuggestionsGridItems';
+SuggestionsGridItemsComponent.displayName = 'SuggestionsGridItems';
+
+export const SuggestionsGridItems = memo(SuggestionsGridItemsComponent);
