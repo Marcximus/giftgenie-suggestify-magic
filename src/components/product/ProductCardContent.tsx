@@ -11,7 +11,7 @@ const formatPrice = (price: string | number | undefined): string => {
   console.log('Formatting price:', {
     price,
     type: typeof price,
-    isNumber: typeof price === 'number'
+    rawValue: price
   });
 
   // If price is undefined or null, return default message
@@ -26,14 +26,14 @@ const formatPrice = (price: string | number | undefined): string => {
   
   // If price is a string, try to parse it
   if (typeof price === 'string') {
-    // Remove any "undefined" that might have been concatenated
-    if (price.includes('undefined')) {
-      return 'Check price on Amazon';
-    }
-    
     // If it already has a currency symbol, return as is
     if (price.startsWith('$') || price.startsWith('USD')) {
       return price;
+    }
+    
+    // Remove any "undefined" that might have been concatenated
+    if (price.includes('undefined')) {
+      return 'Check price on Amazon';
     }
     
     // Try to parse the string as a number
@@ -95,7 +95,7 @@ export const ProductCardContent = ({
   console.log('ProductCardContent received:', {
     price,
     priceType: typeof price,
-    hasPrice: price !== undefined
+    rawValue: price
   });
 
   const formattedPrice = formatPrice(price);
