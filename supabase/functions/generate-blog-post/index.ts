@@ -5,6 +5,7 @@ import { buildBlogPrompt } from './promptBuilder.ts';
 import { corsHeaders } from '../_shared/cors.ts';
 
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -12,6 +13,10 @@ serve(async (req) => {
   try {
     const { title } = await req.json();
     console.log('Processing blog post for title:', title);
+
+    if (!title) {
+      throw new Error('Title is required');
+    }
 
     // Detect demographic information
     const titleLower = title.toLowerCase();
@@ -37,14 +42,19 @@ serve(async (req) => {
     const prompt = buildBlogPrompt();
     console.log('Using prompt system content:', prompt.content.substring(0, 200) + '...');
 
+    const openAiKey = Deno.env.get('OPENAI_API_KEY');
+    if (!openAiKey) {
+      throw new Error('OpenAI API key not configured');
+    }
+
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${Deno.env.get('OPENAI_API_KEY')}`,
+        'Authorization': `Bearer ${openAiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: "gpt-4o",
+        model: "gpt-4o-mini", // Updated to use the correct model name
         messages: [
           prompt,
           {
