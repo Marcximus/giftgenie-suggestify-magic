@@ -7,9 +7,9 @@ import { generateCustomDescription } from '@/utils/descriptionUtils';
 import { logApiMetrics } from '@/utils/metricsUtils';
 import { toast } from "@/components/ui/use-toast";
 
-const BATCH_SIZE = 4; // Increased from 3 to 4 for faster processing
-const STAGGER_DELAY = 100; // Reduced from 200ms to 100ms
-const MAX_CONCURRENT = 4; // Increased from 3 to 4
+const BATCH_SIZE = 8; // Increased from 4 to 8 for faster processing
+const STAGGER_DELAY = 100; // Keep the same delay between batches
+const MAX_CONCURRENT = 8; // Increased from 4 to 8 to match batch size
 
 export const useAmazonProductProcessing = () => {
   const { getAmazonProduct } = useAmazonProducts();

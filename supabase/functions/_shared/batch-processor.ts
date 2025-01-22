@@ -1,7 +1,7 @@
 import { AmazonProduct } from './types.ts';
 import { searchAmazonProducts } from './amazon-search.ts';
 
-const BATCH_SIZE = 3;
+const BATCH_SIZE = 8;
 const BATCH_DELAY = 100;
 
 export async function processSuggestionsInBatches(suggestions: string[]): Promise<AmazonProduct[]> {
