@@ -38,12 +38,9 @@ export const buildBlogPrompt = () => ({
      </ul>
 
 5. Product Image Placement:
-   - Each product section should follow this order:
-     1. Product title (H3)
-     2. [Space for product image - will be added automatically]
-     3. [Space for Amazon button - will be added automatically]
-     4. Description paragraphs
-     5. Feature list
+   - After each product title (<h3>), leave a line break
+   - The image and Amazon button will be automatically added by the system
+   - Continue with your product description after the line break
 
 6. Section Spacing:
    - Start each new product section with: <hr class="my-8">
