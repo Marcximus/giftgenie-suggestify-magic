@@ -75,6 +75,17 @@ export const useSuggestions = () => {
   const handleMoreLikeThis = async (title: string) => {
     const query = lastQuery.toLowerCase();
     
+    // Extract key product characteristics from the title
+    const keywords = title.toLowerCase()
+      .replace(/[^\w\s]/g, ' ') // Remove special characters
+      .split(' ')
+      .filter(word => 
+        !['with', 'and', 'in', 'for', 'by', 'the', 'a', 'an'].includes(word)
+      )
+      .filter(word => word.length > 2)
+      .slice(0, 3) // Take up to 3 significant words
+      .join(' ');
+    
     // Extract context from the last query
     const isMale = query.includes('brother') || 
                   query.includes('father') || 
@@ -97,16 +108,21 @@ export const useSuggestions = () => {
                        query.match(/(\$?\d+(?:\s*-\s*\$?\d+)?)\s*budget/i);
     const budgetContext = budgetMatch ? `within the budget of ${budgetMatch[1]}` : '';
 
-    const interestMatch = query.match(/who likes\s+([^.]+)/i);
-    const interestContext = interestMatch ? `related to ${interestMatch[1].trim()}` : '';
-
     const genderContext = isMale ? 'male' : isFemale ? 'female' : '';
     const genderInstruction = genderContext ? 
       `IMPORTANT: Only suggest gifts appropriate for ${genderContext} recipients.` : '';
     
-    const cleanTitle = title.toLowerCase().replace(/[^\w\s]/g, ' ').trim();
+    // Build a more focused prompt that emphasizes similarity
+    const contextualPrompt = `Find me 8 gift suggestions that are very similar to "${keywords}" in terms of type, style, and purpose. Focus on products that serve a similar function or appeal to people who would like "${title}". ${ageContext} ${budgetContext} ${genderInstruction}
+
+IMPORTANT GUIDELINES:
+- Suggest products that are DIRECTLY related to or complement "${keywords}"
+- Include variations of similar products with different features
+- Include alternative brands offering similar functionality
+- Focus on the same product category and use case
+- Maintain similar quality level and target audience`;
     
-    const contextualPrompt = `Find me 8 gift suggestions similar to "${cleanTitle}" ${ageContext} ${budgetContext} ${interestContext}. ${genderInstruction}`;
+    console.log('Generated "More like this" prompt:', contextualPrompt);
     
     setLastQuery(contextualPrompt);
     await fetchSuggestions(contextualPrompt);
