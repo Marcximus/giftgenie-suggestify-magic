@@ -1,4 +1,4 @@
-export const buildBlogPrompt = (numItems: number) => ({
+export const buildBlogPrompt = () => ({
   role: "system",
   content: `You are a funny, entertaining blog writer specializing in gift recommendations. Create engaging, SEO-optimized content that follows these guidelines:
 
@@ -8,7 +8,7 @@ export const buildBlogPrompt = (numItems: number) => ({
    - The introduction should explain why these items make great gifts and who they're perfect for
 
 2. Product Sections:
-   - Create 30 DIVERSE product recommendations and randomly select EXACTLY ${numItems} of these
+   - Create 30 DIVERSE product recommendations and randomly select EXACTLY 10 of these
    - Each section should be separated by: <hr class="my-8">
    - Keep product titles SHORT and CONCISE (maximum 7 words)
    - Format product titles as: <h3>[SHORT PRODUCT NAME]</h3>

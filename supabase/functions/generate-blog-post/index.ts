@@ -13,12 +13,6 @@ serve(async (req) => {
     const { title } = await req.json();
     console.log('Processing blog post for title:', title);
 
-    // Extract number from title using regex
-    // This will match patterns like "top 10", "10 best", etc.
-    const numMatch = title.match(/(?:top\s+)?(\d+)(?:\s+best|\s+gift)/i);
-    const numItems = numMatch ? parseInt(numMatch[1]) : 8; // Default to 8 if no number found
-    console.log('Number of items to generate:', numItems);
-
     // Detect demographic information
     const titleLower = title.toLowerCase();
     const isTeenage = titleLower.includes('teen') || titleLower.includes('teenage');
@@ -40,9 +34,8 @@ serve(async (req) => {
     ` : '';
 
     // Get the prompt from promptBuilder
-    const prompt = buildBlogPrompt(numItems);
+    const prompt = buildBlogPrompt();
     console.log('Using prompt system content:', prompt.content.substring(0, 200) + '...');
-    console.log('Requested number of items:', numItems);
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -56,7 +49,7 @@ serve(async (req) => {
           prompt,
           {
             role: "user",
-            content: `Create a fun, engaging blog post about: ${title}\n\n${demographicContext}\n\nIMPORTANT: You MUST generate EXACTLY ${numItems} product recommendations, no more, no less.`
+            content: `Create a fun, engaging blog post about: ${title}\n\n${demographicContext}\n\nIMPORTANT: You MUST generate EXACTLY 10 product recommendations, no more, no less.`
           }
         ],
         temperature: 0.7,
@@ -84,8 +77,8 @@ serve(async (req) => {
 
     // Verify the number of product sections matches the requested number
     const actualProductCount = (initialContent.match(/<h3>/g) || []).length;
-    if (actualProductCount !== numItems) {
-      console.warn(`Warning: Generated ${actualProductCount} products instead of requested ${numItems}`);
+    if (actualProductCount !== 10) {
+      console.warn(`Warning: Generated ${actualProductCount} products instead of requested 10`);
     }
 
     // Initialize Supabase client
