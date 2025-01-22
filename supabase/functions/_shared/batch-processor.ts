@@ -1,8 +1,9 @@
 import { AmazonProduct } from './types.ts';
 import { searchAmazonProducts } from './amazon-search.ts';
 
-const BATCH_SIZE = 8;
-const BATCH_DELAY = 100;
+const BATCH_SIZE = 8; // Keep frontend batch size at 8
+const PROCESS_SIZE = 4; // But process 4 at a time
+const BATCH_DELAY = 200; // Increase delay between batches
 
 export async function processSuggestionsInBatches(suggestions: string[]): Promise<AmazonProduct[]> {
   const batches: string[][] = [];
@@ -17,22 +18,35 @@ export async function processSuggestionsInBatches(suggestions: string[]): Promis
   for (const batch of batches) {
     console.log(`Processing batch of ${batch.length} suggestions`);
     
-    // Process batch in parallel
-    const batchResults = await Promise.all(
-      batch.map(async (suggestion) => {
-        try {
-          return await searchAmazonProducts(suggestion);
-        } catch (error) {
-          console.error('Error processing suggestion:', error);
-          return null;
-        }
-      })
-    );
+    // Process batch in smaller chunks
+    for (let i = 0; i < batch.length; i += PROCESS_SIZE) {
+      const chunk = batch.slice(i, i + PROCESS_SIZE);
+      console.log(`Processing chunk of ${chunk.length} items from batch`);
+      
+      // Process chunk in parallel
+      const chunkResults = await Promise.all(
+        chunk.map(async (suggestion) => {
+          try {
+            const result = await searchAmazonProducts(suggestion);
+            console.log(`Processed suggestion: ${suggestion}, success: ${!!result}`);
+            return result;
+          } catch (error) {
+            console.error('Error processing suggestion:', error);
+            return null;
+          }
+        })
+      );
+      
+      // Filter out null results and add to processed products
+      processedProducts.push(...chunkResults.filter((result): result is AmazonProduct => result !== null));
+      
+      // Add delay between chunks within a batch
+      if (i + PROCESS_SIZE < batch.length) {
+        await new Promise(resolve => setTimeout(resolve, BATCH_DELAY / 2));
+      }
+    }
     
-    // Filter out null results and add to processed products
-    processedProducts.push(...batchResults.filter((result): result is AmazonProduct => result !== null));
-    
-    // Add delay between batches to avoid rate limits
+    // Add delay between batches
     if (batches.indexOf(batch) < batches.length - 1) {
       await new Promise(resolve => setTimeout(resolve, BATCH_DELAY));
     }
