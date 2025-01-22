@@ -38,8 +38,8 @@ export const buildBlogPrompt = () => ({
      </ul>
 
 5. Product Image Placement:
-   - After each product title (<h3>), leave a line break
-   - The image and Amazon button will be automatically added by the system
+   - After each product title (<h3>), leave a single line break
+   - The system will automatically add the product image and Amazon button
    - Continue with your product description after the line break
 
 6. Section Spacing:
