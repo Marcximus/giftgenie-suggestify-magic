@@ -63,6 +63,7 @@ const BlogEdit = () => {
         images: parseJsonWithDefault(data.images, []),
         affiliate_links: parseJsonWithDefault(data.affiliate_links, []),
         related_posts: parseJsonWithDefault(data.related_posts, []),
+        breadcrumb_list: parseJsonWithDefault(data.breadcrumb_list, []),
         excerpt: data.excerpt || null,
         image_url: data.image_url || null,
         published_at: data.published_at || null,
@@ -80,7 +81,10 @@ const BlogEdit = () => {
           successful_replacements: 0
         }),
         product_reviews: parseJsonWithDefault(data.product_reviews, []),
-        product_search_failures: parseJsonWithDefault(data.product_search_failures, [])
+        product_search_failures: parseJsonWithDefault(data.product_search_failures, []),
+        word_count: data.word_count || null,
+        reading_time: data.reading_time || null,
+        main_entity: data.main_entity || null
       };
       
       return formattedPost;
