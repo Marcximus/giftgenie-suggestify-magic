@@ -31,6 +31,31 @@ export const BlogPostMeta = ({ post }: BlogPostMetaProps) => {
     })
   } : null;
 
+  // Generate breadcrumb list for structured data
+  const breadcrumbList = {
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Home",
+        "item": "https://getthegift.ai"
+      },
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "name": "Blog",
+        "item": "https://getthegift.ai/blog"
+      },
+      {
+        "@type": "ListItem",
+        "position": 3,
+        "name": post.title,
+        "item": `https://getthegift.ai/blog/post/${post.slug}`
+      }
+    ]
+  };
+
   return (
     <Helmet>
       <title>{post.meta_title || post.title} - Get The Gift Blog</title>
@@ -96,6 +121,7 @@ export const BlogPostMeta = ({ post }: BlogPostMetaProps) => {
             "@type": "WebPage",
             "@id": `https://getthegift.ai/blog/post/${post.slug}`
           },
+          "breadcrumb": breadcrumbList,
           ...(productData && {
             "about": productData
           })

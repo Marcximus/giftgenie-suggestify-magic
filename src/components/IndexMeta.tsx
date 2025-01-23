@@ -2,11 +2,35 @@ import { Helmet } from "react-helmet";
 
 export const IndexMeta = () => {
   const canonicalUrl = "https://getthegift.ai";
+  const title = "Get The Gift - AI-Powered Gift Suggestions | Find Perfect Gifts";
+  const description = "Discover perfect gift ideas with our AI-powered gift suggestion engine. Get personalized recommendations for any occasion, budget, and recipient. Find unique and thoughtful presents easily.";
 
   return (
     <Helmet>
-      <title>Get The Gift - AI-Powered Gift Suggestions | Find Perfect Gifts</title>
+      <title>{title}</title>
+      <meta name="description" content={description} />
       <link rel="canonical" href={canonicalUrl} />
+      
+      {/* Primary keywords */}
+      <meta name="keywords" content="gift suggestions, gift ideas, AI gift finder, perfect gifts, gift recommendations, personalized gifts, unique gifts, thoughtful presents" />
+      
+      {/* Open Graph tags */}
+      <meta property="og:type" content="website" />
+      <meta property="og:title" content={title} />
+      <meta property="og:description" content={description} />
+      <meta property="og:url" content={canonicalUrl} />
+      <meta property="og:image" content={`${canonicalUrl}/og-image.png`} />
+      <meta property="og:site_name" content="Get The Gift" />
+      
+      {/* Twitter Card tags */}
+      <meta name="twitter:card" content="summary_large_image" />
+      <meta name="twitter:title" content={title} />
+      <meta name="twitter:description" content={description} />
+      <meta name="twitter:image" content={`${canonicalUrl}/og-image.png`} />
+      
+      {/* Additional meta tags */}
+      <meta name="robots" content="index, follow" />
+      <meta name="author" content="Get The Gift Team" />
       
       {/* Preconnect to external domains */}
       <link rel="preconnect" href="https://www.amazon.com" />
@@ -21,7 +45,7 @@ export const IndexMeta = () => {
           "name": "Get The Gift",
           "url": canonicalUrl,
           "applicationCategory": "Shopping",
-          "description": "AI-powered gift suggestion engine that helps users find perfect presents for any occasion",
+          "description": description,
           "browserRequirements": "Requires JavaScript. Requires HTML5.",
           "offers": {
             "@type": "Offer",
