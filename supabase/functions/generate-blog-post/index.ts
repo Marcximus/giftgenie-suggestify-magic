@@ -6,12 +6,13 @@ import { corsHeaders } from '../_shared/cors.ts';
 import { validateBlogContent } from './contentValidator.ts';
 
 serve(async (req) => {
-  // This is critical - handle CORS preflight requests
+  // Handle CORS preflight requests first
   if (req.method === 'OPTIONS') {
     return new Response(null, { 
       headers: {
         ...corsHeaders,
         'Access-Control-Allow-Methods': 'POST, OPTIONS',
+        'Access-Control-Max-Age': '86400', // 24 hours
       }
     });
   }
@@ -23,6 +24,11 @@ serve(async (req) => {
     if (!title) {
       throw new Error('Title is required');
     }
+
+    // Initialize Supabase client
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseKey);
 
     // Detect demographic information
     const titleLower = title.toLowerCase();
@@ -126,11 +132,6 @@ Previous attempt failed validation. Please ensure all requirements are met.`
       throw new Error(`Failed to generate valid content after ${maxAttempts} attempts`);
     }
 
-    // Initialize Supabase client
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
-
     // Store the processed content in the database
     const { error: dbError } = await supabase
       .from('blog_posts')
@@ -146,6 +147,7 @@ Previous attempt failed validation. Please ensure all requirements are met.`
       throw new Error('Failed to save blog post');
     }
 
+    // Return success response with CORS headers
     return new Response(
       JSON.stringify({ 
         message: 'Blog post created successfully',
@@ -154,14 +156,19 @@ Previous attempt failed validation. Please ensure all requirements are met.`
       }),
       { 
         headers: { 
-          ...corsHeaders, 
-          'Content-Type': 'application/json' 
+          ...corsHeaders,
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'POST, OPTIONS',
+          'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
         } 
       }
     );
 
   } catch (error) {
     console.error('Error in generate-blog-post:', error);
+    
+    // Return error response with CORS headers
     return new Response(
       JSON.stringify({
         error: error.message,
@@ -171,8 +178,11 @@ Previous attempt failed validation. Please ensure all requirements are met.`
       { 
         status: 500,
         headers: { 
-          ...corsHeaders, 
-          'Content-Type': 'application/json' 
+          ...corsHeaders,
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'POST, OPTIONS',
+          'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
         }
       }
     );
