@@ -3,8 +3,7 @@ import { Editor } from '@tiptap/react';
 import {
   Bold, Italic, List, Heading2, Heading3, Quote, Link as LinkIcon,
   Image as ImageIcon, ListOrdered, AlignLeft, AlignCenter, AlignRight, 
-  Palette, Strikethrough, Underline, Code, Undo, Redo, 
-  Table, TableRow, TableColumn, Heading1
+  Palette, Strikethrough, Underline, Code, Undo, Redo, Heading1
 } from 'lucide-react';
 import {
   Popover,
@@ -97,7 +96,7 @@ export const EditorToolbar = ({ editor, onImageUpload, onLinkAdd }: EditorToolba
         </Button>
         <Button
           type="button"
-          onClick={() => editor.chain().focus().toggleUnderline().run()}
+          onClick={() => editor.commands.toggleUnderline()}
           variant={editor.isActive('underline') ? 'secondary' : 'ghost'}
           size="sm"
           title="Underline"
