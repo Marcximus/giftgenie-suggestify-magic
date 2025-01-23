@@ -117,6 +117,7 @@ export type Database = {
         Row: {
           affiliate_links: Json | null
           author: string
+          breadcrumb_list: Json | null
           content: string
           content_format_version: string | null
           created_at: string | null
@@ -127,6 +128,7 @@ export type Database = {
           image_url: string | null
           images: Json | null
           last_generation_error: string | null
+          main_entity: string | null
           meta_description: string | null
           meta_keywords: string | null
           meta_title: string | null
@@ -134,14 +136,17 @@ export type Database = {
           product_reviews: Json | null
           product_search_failures: Json | null
           published_at: string | null
+          reading_time: number | null
           related_posts: Json | null
           slug: string
           title: string
           updated_at: string | null
+          word_count: number | null
         }
         Insert: {
           affiliate_links?: Json | null
           author: string
+          breadcrumb_list?: Json | null
           content: string
           content_format_version?: string | null
           created_at?: string | null
@@ -152,6 +157,7 @@ export type Database = {
           image_url?: string | null
           images?: Json | null
           last_generation_error?: string | null
+          main_entity?: string | null
           meta_description?: string | null
           meta_keywords?: string | null
           meta_title?: string | null
@@ -159,14 +165,17 @@ export type Database = {
           product_reviews?: Json | null
           product_search_failures?: Json | null
           published_at?: string | null
+          reading_time?: number | null
           related_posts?: Json | null
           slug: string
           title: string
           updated_at?: string | null
+          word_count?: number | null
         }
         Update: {
           affiliate_links?: Json | null
           author?: string
+          breadcrumb_list?: Json | null
           content?: string
           content_format_version?: string | null
           created_at?: string | null
@@ -177,6 +186,7 @@ export type Database = {
           image_url?: string | null
           images?: Json | null
           last_generation_error?: string | null
+          main_entity?: string | null
           meta_description?: string | null
           meta_keywords?: string | null
           meta_title?: string | null
@@ -184,10 +194,12 @@ export type Database = {
           product_reviews?: Json | null
           product_search_failures?: Json | null
           published_at?: string | null
+          reading_time?: number | null
           related_posts?: Json | null
           slug?: string
           title?: string
           updated_at?: string | null
+          word_count?: number | null
         }
         Relationships: []
       }
@@ -223,12 +235,18 @@ export type Database = {
           amazon_rating: number | null
           amazon_total_ratings: number | null
           amazon_url: string | null
+          availability: string | null
+          brand: string | null
+          category: string | null
           created_at: string | null
           description: string
+          gtin: string | null
           id: string
+          mpn: string | null
           price_range: string
           reason: string | null
           search_query: string
+          sku: string | null
           status: string | null
           title: string
         }
@@ -239,12 +257,18 @@ export type Database = {
           amazon_rating?: number | null
           amazon_total_ratings?: number | null
           amazon_url?: string | null
+          availability?: string | null
+          brand?: string | null
+          category?: string | null
           created_at?: string | null
           description: string
+          gtin?: string | null
           id?: string
+          mpn?: string | null
           price_range: string
           reason?: string | null
           search_query: string
+          sku?: string | null
           status?: string | null
           title: string
         }
@@ -255,12 +279,18 @@ export type Database = {
           amazon_rating?: number | null
           amazon_total_ratings?: number | null
           amazon_url?: string | null
+          availability?: string | null
+          brand?: string | null
+          category?: string | null
           created_at?: string | null
           description?: string
+          gtin?: string | null
           id?: string
+          mpn?: string | null
           price_range?: string
           reason?: string | null
           search_query?: string
+          sku?: string | null
           status?: string | null
           title?: string
         }
