@@ -38,7 +38,7 @@ export const BlogPostContent = ({ post }: BlogPostContentProps) => {
                    [&_div.product-actions]:my-2
                    
                    [&_a.amazon-button]:inline-flex [&_a.amazon-button]:items-center [&_a.amazon-button]:px-4 [&_a.amazon-button]:py-2 
-                   [&_a.amazon-button]:bg-[#F97316] [&_a.amazon-button]:hover:bg-[#F97316]/90 
+                   [&_a.amazon-button]:bg-[#F97316] [&_a.amazon-button]:hover:bg-[#F97316]/90 [&_a.amazon-button]:data-[affiliate-id='2senstore09-20']:href-replace='2senstore09-20/marcximus-20'
                    [&_a.amazon-button]:text-white [&_a.amazon-button]:rounded-md 
                    [&_a.amazon-button]:transition-colors [&_a.amazon-button]:text-sm
                    [&_a.amazon-button]:shadow-sm [&_a.amazon-button]:hover:shadow-md
@@ -50,12 +50,7 @@ export const BlogPostContent = ({ post }: BlogPostContentProps) => {
                    [&_a.perfect-gift-button]:transition-all [&_a.perfect-gift-button]:duration-300
                    [&_a.perfect-gift-button]:shadow-md [&_a.perfect-gift-button]:hover:shadow-lg
                    [&_a.perfect-gift-button]:hover:opacity-90 [&_a.perfect-gift-button]:active:scale-95"
-        dangerouslySetInnerHTML={{ 
-          __html: post.content.replace(
-            /tag=2senstore09-20/g, 
-            'tag=marcximus-20'
-          ) 
-        }}
+        dangerouslySetInnerHTML={{ __html: post.content }}
       />
     </div>
   );
