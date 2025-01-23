@@ -6,9 +6,14 @@ import { corsHeaders } from '../_shared/cors.ts';
 import { validateBlogContent } from './contentValidator.ts';
 
 serve(async (req) => {
-  // Handle CORS preflight requests
+  // This is critical - handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { 
+      headers: {
+        ...corsHeaders,
+        'Access-Control-Allow-Methods': 'POST, OPTIONS',
+      }
+    });
   }
 
   try {
@@ -147,7 +152,12 @@ Previous attempt failed validation. Please ensure all requirements are met.`
         attempts,
         wordCount: validContent.word_count
       }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { 
+        headers: { 
+          ...corsHeaders, 
+          'Content-Type': 'application/json' 
+        } 
+      }
     );
 
   } catch (error) {
@@ -160,7 +170,10 @@ Previous attempt failed validation. Please ensure all requirements are met.`
       }),
       { 
         status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        headers: { 
+          ...corsHeaders, 
+          'Content-Type': 'application/json' 
+        }
       }
     );
   }
