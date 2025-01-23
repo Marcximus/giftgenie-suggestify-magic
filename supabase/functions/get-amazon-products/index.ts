@@ -21,24 +21,9 @@ interface AmazonProduct {
 }
 
 const extractPrice = (priceStr: string | null | undefined): number | undefined => {
-  console.log('Extracting price from:', {
-    raw: priceStr,
-    type: typeof priceStr
-  });
-
   if (!priceStr) return undefined;
-
-  // Remove currency symbols and other non-numeric characters except decimal point
   const cleanPrice = priceStr.replace(/[^0-9.]/g, '');
   const price = parseFloat(cleanPrice);
-  
-  console.log('Price extraction result:', {
-    original: priceStr,
-    cleaned: cleanPrice,
-    parsed: price,
-    isValid: !isNaN(price)
-  });
-  
   return isNaN(price) ? undefined : price;
 };
 
@@ -74,7 +59,7 @@ async function searchAmazonProduct(
         status: searchResponse.status,
         statusText: searchResponse.statusText
       });
-      throw new Error(`Amazon API error: ${searchResponse.status}`);
+      return null;
     }
 
     const searchData = await searchResponse.json();
@@ -83,9 +68,9 @@ async function searchAmazonProduct(
       productsCount: searchData.data?.products?.length || 0
     });
 
-    if (!searchData.data?.products?.[0]) {
-      console.error('No products found in search results');
-      throw new Error('No products found');
+    if (!searchData.data?.products?.length) {
+      console.log('No products found in search results');
+      return null;
     }
 
     let product = searchData.data.products[0];
@@ -94,8 +79,8 @@ async function searchAmazonProduct(
       console.log('First product has no ASIN, searching for product with ASIN...');
       const productWithAsin = searchData.data.products.find((p: any) => p.asin);
       if (!productWithAsin) {
-        console.error('No product with ASIN found in results');
-        throw new Error('No product with ASIN found');
+        console.log('No product with ASIN found in results');
+        return null;
       }
       product = productWithAsin;
       console.log('Found alternative product with ASIN:', product.asin);
@@ -159,7 +144,7 @@ async function searchAmazonProduct(
       searchTerm,
       stack: error.stack
     });
-    throw error;
+    return null;
   }
 }
 
@@ -206,9 +191,9 @@ serve(async (req) => {
     if (!product) {
       console.log('No product found for search term:', searchTerm);
       return new Response(
-        JSON.stringify({ error: 'No product found' }),
+        JSON.stringify({ product: null }),
         { 
-          status: 404,
+          status: 200,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         }
       );
