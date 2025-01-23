@@ -6,7 +6,9 @@ import { Color } from '@tiptap/extension-color';
 import ListItem from '@tiptap/extension-list-item';
 import TextAlign from '@tiptap/extension-text-align';
 import Image from '@tiptap/extension-image';
+import Underline from '@tiptap/extension-underline';
 import { EditorToolbar } from './EditorToolbar';
+import { useToast } from "@/components/ui/use-toast";
 
 interface BlogEditorProps {
   value: string;
@@ -14,19 +16,33 @@ interface BlogEditorProps {
 }
 
 export const BlogEditor = ({ value, onChange }: BlogEditorProps) => {
+  const { toast } = useToast();
+
   const editor = useEditor({
     extensions: [
-      StarterKit,
+      StarterKit.configure({
+        heading: {
+          levels: [1, 2, 3],
+        },
+      }),
       Link.configure({
         openOnClick: false,
+        HTMLAttributes: {
+          class: 'text-primary underline',
+        },
       }),
       TextStyle,
       Color,
       ListItem,
+      Underline,
       TextAlign.configure({
         types: ['heading', 'paragraph'],
       }),
-      Image,
+      Image.configure({
+        HTMLAttributes: {
+          class: 'rounded-lg max-w-full h-auto',
+        },
+      }),
     ],
     content: value,
     onUpdate: ({ editor }) => {
@@ -39,26 +55,54 @@ export const BlogEditor = ({ value, onChange }: BlogEditorProps) => {
     },
   });
 
-  if (!editor) {
-    return null;
-  }
-
   const handleLinkAdd = () => {
-    const url = window.prompt('URL');
-    if (url) {
-      editor.chain().focus().setLink({ href: url }).run();
+    const previousUrl = editor?.getAttributes('link').href;
+    const url = window.prompt('URL', previousUrl);
+
+    if (url === null) {
+      return; // Cancelled
+    }
+
+    if (url === '') {
+      editor?.chain().focus().extendMarkRange('link').unsetLink().run();
+      return;
+    }
+
+    try {
+      // Basic URL validation
+      new URL(url);
+      editor?.chain().focus().extendMarkRange('link').setLink({ href: url }).run();
+    } catch {
+      toast({
+        title: "Invalid URL",
+        description: "Please enter a valid URL including http:// or https://",
+        variant: "destructive",
+      });
     }
   };
 
   const handleImageUpload = () => {
     const url = window.prompt('Image URL');
     if (url) {
-      editor.chain().focus().insertContent(`<img src="${url}" />`).run();
+      try {
+        new URL(url);
+        editor?.chain().focus().setImage({ src: url }).run();
+      } catch {
+        toast({
+          title: "Invalid URL",
+          description: "Please enter a valid image URL including http:// or https://",
+          variant: "destructive",
+        });
+      }
     }
   };
 
+  if (!editor) {
+    return null;
+  }
+
   return (
-    <div className="border rounded-md">
+    <div className="border rounded-md overflow-hidden">
       <EditorToolbar 
         editor={editor}
         onImageUpload={handleImageUpload}
