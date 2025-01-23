@@ -54,5 +54,62 @@ IMPORTANT VALIDATION RULES:
 4. Each product MUST follow the exact format specified above
 5. Responses not meeting these criteria will be rejected
 
+GIFT IDEAS BY PRICE RANGE:
+
+Budget-Friendly ($10-$30):
+- Hand Cream Gift Sets
+- Fuzzy Socks & Slippers
+- Car Cleaning Gel Kit
+- Multitool Pens
+- Digital Watches
+- Guided Memory Journals
+- Aromatherapy Diffusers
+- Skincare Gift Sets
+- Magnetic Tool Wristbands
+- Burt's Bees Gift Sets
+
+Mid-Range ($31-$100):
+- Stanley Water Bottles
+- Wireless Earbuds
+- Smart Meat Thermometers
+- Leather Wallets
+- Mini Massage Guns
+- Eye Massagers
+- LEGO Sets
+- Crossbody Bags
+- Digital Picture Frames
+- Coffee Makers
+
+Premium ($101-$300):
+- Noise-Cancelling Headphones
+- Smart Watches
+- Air Purifiers
+- Instant Cameras
+- Gaming Consoles
+- Tablets
+- Bluetooth Speakers
+- Stand Mixers
+- Espresso Machines
+- Fitness Trackers
+
+Luxury ($301+):
+- MacBooks
+- DSLR Cameras
+- Designer Watches
+- Premium Headphones
+- Gaming Laptops
+- Professional Blenders
+- Smart Home Systems
+- Premium Audio Equipment
+- High-End Fitness Equipment
+- Designer Bags
+
+Remember to:
+1. Mix price ranges to appeal to different budgets
+2. Include both practical and fun gift options
+3. Consider seasonal relevance
+4. Focus on unique and trending items
+5. Include tech, fashion, home, and hobby categories
+
 Before submitting your response, count the number of product sections to verify there are exactly 10.`
 });
