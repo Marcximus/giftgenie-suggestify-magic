@@ -96,7 +96,7 @@ export const EditorToolbar = ({ editor, onImageUpload, onLinkAdd }: EditorToolba
         </Button>
         <Button
           type="button"
-          onClick={() => editor.commands.toggleUnderline()}
+          onClick={() => editor.chain().focus().toggleUnderline().run()}
           variant={editor.isActive('underline') ? 'secondary' : 'ghost'}
           size="sm"
           title="Underline"
