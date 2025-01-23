@@ -301,6 +301,12 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      calculate_word_count: {
+        Args: {
+          content: string
+        }
+        Returns: number
+      }
       get_random_daily_times: {
         Args: Record<PropertyKey, never>
         Returns: {

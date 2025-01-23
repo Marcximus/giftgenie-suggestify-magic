@@ -3,6 +3,7 @@ import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 import { buildBlogPrompt } from './promptBuilder.ts';
 import { corsHeaders } from '../_shared/cors.ts';
+import { validateBlogContent } from './contentValidator.ts';
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -80,39 +81,39 @@ serve(async (req) => {
 
     const initialContent = openaiData.choices[0].message.content;
     console.log('Generated content length:', initialContent.length);
-    console.log('Generated content preview:', initialContent.substring(0, 500));
-    console.log('Content contains <h3> tags:', initialContent.includes('<h3>'));
-    console.log('Content contains <hr> tags:', initialContent.includes('<hr'));
-    console.log('Number of product sections:', (initialContent.match(/<h3>/g) || []).length);
 
-    // Verify the number of product sections matches the requested number
-    const actualProductCount = (initialContent.match(/<h3>/g) || []).length;
-    if (actualProductCount !== 10) {
-      console.warn(`Warning: Generated ${actualProductCount} products instead of requested 10`);
+    // Validate content including word count
+    const validation = validateBlogContent(initialContent);
+    console.log('Content validation result:', validation);
+
+    if (!validation.isValid) {
+      console.warn('Content validation failed:', validation.errors);
+      throw new Error(`Content validation failed: ${validation.errors.join(', ')}`);
     }
+
+    // Update the blog post with word count
+    const processedContent = {
+      ...initialContent,
+      word_count: validation.wordCount
+    };
 
     // Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Process the content to add Amazon product information
-    const { data: processedContent, error: processingError } = await supabase.functions.invoke('process-blog-content', {
-      body: { content: initialContent }
-    });
+    // Store the processed content in the database
+    const { error: dbError } = await supabase
+      .from('blog_posts')
+      .insert([{ content: processedContent, title }]);
 
-    if (processingError) {
-      console.error('Content processing error:', processingError);
-      throw processingError;
+    if (dbError) {
+      console.error('Error saving blog post to database:', dbError);
+      throw new Error('Failed to save blog post');
     }
 
-    console.log('Content processed successfully');
-    console.log('Final content length:', processedContent.content.length);
-    console.log('Number of affiliate links:', processedContent.affiliateLinks?.length || 0);
-    console.log('Final content preview:', processedContent.content.substring(0, 500));
-
     return new Response(
-      JSON.stringify(processedContent),
+      JSON.stringify({ message: 'Blog post created successfully' }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
