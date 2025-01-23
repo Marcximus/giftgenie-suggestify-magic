@@ -24,8 +24,8 @@ export const validateBlogContent = (content: string): ValidationResult => {
   }
   
   // Check word count requirements
-  if (totalWordCount < 2000 || totalWordCount > 3500) {
-    errors.push(`Total word count (${totalWordCount}) outside required range (2000-3500)`);
+  if (totalWordCount < 3500 || totalWordCount > 4650) {
+    errors.push(`Total word count (${totalWordCount}) outside required range (3500-4650)`);
   }
   
   // Split content into sections and check individual word counts
@@ -35,8 +35,8 @@ export const validateBlogContent = (content: string): ValidationResult => {
   if (sections[0]) {
     const introClean = sections[0].replace(/<[^>]*>/g, '');
     const introWords = introClean.split(/\s+/).length;
-    if (introWords < 200 || introWords > 300) {
-      errors.push(`Introduction word count (${introWords}) outside required range (200-300)`);
+    if (introWords < 200 || introWords > 250) {
+      errors.push(`Introduction word count (${introWords}) outside required range (200-250)`);
     }
   }
   
@@ -44,8 +44,8 @@ export const validateBlogContent = (content: string): ValidationResult => {
   sections.slice(1, -1).forEach((section, index) => {
     const sectionClean = section.replace(/<[^>]*>/g, '');
     const sectionWords = sectionClean.split(/\s+/).length;
-    if (sectionWords < 200 || sectionWords > 400) {
-      errors.push(`Product section ${index + 1} word count (${sectionWords}) outside required range (200-400)`);
+    if (sectionWords < 300 || sectionWords > 400) {
+      errors.push(`Product section ${index + 1} word count (${sectionWords}) outside required range (300-400)`);
     }
   });
   
@@ -53,8 +53,8 @@ export const validateBlogContent = (content: string): ValidationResult => {
   if (sections[sections.length - 1]) {
     const conclusionClean = sections[sections.length - 1].replace(/<[^>]*>/g, '');
     const conclusionWords = conclusionClean.split(/\s+/).length;
-    if (conclusionWords < 200 || conclusionWords > 400) {
-      errors.push(`Conclusion word count (${conclusionWords}) outside required range (200-400)`);
+    if (conclusionWords < 300 || conclusionWords > 400) {
+      errors.push(`Conclusion word count (${conclusionWords}) outside required range (300-400)`);
     }
   }
   
