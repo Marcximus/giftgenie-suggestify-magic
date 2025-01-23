@@ -38,7 +38,7 @@ export const BlogPostContent = ({ post }: BlogPostContentProps) => {
                    [&_div.product-actions]:my-2
                    
                    [&_a.amazon-button]:inline-flex [&_a.amazon-button]:items-center [&_a.amazon-button]:px-4 [&_a.amazon-button]:py-2 
-                   [&_a.amazon-button]:bg-[#F97316] [&_a.amazon-button]:hover:bg-[#F97316]/90 [&_a.amazon-button]:data-[affiliate-id='2senstore09-20']:href-replace='2senstore09-20/marcximus-20'
+                   [&_a.amazon-button]:bg-[#F97316] [&_a.amazon-button]:hover:bg-[#F97316]/90 
                    [&_a.amazon-button]:text-white [&_a.amazon-button]:rounded-md 
                    [&_a.amazon-button]:transition-colors [&_a.amazon-button]:text-sm
                    [&_a.amazon-button]:shadow-sm [&_a.amazon-button]:hover:shadow-md
