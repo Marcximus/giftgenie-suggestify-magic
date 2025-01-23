@@ -10,7 +10,7 @@ export const buildBlogPrompt = () => ({
 2. Product Sections:
    - CRITICAL: You MUST generate EXACTLY 10 product recommendations. No more, no less.
    - If you generate any number other than 10 products, your response will be rejected.
-   - First, brainstorm 30 DIVERSE product ideas
+   - First, brainstorm 30 DIVERSE product ideas considering the examples below
    - Then, select the 10 most unique and interesting products from your list
    - Each section should be separated by: <hr class="my-8">
    - Keep product titles SHORT and CONCISE (maximum 7 words)
@@ -18,7 +18,7 @@ export const buildBlogPrompt = () => ({
    - Avoid using full Amazon product titles - create shorter, clearer titles
 
 3. Content Structure:
-   - Write 2-3 engaging paragraphs (200-400 words total) for each product
+   - Write 2-3 engaging paragraphs (EXACTLY 200-300 words total) for each product
    - Start with an introduction paragraph about the product
    - Follow with features and benefits
    - End with why it makes a great gift
@@ -54,55 +54,19 @@ IMPORTANT VALIDATION RULES:
 4. Each product MUST follow the exact format specified above
 5. Responses not meeting these criteria will be rejected
 
-GIFT IDEAS BY PRICE RANGE:
+Example Gift Categories:
 
-Budget-Friendly ($10-$30):
-- Hand Cream Gift Sets
-- Fuzzy Socks & Slippers
-- Car Cleaning Gel Kit
-- Multitool Pens
-- Digital Watches
-- Guided Memory Journals
-- Aromatherapy Diffusers
-- Skincare Gift Sets
-- Magnetic Tool Wristbands
-- Burt's Bees Gift Sets
+For Men, Boys, Dad, Boyfriend, Brother & Grandpa:
+- Budget ($10-$30): Car Cleaning Gel, Multitool Pens, Digital Watches, Magnetic Tool Wristbands
+- Mid-Range ($31-$100): Stanley Water Bottles, Smart Meat Thermometers, Mini Massage Guns, Eye Massagers
+- Premium ($101-$300): Noise-Cancelling Headphones, Smart Watches, Gaming Consoles, Air Purifiers
+- Luxury ($301+): DSLR Cameras, Gaming Laptops, Premium Audio Equipment, Smart Home Systems
 
-Mid-Range ($31-$100):
-- Stanley Water Bottles
-- Wireless Earbuds
-- Smart Meat Thermometers
-- Leather Wallets
-- Mini Massage Guns
-- Eye Massagers
-- LEGO Sets
-- Crossbody Bags
-- Digital Picture Frames
-- Coffee Makers
-
-Premium ($101-$300):
-- Noise-Cancelling Headphones
-- Smart Watches
-- Air Purifiers
-- Instant Cameras
-- Gaming Consoles
-- Tablets
-- Bluetooth Speakers
-- Stand Mixers
-- Espresso Machines
-- Fitness Trackers
-
-Luxury ($301+):
-- MacBooks
-- DSLR Cameras
-- Designer Watches
-- Premium Headphones
-- Gaming Laptops
-- Professional Blenders
-- Smart Home Systems
-- Premium Audio Equipment
-- High-End Fitness Equipment
-- Designer Bags
+For Women, Girls, Mom, Girlfriend & Grandma:
+- Budget ($10-$30): Hand Cream Sets, Fuzzy Socks, Aromatherapy Diffusers, Skincare Gift Sets
+- Mid-Range ($31-$100): Crossbody Bags, LEGO Flower Sets, Digital Picture Frames, Foot Massagers
+- Premium ($101-$300): Instant Cameras, Designer Bags, Coffee Makers, Fitness Trackers
+- Luxury ($301+): LED Face Masks, Dyson Hair Tools, Designer Jewelry, Premium Smartwatches
 
 Remember to:
 1. Mix price ranges to appeal to different budgets
