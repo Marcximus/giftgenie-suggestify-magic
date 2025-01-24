@@ -1,176 +1,126 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { Tables } from "@/integrations/supabase/types";
-import { Button } from "@/components/ui/button";
-import { Plus, RefreshCw } from "lucide-react";
-import { Link } from "react-router-dom";
-import { useToast } from "@/components/ui/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { StatsOverview } from "@/components/blog/admin/StatsOverview";
+import { supabase } from "@/integrations/supabase/client";
 import { PublishedPostsTab } from "@/components/blog/admin/PublishedPostsTab";
 import { ScheduledPostsTab } from "@/components/blog/admin/ScheduledPostsTab";
+import { StatsOverview } from "@/components/blog/admin/StatsOverview";
 import { BulkTitleUploader } from "@/components/blog/admin/BulkTitleUploader";
+import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
+import { useToast } from "@/components/ui/use-toast";
+import { Plus } from "lucide-react";
 
 const BlogAdmin = () => {
+  const [activeTab, setActiveTab] = useState("published");
   const { toast } = useToast();
-  const { data: posts, isLoading, refetch } = useQuery({
-    queryKey: ["admin-blog-posts"],
+
+  const { data: publishedPosts, refetch: refetchPublished } = useQuery({
+    queryKey: ["published-posts"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("blog_posts")
-        .select("*")
-        .order("created_at", { ascending: false });
-      
-      if (error) throw error;
-      return data as Tables<"blog_posts">[];
+        .select()
+        .not("published_at", "is", null)
+        .order("published_at", { ascending: false });
+
+      if (error) {
+        console.error("Error fetching published posts:", error);
+        toast({
+          title: "Error",
+          description: "Failed to fetch published posts",
+          variant: "destructive",
+        });
+        throw error;
+      }
+
+      return data || [];
     },
   });
 
-  const { data: queueStats } = useQuery({
-    queryKey: ["queue-stats"],
+  const { data: scheduledPosts, refetch: refetchScheduled } = useQuery({
+    queryKey: ["scheduled-posts"],
     queryFn: async () => {
-      // First, get all published post titles
-      const { data: publishedPosts, error: publishedError } = await supabase
-        .from("blog_posts")
-        .select("title");
-
-      if (publishedError) throw publishedError;
-
-      const publishedTitles = new Set(publishedPosts?.map(post => post.title));
-
-      // Then get queue data and filter out published posts
-      const { data: queueData, error: queueError } = await supabase
+      const { data, error } = await supabase
         .from("blog_post_queue")
-        .select("status, title");
-      
-      if (queueError) throw queueError;
+        .select()
+        .order("created_at", { ascending: false });
 
-      // Filter out posts that are already published
-      const unpublishedQueueData = queueData.filter(post => !publishedTitles.has(post.title));
+      if (error) {
+        console.error("Error fetching scheduled posts:", error);
+        toast({
+          title: "Error",
+          description: "Failed to fetch scheduled posts",
+          variant: "destructive",
+        });
+        throw error;
+      }
 
-      const stats = {
-        publishedTotal: publishedPosts.length,
-        pending: unpublishedQueueData.filter(post => post.status === 'pending').length,
-        generating: unpublishedQueueData.filter(post => post.status === 'generating').length,
-        error: unpublishedQueueData.filter(post => post.status === 'error').length
-      };
-
-      return stats;
+      return data || [];
     },
   });
 
   const handleDelete = async (postId: string) => {
     try {
-      const { error: imagesError } = await supabase
-        .from("blog_post_images")
-        .delete()
-        .eq("blog_post_id", postId);
-
-      if (imagesError) throw imagesError;
-
-      const { error: postError } = await supabase
+      const { error } = await supabase
         .from("blog_posts")
         .delete()
         .eq("id", postId);
 
-      if (postError) throw postError;
+      if (error) throw error;
 
       toast({
         title: "Success",
         description: "Blog post deleted successfully",
       });
-      
-      refetch();
+
+      // Refresh the posts list
+      refetchPublished();
     } catch (error: any) {
-      console.error("Error deleting blog post:", error);
+      console.error("Error deleting post:", error);
       toast({
         title: "Error",
-        description: error.message || "Failed to delete blog post",
+        description: error.message || "Failed to delete post",
         variant: "destructive",
       });
     }
   };
-
-  const regenerateSitemap = async () => {
-    try {
-      const response = await fetch('https://ckcqttsdpxfbpkzljctl.functions.supabase.co/functions/v1/generate-sitemap');
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      const data = await response.text();
-      console.log('Sitemap regenerated:', data);
-      toast({
-        title: "Success",
-        description: "Sitemap regenerated successfully",
-      });
-    } catch (error: any) {
-      console.error('Error regenerating sitemap:', error);
-      toast({
-        title: "Error",
-        description: "Failed to regenerate sitemap",
-        variant: "destructive",
-      });
-    }
-  };
-
-  if (isLoading) {
-    return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold">Blog Posts</h1>
-          <Button disabled>
-            <Plus className="mr-2 h-4 w-4" /> New Post
-          </Button>
-        </div>
-        <div className="animate-pulse space-y-4">
-          <div className="h-12 bg-gray-200 rounded mb-4"></div>
-          <div className="h-12 bg-gray-200 rounded mb-4"></div>
-          <div className="h-12 bg-gray-200 rounded mb-4"></div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold">Blog Posts</h1>
-        <div className="flex gap-4">
-          <Button onClick={regenerateSitemap} variant="outline">
-            <RefreshCw className="mr-2 h-4 w-4" /> Regenerate Sitemap
-          </Button>
+        <h1 className="text-3xl font-bold">Blog Admin</h1>
+        <Button asChild>
           <Link to="/blog/new">
-            <Button>
-              <Plus className="mr-2 h-4 w-4" /> New Post
-            </Button>
+            <Plus className="w-4 h-4 mr-2" />
+            New Post
           </Link>
-        </div>
+        </Button>
       </div>
 
-      <StatsOverview
-        publishedTotal={queueStats?.publishedTotal || 0}
-        pendingCount={queueStats?.pending || 0}
-        generatingCount={queueStats?.generating || 0}
-        errorCount={queueStats?.error || 0}
-      />
+      <StatsOverview />
 
-      <Tabs defaultValue="posts" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="posts">Published Posts</TabsTrigger>
+      <div className="mt-8">
+        <BulkTitleUploader />
+      </div>
+
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-8">
+        <TabsList>
+          <TabsTrigger value="published">Published Posts</TabsTrigger>
           <TabsTrigger value="scheduled">Scheduled Posts</TabsTrigger>
-          <TabsTrigger value="upload">Bulk Upload</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="posts">
-          <PublishedPostsTab posts={posts || []} onDelete={handleDelete} />
+        <TabsContent value="published">
+          {publishedPosts && (
+            <PublishedPostsTab 
+              posts={publishedPosts} 
+              onDelete={handleDelete}
+            />
+          )}
         </TabsContent>
 
         <TabsContent value="scheduled">
-          <ScheduledPostsTab />
-        </TabsContent>
-
-        <TabsContent value="upload">
-          <BulkTitleUploader />
+          {scheduledPosts && <ScheduledPostsTab posts={scheduledPosts} />}
         </TabsContent>
       </Tabs>
     </div>
