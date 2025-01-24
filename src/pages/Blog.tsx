@@ -127,7 +127,10 @@ const Blog = () => {
               Perfect Gift Ideas
             </h1>
             <p className="text-[0.7rem] sm:text-xs md:text-sm text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-              Our suggestions feel tailor-made because they practically are. We use <span className="animate-pulse-text text-primary">AI</span> and <span className="animate-pulse-text text-primary">internet magic</span> to find the absolute best gift ideas and popular presents. Thanks to us, you can spend less time gift hunting and more time celebrating (or binge-watching your favorite show—we won't judge).
+              Our suggestions feel tailor-made because they practically are. We use{' '}
+              <span className="animate-pulse-text text-primary">AI</span> and{' '}
+              <span className="animate-pulse-text text-primary">internet magic</span>
+              {' to find the absolute best gift ideas and popular presents. Thanks to us, you can spend less time gift hunting and more time celebrating (or binge-watching your favorite show—we won't judge).'}
             </p>
           </div>
           <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
@@ -181,10 +184,9 @@ const Blog = () => {
             {activeCategory ? activeCategory.name : 'Perfect Gift Ideas'}
           </h1>
           <p className="text-[0.7rem] sm:text-xs md:text-sm text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-            {activeCategory?.description || 
-              'Our suggestions feel tailor-made because they practically are. We use '}
-            {!activeCategory && (
+            {activeCategory?.description || (
               <>
+                Our suggestions feel tailor-made because they practically are. We use{' '}
                 <span className="animate-pulse-text text-primary">AI</span> and{' '}
                 <span className="animate-pulse-text text-primary">internet magic</span>
                 {' to find the absolute best gift ideas and popular presents. Thanks to us, you can spend less time gift hunting and more time celebrating (or binge-watching your favorite show—we won't judge).'}
