@@ -8,9 +8,7 @@ export const buildBlogPrompt = () => ({
    - The introduction should explain why these items make great gifts and who they're perfect for
 
 2. Product Sections:
-   - CRITICAL: You MUST generate EXACTLY 10 product recommendations. No more, no less.
-   - First, brainstorm 30 DIVERSE product ideas considering the examples below
-   - Then, select the 10 most unique and interesting products from your list
+   - CRITICAL: You MUST generate EXACTLY 10 gift recommendations, taking the examples below into consideration. No more, no less.
    - Each section should be separated by: <hr class="my-8">
    - Keep product titles SHORT and CONCISE (maximum 7 words)
    - Format product titles as: <h3>[SHORT PRODUCT NAME]</h3>

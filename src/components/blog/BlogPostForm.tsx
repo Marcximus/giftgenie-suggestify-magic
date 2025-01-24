@@ -39,6 +39,17 @@ interface BlogPostFormData {
   id?: string;
   created_at?: string;
   updated_at?: string;
+  content_format_version: string;
+  generation_attempts: number;
+  last_generation_error: string | null;
+  processing_status: {
+    reviews_added: number;
+    amazon_lookups: number;
+    product_sections: number;
+    successful_replacements: number;
+  };
+  product_reviews: any[];
+  product_search_failures: any[];
 }
 
 interface BlogPostFormProps {
