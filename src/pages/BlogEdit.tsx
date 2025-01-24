@@ -36,6 +36,9 @@ interface BlogPostFormData {
   main_entity: string | null;
   breadcrumb_list: any[] | null;
   category_id: string | null;
+  id: string;
+  created_at: string;
+  updated_at: string;
 }
 
 const BlogEdit = () => {
@@ -116,7 +119,10 @@ const BlogEdit = () => {
         product_search_failures: parseJsonWithDefault(data.product_search_failures, []),
         word_count: data.word_count || null,
         reading_time: data.reading_time || null,
-        main_entity: data.main_entity || null
+        main_entity: data.main_entity || null,
+        id: data.id,
+        created_at: data.created_at,
+        updated_at: data.updated_at
       };
       
       return formattedPost;
