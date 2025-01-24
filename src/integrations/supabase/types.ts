@@ -39,33 +39,6 @@ export type Database = {
         }
         Relationships: []
       }
-      blog_categories: {
-        Row: {
-          created_at: string | null
-          description: string | null
-          id: string
-          name: string
-          slug: string
-          updated_at: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          description?: string | null
-          id?: string
-          name: string
-          slug: string
-          updated_at?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          description?: string | null
-          id?: string
-          name?: string
-          slug?: string
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
       blog_post_images: {
         Row: {
           alt_text: string | null
@@ -145,7 +118,6 @@ export type Database = {
           affiliate_links: Json | null
           author: string
           breadcrumb_list: Json | null
-          category_id: string | null
           content: string
           content_format_version: string | null
           created_at: string | null
@@ -175,7 +147,6 @@ export type Database = {
           affiliate_links?: Json | null
           author: string
           breadcrumb_list?: Json | null
-          category_id?: string | null
           content: string
           content_format_version?: string | null
           created_at?: string | null
@@ -205,7 +176,6 @@ export type Database = {
           affiliate_links?: Json | null
           author?: string
           breadcrumb_list?: Json | null
-          category_id?: string | null
           content?: string
           content_format_version?: string | null
           created_at?: string | null
@@ -231,15 +201,7 @@ export type Database = {
           updated_at?: string | null
           word_count?: number | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "blog_posts_category_id_fkey"
-            columns: ["category_id"]
-            isOneToOne: false
-            referencedRelation: "blog_categories"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       popular_searches: {
         Row: {
