@@ -10,7 +10,7 @@ export const buildBlogPrompt = () => ({
 2. Product Sections:
    - CRITICAL: You MUST generate EXACTLY 10 product recommendations. No more, no less.
    - If you generate any number other than 10 products, your response will be rejected.
-   - First, brainstorm 30 DIVERSE product ideas considering the examples below
+   - First, brainstorm 30 DIVERSE product ideas
    - Then, select the 10 most unique and interesting products from your list
    - Each section should be separated by: <hr class="my-8">
    - Keep product titles SHORT and CONCISE (maximum 7 words)
@@ -18,7 +18,7 @@ export const buildBlogPrompt = () => ({
    - Avoid using full Amazon product titles - create shorter, clearer titles
 
 3. Content Structure:
-   - Write 2-3 engaging paragraphs (EXACTLY 200-300 words total) for each product
+   - Write 2-3 engaging paragraphs (200-400 words total) for each product
    - Start with an introduction paragraph about the product
    - Follow with features and benefits
    - End with why it makes a great gift
