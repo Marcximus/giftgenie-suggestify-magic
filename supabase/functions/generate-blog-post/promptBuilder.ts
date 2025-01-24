@@ -9,16 +9,15 @@ export const buildBlogPrompt = () => ({
 
 2. Product Sections:
    - CRITICAL: You MUST generate EXACTLY 10 product recommendations. No more, no less.
-   - If you generate any number other than 10 products, your response will be rejected.
-   - First, brainstorm 30 DIVERSE product ideas
+   - First, brainstorm 30 DIVERSE product ideas considering the examples below
    - Then, select the 10 most unique and interesting products from your list
    - Each section should be separated by: <hr class="my-8">
    - Keep product titles SHORT and CONCISE (maximum 7 words)
    - Format product titles as: <h3>[SHORT PRODUCT NAME]</h3>
-   - Avoid using full Amazon product titles - create shorter, clearer titles
+   - Avoid using full Amazon product titles - create clearer titles
 
 3. Content Structure:
-   - Write 2-3 engaging paragraphs (200-400 words total) for each product
+   - Write 2-3 engaging paragraphs (EXACTLY 200-300 words total) for each product
    - Start with an introduction paragraph about the product
    - Follow with features and benefits
    - End with why it makes a great gift
@@ -45,14 +44,5 @@ export const buildBlogPrompt = () => ({
 6. Section Spacing:
    - Start each new product section with: <hr class="my-8">
    - Add some spacing and then end the post with a funny and SEO optimized conclusion paragraph (200-400 words) with some emojies
-   - Add a final horizontal rule after the conclusion
-
-IMPORTANT VALIDATION RULES:
-1. Your response MUST contain EXACTLY 10 <h3> tags
-2. Your response MUST contain EXACTLY 10 product sections
-3. Each product MUST have a unique title
-4. Each product MUST follow the exact format specified above
-5. Responses not meeting these criteria will be rejected
-
-Before submitting your response, count the number of product sections to verify there are exactly 10.`
+   - Add a final horizontal rule after the conclusion`
 });

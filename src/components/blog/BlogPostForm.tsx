@@ -13,12 +13,36 @@ import { useAIContent } from "@/hooks/useAIContent";
 import { BlogPostBasicInfo } from "./form/BlogPostBasicInfo";
 import { BlogPostContent } from "./form/BlogPostContent";
 import { BlogPostSEO } from "./form/BlogPostSEO";
-import { BlogPostFormData, BlogPostData } from "./types/BlogPostTypes";
 import { Input } from "@/components/ui/input";
 import { Wand2 } from "lucide-react";
 
+interface BlogPostFormData {
+  title: string;
+  slug: string;
+  content: string;
+  excerpt: string;
+  author: string;
+  image_url: string;
+  published_at: string | null;
+  meta_title: string;
+  meta_description: string;
+  meta_keywords: string;
+  images: any[];
+  affiliate_links: any[];
+  image_alt_text: string;
+  related_posts: any[];
+  word_count: number | null;
+  reading_time: number | null;
+  main_entity: string | null;
+  breadcrumb_list: any[];
+  category_id: string | null;
+  id?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
 interface BlogPostFormProps {
-  initialData?: BlogPostData;
+  initialData?: BlogPostFormData;
   initialTitle?: string;
 }
 
