@@ -38,7 +38,9 @@ const BlogPost = () => {
 
       if (!currentPost) {
         console.log("No blog post found with slug:", slug);
-        return null;
+        const error = new Error("Blog post not found");
+        error.name = "NotFoundError";
+        throw error;
       }
 
       const { data: relatedPosts, error: relatedError } = await supabase
@@ -65,7 +67,10 @@ const BlogPost = () => {
   }
 
   if (error) {
-    return <BlogPostError type="error" error={error as Error} />;
+    return <BlogPostError 
+      type={error.name === "NotFoundError" ? "not-found" : "error"} 
+      error={error as Error} 
+    />;
   }
 
   if (!post) {
