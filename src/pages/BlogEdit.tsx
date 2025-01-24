@@ -90,7 +90,7 @@ const BlogEdit = () => {
       };
 
       // Convert the database response to match BlogPostFormData structure
-      const formattedPost: BlogPostData = {
+      const formattedPost: BlogPostFormData = {
         ...data,
         images: parseJsonWithDefault(data.images, []),
         affiliate_links: parseJsonWithDefault(data.affiliate_links, []),
