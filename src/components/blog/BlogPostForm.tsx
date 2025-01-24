@@ -49,14 +49,14 @@ const BlogPostForm = ({ initialData, initialTitle }: BlogPostFormProps) => {
         affiliate_links: [],
         image_alt_text: "",
         related_posts: [],
-        // Add new default values for schema fields
         word_count: null,
         reading_time: null,
         main_entity: null,
         breadcrumb_list: [],
+        category_id: null, // Add this line
       }),
-      title: initialTitle || "",  // Ensure initialTitle takes precedence
-      author: DEFAULT_AUTHOR, // Always set author to default value
+      title: initialTitle || "",
+      author: DEFAULT_AUTHOR,
     },
   });
 
