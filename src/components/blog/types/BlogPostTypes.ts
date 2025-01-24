@@ -1,3 +1,15 @@
+export interface ProcessingStatus {
+  reviews_added: number;
+  amazon_lookups: number;
+  product_sections: number;
+  successful_replacements: number;
+}
+
+export interface AggregateRating {
+  ratingValue: number;
+  reviewCount: number;
+}
+
 export interface BlogPostFormData {
   title: string;
   slug: string;
@@ -16,23 +28,28 @@ export interface BlogPostFormData {
   content_format_version: string | null;
   generation_attempts: number | null;
   last_generation_error: string | null;
-  processing_status: {
-    reviews_added: number;
-    amazon_lookups: number;
-    product_sections: number;
-    successful_replacements: number;
-  } | null;
+  processing_status: ProcessingStatus | null;
   product_reviews: any[] | null;
   product_search_failures: any[] | null;
-  // New fields added for SEO schema
   word_count: number | null;
   reading_time: number | null;
   main_entity: string | null;
   breadcrumb_list: any[] | null;
+  category_id: string | null;
+  aggregateRating: AggregateRating | null;
+  operatingSystem: string | null;
+  id?: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface BlogPostData extends BlogPostFormData {
   id: string;
   created_at: string;
   updated_at: string;
+}
+
+export interface BlogPostFormProps {
+  initialData?: BlogPostFormData;
+  initialTitle?: string;
 }

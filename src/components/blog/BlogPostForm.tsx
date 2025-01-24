@@ -2,9 +2,7 @@ import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import { TabsContent, Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Button } from "@/components/ui/button";
-import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage, FormDescription } from "@/components/ui/form";
-import { Separator } from "@/components/ui/separator";
+import { Form } from "@/components/ui/form";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { BlogImageUpload } from "./BlogImageUpload";
@@ -13,48 +11,22 @@ import { useAIContent } from "@/hooks/useAIContent";
 import { BlogPostBasicInfo } from "./form/BlogPostBasicInfo";
 import { BlogPostContent } from "./form/BlogPostContent";
 import { BlogPostSEO } from "./form/BlogPostSEO";
-import { Input } from "@/components/ui/input";
-import { Wand2 } from "lucide-react";
-
-interface BlogPostFormData {
-  title: string;
-  slug: string;
-  content: string;
-  excerpt: string;
-  author: string;
-  image_url: string;
-  published_at: string | null;
-  meta_title: string;
-  meta_description: string;
-  meta_keywords: string;
-  images: any[];
-  affiliate_links: any[];
-  image_alt_text: string;
-  related_posts: any[];
-  word_count: number | null;
-  reading_time: number | null;
-  main_entity: string | null;
-  breadcrumb_list: any[];
-  category_id: string | null;
-  id?: string;
-  created_at?: string;
-  updated_at?: string;
-}
-
-interface BlogPostFormProps {
-  initialData?: BlogPostFormData;
-  initialTitle?: string;
-}
+import { BlogPostActions } from "./form/BlogPostActions";
+import { BlogPostFormData, BlogPostFormProps } from "./types/BlogPostTypes";
 
 const DEFAULT_AUTHOR = "Get The Gift Team";
+const DEFAULT_PROCESSING_STATUS = {
+  reviews_added: 0,
+  amazon_lookups: 0,
+  product_sections: 0,
+  successful_replacements: 0
+};
 
 const BlogPostForm = ({ initialData, initialTitle }: BlogPostFormProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isGeneratingAltText, setIsGeneratingAltText] = useState(false);
   const [activeTab, setActiveTab] = useState("edit");
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { generateContent, getFormFieldFromType } = useAIContent();
 
   const form = useForm<BlogPostFormData>({
     defaultValues: {
@@ -62,25 +34,33 @@ const BlogPostForm = ({ initialData, initialTitle }: BlogPostFormProps) => {
         title: "",
         slug: "",
         content: "",
-        excerpt: "",
+        excerpt: null,
         author: DEFAULT_AUTHOR,
-        image_url: "",
+        image_url: null,
         published_at: null,
-        meta_title: "",
-        meta_description: "",
-        meta_keywords: "",
+        meta_title: null,
+        meta_description: null,
+        meta_keywords: null,
         images: [],
         affiliate_links: [],
-        image_alt_text: "",
+        image_alt_text: null,
         related_posts: [],
-        // Add new default values for schema fields
+        content_format_version: "v1",
+        generation_attempts: 0,
+        last_generation_error: null,
+        processing_status: DEFAULT_PROCESSING_STATUS,
+        product_reviews: [],
+        product_search_failures: [],
         word_count: null,
         reading_time: null,
         main_entity: null,
         breadcrumb_list: [],
+        category_id: null,
+        aggregateRating: null,
+        operatingSystem: null
       }),
-      title: initialTitle || "",  // Ensure initialTitle takes precedence
-      author: DEFAULT_AUTHOR, // Always set author to default value
+      title: initialTitle || "",
+      author: DEFAULT_AUTHOR,
     },
   });
 
@@ -88,7 +68,6 @@ const BlogPostForm = ({ initialData, initialTitle }: BlogPostFormProps) => {
   useEffect(() => {
     if (initialTitle) {
       form.setValue('title', initialTitle);
-      // Also update the slug when initialTitle is set
       form.setValue('slug', generateSlug(initialTitle));
     }
   }, [initialTitle, form]);
@@ -102,51 +81,6 @@ const BlogPostForm = ({ initialData, initialTitle }: BlogPostFormProps) => {
     });
     return () => subscription.unsubscribe();
   }, [form, initialData]);
-
-  const generateAltText = async () => {
-    const title = form.getValues('title');
-    if (!title) {
-      toast({
-        title: "Error",
-        description: "Please provide a title first",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    setIsGeneratingAltText(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('generate-blog-image', {
-        body: { 
-          title,
-          prompt: "Generate a descriptive alt text for this blog post's featured image" 
-        }
-      });
-
-      if (error) throw error;
-
-      if (data?.altText) {
-        form.setValue('image_alt_text', data.altText, { 
-          shouldDirty: true,
-          shouldTouch: true,
-          shouldValidate: true 
-        });
-        toast({
-          title: "Success",
-          description: "Alt text generated successfully",
-        });
-      }
-    } catch (error: any) {
-      console.error('Generation error:', error);
-      toast({
-        title: "Error",
-        description: error.message || "Failed to generate alt text",
-        variant: "destructive",
-      });
-    } finally {
-      setIsGeneratingAltText(false);
-    }
-  };
 
   const generateUniqueSlug = async (baseSlug: string): Promise<string> => {
     const { data: existingPost, error } = await supabase
@@ -239,35 +173,6 @@ const BlogPostForm = ({ initialData, initialTitle }: BlogPostFormProps) => {
       .replace(/(^-|-$)+/g, "");
   };
 
-  const handleAIGenerate = async (type: 'excerpt' | 'seo-title' | 'seo-description' | 'seo-keywords' | 'improve-content') => {
-    const currentTitle = form.getValues('title');
-    const currentContent = form.getValues('content');
-    
-    if (!currentTitle && !currentContent) {
-      toast({
-        title: "Error",
-        description: "Please provide some content or a title first.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    const generatedContent = await generateContent(
-      type,
-      currentContent || '',
-      currentTitle
-    );
-
-    if (generatedContent) {
-      const formField = getFormFieldFromType(type);
-      form.setValue(formField, generatedContent, { shouldDirty: true });
-      toast({
-        title: "Success",
-        description: "Content generated successfully!",
-      });
-    }
-  };
-
   return (
     <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
       <TabsList className="grid w-full grid-cols-2">
@@ -284,105 +189,19 @@ const BlogPostForm = ({ initialData, initialTitle }: BlogPostFormProps) => {
               initialData={initialData}
             />
 
-            <FormField
-              control={form.control}
-              name="author"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Author</FormLabel>
-                  <FormControl>
-                    <Input 
-                      {...field} 
-                      value={DEFAULT_AUTHOR}
-                      readOnly
-                      className="bg-gray-100"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="image_url"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Featured Image</FormLabel>
-                  <BlogImageUpload 
-                    value={field.value || ''} 
-                    setValue={form.setValue}
-                  />
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="image_alt_text"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="flex items-center justify-between">
-                    Image Alt Text
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={generateAltText}
-                      disabled={isGeneratingAltText}
-                    >
-                      <Wand2 className="w-4 h-4 mr-2" />
-                      {isGeneratingAltText ? "Generating..." : "Generate Alt Text"}
-                    </Button>
-                  </FormLabel>
-                  <FormControl>
-                    <Input 
-                      {...field} 
-                      placeholder="Descriptive text for the featured image"
-                      value={field.value || ''}
-                    />
-                  </FormControl>
-                  <FormDescription>
-                    Describe the image content for better SEO and accessibility
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
             <BlogPostContent 
               form={form}
-              handleAIGenerate={handleAIGenerate}
             />
-
-            <Separator />
 
             <BlogPostSEO 
               form={form}
-              handleAIGenerate={handleAIGenerate}
             />
 
-            <div className="flex gap-4">
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? "Saving..." : initialData ? "Update Post" : "Publish Post"}
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                disabled={isSubmitting}
-                onClick={() => onSubmit(form.getValues(), true)}
-              >
-                Save as Draft
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => navigate("/blog/admin")}
-              >
-                Cancel
-              </Button>
-            </div>
+            <BlogPostActions 
+              form={form}
+              isSubmitting={isSubmitting}
+              onSubmit={onSubmit}
+            />
           </form>
         </Form>
       </TabsContent>
