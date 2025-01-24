@@ -20,11 +20,16 @@ const BlogPost = () => {
     queryFn: async () => {
       console.log("Fetching blog post with slug:", slug);
       
+      if (!slug) {
+        console.error("No slug provided");
+        throw new Error("No slug provided");
+      }
+
       const { data: currentPost, error: currentError } = await supabase
         .from("blog_posts")
         .select("*")
         .eq("slug", slug)
-        .maybeSingle();
+        .single();
       
       if (currentError) {
         console.error("Error fetching blog post:", currentError);
@@ -43,11 +48,13 @@ const BlogPost = () => {
         throw error;
       }
 
+      console.log("Found blog post:", currentPost.title);
+
       const { data: relatedPosts, error: relatedError } = await supabase
         .from("blog_posts")
         .select("title, slug, image_url, excerpt")
         .neq("slug", slug)
-        .lt("published_at", new Date().toISOString())
+        .not("published_at", "is", null)
         .order("published_at", { ascending: false })
         .limit(3);
 
@@ -60,6 +67,7 @@ const BlogPost = () => {
         relatedPosts: relatedPosts || []
       };
     },
+    retry: 1,
   });
 
   if (isLoading) {
@@ -67,6 +75,7 @@ const BlogPost = () => {
   }
 
   if (error) {
+    console.error("Error in BlogPost component:", error);
     return <BlogPostError 
       type={error.name === "NotFoundError" ? "not-found" : "error"} 
       error={error as Error} 
@@ -74,6 +83,7 @@ const BlogPost = () => {
   }
 
   if (!post) {
+    console.error("No post data available after successful query");
     return <BlogPostError type="not-found" />;
   }
 
