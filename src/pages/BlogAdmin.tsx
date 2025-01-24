@@ -86,6 +86,14 @@ const BlogAdmin = () => {
     }
   };
 
+  // Calculate stats for StatsOverview
+  const stats = {
+    publishedTotal: publishedPosts?.length || 0,
+    pendingCount: scheduledPosts?.filter(post => post.status === 'pending').length || 0,
+    generatingCount: scheduledPosts?.filter(post => post.status === 'processing').length || 0,
+    errorCount: scheduledPosts?.filter(post => post.status === 'error').length || 0,
+  };
+
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-8">
@@ -98,7 +106,7 @@ const BlogAdmin = () => {
         </Button>
       </div>
 
-      <StatsOverview />
+      <StatsOverview {...stats} />
 
       <div className="mt-8">
         <BulkTitleUploader />
