@@ -62,10 +62,10 @@ serve(async (req) => {
             content: `Create a fun, engaging blog post about: ${title}\n\n${demographicContext}\n\nIMPORTANT: You MUST generate EXACTLY 10 product recommendations, no more, no less.`
           }
         ],
-        temperature: 0.85, // Increased temperature for more creative responses
+        temperature: 0.6, // Changed from 0.85 to 0.6 for more focused responses
         max_tokens: 3500,
-        presence_penalty: 0.2, // Increased to encourage more diverse language
-        frequency_penalty: 0.3, // Increased to reduce repetition
+        presence_penalty: 0.2,
+        frequency_penalty: 0.3,
       }),
     });
 
