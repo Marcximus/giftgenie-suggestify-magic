@@ -6,11 +6,6 @@ import { Color } from '@tiptap/extension-color';
 import ListItem from '@tiptap/extension-list-item';
 import TextAlign from '@tiptap/extension-text-align';
 import Image from '@tiptap/extension-image';
-import Table from '@tiptap/extension-table';
-import TableRow from '@tiptap/extension-table-row';
-import TableCell from '@tiptap/extension-table-cell';
-import TableHeader from '@tiptap/extension-table-header';
-import FontFamily from '@tiptap/extension-font-family';
 import { EditorToolbar } from './EditorToolbar';
 
 interface BlogEditorProps {
@@ -32,15 +27,6 @@ export const BlogEditor = ({ value, onChange }: BlogEditorProps) => {
         types: ['heading', 'paragraph'],
       }),
       Image,
-      Table.configure({
-        resizable: true,
-      }),
-      TableRow,
-      TableCell,
-      TableHeader,
-      FontFamily.configure({
-        types: ['textStyle'],
-      }),
     ],
     content: value,
     onUpdate: ({ editor }) => {
@@ -67,12 +53,8 @@ export const BlogEditor = ({ value, onChange }: BlogEditorProps) => {
   const handleImageUpload = () => {
     const url = window.prompt('Image URL');
     if (url) {
-      editor.chain().focus().setImage({ src: url }).run();
+      editor.chain().focus().insertContent(`<img src="${url}" />`).run();
     }
-  };
-
-  const handleTableAdd = () => {
-    editor.chain().focus().insertTable({ rows: 3, cols: 3 }).run();
   };
 
   return (
@@ -81,7 +63,6 @@ export const BlogEditor = ({ value, onChange }: BlogEditorProps) => {
         editor={editor}
         onImageUpload={handleImageUpload}
         onLinkAdd={handleLinkAdd}
-        onTableAdd={handleTableAdd}
       />
       <EditorContent editor={editor} />
     </div>

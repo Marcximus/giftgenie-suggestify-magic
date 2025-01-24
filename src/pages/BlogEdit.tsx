@@ -3,43 +3,8 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import BlogPostForm from "@/components/blog/BlogPostForm";
 import { useToast } from "@/hooks/use-toast";
+import { BlogPostData } from "@/components/blog/types/BlogPostTypes";
 import { Json } from "@/integrations/supabase/types";
-
-interface BlogPostFormData {
-  title: string;
-  slug: string;
-  content: string;
-  excerpt: string | null;
-  author: string;
-  image_url: string | null;
-  published_at: string | null;
-  meta_title: string | null;
-  meta_description: string | null;
-  meta_keywords: string | null;
-  images: any[] | null;
-  affiliate_links: any[] | null;
-  image_alt_text: string | null;
-  related_posts: any[] | null;
-  content_format_version: string | null;
-  generation_attempts: number | null;
-  last_generation_error: string | null;
-  processing_status: {
-    reviews_added: number;
-    amazon_lookups: number;
-    product_sections: number;
-    successful_replacements: number;
-  } | null;
-  product_reviews: any[] | null;
-  product_search_failures: any[] | null;
-  word_count: number | null;
-  reading_time: number | null;
-  main_entity: string | null;
-  breadcrumb_list: any[] | null;
-  category_id: string | null;
-  id: string;
-  created_at: string;
-  updated_at: string;
-}
 
 const BlogEdit = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -93,7 +58,7 @@ const BlogEdit = () => {
       };
 
       // Convert the database response to match BlogPostFormData structure
-      const formattedPost: BlogPostFormData = {
+      const formattedPost: BlogPostData = {
         ...data,
         images: parseJsonWithDefault(data.images, []),
         affiliate_links: parseJsonWithDefault(data.affiliate_links, []),
@@ -119,10 +84,7 @@ const BlogEdit = () => {
         product_search_failures: parseJsonWithDefault(data.product_search_failures, []),
         word_count: data.word_count || null,
         reading_time: data.reading_time || null,
-        main_entity: data.main_entity || null,
-        id: data.id,
-        created_at: data.created_at,
-        updated_at: data.updated_at
+        main_entity: data.main_entity || null
       };
       
       return formattedPost;
