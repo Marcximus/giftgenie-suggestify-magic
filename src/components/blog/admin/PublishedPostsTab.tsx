@@ -1,13 +1,14 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Tables } from "@/integrations/supabase/types";
-import { Edit } from "lucide-react";
+import { Edit, Trash } from "lucide-react";
 
 interface PublishedPostsTabProps {
   posts: Tables<"blog_posts">[];
+  onDelete: (postId: string) => Promise<void>;
 }
 
-export const PublishedPostsTab = ({ posts }: PublishedPostsTabProps) => {
+export const PublishedPostsTab = ({ posts, onDelete }: PublishedPostsTabProps) => {
   return (
     <div className="space-y-4">
       {posts.map((post) => (
@@ -28,6 +29,14 @@ export const PublishedPostsTab = ({ posts }: PublishedPostsTabProps) => {
                 <Edit className="w-4 h-4 mr-2" />
                 Edit
               </Link>
+            </Button>
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={() => onDelete(post.id)}
+            >
+              <Trash className="w-4 h-4 mr-2" />
+              Delete
             </Button>
           </div>
         </div>
