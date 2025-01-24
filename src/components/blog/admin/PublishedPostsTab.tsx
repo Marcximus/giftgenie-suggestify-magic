@@ -12,14 +12,25 @@ export const PublishedPostsTab = ({ posts, onDelete }: PublishedPostsTabProps) =
   return (
     <div className="space-y-4">
       {posts.map((post) => (
-        <div key={post.id} className="flex items-center justify-between p-4 border rounded-lg">
-          <div>
-            <h3 className="font-medium">{post.title}</h3>
-            <p className="text-sm text-muted-foreground">
+        <div 
+          key={post.id} 
+          className="p-4 border rounded-lg bg-card"
+        >
+          <h3 className="font-medium">{post.title}</h3>
+          <div className="text-sm text-muted-foreground mt-2">
+            <p>
               Published: {new Date(post.published_at || "").toLocaleDateString()}
             </p>
+            <p className="mt-1">
+              Author: {post.author}
+            </p>
+            {post.category_id && (
+              <p className="mt-1">
+                Category ID: {post.category_id}
+              </p>
+            )}
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 mt-4">
             <Button
               variant="outline"
               size="sm"
