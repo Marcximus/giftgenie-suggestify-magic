@@ -15,38 +15,14 @@ import { BlogPostContent } from "./form/BlogPostContent";
 import { BlogPostSEO } from "./form/BlogPostSEO";
 import { Input } from "@/components/ui/input";
 import { Wand2 } from "lucide-react";
+import { BlogPostFormData } from "./types/BlogPostTypes";
 
-interface BlogPostFormData {
-  title: string;
-  slug: string;
-  content: string;
-  excerpt: string;
-  author: string;
-  image_url: string;
-  published_at: string | null;
-  meta_title: string;
-  meta_description: string;
-  meta_keywords: string;
-  images: any[];
-  affiliate_links: any[];
-  image_alt_text: string;
-  related_posts: any[];
-  word_count: number | null;
-  reading_time: number | null;
-  main_entity: string | null;
-  breadcrumb_list: any[];
-  category_id: string | null;
-  id?: string;
-  created_at?: string;
-  updated_at?: string;
-}
+const DEFAULT_AUTHOR = "Get The Gift Team";
 
 interface BlogPostFormProps {
   initialData?: BlogPostFormData;
   initialTitle?: string;
 }
-
-const DEFAULT_AUTHOR = "Get The Gift Team";
 
 const BlogPostForm = ({ initialData, initialTitle }: BlogPostFormProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -73,14 +49,27 @@ const BlogPostForm = ({ initialData, initialTitle }: BlogPostFormProps) => {
         affiliate_links: [],
         image_alt_text: "",
         related_posts: [],
-        // Add new default values for schema fields
         word_count: null,
         reading_time: null,
         main_entity: null,
         breadcrumb_list: [],
+        category_id: null,
+        content_format_version: "v1",
+        generation_attempts: 0,
+        last_generation_error: null,
+        processing_status: {
+          reviews_added: 0,
+          amazon_lookups: 0,
+          product_sections: 0,
+          successful_replacements: 0
+        },
+        product_reviews: [],
+        product_search_failures: [],
+        aggregateRating: null,
+        operatingSystem: null
       }),
-      title: initialTitle || "",  // Ensure initialTitle takes precedence
-      author: DEFAULT_AUTHOR, // Always set author to default value
+      title: initialTitle || "",
+      author: DEFAULT_AUTHOR,
     },
   });
 
