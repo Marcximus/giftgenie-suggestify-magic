@@ -130,7 +130,7 @@ const Blog = () => {
               Our suggestions feel tailor-made because they practically are. We use{' '}
               <span className="animate-pulse-text text-primary">AI</span> and{' '}
               <span className="animate-pulse-text text-primary">internet magic</span>
-              {' to find the absolute best gift ideas and popular presents. Thanks to us, you can spend less time gift hunting and more time celebrating (or binge-watching your favorite show—we won't judge).'}
+              {' '}to find the absolute best gift ideas and popular presents. Thanks to us, you can spend less time gift hunting and more time celebrating (or binge-watching your favorite show—we won't judge).
             </p>
           </div>
           <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
@@ -189,7 +189,7 @@ const Blog = () => {
                 Our suggestions feel tailor-made because they practically are. We use{' '}
                 <span className="animate-pulse-text text-primary">AI</span> and{' '}
                 <span className="animate-pulse-text text-primary">internet magic</span>
-                {' to find the absolute best gift ideas and popular presents. Thanks to us, you can spend less time gift hunting and more time celebrating (or binge-watching your favorite show—we won't judge).'}
+                {' '}to find the absolute best gift ideas and popular presents. Thanks to us, you can spend less time gift hunting and more time celebrating (or binge-watching your favorite show—we won't judge).
               </>
             )}
           </p>
@@ -244,6 +244,7 @@ const Blog = () => {
             </Link>
           ))}
         </div>
+
         <footer className="mt-8 text-center">
           <p className="text-xs text-muted-foreground">
             Some links may contain affiliate links from Amazon and other vendors
