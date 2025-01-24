@@ -1,3 +1,5 @@
+import { Json } from "@/integrations/supabase/types";
+
 export interface ProcessingStatus {
   reviews_added: number;
   amazon_lookups: number;
@@ -11,6 +13,7 @@ export interface AggregateRating {
 }
 
 export interface BlogPostFormData {
+  id?: string;
   title: string;
   slug: string;
   content: string;
@@ -21,26 +24,25 @@ export interface BlogPostFormData {
   meta_title: string | null;
   meta_description: string | null;
   meta_keywords: string | null;
-  images: any[] | null;
-  affiliate_links: any[] | null;
+  images: Json;
+  affiliate_links: Json;
   image_alt_text: string | null;
-  related_posts: any[] | null;
+  related_posts: Json;
   content_format_version: string | null;
   generation_attempts: number | null;
   last_generation_error: string | null;
-  processing_status: ProcessingStatus | null;
-  product_reviews: any[] | null;
-  product_search_failures: any[] | null;
+  processing_status: Json;
+  product_reviews: Json;
+  product_search_failures: Json;
   word_count: number | null;
   reading_time: number | null;
   main_entity: string | null;
-  breadcrumb_list: any[] | null;
+  breadcrumb_list: Json;
   category_id: string | null;
-  aggregateRating: AggregateRating | null;
-  operatingSystem: string | null;
-  id?: string;
   created_at?: string;
   updated_at?: string;
+  aggregateRating: AggregateRating | null;
+  operatingSystem: string | null;
 }
 
 export interface BlogPostData extends BlogPostFormData {

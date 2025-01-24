@@ -13,9 +13,10 @@ import { BlogPostContent } from "./form/BlogPostContent";
 import { BlogPostSEO } from "./form/BlogPostSEO";
 import { BlogPostActions } from "./form/BlogPostActions";
 import { BlogPostFormData, BlogPostFormProps } from "./types/BlogPostTypes";
+import { Json } from "@/integrations/supabase/types";
 
 const DEFAULT_AUTHOR = "Get The Gift Team";
-const DEFAULT_PROCESSING_STATUS = {
+const DEFAULT_PROCESSING_STATUS: Json = {
   reviews_added: 0,
   amazon_lookups: 0,
   product_sections: 0,
@@ -122,11 +123,22 @@ const BlogPostForm = ({ initialData, initialTitle }: BlogPostFormProps) => {
         });
       }
 
+      const formattedData = {
+        ...data,
+        processing_status: data.processing_status as Json,
+        images: data.images as Json,
+        affiliate_links: data.affiliate_links as Json,
+        related_posts: data.related_posts as Json,
+        product_reviews: data.product_reviews as Json,
+        product_search_failures: data.product_search_failures as Json,
+        breadcrumb_list: data.breadcrumb_list as Json,
+      };
+
       if (initialData?.id) {
         const { error } = await supabase
           .from("blog_posts")
           .update({
-            ...data,
+            ...formattedData,
             updated_at: currentTime,
             published_at: publishedAt,
           })
@@ -141,7 +153,7 @@ const BlogPostForm = ({ initialData, initialTitle }: BlogPostFormProps) => {
         const { error } = await supabase
           .from("blog_posts")
           .insert([{
-            ...data,
+            ...formattedData,
             created_at: currentTime,
             updated_at: currentTime,
             published_at: publishedAt,
