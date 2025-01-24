@@ -8,7 +8,7 @@ import { BlogPostFormData } from "../types/BlogPostTypes";
 
 interface BlogPostSEOProps {
   form: UseFormReturn<BlogPostFormData>;
-  handleAIGenerate?: (type: 'excerpt' | 'seo-title' | 'seo-description' | 'seo-keywords' | 'improve-content') => Promise<void>;
+  handleAIGenerate: (type: 'excerpt' | 'seo-title' | 'seo-description' | 'seo-keywords' | 'improve-content') => Promise<void>;
 }
 
 export const BlogPostSEO = ({ form, handleAIGenerate }: BlogPostSEOProps) => {
@@ -16,21 +16,19 @@ export const BlogPostSEO = ({ form, handleAIGenerate }: BlogPostSEOProps) => {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-medium">SEO Settings</h3>
-        {handleAIGenerate && (
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={async () => {
-              await handleAIGenerate('seo-title');
-              await handleAIGenerate('seo-description');
-              await handleAIGenerate('seo-keywords');
-            }}
-          >
-            <Wand2 className="w-4 h-4 mr-2" />
-            Generate All SEO
-          </Button>
-        )}
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={async () => {
+            await handleAIGenerate('seo-title');
+            await handleAIGenerate('seo-description');
+            await handleAIGenerate('seo-keywords');
+          }}
+        >
+          <Wand2 className="w-4 h-4 mr-2" />
+          Generate All SEO
+        </Button>
       </div>
       
       <div className="grid gap-4">
@@ -41,17 +39,15 @@ export const BlogPostSEO = ({ form, handleAIGenerate }: BlogPostSEOProps) => {
             <FormItem>
               <FormLabel className="flex items-center justify-between">
                 Meta Title
-                {handleAIGenerate && (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleAIGenerate('seo-title')}
-                  >
-                    <Wand2 className="w-4 h-4 mr-2" />
-                    Generate
-                  </Button>
-                )}
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleAIGenerate('seo-title')}
+                >
+                  <Wand2 className="w-4 h-4 mr-2" />
+                  Generate
+                </Button>
               </FormLabel>
               <FormControl>
                 <Input {...field} value={field.value || ''} />
@@ -71,17 +67,15 @@ export const BlogPostSEO = ({ form, handleAIGenerate }: BlogPostSEOProps) => {
             <FormItem>
               <FormLabel className="flex items-center justify-between">
                 Meta Description
-                {handleAIGenerate && (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleAIGenerate('seo-description')}
-                  >
-                    <Wand2 className="w-4 h-4 mr-2" />
-                    Generate
-                  </Button>
-                )}
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleAIGenerate('seo-description')}
+                >
+                  <Wand2 className="w-4 h-4 mr-2" />
+                  Generate
+                </Button>
               </FormLabel>
               <FormControl>
                 <Textarea {...field} value={field.value || ''} />
@@ -101,17 +95,15 @@ export const BlogPostSEO = ({ form, handleAIGenerate }: BlogPostSEOProps) => {
             <FormItem>
               <FormLabel className="flex items-center justify-between">
                 Meta Keywords
-                {handleAIGenerate && (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleAIGenerate('seo-keywords')}
-                  >
-                    <Wand2 className="w-4 h-4 mr-2" />
-                    Generate
-                  </Button>
-                )}
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleAIGenerate('seo-keywords')}
+                >
+                  <Wand2 className="w-4 h-4 mr-2" />
+                  Generate
+                </Button>
               </FormLabel>
               <FormControl>
                 <Input {...field} value={field.value || ''} />
