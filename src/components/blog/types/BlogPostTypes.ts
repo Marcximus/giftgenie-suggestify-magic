@@ -24,21 +24,15 @@ export interface BlogPostFormData {
   } | null;
   product_reviews: any[] | null;
   product_search_failures: any[] | null;
+  // New fields added for SEO schema
   word_count: number | null;
   reading_time: number | null;
   main_entity: string | null;
   breadcrumb_list: any[] | null;
-  category_id: string | null;
-  aggregateRating?: {
-    ratingValue: number;
-    reviewCount: number;
-  } | null;
-  operatingSystem?: string | null;
 }
 
 export interface BlogPostData extends BlogPostFormData {
   id: string;
   created_at: string;
   updated_at: string;
-  category_id: string | null;
 }
