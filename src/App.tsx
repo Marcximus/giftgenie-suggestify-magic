@@ -9,6 +9,7 @@ import BlogEdit from "@/pages/BlogEdit";
 import BlogAdmin from "@/pages/BlogAdmin";
 import NotFound from "@/pages/NotFound";
 import Auth from "@/pages/Auth";
+import { FloatingNav } from "@/components/FloatingNav";
 import "./App.css";
 
 function App() {
@@ -25,6 +26,7 @@ function App() {
         <Route path="/auth" element={<Auth />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
+      <FloatingNav />
       <Toaster />
     </Router>
   );
