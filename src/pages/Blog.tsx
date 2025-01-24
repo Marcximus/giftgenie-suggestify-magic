@@ -2,24 +2,54 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
 import { Card } from "@/components/ui/card";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { Helmet } from "react-helmet";
 import { toast } from "@/components/ui/use-toast";
+import { Button } from "@/components/ui/button";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 
 const Blog = () => {
-  console.log("Blog component initialized");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const currentCategory = searchParams.get('category');
+
+  const { data: categories, isLoading: categoriesLoading } = useQuery({
+    queryKey: ["blog-categories"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("blog_categories")
+        .select("*")
+        .order("name");
+      
+      if (error) {
+        console.error("Error fetching categories:", error);
+        toast({
+          title: "Error loading categories",
+          description: error.message,
+          variant: "destructive",
+        });
+        throw error;
+      }
+      return data;
+    },
+  });
 
   const { data: posts, isLoading, error } = useQuery({
-    queryKey: ["blog-posts"],
+    queryKey: ["blog-posts", currentCategory],
     queryFn: async () => {
       console.log("Starting blog posts fetch...");
       
       try {
         console.log("Initiating Supabase query...");
-        const { data, error, status, statusText } = await supabase
+        let query = supabase
           .from("blog_posts")
-          .select("*")
+          .select("*, blog_categories(name, slug)")
           .order("published_at", { ascending: false });
+
+        if (currentCategory) {
+          query = query.eq("blog_categories.slug", currentCategory);
+        }
+        
+        const { data, error, status, statusText } = await query;
         
         console.log("Supabase response status:", status, statusText);
         
@@ -42,7 +72,9 @@ const Blog = () => {
           count: data?.length || 0,
           firstPost: data?.[0]?.title || 'No posts'
         });
-        return data as Tables<"blog_posts">[];
+        return data as (Tables<"blog_posts"> & {
+          blog_categories: Tables<"blog_categories"> | null;
+        })[];
       } catch (error: any) {
         console.error("Detailed fetch error:", {
           message: error.message,
@@ -61,6 +93,14 @@ const Blog = () => {
     }
   });
 
+  const handleCategoryClick = (slug: string | null) => {
+    if (slug) {
+      setSearchParams({ category: slug });
+    } else {
+      setSearchParams({});
+    }
+  };
+
   if (error) {
     console.error("Rendering error state:", error);
     return (
@@ -74,7 +114,7 @@ const Blog = () => {
     );
   }
 
-  if (isLoading) {
+  if (isLoading || categoriesLoading) {
     return (
       <>
         <Helmet>
@@ -110,13 +150,27 @@ const Blog = () => {
     );
   }
 
+  const activeCategory = categories?.find(cat => cat.slug === currentCategory);
+
   return (
     <>
       <Helmet>
-        <title>Gift Ideas - Get The Gift</title>
-        <meta name="description" content="Discover gift-giving tips, ideas, and inspiration on our blog. Learn about the latest trends and get expert advice on finding the perfect gift." />
-        <meta property="og:title" content="Gift Ideas - Get The Gift" />
-        <meta property="og:description" content="Discover gift-giving tips, ideas, and inspiration on our blog. Learn about the latest trends and get expert advice on finding the perfect gift." />
+        <title>{activeCategory ? `${activeCategory.name} - Get The Gift` : 'Gift Ideas - Get The Gift'}</title>
+        <meta 
+          name="description" 
+          content={activeCategory 
+            ? `${activeCategory.description || `Discover the perfect ${activeCategory.name.toLowerCase()}. Expert recommendations and creative gift suggestions.`}`
+            : "Discover gift-giving tips, ideas, and inspiration on our blog. Learn about the latest trends and get expert advice on finding the perfect gift."
+          } 
+        />
+        <meta property="og:title" content={activeCategory ? `${activeCategory.name} - Get The Gift` : 'Gift Ideas - Get The Gift'} />
+        <meta 
+          property="og:description" 
+          content={activeCategory 
+            ? `${activeCategory.description || `Discover the perfect ${activeCategory.name.toLowerCase()}. Expert recommendations and creative gift suggestions.`}`
+            : "Discover gift-giving tips, ideas, and inspiration on our blog. Learn about the latest trends and get expert advice on finding the perfect gift."
+          }
+        />
         {posts?.[0]?.image_url && (
           <meta property="og:image" content={posts[0].image_url} />
         )}
@@ -124,12 +178,46 @@ const Blog = () => {
       <div className="container mx-auto px-4 py-6">
         <div className="text-center mb-8">
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold bg-gradient-to-r from-purple-500/80 via-blue-500/80 to-purple-500/80 inline-block text-transparent bg-clip-text mb-4">
-            Perfect Gift Ideas
+            {activeCategory ? activeCategory.name : 'Perfect Gift Ideas'}
           </h1>
           <p className="text-[0.7rem] sm:text-xs md:text-sm text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-            Our suggestions feel tailor-made because they practically are. We use <span className="animate-pulse-text text-primary">AI</span> and <span className="animate-pulse-text text-primary">internet magic</span> to find the absolute best gift ideas and popular presents. Thanks to us, you can spend less time gift hunting and more time celebrating (or binge-watching your favorite show—we won't judge).
+            {activeCategory?.description || 
+              'Our suggestions feel tailor-made because they practically are. We use '}
+            {!activeCategory && (
+              <>
+                <span className="animate-pulse-text text-primary">AI</span> and{' '}
+                <span className="animate-pulse-text text-primary">internet magic</span>
+                {' to find the absolute best gift ideas and popular presents. Thanks to us, you can spend less time gift hunting and more time celebrating (or binge-watching your favorite show—we won't judge).'}
+              </>
+            )}
           </p>
         </div>
+
+        <ScrollArea className="w-full whitespace-nowrap mb-6">
+          <div className="flex space-x-2 pb-4">
+            <Button
+              variant={!currentCategory ? "default" : "outline"}
+              size="sm"
+              onClick={() => handleCategoryClick(null)}
+              className="flex-shrink-0"
+            >
+              All Gift Ideas
+            </Button>
+            {categories?.map((category) => (
+              <Button
+                key={category.id}
+                variant={currentCategory === category.slug ? "default" : "outline"}
+                size="sm"
+                onClick={() => handleCategoryClick(category.slug)}
+                className="flex-shrink-0"
+              >
+                {category.name}
+              </Button>
+            ))}
+          </div>
+          <ScrollBar orientation="horizontal" />
+        </ScrollArea>
+
         <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
           {posts?.map((post) => (
             <Link to={`/blog/post/${post.slug}`} key={post.id}>
