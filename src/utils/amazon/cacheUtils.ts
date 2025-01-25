@@ -6,6 +6,8 @@ type AmazonCacheRow = Database['public']['Tables']['amazon_product_cache']['Row'
 
 export const getCachedProduct = async (searchTerm: string, priceRange?: string): Promise<AmazonProduct | null> => {
   try {
+    console.log('Checking cache for:', searchTerm, 'with price range:', priceRange);
+    
     const { data, error } = await supabase
       .from('amazon_product_cache')
       .select('*')
@@ -31,9 +33,11 @@ export const getCachedProduct = async (searchTerm: string, priceRange?: string):
 
       // Safely cast the stored JSON data to AmazonProduct
       const productData = cacheRow.product_data as unknown as AmazonProduct;
+      console.log('Cache hit for:', searchTerm);
       return productData;
     }
 
+    console.log('Cache miss for:', searchTerm);
     return null;
   } catch (error) {
     console.error('Error getting cached product:', error);
@@ -47,6 +51,8 @@ export const cacheProduct = async (
   priceRange?: string
 ): Promise<void> => {
   try {
+    console.log('Caching product:', searchTerm);
+    
     const { error } = await supabase
       .from('amazon_product_cache')
       .upsert({
@@ -60,6 +66,8 @@ export const cacheProduct = async (
 
     if (error) {
       console.error('Error caching product:', error);
+    } else {
+      console.log('Successfully cached product:', searchTerm);
     }
   } catch (error) {
     console.error('Error caching product:', error);
