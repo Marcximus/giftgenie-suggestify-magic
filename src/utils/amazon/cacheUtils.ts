@@ -11,7 +11,7 @@ export const getCachedProduct = async (searchTerm: string, priceRange?: string):
       .select('*')
       .eq('search_term', searchTerm.toLowerCase())
       .eq('price_range', priceRange || '')
-      .single();
+      .maybeSingle();
 
     if (error) throw error;
     
