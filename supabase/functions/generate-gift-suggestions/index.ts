@@ -7,7 +7,7 @@ import { processSuggestionsInBatches } from '../_shared/batch-processor.ts';
 import { buildGiftPrompt } from '../_shared/prompt-builder.ts';
 
 const DEEPSEEK_API_KEY = Deno.env.get('DEEPSEEK_API_KEY');
-const PARALLEL_REQUESTS = 2; // Generate 4 suggestions in parallel (8 total / 2)
+const PARALLEL_REQUESTS = 3; // Increase to 3 parallel requests of 3 suggestions each (9 total)
 
 serve(async (req) => {
   const startTime = performance.now();
@@ -29,9 +29,14 @@ serve(async (req) => {
       throw new Error('Invalid prompt');
     }
 
-    // Split the request into parallel calls
+    // Track all suggestions to prevent duplicates
+    const seenSuggestions = new Set();
+    const allSuggestions = [];
+
+    // Make parallel requests for suggestions
     const parallelPrompts = Array(PARALLEL_REQUESTS).fill(null).map((_, index) => {
-      const enhancedPrompt = buildGiftPrompt(prompt, 4); // Ask for 4 suggestions per request
+      // Ask for 3 suggestions per request, with context about avoiding duplicates
+      const enhancedPrompt = buildGiftPrompt(prompt, 3, index); 
       console.log(`Enhanced prompt ${index + 1}:`, enhancedPrompt);
       
       return fetch('https://api.deepseek.com/v1/chat/completions', {
@@ -49,14 +54,16 @@ serve(async (req) => {
 
 1. ALWAYS consider age, gender, occasion, and budget from the user's request
 2. Format each suggestion as: "[Brand Name] [Specific Product Model] ([Premium/Special Edition if applicable])"
-3. Return EXACTLY 4 suggestions in a JSON array
-4. Each suggestion must be unique and highly specific
+3. Return EXACTLY 3 suggestions in a JSON array
+4. Each suggestion must be UNIQUE and HIGHLY SPECIFIC
 5. DO NOT include any explanatory text or markdown
 6. DO NOT use backticks or code blocks
 7. ONLY return a raw JSON array of strings
+8. NEVER suggest products that are too similar to each other
+9. Focus on DIFFERENT product categories for variety
 
 Example response:
-["Sony WH-1000XM4 Wireless Headphones (Premium Edition)", "suggestion2", "suggestion3", "suggestion4"]`
+["Sony WH-1000XM4 Wireless Headphones (Premium Edition)", "suggestion2", "suggestion3"]`
             },
             { 
               role: "user", 
@@ -65,14 +72,13 @@ Example response:
           ],
           max_tokens: 1000,
           temperature: 1.3,
-          stream: true, // Enable streaming for faster initial response
+          stream: true,
         }),
       });
     });
 
     // Process all requests in parallel
     const responses = await Promise.all(parallelPrompts);
-    const suggestions = [];
     
     // Process streams in parallel
     await Promise.all(responses.map(async (response) => {
@@ -108,24 +114,34 @@ Example response:
         }
       }
 
-      // Process complete response
+      // Process complete response and check for duplicates
       try {
         const partialSuggestions = validateAndCleanSuggestions(buffer);
-        suggestions.push(...partialSuggestions);
+        
+        // Only add non-duplicate suggestions
+        partialSuggestions.forEach(suggestion => {
+          const normalizedTitle = suggestion.toLowerCase().trim();
+          if (!seenSuggestions.has(normalizedTitle)) {
+            seenSuggestions.add(normalizedTitle);
+            allSuggestions.push(suggestion);
+          }
+        });
       } catch (e) {
         console.error('Error processing suggestions:', e);
       }
     }));
 
-    console.log('All suggestions collected:', suggestions);
+    // Take only the first 8 unique suggestions
+    const uniqueSuggestions = allSuggestions.slice(0, 8);
+    console.log('Unique suggestions collected:', uniqueSuggestions);
     
-    if (!suggestions || suggestions.length !== 8) {
-      throw new Error('Invalid number of suggestions received');
+    if (!uniqueSuggestions || uniqueSuggestions.length < 8) {
+      throw new Error('Not enough unique suggestions received');
     }
 
     // Process suggestions in parallel batches
-    console.log('Processing suggestions in parallel:', suggestions);
-    const processedProducts = await processSuggestionsInBatches(suggestions);
+    console.log('Processing suggestions in parallel:', uniqueSuggestions);
+    const processedProducts = await processSuggestionsInBatches(uniqueSuggestions);
     console.log('Processed products:', processedProducts);
     
     if (!processedProducts.length) {
