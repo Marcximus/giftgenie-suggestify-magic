@@ -17,8 +17,9 @@ interface BlogPostContentProps {
 export const BlogPostContent = ({ form, handleAIGenerate }: BlogPostContentProps) => {
   const { toast } = useToast();
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isGeneratingDeepSeek, setIsGeneratingDeepSeek] = useState(false);
 
-  const generateFullPost = async () => {
+  const generateFullPost = async (provider: 'openai' | 'deepseek' = 'openai') => {
     const title = form.getValues('title');
     if (!title) {
       toast({
@@ -29,10 +30,17 @@ export const BlogPostContent = ({ form, handleAIGenerate }: BlogPostContentProps
       return;
     }
 
-    setIsGenerating(true);
+    if (provider === 'openai') {
+      setIsGenerating(true);
+    } else {
+      setIsGeneratingDeepSeek(true);
+    }
+
     try {
-      console.log('Generating blog post for title:', title);
-      const { data, error } = await supabase.functions.invoke('generate-blog-post', {
+      console.log(`Generating blog post with ${provider} for title:`, title);
+      const endpoint = provider === 'openai' ? 'generate-blog-post' : 'generate-with-deepseek';
+      
+      const { data, error } = await supabase.functions.invoke(endpoint, {
         body: { title }
       });
 
@@ -59,20 +67,24 @@ export const BlogPostContent = ({ form, handleAIGenerate }: BlogPostContentProps
         
         toast({
           title: "Success",
-          description: `Blog post generated with ${data.affiliateLinks?.length || 0} product links`,
+          description: `Blog post generated with ${data.affiliateLinks?.length || 0} product links using ${provider}`,
         });
       } else {
         throw new Error('No content received from AI');
       }
     } catch (error) {
-      console.error('Error generating blog post:', error);
+      console.error(`Error generating blog post with ${provider}:`, error);
       toast({
         title: "Error",
-        description: "Failed to generate blog post. Please try again.",
+        description: `Failed to generate blog post with ${provider}. Please try again.`,
         variant: "destructive"
       });
     } finally {
-      setIsGenerating(false);
+      if (provider === 'openai') {
+        setIsGenerating(false);
+      } else {
+        setIsGeneratingDeepSeek(false);
+      }
     }
   };
 
@@ -118,17 +130,28 @@ export const BlogPostContent = ({ form, handleAIGenerate }: BlogPostContentProps
                   type="button"
                   variant="outline"
                   size="sm"
-                  onClick={generateFullPost}
-                  disabled={isGenerating}
+                  onClick={() => generateFullPost('openai')}
+                  disabled={isGenerating || isGeneratingDeepSeek}
                 >
                   <Wand2 className="w-4 h-4 mr-2" />
-                  {isGenerating ? "Generating..." : "Generate Full Post"}
+                  {isGenerating ? "Generating..." : "Generate with OpenAI"}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => generateFullPost('deepseek')}
+                  disabled={isGenerating || isGeneratingDeepSeek}
+                >
+                  <Wand2 className="w-4 h-4 mr-2" />
+                  {isGeneratingDeepSeek ? "Generating..." : "Generate with DeepSeek"}
                 </Button>
                 <Button
                   type="button"
                   variant="outline"
                   size="sm"
                   onClick={() => handleAIGenerate('improve-content')}
+                  disabled={isGenerating || isGeneratingDeepSeek}
                 >
                   <Wand2 className="w-4 h-4 mr-2" />
                   Improve Content
