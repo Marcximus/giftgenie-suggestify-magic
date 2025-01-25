@@ -39,16 +39,7 @@ IMPORTANT REQUIREMENTS:
 1. MUST include at least 2 gifts related to each interest: ${interests.join(', ')}
 2. Ensure gifts are appropriate for the specified budget
 3. Each suggestion must be from a different product category
-4. For each suggestion, provide a CLEAR and SPECIFIC product title that includes:
-   - Brand name (if applicable)
-   - Product model/series (if applicable)
-   - Key distinguishing feature (e.g., "8x42" for binoculars, "Anti-Squirrel" for bird feeders)
-   - Basic product type (e.g., "Binoculars", "Black Tea", "Bird Feeder")
-
-Example titles:
-- "Celestron Nature DX 8x42 Binoculars"
-- "Harney & Sons Tower of London Black Tea"
-- "Perky-Pet Squirrel Stumper Bird Feeder"
+4. Format each suggestion as: "[Brand Name] [Specific Product Model] ([Premium/Special Edition if applicable])"
 
 Return ONLY a JSON array of exactly 8 strings, with no additional text.`;
 

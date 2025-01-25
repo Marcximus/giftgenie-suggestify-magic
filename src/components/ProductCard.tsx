@@ -24,47 +24,29 @@ export const simplifyTitle = (title: string): string => {
   const doc = new DOMParser().parseFromString(title, 'text/html');
   const decodedTitle = doc.body.textContent || title;
 
-  // Basic cleanup of HTML and extra spaces
+  // Basic cleanup
   let cleanTitle = decodedTitle
     .replace(/<[^>]*>/g, '') // Remove HTML tags
+    .replace(/\([^)]*\)/g, '') // Remove parentheses content
+    .replace(/\[[^\]]*\]/g, '') // Remove bracket content
+    .replace(/[,|]/g, ' ') // Replace commas and pipes with spaces
     .replace(/\s+/g, ' ') // Normalize spaces
     .trim();
 
-  // Remove marketplace prefixes but preserve brand names
-  cleanTitle = cleanTitle
-    .replace(/^(new|hot|2024|latest|best|premium)\s+/i, '')
-    .trim();
+  // Take the first meaningful part (before common separators)
+  cleanTitle = cleanTitle.split(/[-–—]|\.\s/)[0].trim();
 
-  // Keep everything before "with", "for", or similar connecting words
-  // but only if we have enough content before them
-  const beforeConnector = cleanTitle.split(/\s+(?:with|for|featuring)\s+/i)[0];
-  if (beforeConnector.split(' ').length >= 3) {
-    cleanTitle = beforeConnector;
-  }
-
-  // Capitalize properly while preserving special cases
+  // Capitalize properly
   const words = cleanTitle.split(' ').filter(word => word.length > 0);
   const processedWords = words.map((word, index) => {
-    // Preserve exact cases for known brands and abbreviations
-    if (word.includes('&') || // Preserve cases like "Harney & Sons"
-        word.match(/^[A-Z0-9]+$/) || // Keep acronyms and product codes uppercase
-        word.match(/^(?:iPhone|iPad|MacBook|AirPods|PlayStation|Xbox)/i) || // Keep product names
-        word.match(/^(?:Wi-Fi|Bluetooth|USB-C|HDMI|LED|LCD)/i)) { // Keep technology terms
+    // Keep acronyms and product codes uppercase
+    if (word.match(/^[A-Z0-9]+$/)) {
       return word;
     }
-
-    // Special case for hyphenated words
-    if (word.includes('-')) {
-      return word.split('-')
-        .map(part => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
-        .join('-');
-    }
-
-    // Capitalize first word and significant words
+    // Capitalize first word and other significant words
     if (index === 0 || !['a', 'an', 'the', 'and', 'but', 'or', 'for', 'nor', 'on', 'at', 'to', 'of', 'in', 'with'].includes(word.toLowerCase())) {
       return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
     }
-
     return word.toLowerCase();
   });
 
