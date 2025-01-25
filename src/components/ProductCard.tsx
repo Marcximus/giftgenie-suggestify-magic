@@ -24,14 +24,37 @@ export const simplifyTitle = (title: string): string => {
   const doc = new DOMParser().parseFromString(title, 'text/html');
   const decodedTitle = doc.body.textContent || title;
 
-  // Clean up any HTML and extra spaces
-  const cleanTitle = decodedTitle
+  // Process the title step by step
+  let processedTitle = decodedTitle
     .replace(/<[^>]*>/g, '') // Remove HTML tags
+    .replace(/\([^)]*\)/g, '') // Remove content in parentheses
+    .replace(/\[[^\]]*\]/g, '') // Remove content in square brackets
+    .split(',')[0] // Take only the part before the first comma
+    .split('|')[0] // Take only the part before the first pipe
+    .split('-')[0] // Take only the part before the first dash
+    .replace(/^(new|hot|2024|latest|best|premium)/i, '') // Remove common marketplace prefixes
+    .replace(/\b(with|featuring|for|by|in)\b/gi, '') // Remove common connecting words
     .replace(/\s{2,}/g, ' ') // Remove extra spaces
     .trim();
 
-  // Take first 7 words
-  const words = cleanTitle.split(' ');
+  // Ensure proper capitalization
+  processedTitle = processedTitle
+    .split(' ')
+    .map((word, index) => {
+      // Don't lowercase certain words/acronyms
+      if (word.match(/^(LED|LCD|HD|UHD|USB|HDMI|WiFi|GPS|TV|PC|AI)$/i)) {
+        return word.toUpperCase();
+      }
+      // Capitalize first letter of each word except articles/conjunctions/prepositions
+      if (index === 0 || !['a', 'an', 'the', 'and', 'but', 'or', 'for', 'nor', 'on', 'at', 'to', 'of', 'in'].includes(word.toLowerCase())) {
+        return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+      }
+      return word.toLowerCase();
+    })
+    .join(' ');
+
+  // Take first 7 words while ensuring we don't cut in the middle of a brand name
+  const words = processedTitle.split(' ');
   return words.slice(0, 7).join(' ');
 };
 
