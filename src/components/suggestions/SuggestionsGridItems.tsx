@@ -21,8 +21,8 @@ export const SuggestionsGridItems = ({
   const [processingIndexes, setProcessingIndexes] = useState<Set<number>>(new Set());
   const abortController = useRef<AbortController | null>(null);
 
-  const generateTitle = useCallback(async (originalTitle: string) => {
-    const cacheKey = originalTitle;
+  const generateTitle = useCallback(async (originalTitle: string, description: string) => {
+    const cacheKey = `${originalTitle}-${description}`;
     if (titleCache.has(cacheKey)) {
       console.log('Cache hit for title:', originalTitle);
       return titleCache.get(cacheKey)!;
@@ -30,7 +30,7 @@ export const SuggestionsGridItems = ({
 
     try {
       const { data, error } = await supabase.functions.invoke('generate-product-title', {
-        body: { title: originalTitle }
+        body: { title: originalTitle, description }
       });
 
       if (error) throw error;
@@ -59,8 +59,8 @@ export const SuggestionsGridItems = ({
       const startTime = performance.now();
       console.log('Starting parallel processing of suggestions');
 
-      // Process all suggestions in parallel with Promise.all
-      const batchSize = 4; // Process in smaller batches for better UX
+      // Process suggestions in parallel batches of 4
+      const batchSize = 4;
       const batches = Math.ceil(suggestions.length / batchSize);
 
       for (let batchIndex = 0; batchIndex < batches; batchIndex++) {
@@ -68,27 +68,23 @@ export const SuggestionsGridItems = ({
         const batchEnd = Math.min(batchStart + batchSize, suggestions.length);
         const batchItems = suggestions.slice(batchStart, batchEnd);
 
-        // Mark batch items as processing
-        setProcessingIndexes(prev => {
-          const newIndexes = new Set(prev);
-          batchItems.forEach((_, index) => newIndexes.add(batchStart + index));
-          return newIndexes;
-        });
-
         try {
-          // Process batch items in parallel
-          const batchPromises = batchItems.map(async (suggestion) => {
-            const optimizedTitle = await generateTitle(suggestion.title);
-            return {
-              ...suggestion,
-              optimizedTitle
-            };
-          });
+          // Process batch in parallel
+          const batchResults = await Promise.all(
+            batchItems.map(async (suggestion, index) => {
+              const globalIndex = batchStart + index;
+              setProcessingIndexes(prev => new Set([...prev, globalIndex]));
 
-          // Wait for all items in the batch to complete
-          const batchResults = await Promise.all(batchPromises);
+              const optimizedTitle = await generateTitle(suggestion.title, suggestion.description);
+              
+              return {
+                ...suggestion,
+                optimizedTitle
+              };
+            })
+          );
 
-          // Update state while preserving order
+          // Update state with batch results while preserving order
           setProcessedSuggestions(prev => {
             const newSuggestions = [...prev];
             batchResults.forEach((result, index) => {
@@ -110,11 +106,6 @@ export const SuggestionsGridItems = ({
           if (error.message !== 'Processing aborted') {
             console.error('Error processing batch:', error);
           }
-        }
-
-        // Add a small delay between batches to prevent rate limiting
-        if (batchIndex < batches - 1) {
-          await new Promise(resolve => setTimeout(resolve, 100));
         }
       }
 
