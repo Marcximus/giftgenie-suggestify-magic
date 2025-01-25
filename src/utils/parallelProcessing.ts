@@ -43,7 +43,7 @@ export async function processInParallel<T, R>(
     
     // Wait for all items in the batch to complete
     const batchResults = await Promise.all(batchPromises);
-    results.push(...batchResults.filter((r): r is R => r !== null));
+    results.push(...batchResults.filter((r): r is NonNullable<Awaited<R>> => r !== null));
     
     const batchDuration = performance.now() - batchStartTime;
     console.log(`Batch completed in ${batchDuration.toFixed(2)}ms`);
