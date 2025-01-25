@@ -32,19 +32,32 @@ serve(async (req) => {
     const interests = interestsMatch ? interestsMatch[1].split(' and ') : [];
     console.log('Extracted interests:', interests);
 
-    // Build a more structured prompt
+    // Build a more structured prompt with clearer title formatting rules
     const enhancedPrompt = `Based on the request "${prompt}", suggest 8 highly specific and thoughtful gift ideas that would genuinely delight the recipient.
 
-IMPORTANT TITLE FORMATTING RULES:
-1. Keep titles concise but informative (5-7 words maximum)
-2. Don't use HTML tags or special characters
+CRITICAL TITLE FORMATTING RULES:
+1. Each title MUST be 5-7 words maximum
+2. Focus on the essential product information only
+3. Remove unnecessary words like "The", "Premium", "New", "Latest"
+4. Include brand name only if it's well-known
+5. Avoid model numbers and technical specifications
+6. No HTML tags or special characters
 
-EXAMPLES OF GOOD TITLES:
-- "Celestron Binoculars" (not "Celestron Nature DX 8x42 Binoculars")
-- "Harney & Sons Black Tea" (not "Harney & Sons Tower of London Black Tea")
-- "Anti-Squirrel Bird Feeder" (not "The Perky-Pet 114B Squirrel Stumper Bird Feeder")
-- "SITKA Hunting Hoody" (not "SITKA Gear Men's Core Lightweight Hunting Hoody")
-- "Plano Utility Box" (not "The Plano EDGE 3700 Premium Tackle Utility Box")
+STUDY THESE EXAMPLES CAREFULLY:
+BAD: "The Perky-Pet 114B Squirrel Stumper Premium Bird Feeder with Advanced Protection System"
+GOOD: "Anti-Squirrel Bird Feeder"
+
+BAD: "Celestron Nature DX 8x42 Professional Grade Binoculars with ED Glass"
+GOOD: "Celestron Binoculars"
+
+BAD: "SITKA Gear Men's Core Lightweight Hunting Hoody with Advanced Odor Control"
+GOOD: "SITKA Hunting Hoody"
+
+BAD: "The Plano EDGE 3700 Premium Professional Grade Tackle Storage System"
+GOOD: "Plano Utility Box"
+
+BAD: "Harney & Sons Tower of London Premium Loose Leaf Black Tea Blend"
+GOOD: "Harney & Sons Black Tea"
 
 ADDITIONAL REQUIREMENTS:
 1. MUST include at least 2 gifts related to each interest: ${interests.join(', ')}
