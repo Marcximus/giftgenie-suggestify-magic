@@ -20,28 +20,26 @@ export const SuggestionsGridItems = ({
   isLoading
 }: SuggestionsGridItemsProps) => {
   const [processedSuggestions, setProcessedSuggestions] = useState<(GiftSuggestion & { optimizedTitle: string | null })[]>([]);
-  const [processingIndexes, setProcessingIndexes] = useState<Set<number>>(new Set());
+  const [visibleIndexes, setVisibleIndexes] = useState<Set<number>>(new Set());
   const abortController = useRef<AbortController | null>(null);
 
   const generateTitle = useCallback(async (suggestion: GiftSuggestion, index: number) => {
     const cacheKey = `${suggestion.title}-${suggestion.description}`;
     
-    setProcessingIndexes(prev => {
-      const updated = new Set(prev);
-      updated.add(index);
-      return updated;
-    });
-
     try {
       if (titleCache.has(cacheKey)) {
+        const cachedTitle = titleCache.get(cacheKey)!;
         setProcessedSuggestions(prev => {
           const updated = [...prev];
           updated[index] = {
             ...suggestion,
-            optimizedTitle: titleCache.get(cacheKey)!
+            optimizedTitle: cachedTitle
           };
           return updated;
         });
+        // Add a small delay before showing the item
+        await new Promise(resolve => setTimeout(resolve, 50));
+        setVisibleIndexes(prev => new Set([...prev, index]));
       } else {
         const { data, error } = await supabase.functions.invoke('generate-product-title', {
           body: {
@@ -63,6 +61,9 @@ export const SuggestionsGridItems = ({
           };
           return updated;
         });
+        // Add a small delay before showing the item
+        await new Promise(resolve => setTimeout(resolve, 50));
+        setVisibleIndexes(prev => new Set([...prev, index]));
       }
     } catch (error) {
       console.error('Error generating title:', error);
@@ -74,12 +75,8 @@ export const SuggestionsGridItems = ({
         };
         return updated;
       });
-    } finally {
-      setProcessingIndexes(prev => {
-        const updated = new Set(prev);
-        updated.delete(index);
-        return updated;
-      });
+      // Still show the item even if there was an error
+      setVisibleIndexes(prev => new Set([...prev, index]));
     }
   }, []);
 
@@ -92,7 +89,8 @@ export const SuggestionsGridItems = ({
       optimizedTitle: null
     })));
     
-    setProcessingIndexes(new Set());
+    // Reset visible indexes
+    setVisibleIndexes(new Set());
     
     if (abortController.current) {
       abortController.current.abort();
@@ -143,8 +141,8 @@ export const SuggestionsGridItems = ({
         {Array.from({ length: 8 }).map((_, index) => (
           <div 
             key={`skeleton-${index}`} 
-            className="animate-in fade-in slide-in-from-bottom-4" 
-            style={{ animationDelay: `${index * 100}ms` }}
+            className="animate-pulse"
+            style={{ animationDelay: `${index * 50}ms` }}
             aria-hidden="true"
           >
             <SuggestionSkeleton />
@@ -157,15 +155,15 @@ export const SuggestionsGridItems = ({
   return (
     <>
       {processedSuggestions.map((suggestion, index) => {
-        const isProcessing = processingIndexes.has(index);
+        const isVisible = visibleIndexes.has(index);
         const hasTitle = suggestion.optimizedTitle !== null;
 
-        if (!hasTitle || isProcessing) {
+        if (!hasTitle || !isVisible) {
           return (
             <div 
               key={`processing-${index}`}
-              className="animate-in fade-in duration-500"
-              style={{ animationDelay: `${index * 100}ms` }}
+              className="animate-pulse"
+              style={{ animationDelay: `${index * 50}ms` }}
             >
               <SuggestionSkeleton />
             </div>
@@ -179,9 +177,9 @@ export const SuggestionsGridItems = ({
         return (
           <div 
             key={`suggestion-${index}`}
-            className="animate-in fade-in duration-500"
+            className="opacity-0 animate-in fade-in duration-300"
             style={{ 
-              animationDelay: `${index * 100}ms`,
+              animationDelay: '0ms',
               animationFillMode: 'forwards' 
             }}
           >
