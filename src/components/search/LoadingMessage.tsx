@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { loadingMessages } from './loadingMessages';
+import { Spinner } from "@/components/ui/spinner";
 
 interface LoadingMessageProps {
   isLoading: boolean;
@@ -47,8 +48,11 @@ export const LoadingMessage = ({ isLoading }: LoadingMessageProps) => {
   if (!isLoading || shuffledMessages.length === 0) return null;
 
   return (
-    <p className="text-[#8E9196] text-center animate-pulse text-sm md:text-base font-medium">
-      {shuffledMessages[currentLoadingMessage]}
-    </p>
+    <div className="flex flex-col items-center gap-4">
+      <Spinner variant="infinite" className="text-primary w-12 h-12" />
+      <p className="text-[#8E9196] text-center text-sm md:text-base font-medium">
+        {shuffledMessages[currentLoadingMessage]}
+      </p>
+    </div>
   );
 };
