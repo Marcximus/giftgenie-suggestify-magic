@@ -26,16 +26,27 @@ const marketingTerms = [
   'deluxe', 'exclusive', 'advanced', 'innovative', 'revolutionary',
   'next-generation', 'state-of-the-art', 'cutting-edge', 'top-of-the-line',
   'world-class', 'ultra', 'super', 'mega', 'premium-quality', 'high-quality',
-  'professional-grade', 'limited-edition', 'special-edition', 'new'
+  'professional-grade', 'limited-edition', 'special-edition', 'new', 'series',
+  'genuine', 'authentic', 'compact', 'portable', 'wireless', 'digital'
 ];
 
-// Compile a regex pattern for marketing terms
+// Technical specifications pattern to remove
+const techSpecsPattern = /\b([A-Z0-9]+-[A-Z0-9]+|\d+(?:\.\d+)?(?:mm|MP|GB|TB|mAh|fps|inch|"|cm|m|kg|g|oz|ml|L)\b)/gi;
+
+// Compile patterns once
 const marketingTermsPattern = new RegExp(`\\b(${marketingTerms.join('|')})\\b`, 'gi');
+const modelNumberPattern = /\b[A-Z0-9]+-?[A-Z0-9]+\b/g;
+
+// Create a single DOMParser instance
+const domParser = new DOMParser();
 
 export const simplifyTitle = (title: string): string => {
   // First decode any HTML entities
-  const doc = new DOMParser().parseFromString(title, 'text/html');
+  const doc = domParser.parseFromString(title, 'text/html');
   let decodedTitle = doc.body.textContent || title;
+
+  // Log original title for debugging
+  console.log('Processing title:', decodedTitle);
 
   // Remove HTML tags and normalize spaces
   decodedTitle = decodedTitle
@@ -43,31 +54,52 @@ export const simplifyTitle = (title: string): string => {
     .replace(/\s+/g, ' ')
     .trim();
 
+  // Remove text in parentheses and brackets
+  decodedTitle = decodedTitle
+    .replace(/\([^)]*\)/g, '')
+    .replace(/\[[^\]]*\]/g, '')
+    .trim();
+
+  // Remove technical specifications
+  decodedTitle = decodedTitle.replace(techSpecsPattern, '');
+
+  // Remove model numbers while preserving brand names
+  const words = decodedTitle.split(' ');
+  const brandName = words[0]; // Preserve the first word as it's usually the brand
+  decodedTitle = [brandName, ...words.slice(1).filter(word => !modelNumberPattern.test(word))].join(' ');
+
   // Remove marketing terms
   decodedTitle = decodedTitle.replace(marketingTermsPattern, '');
 
-  // Remove text in parentheses
-  decodedTitle = decodedTitle.replace(/\([^)]*\)/g, '');
+  // Remove common conjunctions and prepositions when not at start
+  decodedTitle = decodedTitle.replace(/\s+(with|and|in|for|by|or|of)\s+/gi, ' ');
 
-  // Remove multiple spaces that might have been created
+  // Remove multiple spaces and trim
   decodedTitle = decodedTitle.replace(/\s+/g, ' ').trim();
 
-  // Split into words and limit to 7 words
-  const words = decodedTitle.split(' ');
-  if (words.length > 7) {
-    decodedTitle = words.slice(0, 7).join(' ');
-  }
+  // Split into words and get key terms
+  const finalWords = decodedTitle.split(' ')
+    .filter(word => word.length > 1) // Remove single characters
+    .slice(0, 5); // Limit to 5 words max
 
   // Ensure the title starts with a capital letter
-  decodedTitle = decodedTitle.charAt(0).toUpperCase() + decodedTitle.slice(1);
+  let finalTitle = finalWords.join(' ');
+  finalTitle = finalTitle.charAt(0).toUpperCase() + finalTitle.slice(1);
 
   // Log the transformation for debugging
   console.log('Title transformation:', {
     original: title,
-    simplified: decodedTitle
+    simplified: finalTitle,
+    steps: {
+      afterParentheses: decodedTitle,
+      afterTechSpecs: decodedTitle.replace(techSpecsPattern, ''),
+      afterModelNumbers: decodedTitle.replace(modelNumberPattern, ''),
+      afterMarketing: decodedTitle.replace(marketingTermsPattern, ''),
+      finalWords: finalWords
+    }
   });
 
-  return decodedTitle;
+  return finalTitle;
 };
 
 const ProductCardComponent = ({ 
