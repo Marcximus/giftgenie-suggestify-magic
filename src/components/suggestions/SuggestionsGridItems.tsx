@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { ProductCard } from '../ProductCard';
 import { SuggestionSkeleton } from '../SuggestionSkeleton';
 import { GiftSuggestion } from '@/types/suggestions';
@@ -16,13 +16,20 @@ export const SuggestionsGridItems = ({
   isLoading
 }: SuggestionsGridItemsProps) => {
   const [processedSuggestions, setProcessedSuggestions] = useState<(GiftSuggestion & { optimizedTitle: string })[]>([]);
-  const [processingCount, setProcessingCount] = useState(0);
+  const [processingQueue, setProcessingQueue] = useState<number[]>([]);
+  const [currentlyProcessing, setCurrentlyProcessing] = useState<number | null>(null);
 
-  const generateTitle = async (originalTitle: string, description: string) => {
+  const generateTitle = useCallback(async (originalTitle: string, description: string) => {
     try {
+      console.log('Generating title for:', originalTitle);
+      const startTime = performance.now();
+      
       const { data, error } = await supabase.functions.invoke('generate-product-title', {
         body: { title: originalTitle, description }
       });
+
+      const endTime = performance.now();
+      console.log(`Title generation took ${endTime - startTime}ms`);
 
       if (error) {
         console.error('Error generating title:', error);
@@ -34,29 +41,36 @@ export const SuggestionsGridItems = ({
       console.error('Error in title generation:', error);
       return originalTitle;
     }
-  };
+  }, []);
 
+  // Initialize processing queue when suggestions change
   useEffect(() => {
     if (suggestions.length === 0) return;
     
-    setProcessingCount(suggestions.length);
-    setProcessedSuggestions([]); // Reset when new suggestions come in
+    const indices = Array.from({ length: suggestions.length }, (_, i) => i);
+    setProcessingQueue(indices);
+    setProcessedSuggestions([]);
+    setCurrentlyProcessing(null);
+  }, [suggestions]);
 
-    // Process each suggestion individually
-    suggestions.forEach(async (suggestion, index) => {
+  // Process queue
+  useEffect(() => {
+    const processNextInQueue = async () => {
+      if (processingQueue.length === 0 || currentlyProcessing !== null) return;
+
+      const index = processingQueue[0];
+      const suggestion = suggestions[index];
+
       if (!suggestion) {
-        console.warn('Received undefined suggestion at index:', index);
-        setProcessingCount(count => count - 1);
+        console.warn('Invalid suggestion at index:', index);
+        setProcessingQueue(prev => prev.slice(1));
         return;
       }
 
-      try {
-        console.log('Processing suggestion:', {
-          title: suggestion.title,
-          amazonPrice: suggestion.amazon_price,
-          priceRange: suggestion.priceRange
-        });
+      setCurrentlyProcessing(index);
+      console.log('Processing suggestion:', index);
 
+      try {
         const optimizedTitle = await generateTitle(suggestion.title, suggestion.description);
         
         setProcessedSuggestions(prev => {
@@ -64,14 +78,16 @@ export const SuggestionsGridItems = ({
           newSuggestions[index] = { ...suggestion, optimizedTitle };
           return newSuggestions;
         });
-        
-        setProcessingCount(count => count - 1);
       } catch (error) {
         console.error('Error processing suggestion:', error);
-        setProcessingCount(count => count - 1);
+      } finally {
+        setCurrentlyProcessing(null);
+        setProcessingQueue(prev => prev.slice(1));
       }
-    });
-  }, [suggestions]);
+    };
+
+    processNextInQueue();
+  }, [processingQueue, currentlyProcessing, suggestions, generateTitle]);
 
   if (isLoading) {
     return (
@@ -90,57 +106,56 @@ export const SuggestionsGridItems = ({
     );
   }
 
-  // Show skeletons for items still being processed
-  const remainingSkeletons = processingCount;
-  const processedCount = suggestions.length - processingCount;
-
   return (
     <>
-      {processedSuggestions
-        .slice(0, processedCount)
-        .map((suggestion, index) => {
-          if (!suggestion) {
-            console.warn('Encountered undefined processed suggestion at index:', index);
-            return null;
-          }
+      {suggestions.map((suggestion, index) => {
+        const processed = processedSuggestions[index];
+        const isProcessing = !processed && (currentlyProcessing === index || processingQueue.includes(index));
 
-          const price = suggestion.amazon_price 
-            ? suggestion.amazon_price.toString()
-            : suggestion.priceRange?.replace('USD ', '') || 'Check price on Amazon';
-
+        if (isProcessing) {
           return (
             <div 
-              key={`suggestion-${index}`}
+              key={`processing-${index}`}
               className="animate-in fade-in slide-in-from-bottom-4"
-              style={{ 
-                animationDelay: `${index * 100}ms`,
-                animationFillMode: 'forwards' 
-              }}
+              style={{ animationDelay: `${index * 100}ms` }}
             >
-              <ProductCard
-                title={suggestion.optimizedTitle}
-                description={suggestion.description}
-                price={price}
-                amazonUrl={suggestion.amazon_url || "#"}
-                imageUrl={suggestion.amazon_image_url}
-                rating={suggestion.amazon_rating}
-                totalRatings={suggestion.amazon_total_ratings}
-                asin={suggestion.amazon_asin}
-                onMoreLikeThis={onMoreLikeThis}
-              />
+              <SuggestionSkeleton />
             </div>
           );
-        })}
-      
-      {remainingSkeletons > 0 && Array.from({ length: remainingSkeletons }).map((_, index) => (
-        <div 
-          key={`remaining-skeleton-${index}`}
-          className="animate-in fade-in slide-in-from-bottom-4"
-          style={{ animationDelay: `${(processedCount + index) * 100}ms` }}
-        >
-          <SuggestionSkeleton />
-        </div>
-      ))}
+        }
+
+        if (!processed) {
+          console.warn('Suggestion not yet processed:', index);
+          return null;
+        }
+
+        const price = processed.amazon_price 
+          ? processed.amazon_price.toString()
+          : processed.priceRange?.replace('USD ', '') || 'Check price on Amazon';
+
+        return (
+          <div 
+            key={`suggestion-${index}`}
+            className="animate-in fade-in slide-in-from-bottom-4"
+            style={{ 
+              animationDelay: `${index * 100}ms`,
+              animationFillMode: 'forwards' 
+            }}
+          >
+            <ProductCard
+              title={processed.optimizedTitle}
+              description={processed.description}
+              price={price}
+              amazonUrl={processed.amazon_url || "#"}
+              imageUrl={processed.amazon_image_url}
+              rating={processed.amazon_rating}
+              totalRatings={processed.amazon_total_ratings}
+              asin={processed.amazon_asin}
+              onMoreLikeThis={onMoreLikeThis}
+            />
+          </div>
+        );
+      })}
     </>
   );
 };
