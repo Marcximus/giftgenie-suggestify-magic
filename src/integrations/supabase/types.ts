@@ -9,6 +9,39 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      amazon_product_cache: {
+        Row: {
+          created_at: string | null
+          expires_at: string | null
+          hit_count: number | null
+          id: string
+          last_accessed: string | null
+          price_range: string | null
+          product_data: Json
+          search_term: string
+        }
+        Insert: {
+          created_at?: string | null
+          expires_at?: string | null
+          hit_count?: number | null
+          id?: string
+          last_accessed?: string | null
+          price_range?: string | null
+          product_data: Json
+          search_term: string
+        }
+        Update: {
+          created_at?: string | null
+          expires_at?: string | null
+          hit_count?: number | null
+          id?: string
+          last_accessed?: string | null
+          price_range?: string | null
+          product_data?: Json
+          search_term?: string
+        }
+        Relationships: []
+      }
       api_metrics: {
         Row: {
           cache_hit: boolean | null
