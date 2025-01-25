@@ -32,7 +32,7 @@ serve(async (req) => {
     const interests = interestsMatch ? interestsMatch[1].split(' and ') : [];
     console.log('Extracted interests:', interests);
 
-    // Build a more structured prompt that ensures coverage of all interests
+    // Build a more structured prompt
     const enhancedPrompt = `Based on the request "${prompt}", suggest 8 highly specific and thoughtful gift ideas that would genuinely delight the recipient.
 
 IMPORTANT TITLE FORMATTING RULES:
@@ -55,6 +55,10 @@ ADDITIONAL REQUIREMENTS:
 Return ONLY a JSON array of exactly 8 strings, with no additional text.`;
 
     console.log('Enhanced prompt:', enhancedPrompt);
+
+    if (!DEEPSEEK_API_KEY) {
+      throw new Error('DEEPSEEK_API_KEY is not configured');
+    }
 
     const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
       method: 'POST',
@@ -83,40 +87,25 @@ Return ONLY a JSON array of exactly 8 strings, with no additional text.`;
         ],
         max_tokens: 1000,
         temperature: 1.3,
-        stream: true,
+        stream: false
       }),
     });
 
-    const reader = response.body?.getReader();
-    if (!reader) throw new Error('No reader available');
-
-    let buffer = '';
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-
-      const chunk = new TextDecoder().decode(value);
-      const lines = chunk.split('\n');
-      
-      for (const line of lines) {
-        if (line.startsWith('data: ')) {
-          const data = line.slice(6);
-          if (data === '[DONE]') continue;
-          
-          try {
-            const parsed = JSON.parse(data);
-            const content = parsed.choices[0].delta.content;
-            if (content) buffer += content;
-          } catch (e) {
-            console.warn('Error parsing chunk:', e);
-          }
-        }
-      }
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('DeepSeek API error:', errorText);
+      throw new Error(`DeepSeek API error: ${response.status} ${errorText}`);
     }
 
-    // Process complete response
-    const suggestions = validateAndCleanSuggestions(buffer);
-    console.log('Raw suggestions:', suggestions);
+    const data = await response.json();
+    console.log('Raw DeepSeek response:', data);
+
+    if (!data.choices?.[0]?.message?.content) {
+      throw new Error('Invalid response format from DeepSeek API');
+    }
+
+    const suggestions = validateAndCleanSuggestions(data.choices[0].message.content);
+    console.log('Validated suggestions:', suggestions);
     
     if (!suggestions || suggestions.length !== 8) {
       throw new Error('Did not receive exactly 8 suggestions');
