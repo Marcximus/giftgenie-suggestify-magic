@@ -32,7 +32,7 @@ serve(async (req) => {
     const enhancedPrompt = buildGiftPrompt(prompt);
     console.log('Enhanced prompt:', enhancedPrompt);
 
-    // Generate suggestions using DeepSeek
+    // Generate suggestions using DeepSeek with temperature 1.3
     const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -58,6 +58,7 @@ ONLY return a raw JSON array like this: ["suggestion1", "suggestion2", "suggesti
           }
         ],
         max_tokens: 1000,
+        temperature: 1.3, // Set temperature to 1.3 for general conversation/creative suggestions
       }),
     });
 
