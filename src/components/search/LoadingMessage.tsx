@@ -49,7 +49,19 @@ export const LoadingMessage = ({ isLoading }: LoadingMessageProps) => {
 
   return (
     <div className="flex flex-col items-center gap-4">
-      <Spinner variant="infinite" className="text-primary w-12 h-12" />
+      <Spinner 
+        variant="infinite" 
+        className="w-12 h-12 [&>path]:stroke-[url(#spinner-gradient)]" 
+        size={48}
+      >
+        <defs>
+          <linearGradient id="spinner-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" style={{ stopColor: '#9b87f5' }} />
+            <stop offset="50%" style={{ stopColor: '#D946EF' }} />
+            <stop offset="100%" style={{ stopColor: '#0EA5E9' }} />
+          </linearGradient>
+        </defs>
+      </Spinner>
       <p className="text-[#8E9196] text-center text-sm md:text-base font-medium">
         {shuffledMessages[currentLoadingMessage]}
       </p>
