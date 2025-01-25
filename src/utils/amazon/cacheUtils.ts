@@ -13,7 +13,10 @@ export const getCachedProduct = async (searchTerm: string, priceRange?: string):
       .eq('price_range', priceRange || '')
       .maybeSingle();
 
-    if (error) throw error;
+    if (error) {
+      console.error('Error getting cached product:', error);
+      return null;
+    }
     
     if (data) {
       // Update last_accessed and hit_count
@@ -24,8 +27,7 @@ export const getCachedProduct = async (searchTerm: string, priceRange?: string):
           last_accessed: new Date().toISOString(),
           hit_count: (cacheRow.hit_count || 0) + 1
         })
-        .eq('search_term', searchTerm.toLowerCase())
-        .eq('price_range', priceRange || '');
+        .eq('id', cacheRow.id);
 
       // Safely cast the stored JSON data to AmazonProduct
       const productData = cacheRow.product_data as unknown as AmazonProduct;
@@ -45,19 +47,20 @@ export const cacheProduct = async (
   priceRange?: string
 ): Promise<void> => {
   try {
-    const cacheEntry = {
-      search_term: searchTerm.toLowerCase(),
-      price_range: priceRange || '',
-      product_data: product as unknown as Json,
-      last_accessed: new Date().toISOString(),
-      expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
-    };
-
-    await supabase
+    const { error } = await supabase
       .from('amazon_product_cache')
-      .upsert(cacheEntry, {
-        onConflict: 'search_term,price_range'
+      .upsert({
+        search_term: searchTerm.toLowerCase(),
+        price_range: priceRange || '',
+        product_data: product as unknown as Json,
+        last_accessed: new Date().toISOString(),
+        expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+        hit_count: 1
       });
+
+    if (error) {
+      console.error('Error caching product:', error);
+    }
   } catch (error) {
     console.error('Error caching product:', error);
   }
