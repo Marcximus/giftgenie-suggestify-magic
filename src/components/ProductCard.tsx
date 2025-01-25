@@ -19,6 +19,14 @@ interface ProductCardProps extends Product {
   onMoreLikeThis?: (title: string) => void;
 }
 
+// Common brand name patterns that should be preserved
+const brandPatterns = [
+  'tree of life',
+  'bed head',
+  'purely inspired',
+  // Add more as needed
+];
+
 // Marketing terms to remove for cleaner titles
 const marketingTerms = [
   'premium', 'luxury', 'professional', 'high-end', 'ultimate', 'best',
@@ -27,26 +35,33 @@ const marketingTerms = [
   'next-generation', 'state-of-the-art', 'cutting-edge', 'top-of-the-line',
   'world-class', 'ultra', 'super', 'mega', 'premium-quality', 'high-quality',
   'professional-grade', 'limited-edition', 'special-edition', 'new', 'series',
-  'genuine', 'authentic', 'compact', 'portable', 'wireless', 'digital'
+  'genuine', 'authentic', 'compact', 'portable', 'wireless', 'digital',
+  'generation', 'gen', 'ver', 'version', 'latest', 'upgraded', 'enhanced',
+  'improved', 'advanced', '2nd', '3rd', '4th', '5th', 'ii', 'iii', 'iv'
 ];
 
-// Technical specifications pattern to remove
-const techSpecsPattern = /\b([A-Z0-9]+-[A-Z0-9]+|\d+(?:\.\d+)?(?:mm|MP|GB|TB|mAh|fps|inch|"|cm|m|kg|g|oz|ml|L)\b)/gi;
+// Product type indicators that should be preserved
+const productTypes = [
+  'camera', 'printer', 'album', 'set', 'kit', 'pack', 'bundle',
+  'cream', 'serum', 'lotion', 'moisturizer', 'cleanser',
+  'phone', 'tablet', 'laptop', 'watch', 'speaker',
+  'book', 'guide', 'manual', 'collection',
+];
+
+// Create a single DOMParser instance
+const domParser = new DOMParser();
 
 // Compile patterns once
 const marketingTermsPattern = new RegExp(`\\b(${marketingTerms.join('|')})\\b`, 'gi');
 const modelNumberPattern = /\b[A-Z0-9]+-?[A-Z0-9]+\b/g;
-
-// Create a single DOMParser instance
-const domParser = new DOMParser();
+const measurementPattern = /\b\d+(?:\.\d+)?(?:mm|MP|GB|TB|mAh|fps|inch|"|cm|m|kg|g|oz|ml|L|x|\d+['"])\b/gi;
 
 export const simplifyTitle = (title: string): string => {
   // First decode any HTML entities
   const doc = domParser.parseFromString(title, 'text/html');
   let decodedTitle = doc.body.textContent || title;
 
-  // Log original title for debugging
-  console.log('Processing title:', decodedTitle);
+  console.log('Original title:', decodedTitle);
 
   // Remove HTML tags and normalize spaces
   decodedTitle = decodedTitle
@@ -54,48 +69,77 @@ export const simplifyTitle = (title: string): string => {
     .replace(/\s+/g, ' ')
     .trim();
 
+  // Check for and preserve brand patterns
+  let preservedBrand = '';
+  for (const pattern of brandPatterns) {
+    if (decodedTitle.toLowerCase().includes(pattern)) {
+      preservedBrand = pattern;
+      break;
+    }
+  }
+
   // Remove text in parentheses and brackets
   decodedTitle = decodedTitle
     .replace(/\([^)]*\)/g, '')
     .replace(/\[[^\]]*\]/g, '')
     .trim();
 
-  // Remove technical specifications
-  decodedTitle = decodedTitle.replace(techSpecsPattern, '');
+  // Remove measurements while preserving essential product info
+  decodedTitle = decodedTitle.replace(measurementPattern, '');
 
+  // Split into words and process
+  let words = decodedTitle.split(' ');
+  
+  // Preserve the first word if it's likely a brand name
+  const brandName = words[0];
+  
   // Remove model numbers while preserving brand names
-  const words = decodedTitle.split(' ');
-  const brandName = words[0]; // Preserve the first word as it's usually the brand
-  decodedTitle = [brandName, ...words.slice(1).filter(word => !modelNumberPattern.test(word))].join(' ');
-
+  words = [brandName, ...words.slice(1).filter(word => !modelNumberPattern.test(word))];
+  
   // Remove marketing terms
-  decodedTitle = decodedTitle.replace(marketingTermsPattern, '');
+  decodedTitle = words.join(' ').replace(marketingTermsPattern, '');
 
-  // Remove common conjunctions and prepositions when not at start
-  decodedTitle = decodedTitle.replace(/\s+(with|and|in|for|by|or|of)\s+/gi, ' ');
+  // Remove common conjunctions and prepositions when not part of a brand name
+  if (!preservedBrand) {
+    decodedTitle = decodedTitle.replace(/\s+(with|and|in|for|by|or|of)\s+/gi, ' ');
+  }
 
-  // Remove multiple spaces and trim
-  decodedTitle = decodedTitle.replace(/\s+/g, ' ').trim();
-
-  // Split into words and get key terms
-  const finalWords = decodedTitle.split(' ')
+  // Split into words again for final processing
+  words = decodedTitle.split(' ')
     .filter(word => word.length > 1) // Remove single characters
+    .filter((word, index, array) => {
+      // Keep words that are either:
+      // 1. Part of a preserved brand name
+      // 2. A known product type
+      // 3. Among the first 3 words (likely brand/main product words)
+      const isPartOfBrand = preservedBrand && preservedBrand.toLowerCase().includes(word.toLowerCase());
+      const isProductType = productTypes.some(type => word.toLowerCase().includes(type.toLowerCase()));
+      const isImportantPosition = index < 3;
+      
+      return isPartOfBrand || isProductType || isImportantPosition;
+    })
     .slice(0, 5); // Limit to 5 words max
 
+  // Reconstruct the title
+  let finalTitle = words.join(' ');
+  
+  // If we preserved a brand pattern, make sure it's properly formatted
+  if (preservedBrand && finalTitle.toLowerCase().includes(preservedBrand.toLowerCase())) {
+    const brandRegex = new RegExp(preservedBrand, 'i');
+    finalTitle = finalTitle.replace(brandRegex, preservedBrand);
+  }
+
   // Ensure the title starts with a capital letter
-  let finalTitle = finalWords.join(' ');
   finalTitle = finalTitle.charAt(0).toUpperCase() + finalTitle.slice(1);
 
-  // Log the transformation for debugging
   console.log('Title transformation:', {
     original: title,
     simplified: finalTitle,
+    preservedBrand,
     steps: {
+      afterDecoding: decodedTitle,
       afterParentheses: decodedTitle,
-      afterTechSpecs: decodedTitle.replace(techSpecsPattern, ''),
-      afterModelNumbers: decodedTitle.replace(modelNumberPattern, ''),
-      afterMarketing: decodedTitle.replace(marketingTermsPattern, ''),
-      finalWords: finalWords
+      finalWords: words
     }
   });
 
