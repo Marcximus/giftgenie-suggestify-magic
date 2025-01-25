@@ -36,21 +36,15 @@ serve(async (req) => {
     const enhancedPrompt = `Based on the request "${prompt}", suggest 8 highly specific and thoughtful gift ideas that would genuinely delight the recipient.
 
 IMPORTANT TITLE FORMATTING RULES:
-1. Format each title as: "[Brand Name] [Essential Model/Product Info] [Key Feature]"
-2. Keep titles concise but informative (5-7 words maximum)
-3. Include brand name ONLY if it's a well-known brand
-4. Include model numbers ONLY if they're significant for identification
-5. Focus on the most distinctive feature that sets the product apart
-6. Remove unnecessary words like "the", "with", "for", "by"
-7. Don't include measurements unless crucial for product identification
-8. Don't include years or dates
-9. Don't use parentheses or brackets
-10. Don't use HTML tags or special characters
+1. Keep titles concise but informative (5-7 words maximum)
+2. Don't use HTML tags or special characters
 
 EXAMPLES OF GOOD TITLES:
-- "Celestron Nature DX Binoculars" (not "Celestron Nature DX 8x42 Binoculars")
-- "Harney & Sons London Black Tea" (not "Harney & Sons Tower of London Black Tea")
+- "Celestron Binoculars" (not "Celestron Nature DX 8x42 Binoculars")
+- "Harney & Sons Black Tea" (not "Harney & Sons Tower of London Black Tea")
 - "Anti-Squirrel Bird Feeder" (not "The Perky-Pet 114B Squirrel Stumper Bird Feeder")
+- "SITKA Hunting Hoody" (not "SITKA Gear Men's Core Lightweight Hunting Hoody")
+- "Plano Utility Box" (not "The Plano EDGE 3700 Premium Tackle Utility Box")
 
 ADDITIONAL REQUIREMENTS:
 1. MUST include at least 2 gifts related to each interest: ${interests.join(', ')}
