@@ -4,10 +4,8 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 import { corsHeaders } from '../_shared/cors.ts';
 import { validateAndCleanSuggestions } from '../_shared/suggestion-validator.ts';
 import { processSuggestionsInBatches } from '../_shared/batch-processor.ts';
-import { buildGiftPrompt } from '../_shared/prompt-builder.ts';
 
 const DEEPSEEK_API_KEY = Deno.env.get('DEEPSEEK_API_KEY');
-const PARALLEL_REQUESTS = 3; // Increase to 3 parallel requests of 3 suggestions each (9 total)
 
 serve(async (req) => {
   const startTime = performance.now();
@@ -29,45 +27,42 @@ serve(async (req) => {
       throw new Error('Invalid prompt');
     }
 
-    // Track all suggestions to prevent duplicates
-    const seenSuggestions = new Set();
-    const allSuggestions = [];
-
-    // Make parallel requests for suggestions
-    const parallelPrompts = Array(PARALLEL_REQUESTS).fill(null).map((_, index) => {
-      // Ask for 3 suggestions per request, with context about avoiding duplicates
-      const enhancedPrompt = buildGiftPrompt(prompt, 3, index); 
-      console.log(`Enhanced prompt ${index + 1}:`, enhancedPrompt);
-      
-      return fetch('https://api.deepseek.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${DEEPSEEK_API_KEY}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: "deepseek-chat",
-          messages: [
-            {
-              role: "system",
-              content: `You are a gift suggestion expert that follows these STRICT rules:
+    // Single request for all 8 suggestions
+    const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${DEEPSEEK_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: "deepseek-chat",
+        messages: [
+          {
+            role: "system",
+            content: `You are a gift suggestion expert that follows these rules:
 
 1. ALWAYS consider age, gender, occasion, and budget from the user's request
 2. Format each suggestion as: "[Brand Name] [Specific Product Model] ([Premium/Special Edition if applicable])"
-3. Return EXACTLY 3 suggestions in a JSON array
-4. Each suggestion must be UNIQUE and HIGHLY SPECIFIC
+3. Return EXACTLY 8 suggestions in a JSON array
+4. Each suggestion must be HIGHLY SPECIFIC
 5. DO NOT include any explanatory text or markdown
 6. DO NOT use backticks or code blocks
 7. ONLY return a raw JSON array of strings
-8. NEVER suggest products that are too similar to each other
-9. Focus on DIFFERENT product categories for variety
+8. Suggest products that would genuinely interest the recipient
+9. Consider both mainstream and unique gift ideas
+10. Feel free to suggest multiple items from the same category if they make sense for the recipient
 
 Example response:
-["Sony WH-1000XM4 Wireless Headphones (Premium Edition)", "suggestion2", "suggestion3"]`
+["Sony WH-1000XM4 Wireless Headphones (Premium Edition)", "suggestion2", "suggestion3", ...]`
             },
             { 
               role: "user", 
-              content: enhancedPrompt
+              content: `Based on the request "${prompt}", suggest 8 highly specific and thoughtful gift ideas that would genuinely delight the recipient. Consider their interests and preferences carefully.
+
+Format EACH suggestion as a string in this EXACT format:
+"[Brand Name] [Specific Product Model] ([Premium/Special Edition if applicable])"
+
+Return ONLY a JSON array of exactly 8 strings.`
             }
           ],
           max_tokens: 1000,
@@ -75,73 +70,50 @@ Example response:
           stream: true,
         }),
       });
-    });
 
-    // Process all requests in parallel
-    const responses = await Promise.all(parallelPrompts);
-    
-    // Process streams in parallel
-    await Promise.all(responses.map(async (response) => {
-      if (!response.ok) {
-        console.error('DeepSeek API error:', response.status);
-        throw new Error(`DeepSeek API error: ${response.status}`);
-      }
+    if (!response.ok) {
+      console.error('DeepSeek API error:', response.status);
+      throw new Error(`DeepSeek API error: ${response.status}`);
+    }
 
-      const reader = response.body?.getReader();
-      if (!reader) throw new Error('No reader available');
+    const reader = response.body?.getReader();
+    if (!reader) throw new Error('No reader available');
 
-      let buffer = '';
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
+    let buffer = '';
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
 
-        const chunk = new TextDecoder().decode(value);
-        const lines = chunk.split('\n');
-        
-        for (const line of lines) {
-          if (line.startsWith('data: ')) {
-            const data = line.slice(6);
-            if (data === '[DONE]') continue;
-            
-            try {
-              const parsed = JSON.parse(data);
-              const content = parsed.choices[0].delta.content;
-              if (content) buffer += content;
-            } catch (e) {
-              console.warn('Error parsing chunk:', e);
-            }
+      const chunk = new TextDecoder().decode(value);
+      const lines = chunk.split('\n');
+      
+      for (const line of lines) {
+        if (line.startsWith('data: ')) {
+          const data = line.slice(6);
+          if (data === '[DONE]') continue;
+          
+          try {
+            const parsed = JSON.parse(data);
+            const content = parsed.choices[0].delta.content;
+            if (content) buffer += content;
+          } catch (e) {
+            console.warn('Error parsing chunk:', e);
           }
         }
       }
-
-      // Process complete response and check for duplicates
-      try {
-        const partialSuggestions = validateAndCleanSuggestions(buffer);
-        
-        // Only add non-duplicate suggestions
-        partialSuggestions.forEach(suggestion => {
-          const normalizedTitle = suggestion.toLowerCase().trim();
-          if (!seenSuggestions.has(normalizedTitle)) {
-            seenSuggestions.add(normalizedTitle);
-            allSuggestions.push(suggestion);
-          }
-        });
-      } catch (e) {
-        console.error('Error processing suggestions:', e);
-      }
-    }));
-
-    // Take only the first 8 unique suggestions
-    const uniqueSuggestions = allSuggestions.slice(0, 8);
-    console.log('Unique suggestions collected:', uniqueSuggestions);
-    
-    if (!uniqueSuggestions || uniqueSuggestions.length < 8) {
-      throw new Error('Not enough unique suggestions received');
     }
 
-    // Process suggestions in parallel batches
-    console.log('Processing suggestions in parallel:', uniqueSuggestions);
-    const processedProducts = await processSuggestionsInBatches(uniqueSuggestions);
+    // Process complete response
+    const suggestions = validateAndCleanSuggestions(buffer);
+    console.log('Raw suggestions:', suggestions);
+    
+    if (!suggestions || suggestions.length !== 8) {
+      throw new Error('Did not receive exactly 8 suggestions');
+    }
+
+    // Process suggestions
+    console.log('Processing suggestions:', suggestions);
+    const processedProducts = await processSuggestionsInBatches(suggestions);
     console.log('Processed products:', processedProducts);
     
     if (!processedProducts.length) {
