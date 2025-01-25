@@ -19,16 +19,17 @@ export const SuggestionsGridItems = ({
   onMoreLikeThis,
   isLoading
 }: SuggestionsGridItemsProps) => {
-  const [processedSuggestions, setProcessedSuggestions] = useState<(GiftSuggestion & { optimizedTitle: string })[]>([]);
+  const [processedSuggestions, setProcessedSuggestions] = useState<Map<number, GiftSuggestion & { optimizedTitle: string }>>(new Map());
   const abortController = useRef<AbortController | null>(null);
 
-  const generateTitle = useCallback(async (suggestion: GiftSuggestion) => {
+  const generateTitle = useCallback(async (suggestion: GiftSuggestion, index: number) => {
     const cacheKey = `${suggestion.title}-${suggestion.description}`;
     if (titleCache.has(cacheKey)) {
-      return {
+      setProcessedSuggestions(prev => new Map(prev).set(index, {
         ...suggestion,
         optimizedTitle: titleCache.get(cacheKey)!
-      };
+      }));
+      return;
     }
 
     try {
@@ -44,23 +45,24 @@ export const SuggestionsGridItems = ({
       const optimizedTitle = data.title || suggestion.title;
       titleCache.set(cacheKey, optimizedTitle);
 
-      return {
+      setProcessedSuggestions(prev => new Map(prev).set(index, {
         ...suggestion,
         optimizedTitle
-      };
+      }));
     } catch (error) {
       console.error('Error generating title:', error);
-      return {
+      // On error, use the original title
+      setProcessedSuggestions(prev => new Map(prev).set(index, {
         ...suggestion,
         optimizedTitle: suggestion.title
-      };
+      }));
     }
   }, []);
 
   useEffect(() => {
     if (suggestions.length === 0) return;
     
-    setProcessedSuggestions([]);
+    setProcessedSuggestions(new Map());
     
     if (abortController.current) {
       abortController.current.abort();
@@ -72,19 +74,23 @@ export const SuggestionsGridItems = ({
         console.log('Processing suggestions in batches');
         const startTime = performance.now();
 
-        const results = await processBatch(
-          suggestions,
-          generateTitle,
-          (processed, total) => {
-            console.log(`Processed ${processed}/${total} suggestions`);
+        // Process suggestions in parallel with a maximum of 4 concurrent requests
+        const batchSize = 4;
+        for (let i = 0; i < suggestions.length; i += batchSize) {
+          const batch = suggestions.slice(i, i + batchSize);
+          await Promise.all(
+            batch.map((suggestion, batchIndex) => 
+              generateTitle(suggestion, i + batchIndex)
+            )
+          );
+          // Add a small delay between batches
+          if (i + batchSize < suggestions.length) {
+            await new Promise(resolve => setTimeout(resolve, 200));
           }
-        );
-
-        if (!abortController.current?.signal.aborted) {
-          setProcessedSuggestions(results);
-          const duration = performance.now() - startTime;
-          console.log(`All suggestions processed in ${duration}ms`);
         }
+
+        const duration = performance.now() - startTime;
+        console.log(`All suggestions processed in ${duration}ms`);
       } catch (error) {
         if (error.message !== 'Processing aborted') {
           console.error('Error processing suggestions:', error);
@@ -121,7 +127,7 @@ export const SuggestionsGridItems = ({
   return (
     <>
       {suggestions.map((suggestion, index) => {
-        const processed = processedSuggestions[index];
+        const processed = processedSuggestions.get(index);
 
         if (!processed) {
           return (
