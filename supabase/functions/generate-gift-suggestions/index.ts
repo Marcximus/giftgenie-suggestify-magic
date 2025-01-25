@@ -32,7 +32,15 @@ serve(async (req) => {
     const interests = interestsMatch ? interestsMatch[1].split(' and ') : [];
     console.log('Extracted interests:', interests);
 
-    const enhancedPrompt = `Based on the request "${prompt}", suggest 8 specific gift ideas that strictly follow the budget constraints. Return ONLY a JSON array of exactly 8 strings.`;
+    const enhancedPrompt = `You are an gifting expert. Based on the request "${prompt}", suggest 8 specific gift ideas.
+
+Consider:
+- Age, gender, and occasion mentioned
+- CRITICAL: Any budget constraints specified (can fluctuate by 20%)
+- The recipient's interests and preferences
+- Avoid suggesting identical items
+
+Return ONLY a JSON array of exactly 8 strings`;
 
     console.log('Enhanced prompt:', enhancedPrompt);
 
@@ -51,7 +59,16 @@ serve(async (req) => {
         messages: [
           {
             role: "system",
-            content: `You are a gift suggestion expert. Budget is HIGHLY important to you.`
+            content: `You are a gift suggestion expert that follows these rules:
+1. ALWAYS consider age, gender, occasion, and budget from the user's request
+2. Return EXACTLY 8 suggestions in a JSON array
+3. Each suggestion must be HIGHLY SPECIFIC
+4. DO NOT include any explanatory text or markdown
+5. DO NOT use backticks or code blocks
+6. ONLY return a raw JSON array of strings
+7. Suggest products that would genuinely interest the recipient
+8. Consider both mainstream and unique gift ideas
+9. MUST include items related to ALL specified interests`
           },
           { role: "user", content: enhancedPrompt }
         ],
