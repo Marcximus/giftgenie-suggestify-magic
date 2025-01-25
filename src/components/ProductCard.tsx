@@ -19,16 +19,55 @@ interface ProductCardProps extends Product {
   onMoreLikeThis?: (title: string) => void;
 }
 
-export const simplifyTitle = (title: string): string => {
-  // Only decode HTML entities and clean up basic formatting
-  const doc = new DOMParser().parseFromString(title, 'text/html');
-  const decodedTitle = doc.body.textContent || title;
+// Marketing terms to remove for cleaner titles
+const marketingTerms = [
+  'premium', 'luxury', 'professional', 'high-end', 'ultimate', 'best',
+  'perfect', 'amazing', 'incredible', 'exceptional', 'superior', 'elite',
+  'deluxe', 'exclusive', 'advanced', 'innovative', 'revolutionary',
+  'next-generation', 'state-of-the-art', 'cutting-edge', 'top-of-the-line',
+  'world-class', 'ultra', 'super', 'mega', 'premium-quality', 'high-quality',
+  'professional-grade', 'limited-edition', 'special-edition', 'new'
+];
 
-  // Basic cleanup - remove HTML tags and normalize spaces
-  return decodedTitle
-    .replace(/<[^>]*>/g, '') // Remove HTML tags
-    .replace(/\s+/g, ' ') // Normalize spaces
+// Compile a regex pattern for marketing terms
+const marketingTermsPattern = new RegExp(`\\b(${marketingTerms.join('|')})\\b`, 'gi');
+
+export const simplifyTitle = (title: string): string => {
+  // First decode any HTML entities
+  const doc = new DOMParser().parseFromString(title, 'text/html');
+  let decodedTitle = doc.body.textContent || title;
+
+  // Remove HTML tags and normalize spaces
+  decodedTitle = decodedTitle
+    .replace(/<[^>]*>/g, '')
+    .replace(/\s+/g, ' ')
     .trim();
+
+  // Remove marketing terms
+  decodedTitle = decodedTitle.replace(marketingTermsPattern, '');
+
+  // Remove text in parentheses
+  decodedTitle = decodedTitle.replace(/\([^)]*\)/g, '');
+
+  // Remove multiple spaces that might have been created
+  decodedTitle = decodedTitle.replace(/\s+/g, ' ').trim();
+
+  // Split into words and limit to 7 words
+  const words = decodedTitle.split(' ');
+  if (words.length > 7) {
+    decodedTitle = words.slice(0, 7).join(' ');
+  }
+
+  // Ensure the title starts with a capital letter
+  decodedTitle = decodedTitle.charAt(0).toUpperCase() + decodedTitle.slice(1);
+
+  // Log the transformation for debugging
+  console.log('Title transformation:', {
+    original: title,
+    simplified: decodedTitle
+  });
+
+  return decodedTitle;
 };
 
 const ProductCardComponent = ({ 
