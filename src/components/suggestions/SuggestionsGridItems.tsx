@@ -20,43 +20,50 @@ export const SuggestionsGridItems = ({
   isLoading
 }: SuggestionsGridItemsProps) => {
   const [processedSuggestions, setProcessedSuggestions] = useState<(GiftSuggestion & { optimizedTitle: string | null })[]>([]);
+  const [processingIndexes, setProcessingIndexes] = useState<Set<number>>(new Set());
   const abortController = useRef<AbortController | null>(null);
 
   const generateTitle = useCallback(async (suggestion: GiftSuggestion, index: number) => {
     const cacheKey = `${suggestion.title}-${suggestion.description}`;
-    if (titleCache.has(cacheKey)) {
-      setProcessedSuggestions(prev => {
-        const updated = [...prev];
-        updated[index] = {
-          ...suggestion,
-          optimizedTitle: titleCache.get(cacheKey)!
-        };
-        return updated;
-      });
-      return;
-    }
+    
+    setProcessingIndexes(prev => {
+      const updated = new Set(prev);
+      updated.add(index);
+      return updated;
+    });
 
     try {
-      const { data, error } = await supabase.functions.invoke('generate-product-title', {
-        body: {
-          title: suggestion.title,
-          description: suggestion.description
-        }
-      });
+      if (titleCache.has(cacheKey)) {
+        setProcessedSuggestions(prev => {
+          const updated = [...prev];
+          updated[index] = {
+            ...suggestion,
+            optimizedTitle: titleCache.get(cacheKey)!
+          };
+          return updated;
+        });
+      } else {
+        const { data, error } = await supabase.functions.invoke('generate-product-title', {
+          body: {
+            title: suggestion.title,
+            description: suggestion.description
+          }
+        });
 
-      if (error) throw error;
+        if (error) throw error;
 
-      const optimizedTitle = data.title || suggestion.title;
-      titleCache.set(cacheKey, optimizedTitle);
+        const optimizedTitle = data.title || suggestion.title;
+        titleCache.set(cacheKey, optimizedTitle);
 
-      setProcessedSuggestions(prev => {
-        const updated = [...prev];
-        updated[index] = {
-          ...suggestion,
-          optimizedTitle
-        };
-        return updated;
-      });
+        setProcessedSuggestions(prev => {
+          const updated = [...prev];
+          updated[index] = {
+            ...suggestion,
+            optimizedTitle
+          };
+          return updated;
+        });
+      }
     } catch (error) {
       console.error('Error generating title:', error);
       setProcessedSuggestions(prev => {
@@ -65,6 +72,12 @@ export const SuggestionsGridItems = ({
           ...suggestion,
           optimizedTitle: suggestion.title
         };
+        return updated;
+      });
+    } finally {
+      setProcessingIndexes(prev => {
+        const updated = new Set(prev);
+        updated.delete(index);
         return updated;
       });
     }
@@ -78,6 +91,8 @@ export const SuggestionsGridItems = ({
       ...suggestion,
       optimizedTitle: null
     })));
+    
+    setProcessingIndexes(new Set());
     
     if (abortController.current) {
       abortController.current.abort();
@@ -142,11 +157,14 @@ export const SuggestionsGridItems = ({
   return (
     <>
       {processedSuggestions.map((suggestion, index) => {
-        if (!suggestion.optimizedTitle) {
+        const isProcessing = processingIndexes.has(index);
+        const hasTitle = suggestion.optimizedTitle !== null;
+
+        if (!hasTitle || isProcessing) {
           return (
             <div 
               key={`processing-${index}`}
-              className="animate-in fade-in slide-in-from-bottom-4"
+              className="animate-in fade-in duration-500"
               style={{ animationDelay: `${index * 100}ms` }}
             >
               <SuggestionSkeleton />
@@ -161,7 +179,7 @@ export const SuggestionsGridItems = ({
         return (
           <div 
             key={`suggestion-${index}`}
-            className="animate-in fade-in slide-in-from-bottom-4"
+            className="animate-in fade-in duration-500"
             style={{ 
               animationDelay: `${index * 100}ms`,
               animationFillMode: 'forwards' 
