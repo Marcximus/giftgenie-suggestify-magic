@@ -68,46 +68,29 @@ const ProductCardComponent = ({
   imageUrl,
   onMoreLikeThis 
 }: ProductCardProps) => {
-  const [simplifiedTitle, setSimplifiedTitle] = useState(() => {
-    // Try to get from cache on initial render
-    const cacheKey = `${title}-${description || ''}`;
-    return titleCache.has(cacheKey) ? titleCache.get(cacheKey)! : title;
-  });
+  // Use a single state for the title that only updates once
+  const [displayTitle, setDisplayTitle] = useState(title);
 
-  // Remove isProcessing state as it's causing unnecessary re-renders
-  const updateTitle = useCallback(
-    debounce(async (title: string, description?: string) => {
-      try {
-        const newTitle = await simplifyTitle(title, description);
-        setSimplifiedTitle(newTitle);
-      } catch (error) {
-        console.error('Failed to update title:', error);
-      }
-    }, 500),
-    [] // Empty dependency array since the function doesn't depend on any props or state
-  );
-
-  // Effect to handle title updates
+  // Effect to handle initial title setup
   useEffect(() => {
     const cacheKey = `${title}-${description || ''}`;
+    
     if (titleCache.has(cacheKey)) {
-      // If in cache, update synchronously
-      setSimplifiedTitle(titleCache.get(cacheKey)!);
+      // If in cache, use it immediately
+      setDisplayTitle(titleCache.get(cacheKey)!);
     } else {
-      // If not in cache, trigger async update
-      updateTitle(title, description);
+      // If not in cache, get it once
+      simplifyTitle(title, description).then(newTitle => {
+        setDisplayTitle(newTitle);
+      });
     }
-
-    return () => {
-      updateTitle.cancel(); // Cancel any pending debounced calls
-    };
-  }, [title, description]); // Remove updateTitle from dependencies
+  }, [title, description]); // Only run on initial mount or when title/description changes
 
   // Memoize schema data
   const schemaData = useMemo(() => ({
     "@context": "https://schema.org",
     "@type": "Product",
-    "name": simplifiedTitle,
+    "name": displayTitle,
     "description": description,
     "image": imageUrl,
     "offers": {
@@ -126,26 +109,26 @@ const ProductCardComponent = ({
         "worstRating": "1"
       }
     })
-  }), [simplifiedTitle, description, imageUrl, price, asin, rating, totalRatings]);
+  }), [displayTitle, description, imageUrl, price, asin, rating, totalRatings]);
 
   return (
     <Card 
       className="group h-full flex flex-col overflow-hidden hover:shadow-lg transition-all duration-300 border-accent/20 backdrop-blur-sm bg-white/80 hover:bg-white/90"
       role="article"
-      aria-label={`Product: ${simplifiedTitle}`}
+      aria-label={`Product: ${displayTitle}`}
     >
       <script type="application/ld+json">
         {JSON.stringify(schemaData)}
       </script>
       <CardHeader className="p-0 flex-none">
         <ProductImage 
-          title={simplifiedTitle} 
+          title={displayTitle} 
           description={description} 
           imageUrl={imageUrl} 
         />
         <div className="h-[1.75rem] overflow-hidden mt-2 px-3 sm:px-4">
           <CardTitle className="text-sm sm:text-base truncate text-center group-hover:text-primary transition-colors duration-200">
-            {simplifiedTitle}
+            {displayTitle}
           </CardTitle>
         </div>
       </CardHeader>
@@ -158,7 +141,7 @@ const ProductCardComponent = ({
       />
       
       <ProductCardActions 
-        title={simplifiedTitle}
+        title={displayTitle}
         asin={asin}
         onMoreLikeThis={onMoreLikeThis}
       />
