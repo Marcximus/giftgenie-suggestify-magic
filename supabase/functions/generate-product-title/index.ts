@@ -1,12 +1,8 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
+import { corsHeaders } from '../_shared/cors.ts';
 
 const DEEPSEEK_API_KEY = Deno.env.get('DEEPSEEK_API_KEY');
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -14,39 +10,47 @@ serve(async (req) => {
   }
 
   try {
-    const requestData = await req.json();
-    console.log('Received request data:', requestData);
+    const { title, description } = await req.json();
+    console.log('Generating title for:', { 
+      originalTitle: title,
+      description: description?.substring(0, 100) + '...' // Log truncated description
+    });
 
-    const titlesToProcess = requestData.titles || [requestData];
-    
-    if (!Array.isArray(titlesToProcess)) {
-      throw new Error('Invalid request format. Expected titles array or single title object');
+    if (!title) {
+      throw new Error('Title is required');
     }
 
-    // Process each title with a focused prompt
-    const prompt = `As a product title specialist, optimize these product titles to be clear and marketable while preserving brand names and key features. Each title should be 3-7 words.
+    const prompt = `As a product title specialist, create a clear, concise title for this product. Here's the context:
 
-${titlesToProcess.map((item, index) => `
-Original: "${item.title}"
-Context: "${item.description || 'Not provided'}"
-Key requirements:
-1. Keep brand name if present
-2. Keep main product type
-3. Include one key distinguishing feature
-4. Remove unnecessary words
-5. Max 7 words`).join('\n')}
+Original Title: "${title}"
+Product Description: "${description || 'Not provided'}"
 
-EXAMPLES:
-Original: "The Perky-Pet 114B Squirrel Stumper Premium Bird Feeder with Advanced Protection System"
-Better: "Perky-Pet Squirrel-Proof Bird Feeder"
+CRITICAL TITLE FORMATTING RULES:
+1. Keep essential product feature/type/category words
+2. Include brand name only if it's well-known
+4. Remove model numbers unless crucial
+5. Maximum 5-7 words
+6. Preserve purpose-specific terms
 
-Original: "Celestron Nature DX 8x42 Professional Grade Binoculars with ED Glass"
-Better: "Celestron Nature DX Binoculars"
+STUDY THESE EXAMPLES CAREFULLY:
+BAD: "The Perky-Pet 114B Squirrel Stumper Premium Bird Feeder with Advanced Protection System"
+GOOD: "Anti-Squirrel Bird Feeder"
 
-Return each optimized title on a new line, without numbering or additional text.`;
+BAD: "Celestron Nature DX 8x42 Professional Grade Binoculars with ED Glass"
+GOOD: "Celestron Nature Binoculars"
 
-    console.log('Sending request to DeepSeek API');
-    const startTime = performance.now();
+BAD: "SITKA Gear Men's Core Lightweight Hunting Hoody with Advanced Odor Control"
+GOOD: "SITKA Hunting Hoody"
+
+BAD: "The Plano EDGE 3700 Premium Professional Grade Tackle Storage System"
+GOOD: "Plano Utility Box"
+
+BAD: "Harney & Sons Tower of London Premium Loose Leaf Black Tea Blend"
+GOOD: "Harney & Sons Black Tea"
+
+Return ONLY the final title, no explanations or additional text.`;
+
+    console.log('Sending request to DeepSeek API with temperature:', 1.3);
 
     const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
       method: 'POST',
@@ -59,12 +63,12 @@ Return each optimized title on a new line, without numbering or additional text.
         messages: [
           {
             role: "system",
-            content: "You are a product title specialist that returns only simplified titles."
+            content: "You are a product title specialist that follows the rules exactly and returns only the simplified title."
           },
           { role: "user", content: prompt }
         ],
-        max_tokens: 200,
-        temperature: 0.7,
+        max_tokens: 100,
+        temperature: 1.3,
         stream: false
       }),
     });
@@ -82,35 +86,23 @@ Return each optimized title on a new line, without numbering or additional text.
     const data = await response.json();
     console.log('DeepSeek API response:', {
       rawResponse: data,
-      processingTime: `${(performance.now() - startTime).toFixed(2)}ms`
+      generatedTitle: data.choices?.[0]?.message?.content
     });
 
     if (!data.choices?.[0]?.message?.content) {
       throw new Error('Invalid response format from DeepSeek API');
     }
 
-    const generatedTitles = data.choices[0].message.content
-      .split('\n')
-      .filter(line => line.trim())
-      .map(title => title.replace(/^\d+\.\s*/, '').trim());
-
-    if (generatedTitles.length !== titlesToProcess.length) {
-      console.warn('Mismatch in number of titles:', {
-        requested: titlesToProcess.length,
-        received: generatedTitles.length
-      });
-    }
-
-    const result = requestData.titles ? { titles: generatedTitles } : { title: generatedTitles[0] };
-
-    console.log('Processing complete:', {
-      requestedTitles: titlesToProcess.length,
-      generatedTitles: generatedTitles.length,
-      processingTime: `${(performance.now() - startTime).toFixed(2)}ms`
+    const simplifiedTitle = data.choices[0].message.content.trim();
+    console.log('Title transformation:', {
+      original: title,
+      simplified: simplifiedTitle,
+      charactersReduced: title.length - simplifiedTitle.length,
+      percentageReduction: ((title.length - simplifiedTitle.length) / title.length * 100).toFixed(1) + '%'
     });
 
     return new Response(
-      JSON.stringify(result),
+      JSON.stringify({ title: simplifiedTitle }),
       { 
         headers: { 
           ...corsHeaders, 
@@ -129,7 +121,7 @@ Return each optimized title on a new line, without numbering or additional text.
     
     return new Response(
       JSON.stringify({ 
-        error: 'Failed to generate product titles',
+        error: 'Failed to generate product title',
         details: error.message,
         timestamp: new Date().toISOString()
       }),

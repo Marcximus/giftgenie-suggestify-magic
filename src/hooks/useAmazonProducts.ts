@@ -26,14 +26,9 @@ export const useAmazonProducts = () => {
 
   const getAmazonProduct = async (searchTerm: string, priceRange: string): Promise<AmazonProduct | null> => {
     try {
-      // First, check the cache
-      const cachedProduct = await getCachedProduct(searchTerm, priceRange);
-      if (cachedProduct) {
-        console.log('Cache hit for:', searchTerm);
-        return cachedProduct;
-      }
-
-      console.log('Cache miss for:', searchTerm);
+      const cacheKey = `${searchTerm}-${priceRange}`;
+      const cached = getCachedProduct<AmazonProduct>(cacheKey);
+      if (cached) return cached;
 
       if (isRateLimited()) {
         await new Promise(resolve => setTimeout(resolve, RATE_LIMIT.RETRY_AFTER * 1000));
@@ -48,8 +43,7 @@ export const useAmazonProducts = () => {
       );
       
       if (product) {
-        // Cache the result
-        await cacheProduct(searchTerm, product, priceRange);
+        cacheProduct(cacheKey, product);
         return product;
       }
 

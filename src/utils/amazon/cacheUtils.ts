@@ -1,75 +1,101 @@
-import { supabase } from "@/integrations/supabase/client";
-import type { AmazonProduct } from './types';
-import { Database, Json } from '@/integrations/supabase/types';
+interface CacheItem<T> {
+  value: T;
+  timestamp: number;
+}
 
-type AmazonCacheRow = Database['public']['Tables']['amazon_product_cache']['Row'];
+const CACHE_EXPIRY = 24 * 60 * 60 * 1000; // 24 hours
+const MAX_CACHE_SIZE = 500;
+const MEMORY_CACHE = new Map<string, CacheItem<any>>();
 
-export const getCachedProduct = async (searchTerm: string, priceRange?: string): Promise<AmazonProduct | null> => {
+// Initialize cache from localStorage
+const initializeCache = () => {
   try {
-    console.log('Checking cache for:', searchTerm, 'with price range:', priceRange);
-    
-    const { data, error } = await supabase
-      .from('amazon_product_cache')
-      .select('*')
-      .eq('search_term', searchTerm.toLowerCase())
-      .eq('price_range', priceRange || '')
-      .maybeSingle();
-
-    if (error) {
-      console.error('Error getting cached product:', error);
-      return null;
-    }
-    
-    if (data) {
-      // Update last_accessed and hit_count
-      const cacheRow = data as AmazonCacheRow;
-      await supabase
-        .from('amazon_product_cache')
-        .update({
-          last_accessed: new Date().toISOString(),
-          hit_count: (cacheRow.hit_count || 0) + 1
-        })
-        .eq('id', cacheRow.id);
-
-      // Safely cast the stored JSON data to AmazonProduct
-      const productData = cacheRow.product_data as unknown as AmazonProduct;
-      console.log('Cache hit for:', searchTerm);
-      return productData;
-    }
-
-    console.log('Cache miss for:', searchTerm);
-    return null;
-  } catch (error) {
-    console.error('Error getting cached product:', error);
-    return null;
-  }
-};
-
-export const cacheProduct = async (
-  searchTerm: string, 
-  product: AmazonProduct, 
-  priceRange?: string
-): Promise<void> => {
-  try {
-    console.log('Caching product:', searchTerm);
-    
-    const { error } = await supabase
-      .from('amazon_product_cache')
-      .upsert({
-        search_term: searchTerm.toLowerCase(),
-        price_range: priceRange || '',
-        product_data: product as unknown as Json,
-        last_accessed: new Date().toISOString(),
-        expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
-        hit_count: 1
+    const localStorageCache = localStorage.getItem('amazonProductCache');
+    if (localStorageCache) {
+      const entries = JSON.parse(localStorageCache);
+      entries.forEach(([key, value]: [string, CacheItem<any>]) => {
+        if (Date.now() - value.timestamp <= CACHE_EXPIRY) {
+          MEMORY_CACHE.set(key, value);
+        }
       });
-
-    if (error) {
-      console.error('Error caching product:', error);
-    } else {
-      console.log('Successfully cached product:', searchTerm);
     }
+    console.log('Cache initialized with', MEMORY_CACHE.size, 'entries');
   } catch (error) {
-    console.error('Error caching product:', error);
+    console.warn('Failed to load cache from storage:', error);
   }
 };
+
+// Save cache to localStorage
+const saveCacheToStorage = () => {
+  try {
+    localStorage.setItem('amazonProductCache', 
+      JSON.stringify(Array.from(MEMORY_CACHE.entries()))
+    );
+  } catch (error) {
+    console.warn('Failed to save cache to storage:', error);
+    clearStaleCache(); // Try to free up space
+  }
+};
+
+// Optimized cache cleanup
+const clearStaleCache = () => {
+  const now = Date.now();
+  const entriesToDelete: string[] = [];
+  
+  for (const [key, value] of MEMORY_CACHE.entries()) {
+    if (now - value.timestamp > CACHE_EXPIRY || MEMORY_CACHE.size > MAX_CACHE_SIZE) {
+      entriesToDelete.push(key);
+    }
+  }
+  
+  if (entriesToDelete.length > 0) {
+    entriesToDelete.forEach(key => MEMORY_CACHE.delete(key));
+    saveCacheToStorage();
+    console.log(`Cleared ${entriesToDelete.length} stale cache entries`);
+  }
+};
+
+// Get cached product with localStorage fallback
+export const getCachedProduct = <T>(key: string): T | null => {
+  // Initialize cache if needed
+  if (MEMORY_CACHE.size === 0) {
+    initializeCache();
+  }
+  
+  // Clean up stale entries
+  clearStaleCache();
+  
+  // Check memory cache first
+  const cached = MEMORY_CACHE.get(key);
+  if (cached && Date.now() - cached.timestamp < CACHE_EXPIRY) {
+    console.log('Memory cache hit for:', key);
+    return cached.value;
+  }
+  
+  console.log('Cache miss for:', key);
+  return null;
+};
+
+// Cache product in both memory and localStorage
+export const cacheProduct = <T>(key: string, value: T): void => {
+  if (MEMORY_CACHE.size === 0) {
+    initializeCache();
+  }
+  
+  clearStaleCache();
+  
+  const cacheEntry: CacheItem<T> = {
+    value,
+    timestamp: Date.now()
+  };
+
+  MEMORY_CACHE.set(key, cacheEntry);
+  saveCacheToStorage();
+  console.log('Cached product:', key);
+};
+
+// Initialize cache when module loads
+initializeCache();
+
+// Clean up expired items periodically
+setInterval(clearStaleCache, 60 * 60 * 1000); // Every hour
