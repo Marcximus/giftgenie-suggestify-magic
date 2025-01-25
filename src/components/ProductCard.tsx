@@ -1,9 +1,13 @@
-import { memo, useState, useEffect, useCallback } from 'react';
+import { memo, useState, useEffect, useCallback, useMemo } from 'react';
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { ProductImage } from "./ProductImage";
 import { ProductCardContent } from "./product/ProductCardContent";
 import { ProductCardActions } from "./product/ProductCardActions";
 import { supabase } from "@/integrations/supabase/client";
+import { debounce } from "@/utils/debounce";
+
+// Cache for simplified titles
+const titleCache = new Map<string, string>();
 
 interface Product {
   title: string;
@@ -21,16 +25,32 @@ interface ProductCardProps extends Product {
 }
 
 export const simplifyTitle = async (title: string, description?: string): Promise<string> => {
+  // Check cache first
+  const cacheKey = `${title}-${description || ''}`;
+  if (titleCache.has(cacheKey)) {
+    console.log('Using cached title for:', title);
+    return titleCache.get(cacheKey)!;
+  }
+
   try {
     const { data, error } = await supabase.functions.invoke('generate-product-title', {
       body: { title, description }
     });
 
-    if (error || !data?.title) {
+    if (error) {
       console.warn('Error simplifying title:', error);
       return title;
     }
 
+    if (!data?.title) {
+      console.warn('No title returned from API');
+      return title;
+    }
+
+    // Cache the result
+    titleCache.set(cacheKey, data.title);
+    console.log('Cached simplified title for:', title);
+    
     return data.title;
   } catch (error) {
     console.error('Error in simplifyTitle:', error);
@@ -51,40 +71,51 @@ const ProductCardComponent = ({
   const [simplifiedTitle, setSimplifiedTitle] = useState(title);
   const [isProcessing, setIsProcessing] = useState(false);
 
-  const updateTitle = useCallback(async () => {
-    // Skip if already processing or no title change
-    if (isProcessing || !title) return;
+  // Memoize the update function to prevent unnecessary re-renders
+  const debouncedUpdateTitle = useMemo(
+    () => debounce(async (title: string, description?: string) => {
+      if (!title || isProcessing) return;
 
-    setIsProcessing(true);
-    try {
-      const newTitle = await simplifyTitle(title, description);
-      // Only update if component is still mounted and title has changed
-      setSimplifiedTitle(newTitle);
-    } catch (error) {
-      console.error('Failed to update title:', error);
-    } finally {
-      setIsProcessing(false);
-    }
-  }, [title, description, isProcessing]);
+      setIsProcessing(true);
+      try {
+        const newTitle = await simplifyTitle(title, description);
+        setSimplifiedTitle(newTitle);
+      } catch (error) {
+        console.error('Failed to update title:', error);
+      } finally {
+        setIsProcessing(false);
+      }
+    }, 500),
+    [isProcessing]
+  );
 
+  // Effect to handle title updates
   useEffect(() => {
     let isMounted = true;
 
     const processTitle = async () => {
       if (!isMounted) return;
-      await updateTitle();
+      
+      // Check cache first
+      const cacheKey = `${title}-${description || ''}`;
+      if (titleCache.has(cacheKey)) {
+        setSimplifiedTitle(titleCache.get(cacheKey)!);
+        return;
+      }
+
+      // If not in cache, trigger debounced update
+      debouncedUpdateTitle(title, description);
     };
 
     processTitle();
 
-    // Cleanup function to prevent memory leaks
     return () => {
       isMounted = false;
     };
-  }, [updateTitle]);
+  }, [title, description, debouncedUpdateTitle]);
 
-  // Prepare schema.org structured data for the product
-  const schemaData = {
+  // Memoize schema data to prevent unnecessary re-renders
+  const schemaData = useMemo(() => ({
     "@context": "https://schema.org",
     "@type": "Product",
     "name": simplifiedTitle,
@@ -106,7 +137,7 @@ const ProductCardComponent = ({
         "worstRating": "1"
       }
     })
-  };
+  }), [simplifiedTitle, description, imageUrl, price, asin, rating, totalRatings]);
 
   return (
     <Card 
