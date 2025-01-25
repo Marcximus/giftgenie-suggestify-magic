@@ -24,35 +24,39 @@ const brandPatterns = [
   'tree of life',
   'bed head',
   'purely inspired',
-  // Add more as needed
 ];
 
-// Marketing terms to remove for cleaner titles
-const marketingTerms = [
-  'premium', 'luxury', 'professional', 'high-end', 'ultimate', 'best',
-  'perfect', 'amazing', 'incredible', 'exceptional', 'superior', 'elite',
-  'deluxe', 'exclusive', 'advanced', 'innovative', 'revolutionary',
-  'next-generation', 'state-of-the-art', 'cutting-edge', 'top-of-the-line',
-  'world-class', 'ultra', 'super', 'mega', 'premium-quality', 'high-quality',
-  'professional-grade', 'limited-edition', 'special-edition', 'new', 'series',
-  'genuine', 'authentic', 'compact', 'portable', 'wireless', 'digital',
-  'generation', 'gen', 'ver', 'version', 'latest', 'upgraded', 'enhanced',
-  'improved', 'advanced', '2nd', '3rd', '4th', '5th', 'ii', 'iii', 'iv'
+// Essential product descriptors that should be preserved
+const productDescriptors = [
+  'cleaning', 'protective', 'storage', 'carrying',
+  'portable', 'professional', 'instant', 'digital',
+  'wireless', 'bluetooth', 'rechargeable', 'waterproof'
 ];
 
-// Product type indicators that should be preserved
+// Core product types that should be preserved
 const productTypes = [
-  'camera', 'printer', 'album', 'set', 'kit', 'pack', 'bundle',
+  'kit', 'set', 'pack', 'bundle', 'system',
+  'camera', 'printer', 'album', 'strap',
   'cream', 'serum', 'lotion', 'moisturizer', 'cleanser',
   'phone', 'tablet', 'laptop', 'watch', 'speaker',
   'book', 'guide', 'manual', 'collection',
 ];
 
-// Create a single DOMParser instance
-const domParser = new DOMParser();
+// Marketing terms to remove
+const marketingTerms = [
+  'premium', 'luxury', 'high-end', 'ultimate', 'best',
+  'perfect', 'amazing', 'incredible', 'exceptional',
+  'superior', 'elite', 'deluxe', 'exclusive',
+  'innovative', 'revolutionary', 'next-generation',
+  'state-of-the-art', 'cutting-edge', 'top-of-the-line',
+  'world-class', 'ultra', 'super', 'mega',
+  'limited-edition', 'special-edition', 'new',
+  'genuine', 'authentic', 'latest', 'upgraded',
+  'enhanced', 'improved', 'advanced',
+  '2nd', '3rd', '4th', '5th', 'ii', 'iii', 'iv'
+];
 
-// Compile patterns once
-const marketingTermsPattern = new RegExp(`\\b(${marketingTerms.join('|')})\\b`, 'gi');
+const domParser = new DOMParser();
 const modelNumberPattern = /\b[A-Z0-9]+-?[A-Z0-9]+\b/g;
 const measurementPattern = /\b\d+(?:\.\d+)?(?:mm|MP|GB|TB|mAh|fps|inch|"|cm|m|kg|g|oz|ml|L|x|\d+['"])\b/gi;
 
@@ -96,29 +100,41 @@ export const simplifyTitle = (title: string): string => {
   // Remove model numbers while preserving brand names
   words = [brandName, ...words.slice(1).filter(word => !modelNumberPattern.test(word))];
   
-  // Remove marketing terms
-  decodedTitle = words.join(' ').replace(marketingTermsPattern, '');
+  // Filter out marketing terms but preserve product descriptors
+  words = words.filter(word => {
+    const lowerWord = word.toLowerCase();
+    const isMarketingTerm = marketingTerms.some(term => 
+      lowerWord === term.toLowerCase()
+    );
+    const isDescriptor = productDescriptors.some(desc => 
+      lowerWord === desc.toLowerCase()
+    );
+    const isProductType = productTypes.some(type => 
+      lowerWord === type.toLowerCase()
+    );
+    
+    return !isMarketingTerm || isDescriptor || isProductType;
+  });
 
   // Remove common conjunctions and prepositions when not part of a brand name
   if (!preservedBrand) {
-    decodedTitle = decodedTitle.replace(/\s+(with|and|in|for|by|or|of)\s+/gi, ' ');
+    words = words.filter(word => 
+      !['with', 'and', 'in', 'for', 'by', 'or', 'to', 'the'].includes(word.toLowerCase())
+    );
   }
 
-  // Split into words again for final processing
-  words = decodedTitle.split(' ')
-    .filter(word => word.length > 1) // Remove single characters
-    .filter((word, index, array) => {
-      // Keep words that are either:
-      // 1. Part of a preserved brand name
-      // 2. A known product type
-      // 3. Among the first 3 words (likely brand/main product words)
-      const isPartOfBrand = preservedBrand && preservedBrand.toLowerCase().includes(word.toLowerCase());
-      const isProductType = productTypes.some(type => word.toLowerCase().includes(type.toLowerCase()));
-      const isImportantPosition = index < 3;
-      
-      return isPartOfBrand || isProductType || isImportantPosition;
-    })
-    .slice(0, 5); // Limit to 5 words max
+  // Keep important descriptive words and product types
+  words = words.filter((word, index) => {
+    const lowerWord = word.toLowerCase();
+    return (
+      word.length > 1 && (
+        index === 0 || // Keep brand name
+        productDescriptors.includes(lowerWord) || // Keep descriptors
+        productTypes.includes(lowerWord) || // Keep product types
+        index < 4 // Keep first few words
+      )
+    );
+  });
 
   // Reconstruct the title
   let finalTitle = words.join(' ');
@@ -129,18 +145,11 @@ export const simplifyTitle = (title: string): string => {
     finalTitle = finalTitle.replace(brandRegex, preservedBrand);
   }
 
-  // Ensure the title starts with a capital letter
-  finalTitle = finalTitle.charAt(0).toUpperCase() + finalTitle.slice(1);
-
   console.log('Title transformation:', {
     original: title,
     simplified: finalTitle,
     preservedBrand,
-    steps: {
-      afterDecoding: decodedTitle,
-      afterParentheses: decodedTitle,
-      finalWords: words
-    }
+    words
   });
 
   return finalTitle;
