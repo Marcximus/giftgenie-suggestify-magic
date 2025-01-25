@@ -1,4 +1,5 @@
 export interface BlogPostFormData {
+  id?: string;
   title: string;
   slug: string;
   content: string;
@@ -35,5 +36,4 @@ export interface BlogPostData extends BlogPostFormData {
   id: string;
   created_at: string;
   updated_at: string;
-  category_id: string | null;
 }

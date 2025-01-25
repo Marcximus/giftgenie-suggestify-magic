@@ -16,7 +16,7 @@ serve(async (req) => {
 
   try {
     const { title } = await req.json();
-    console.log('Processing blog post with DeepSeek for title:', title);
+    console.log('Processing blog post with DeepSeek Reasoner for title:', title);
 
     if (!title) {
       throw new Error('Title is required');
@@ -38,7 +38,7 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: "deepseek-chat",
+        model: "deepseek-reasoner",
         messages: [
           prompt,
           {
@@ -46,11 +46,7 @@ serve(async (req) => {
             content: `Create a fun, engaging blog post about: ${title}\n\nIMPORTANT: You MUST generate EXACTLY 10 product recommendations, no more, no less.`
           }
         ],
-        temperature: 1.3, // Updated temperature for better creativity and engagement
-        max_tokens: 4000,
-        top_p: 0.95,
-        presence_penalty: 0.1,
-        frequency_penalty: 0.1,
+        max_tokens: 4000, // Maximum length for final response
       }),
     });
 
@@ -62,6 +58,11 @@ serve(async (req) => {
 
     const data = await response.json();
     console.log('Raw DeepSeek response:', JSON.stringify(data, null, 2));
+    
+    // Log both the reasoning content and final content
+    if (data.choices[0].message.reasoning_content) {
+      console.log('Chain of Thought reasoning:', data.choices[0].message.reasoning_content);
+    }
     console.log('Generated content length:', data.choices[0].message.content.length);
     console.log('First 500 characters of content:', data.choices[0].message.content.substring(0, 500));
 
