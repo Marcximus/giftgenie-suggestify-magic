@@ -61,11 +61,11 @@ serve(async (req) => {
     }
 
     const data = await response.json();
-    console.log('DeepSeek response received, processing content...');
+    console.log('Raw DeepSeek response:', JSON.stringify(data, null, 2));
+    console.log('Generated content length:', data.choices[0].message.content.length);
+    console.log('First 500 characters of content:', data.choices[0].message.content.substring(0, 500));
 
     const initialContent = data.choices[0].message.content;
-    console.log('Generated content length:', initialContent.length);
-    console.log('Generated content preview:', initialContent.substring(0, 500));
 
     // Initialize Supabase client for processing the content
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
