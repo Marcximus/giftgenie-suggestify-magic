@@ -1,4 +1,4 @@
-import { memo, useState, useEffect } from 'react';
+import { memo, useState, useEffect, useCallback } from 'react';
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { ProductImage } from "./ProductImage";
 import { ProductCardContent } from "./product/ProductCardContent";
@@ -26,12 +26,12 @@ export const simplifyTitle = async (title: string, description?: string): Promis
       body: { title, description }
     });
 
-    if (error) {
-      console.error('Error simplifying title:', error);
+    if (error || !data?.title) {
+      console.warn('Error simplifying title:', error);
       return title;
     }
 
-    return data.title || title;
+    return data.title;
   } catch (error) {
     console.error('Error in simplifyTitle:', error);
     return title;
@@ -49,14 +49,39 @@ const ProductCardComponent = ({
   onMoreLikeThis 
 }: ProductCardProps) => {
   const [simplifiedTitle, setSimplifiedTitle] = useState(title);
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  const updateTitle = useCallback(async () => {
+    // Skip if already processing or no title change
+    if (isProcessing || !title) return;
+
+    setIsProcessing(true);
+    try {
+      const newTitle = await simplifyTitle(title, description);
+      // Only update if component is still mounted and title has changed
+      setSimplifiedTitle(newTitle);
+    } catch (error) {
+      console.error('Failed to update title:', error);
+    } finally {
+      setIsProcessing(false);
+    }
+  }, [title, description, isProcessing]);
 
   useEffect(() => {
-    const updateTitle = async () => {
-      const newTitle = await simplifyTitle(title, description);
-      setSimplifiedTitle(newTitle);
+    let isMounted = true;
+
+    const processTitle = async () => {
+      if (!isMounted) return;
+      await updateTitle();
     };
-    updateTitle();
-  }, [title, description]);
+
+    processTitle();
+
+    // Cleanup function to prevent memory leaks
+    return () => {
+      isMounted = false;
+    };
+  }, [updateTitle]);
 
   // Prepare schema.org structured data for the product
   const schemaData = {
