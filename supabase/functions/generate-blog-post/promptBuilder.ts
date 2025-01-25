@@ -11,6 +11,7 @@ CRITICAL: Do not write less than 1500 words on the topic!
 
 2. Product Sections:
    - CRITICAL: You MUST generate EXACTLY 10 unique and interesting product recommendations. No more, no less.
+   - To ensure diversity, first brainstorm 30 different gift ideas, then randomly select 10 of these to write about in detail
    - Each section should be separated by: <hr class="my-8">
    - Keep product titles SHORT and CONCISE (maximum 7 words)
    - Format product titles as: <h3>[PRODUCT NAME]</h3>
