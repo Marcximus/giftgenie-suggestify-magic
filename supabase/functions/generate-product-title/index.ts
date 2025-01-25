@@ -32,7 +32,7 @@ serve(async (req) => {
           },
           { 
             role: "user", 
-            content: "Simplify this product title, max 5-7 words. Return ONLY the final title: " + title 
+            content: "Simplify this product title, max 3-5 words. Return ONLY the final title: " + title 
           }
         ],
         max_tokens: 30,
