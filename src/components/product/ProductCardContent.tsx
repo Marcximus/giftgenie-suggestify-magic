@@ -1,7 +1,7 @@
 import { memo, useMemo } from 'react';
 import { formatPrice } from '@/utils/priceUtils';
 
-interface ProductCardContentProps {
+export interface ProductCardContentProps {
   title: string;
   description: string;
   price: string;
