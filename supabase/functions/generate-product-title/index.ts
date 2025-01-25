@@ -4,26 +4,35 @@ import { corsHeaders } from '../_shared/cors.ts';
 
 const DEEPSEEK_API_KEY = Deno.env.get('DEEPSEEK_API_KEY');
 
+interface TitleRequest {
+  titles: Array<{
+    title: string;
+    description?: string;
+  }>;
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { title, description } = await req.json();
-    console.log('Generating title for:', { 
-      originalTitle: title,
-      description: description?.substring(0, 100) + '...'
-    });
+    const { titles } = await req.json() as TitleRequest;
+    console.log('Batch processing titles:', titles.length);
 
-    if (!title) {
-      throw new Error('Title is required');
+    if (!titles?.length) {
+      throw new Error('Titles array is required');
     }
 
-    const prompt = `As a product title specialist, create a clear, concise title (max 5-7 words).
+    // Create a single prompt for all titles
+    const titlesPrompt = titles.map((item, index) => `
+Title ${index + 1}: "${item.title}"
+Description ${index + 1}: "${item.description || 'Not provided'}"
+`).join('\n');
 
-Original Title: "${title}"
-Product Description: "${description || 'Not provided'}"
+    const prompt = `As a product title specialist, create clear, concise titles (max 5-7 words) for these products.
+
+${titlesPrompt}
 
 RULES:
 1. Keep essential product features and brand names
@@ -37,9 +46,10 @@ GOOD: "Anti-Squirrel Bird Feeder"
 BAD: "Celestron Nature DX 8x42 Professional Grade Binoculars with ED Glass"
 GOOD: "Celestron Nature Binoculars"
 
-Return ONLY the final title.`;
+Return ONLY the final titles, one per line, in order.`;
 
-    console.log('Sending request to DeepSeek API with temperature:', 0.7);
+    console.log('Sending batch request to DeepSeek API');
+    const startTime = performance.now();
 
     const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
       method: 'POST',
@@ -56,7 +66,7 @@ Return ONLY the final title.`;
           },
           { role: "user", content: prompt }
         ],
-        max_tokens: 30,
+        max_tokens: 200,
         temperature: 0.7,
         stream: false
       }),
@@ -75,23 +85,34 @@ Return ONLY the final title.`;
     const data = await response.json();
     console.log('DeepSeek API response:', {
       rawResponse: data,
-      generatedTitle: data.choices?.[0]?.message?.content
+      processingTime: `${(performance.now() - startTime).toFixed(2)}ms`
     });
 
     if (!data.choices?.[0]?.message?.content) {
       throw new Error('Invalid response format from DeepSeek API');
     }
 
-    const simplifiedTitle = data.choices[0].message.content.trim();
-    console.log('Title transformation:', {
-      original: title,
-      simplified: simplifiedTitle,
-      charactersReduced: title.length - simplifiedTitle.length,
-      percentageReduction: ((title.length - simplifiedTitle.length) / title.length * 100).toFixed(1) + '%'
+    // Split response into array of titles
+    const generatedTitles = data.choices[0].message.content
+      .split('\n')
+      .filter(line => line.trim())
+      .map(title => title.trim());
+
+    if (generatedTitles.length !== titles.length) {
+      console.warn('Mismatch in number of titles:', {
+        requested: titles.length,
+        received: generatedTitles.length
+      });
+    }
+
+    console.log('Batch processing complete:', {
+      requestedTitles: titles.length,
+      generatedTitles: generatedTitles.length,
+      processingTime: `${(performance.now() - startTime).toFixed(2)}ms`
     });
 
     return new Response(
-      JSON.stringify({ title: simplifiedTitle }),
+      JSON.stringify({ titles: generatedTitles }),
       { 
         headers: { 
           ...corsHeaders, 
@@ -110,7 +131,7 @@ Return ONLY the final title.`;
     
     return new Response(
       JSON.stringify({ 
-        error: 'Failed to generate product title',
+        error: 'Failed to generate product titles',
         details: error.message,
         timestamp: new Date().toISOString()
       }),

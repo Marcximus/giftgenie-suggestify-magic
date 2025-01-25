@@ -21,69 +21,83 @@ export const SuggestionsGridItems = ({
   const [processedSuggestions, setProcessedSuggestions] = useState<(GiftSuggestion & { optimizedTitle: string })[]>([]);
   const abortController = useRef<AbortController | null>(null);
 
-  const generateTitle = useCallback(async (originalTitle: string, description: string) => {
-    const cacheKey = `${originalTitle}-${description}`;
-    if (titleCache.has(cacheKey)) {
-      console.log('Cache hit for title:', originalTitle);
-      return titleCache.get(cacheKey)!;
-    }
-
+  const generateTitles = useCallback(async (suggestions: GiftSuggestion[]) => {
     const startTime = performance.now();
-    console.log('Generating title for:', originalTitle);
+    console.log('Processing suggestions in batch');
+
+    // Filter out suggestions that are already in cache
+    const uncachedSuggestions = suggestions.filter(suggestion => {
+      const cacheKey = `${suggestion.title}-${suggestion.description}`;
+      return !titleCache.has(cacheKey);
+    });
+
+    if (uncachedSuggestions.length === 0) {
+      console.log('All titles found in cache');
+      return suggestions.map(suggestion => {
+        const cacheKey = `${suggestion.title}-${suggestion.description}`;
+        return {
+          ...suggestion,
+          optimizedTitle: titleCache.get(cacheKey)!
+        };
+      });
+    }
 
     try {
       const { data, error } = await supabase.functions.invoke('generate-product-title', {
-        body: { title: originalTitle, description }
+        body: {
+          titles: uncachedSuggestions.map(s => ({
+            title: s.title,
+            description: s.description
+          }))
+        }
       });
 
       if (error) throw error;
 
-      const optimizedTitle = data?.title || originalTitle;
-      titleCache.set(cacheKey, optimizedTitle);
+      // Update cache with new titles
+      uncachedSuggestions.forEach((suggestion, index) => {
+        const cacheKey = `${suggestion.title}-${suggestion.description}`;
+        titleCache.set(cacheKey, data.titles[index] || suggestion.title);
+      });
+
+      // Combine cached and new titles
+      const processedResults = suggestions.map(suggestion => {
+        const cacheKey = `${suggestion.title}-${suggestion.description}`;
+        return {
+          ...suggestion,
+          optimizedTitle: titleCache.get(cacheKey) || suggestion.title
+        };
+      });
 
       const duration = performance.now() - startTime;
-      console.log(`Title generation took ${duration}ms`);
+      console.log(`Batch title generation completed in ${duration}ms`);
 
-      return optimizedTitle;
+      return processedResults;
     } catch (error) {
-      console.error('Error generating title:', error);
-      return originalTitle;
+      console.error('Error generating titles:', error);
+      return suggestions.map(suggestion => ({
+        ...suggestion,
+        optimizedTitle: suggestion.title
+      }));
     }
   }, []);
 
   useEffect(() => {
     if (suggestions.length === 0) return;
     
-    // Reset state when suggestions change
     setProcessedSuggestions([]);
     
-    // Cleanup previous processing
     if (abortController.current) {
       abortController.current.abort();
     }
     abortController.current = new AbortController();
 
-    // Process all suggestions in parallel
     const processSuggestions = async () => {
       try {
-        console.log('Processing all suggestions in parallel');
+        console.log('Processing all suggestions in batch');
         const startTime = performance.now();
 
-        const results = await Promise.all(
-          suggestions.map(async (suggestion, index) => {
-            if (abortController.current?.signal.aborted) {
-              throw new Error('Processing aborted');
-            }
-
-            const optimizedTitle = await generateTitle(suggestion.title, suggestion.description);
-            console.log(`Processed suggestion ${index + 1}/${suggestions.length}`);
-            
-            return {
-              ...suggestion,
-              optimizedTitle
-            };
-          })
-        );
+        const results = await generateTitles(suggestions);
 
         if (!abortController.current?.signal.aborted) {
           setProcessedSuggestions(results);
@@ -104,7 +118,7 @@ export const SuggestionsGridItems = ({
         abortController.current.abort();
       }
     };
-  }, [suggestions, generateTitle]);
+  }, [suggestions, generateTitles]);
 
   if (isLoading) {
     return (
