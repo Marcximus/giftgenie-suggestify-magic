@@ -1,5 +1,5 @@
-export function buildGiftPrompt(prompt: string): string {
-  return `Based on the request "${prompt}", suggest 8 varied, unique and highly recommendable gift ideas.
+export function buildGiftPrompt(prompt: string, numSuggestions: number = 8): string {
+  return `Based on the request "${prompt}", suggest ${numSuggestions} varied, unique and highly recommendable gift ideas.
 
 Consider:
 - Age, gender, and occasion mentioned
@@ -11,5 +11,5 @@ Format EACH suggestion as a string in this EXACT format:
 
 Example format: "Sony WH-1000XM4 Wireless Noise-Cancelling Headphones (Premium Edition)"
 
-Return ONLY a JSON array of exactly 8 strings, each following this format.`;
+Return ONLY a JSON array of exactly ${numSuggestions} strings, each following this format.`;
 }
