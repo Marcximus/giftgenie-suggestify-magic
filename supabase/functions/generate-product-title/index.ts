@@ -9,7 +9,6 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -18,36 +17,33 @@ serve(async (req) => {
     const requestData = await req.json();
     console.log('Received request data:', requestData);
 
-    // Handle both single title and batch requests
     const titlesToProcess = requestData.titles || [requestData];
     
     if (!Array.isArray(titlesToProcess)) {
       throw new Error('Invalid request format. Expected titles array or single title object');
     }
 
-    // Create a single prompt for all titles
-    const titlesPrompt = titlesToProcess.map((item, index) => `
-Product ${index + 1}: "${item.title}"
-Description: "${item.description || 'Not provided'}"
-`).join('\n');
+    // Process each title with a focused prompt
+    const prompt = `As a product title specialist, optimize these product titles to be clear and marketable while preserving brand names and key features. Each title should be 3-7 words.
 
-    const prompt = `As a product title specialist, create clear, concise titles (max 5-7 words) for these products.
-
-${titlesPrompt}
-
-RULES:
-1. Keep essential product features and brand names
-2. Remove unnecessary words and model numbers
-3. Focus on the main purpose/benefit
+${titlesToProcess.map((item, index) => `
+Original: "${item.title}"
+Context: "${item.description || 'Not provided'}"
+Key requirements:
+1. Keep brand name if present
+2. Keep main product type
+3. Include one key distinguishing feature
+4. Remove unnecessary words
+5. Max 7 words`).join('\n')}
 
 EXAMPLES:
 Original: "The Perky-Pet 114B Squirrel Stumper Premium Bird Feeder with Advanced Protection System"
-Better: "Anti-Squirrel Bird Feeder"
+Better: "Perky-Pet Squirrel-Proof Bird Feeder"
 
 Original: "Celestron Nature DX 8x42 Professional Grade Binoculars with ED Glass"
-Better: "Celestron Nature Binoculars"
+Better: "Celestron Nature DX Binoculars"
 
-Return each title on a new line, without numbering or prefixes.`;
+Return each optimized title on a new line, without numbering or additional text.`;
 
     console.log('Sending request to DeepSeek API');
     const startTime = performance.now();
@@ -68,7 +64,7 @@ Return each title on a new line, without numbering or prefixes.`;
           { role: "user", content: prompt }
         ],
         max_tokens: 200,
-        temperature: 1.3,
+        temperature: 0.7,
         stream: false
       }),
     });
@@ -93,7 +89,6 @@ Return each title on a new line, without numbering or prefixes.`;
       throw new Error('Invalid response format from DeepSeek API');
     }
 
-    // Split response into array of titles and clean up any numbering or extra whitespace
     const generatedTitles = data.choices[0].message.content
       .split('\n')
       .filter(line => line.trim())
@@ -106,10 +101,9 @@ Return each title on a new line, without numbering or prefixes.`;
       });
     }
 
-    // If it was a single title request, return just that title
     const result = requestData.titles ? { titles: generatedTitles } : { title: generatedTitles[0] };
 
-    console.log('Batch processing complete:', {
+    console.log('Processing complete:', {
       requestedTitles: titlesToProcess.length,
       generatedTitles: generatedTitles.length,
       processingTime: `${(performance.now() - startTime).toFixed(2)}ms`
