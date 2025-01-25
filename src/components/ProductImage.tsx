@@ -36,6 +36,7 @@ export const ProductImage = ({ title, imageUrl }: ProductImageProps) => {
   const [isLoadingFallback, setIsLoadingFallback] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(false);
   const imageRef = useRef<HTMLImageElement>(null);
   
   const genericFallback = 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=300&q=80';
@@ -43,7 +44,6 @@ export const ProductImage = ({ title, imageUrl }: ProductImageProps) => {
   const getOptimizedImageUrl = (url: string, width: number) => {
     if (!url) return genericFallback;
     if (url.includes('unsplash.com')) {
-      // Increase quality parameter and remove blur
       return `${url}&w=${width}&q=95&auto=format&fit=crop`;
     }
     return url;
@@ -52,7 +52,6 @@ export const ProductImage = ({ title, imageUrl }: ProductImageProps) => {
   const getTinyPlaceholder = (url: string) => {
     if (!url) return genericFallback;
     if (url.includes('unsplash.com')) {
-      // Increase tiny placeholder quality slightly to reduce blur
       return `${url}&w=40&q=30&blur=2`;
     }
     return url;
@@ -88,8 +87,16 @@ export const ProductImage = ({ title, imageUrl }: ProductImageProps) => {
     }
   };
 
+  const handleImageLoad = () => {
+    setIsLoading(false);
+    setImageLoaded(true);
+    setHasError(false);
+  };
+
   useEffect(() => {
     if (!currentImageUrl) return;
+    setImageLoaded(false);
+    setIsLoading(true);
 
     // If we're already loading too many images, queue this one
     if (loadingQueue.size >= MAX_CONCURRENT_LOADS) {
@@ -98,10 +105,8 @@ export const ProductImage = ({ title, imageUrl }: ProductImageProps) => {
     }
 
     const loadImage = async () => {
-      setIsLoading(true);
-      
       // Generate srcset for responsive images with higher quality
-      const sizes = [400, 800, 1200];  // Increased sizes for better quality
+      const sizes = [400, 800, 1200];
       const srcset = sizes
         .map(width => getOptimizedImageUrl(currentImageUrl, width))
         .map((url, index) => `${url} ${sizes[index]}w`)
@@ -109,12 +114,10 @@ export const ProductImage = ({ title, imageUrl }: ProductImageProps) => {
 
       // Start preloading the image
       try {
-        await preloadImage(getOptimizedImageUrl(currentImageUrl, 800));  // Increased base size
+        await preloadImage(getOptimizedImageUrl(currentImageUrl, 800));
         if (imageRef.current) {
           imageRef.current.srcset = srcset;
         }
-        setIsLoading(false);
-        setHasError(false);
       } catch (error) {
         handleImageError();
       }
@@ -140,7 +143,7 @@ export const ProductImage = ({ title, imageUrl }: ProductImageProps) => {
 
   return (
     <div className="aspect-[4/3] relative overflow-hidden bg-gray-100">
-      {isLoading && currentImageUrl && (
+      {!imageLoaded && currentImageUrl && (
         <img
           src={getTinyPlaceholder(currentImageUrl)}
           alt=""
@@ -159,11 +162,12 @@ export const ProductImage = ({ title, imageUrl }: ProductImageProps) => {
         src={currentImageUrl ? getOptimizedImageUrl(currentImageUrl, 800) : genericFallback}
         alt={`Product image of ${title}`}
         className={`w-full h-full object-contain transition-all duration-500 ${
-          isLoading ? 'opacity-0' : 'opacity-100'
+          !imageLoaded ? 'opacity-0' : 'opacity-100'
         } ${hasError ? 'opacity-0' : ''} group-hover:scale-105`}
         loading="lazy"
         decoding="async"
         onError={handleImageError}
+        onLoad={handleImageLoad}
       />
       
       {isLoadingFallback && (
