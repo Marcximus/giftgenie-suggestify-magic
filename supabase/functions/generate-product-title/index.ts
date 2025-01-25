@@ -50,7 +50,7 @@ GOOD: "Harney & Sons Black Tea"
 
 Return ONLY the final title, no explanations or additional text.`;
 
-    console.log('Sending request to DeepSeek API with temperature:', 0.3);
+    console.log('Sending request to DeepSeek API with temperature:', 1.3);
 
     const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
       method: 'POST',
@@ -68,7 +68,7 @@ Return ONLY the final title, no explanations or additional text.`;
           { role: "user", content: prompt }
         ],
         max_tokens: 100,
-        temperature: 0.3,
+        temperature: 1.3,
         stream: false
       }),
     });
