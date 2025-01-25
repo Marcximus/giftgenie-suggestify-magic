@@ -24,26 +24,99 @@ export const simplifyTitle = (title: string): string => {
   const doc = new DOMParser().parseFromString(title, 'text/html');
   const decodedTitle = doc.body.textContent || title;
 
-  // Basic cleanup
+  // Remove HTML tags and clean up
   let cleanTitle = decodedTitle
     .replace(/<[^>]*>/g, '') // Remove HTML tags
-    .replace(/\([^)]*\)/g, '') // Remove parentheses content
-    .replace(/\[[^\]]*\]/g, '') // Remove bracket content
-    .replace(/[,|]/g, ' ') // Replace commas and pipes with spaces
-    .replace(/\s+/g, ' ') // Normalize spaces
     .trim();
 
-  // Take the first meaningful part (before common separators)
-  cleanTitle = cleanTitle.split(/[-–—]|\.\s/)[0].trim();
+  // Common patterns to remove
+  const patternsToRemove = [
+    /\([^)]*\)/g,                    // Remove parentheses and content
+    /\[[^\]]*\]/g,                   // Remove brackets and content
+    /\b\d{4}\b/g,                    // Remove 4-digit years
+    /\b\d+(\.\d+)?\s*(ml|oz|inch|inches|ft|feet|cm|m|kg|lb|lbs|pack|piece|pieces)\b/gi, // Remove measurements
+    /\b(with|for|by|in|of|and|the|a|an)\b/gi, // Remove common connecting words
+    /\s*-\s*/g,                      // Remove hyphens with spaces
+    /\s*\|\s*/g,                     // Remove pipes with spaces
+    /\s*,\s*/g,                      // Remove commas with spaces
+  ];
 
-  // Capitalize properly
-  const words = cleanTitle.split(' ').filter(word => word.length > 0);
+  patternsToRemove.forEach(pattern => {
+    cleanTitle = cleanTitle.replace(pattern, ' ');
+  });
+
+  // Special cases for brand names (preserve them)
+  const commonBrands = [
+    'Harney & Sons',
+    'Perky-Pet',
+    'Celestron',
+    // Add more brands as needed
+  ];
+
+  let finalTitle = cleanTitle;
+  commonBrands.forEach(brand => {
+    if (cleanTitle.toLowerCase().includes(brand.toLowerCase())) {
+      const brandRegex = new RegExp(brand, 'i');
+      const match = cleanTitle.match(brandRegex);
+      if (match) {
+        // Keep the brand name with original casing
+        finalTitle = finalTitle.replace(brandRegex, match[0]);
+      }
+    }
+  });
+
+  // Handle special cases for product types
+  const productTypes = {
+    'bird feeder': (title: string) => {
+      if (title.toLowerCase().includes('squirrel')) {
+        return 'Anti-Squirrel Bird Feeder';
+      }
+      return 'Bird Feeder';
+    },
+    'binoculars': (title: string) => {
+      const brandMatch = commonBrands.find(brand => 
+        title.toLowerCase().includes(brand.toLowerCase())
+      );
+      return brandMatch ? `${brandMatch} Binoculars` : 'Binoculars';
+    },
+    'tea': (title: string) => {
+      if (title.toLowerCase().includes('harney & sons')) {
+        const teaType = title.toLowerCase().includes('black tea') ? 'Black Tea' :
+                       title.toLowerCase().includes('green tea') ? 'Green Tea' :
+                       title.toLowerCase().includes('herbal tea') ? 'Herbal Tea' : 'Tea';
+        return `Harney & Sons ${teaType}`;
+      }
+      return 'Tea';
+    }
+  };
+
+  // Apply special case handling
+  for (const [type, handler] of Object.entries(productTypes)) {
+    if (finalTitle.toLowerCase().includes(type)) {
+      finalTitle = handler(finalTitle);
+      break;
+    }
+  }
+
+  // Clean up multiple spaces and trim
+  finalTitle = finalTitle
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  // Capitalize properly (preserve acronyms)
+  const words = finalTitle.split(' ');
   const processedWords = words.map((word, index) => {
-    // Keep acronyms and product codes uppercase
+    // Keep acronyms uppercase
     if (word.match(/^[A-Z0-9]+$/)) {
       return word;
     }
-    // Capitalize first word and other significant words
+    // Keep brand names as is
+    if (commonBrands.some(brand => 
+      brand.toLowerCase().split(' ').includes(word.toLowerCase())
+    )) {
+      return word;
+    }
+    // Capitalize first word and significant words
     if (index === 0 || !['a', 'an', 'the', 'and', 'but', 'or', 'for', 'nor', 'on', 'at', 'to', 'of', 'in', 'with'].includes(word.toLowerCase())) {
       return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
     }
