@@ -274,6 +274,8 @@ export type Database = {
           amazon_total_ratings: number | null
           amazon_url: string | null
           availability: string | null
+          batch_id: string | null
+          batch_status: string | null
           brand: string | null
           category: string | null
           created_at: string | null
@@ -296,6 +298,8 @@ export type Database = {
           amazon_total_ratings?: number | null
           amazon_url?: string | null
           availability?: string | null
+          batch_id?: string | null
+          batch_status?: string | null
           brand?: string | null
           category?: string | null
           created_at?: string | null
@@ -318,6 +322,8 @@ export type Database = {
           amazon_total_ratings?: number | null
           amazon_url?: string | null
           availability?: string | null
+          batch_id?: string | null
+          batch_status?: string | null
           brand?: string | null
           category?: string | null
           created_at?: string | null
