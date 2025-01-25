@@ -15,31 +15,7 @@ import { BlogPostContent } from "./form/BlogPostContent";
 import { BlogPostSEO } from "./form/BlogPostSEO";
 import { Input } from "@/components/ui/input";
 import { Wand2 } from "lucide-react";
-
-interface BlogPostFormData {
-  title: string;
-  slug: string;
-  content: string;
-  excerpt: string;
-  author: string;
-  image_url: string;
-  published_at: string | null;
-  meta_title: string;
-  meta_description: string;
-  meta_keywords: string;
-  images: any[];
-  affiliate_links: any[];
-  image_alt_text: string;
-  related_posts: any[];
-  word_count: number | null;
-  reading_time: number | null;
-  main_entity: string | null;
-  breadcrumb_list: any[];
-  category_id: string | null;
-  id?: string;
-  created_at?: string;
-  updated_at?: string;
-}
+import { BlogPostFormData } from "./types/BlogPostTypes";
 
 interface BlogPostFormProps {
   initialData?: BlogPostFormData;
@@ -62,25 +38,36 @@ const BlogPostForm = ({ initialData, initialTitle }: BlogPostFormProps) => {
         title: "",
         slug: "",
         content: "",
-        excerpt: "",
+        excerpt: null,
         author: DEFAULT_AUTHOR,
-        image_url: "",
+        image_url: null,
         published_at: null,
-        meta_title: "",
-        meta_description: "",
-        meta_keywords: "",
+        meta_title: null,
+        meta_description: null,
+        meta_keywords: null,
         images: [],
         affiliate_links: [],
-        image_alt_text: "",
+        image_alt_text: null,
         related_posts: [],
-        // Add new default values for schema fields
+        content_format_version: "v1",
+        generation_attempts: 0,
+        last_generation_error: null,
+        processing_status: {
+          reviews_added: 0,
+          amazon_lookups: 0,
+          product_sections: 0,
+          successful_replacements: 0
+        },
+        product_reviews: [],
+        product_search_failures: [],
         word_count: null,
         reading_time: null,
         main_entity: null,
         breadcrumb_list: [],
+        category_id: null
       }),
-      title: initialTitle || "",  // Ensure initialTitle takes precedence
-      author: DEFAULT_AUTHOR, // Always set author to default value
+      title: initialTitle || "",
+      author: DEFAULT_AUTHOR,
     },
   });
 

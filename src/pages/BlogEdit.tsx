@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import BlogPostForm from "@/components/blog/BlogPostForm";
 import { useToast } from "@/hooks/use-toast";
-import { BlogPostData } from "@/components/blog/types/BlogPostTypes";
+import { BlogPostFormData } from "@/components/blog/types/BlogPostTypes";
 import { Json } from "@/integrations/supabase/types";
 
 const BlogEdit = () => {
@@ -58,7 +58,7 @@ const BlogEdit = () => {
       };
 
       // Convert the database response to match BlogPostFormData structure
-      const formattedPost: BlogPostData = {
+      const formattedPost: BlogPostFormData = {
         ...data,
         images: parseJsonWithDefault(data.images, []),
         affiliate_links: parseJsonWithDefault(data.affiliate_links, []),
@@ -71,8 +71,8 @@ const BlogEdit = () => {
         meta_description: data.meta_description || null,
         meta_keywords: data.meta_keywords || null,
         image_alt_text: data.image_alt_text || null,
-        content_format_version: data.content_format_version || null,
-        generation_attempts: data.generation_attempts || null,
+        content_format_version: data.content_format_version || "v1",
+        generation_attempts: data.generation_attempts || 0,
         last_generation_error: data.last_generation_error || null,
         processing_status: parseJsonWithDefault(data.processing_status, {
           reviews_added: 0,
@@ -84,7 +84,8 @@ const BlogEdit = () => {
         product_search_failures: parseJsonWithDefault(data.product_search_failures, []),
         word_count: data.word_count || null,
         reading_time: data.reading_time || null,
-        main_entity: data.main_entity || null
+        main_entity: data.main_entity || null,
+        category_id: data.category_id || null
       };
       
       return formattedPost;
