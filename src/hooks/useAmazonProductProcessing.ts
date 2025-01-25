@@ -7,9 +7,9 @@ import { generateCustomDescription } from '@/utils/descriptionUtils';
 import { logApiMetrics } from '@/utils/metricsUtils';
 import { toast } from "@/components/ui/use-toast";
 
-const BATCH_SIZE = 8; // Increased from 4 to 8 for faster processing
-const STAGGER_DELAY = 100; // Keep the same delay between batches
-const MAX_CONCURRENT = 8; // Increased from 4 to 8 to match batch size
+const BATCH_SIZE = 4; // Reduced from 8 to 4 for better throughput
+const STAGGER_DELAY = 50; // Reduced from 100ms to 50ms
+const MAX_CONCURRENT = 4; // Match batch size
 
 export const useAmazonProductProcessing = () => {
   const { getAmazonProduct } = useAmazonProducts();
@@ -18,49 +18,46 @@ export const useAmazonProductProcessing = () => {
 
   const processGiftSuggestion = async (suggestion: GiftSuggestion): Promise<GiftSuggestion> => {
     const startTime = performance.now();
+    const cacheKey = ['amazon-product', suggestion.title.toLowerCase().trim()];
+    
     try {
-      const normalizedTitle = suggestion.title.toLowerCase().trim();
-      const cacheKey = ['amazon-product', normalizedTitle];
+      // Check cache first
       const cachedData = queryClient.getQueryData(cacheKey);
-      
       if (cachedData) {
         console.log('Cache hit for:', suggestion.title);
-        await logApiMetrics('amazon-product-processing', startTime, 'success', undefined, true);
         return cachedData as GiftSuggestion;
       }
 
-      // Run these operations in parallel using Promise.all for better performance
+      // Run all async operations in parallel
       const [amazonProduct, customDescription] = await Promise.all([
         getAmazonProduct(suggestion.title, suggestion.priceRange),
         generateCustomDescription(suggestion.title, suggestion.description),
         updateSearchFrequency(suggestion.title)
       ]);
-      
-      if (amazonProduct && amazonProduct.asin) {
-        const processedSuggestion = {
-          ...suggestion,
-          title: amazonProduct.title || suggestion.title,
-          description: customDescription,
-          priceRange: `${amazonProduct.currency} ${amazonProduct.price}`,
-          amazon_asin: amazonProduct.asin,
-          amazon_url: `https://www.amazon.com/dp/${amazonProduct.asin}`,
-          amazon_price: amazonProduct.price,
-          amazon_image_url: amazonProduct.imageUrl,
-          amazon_rating: amazonProduct.rating,
-          amazon_total_ratings: amazonProduct.totalRatings
-        };
 
-        // Update the cache with the enriched data
-        queryClient.setQueryData(cacheKey, processedSuggestion);
-        
-        // Invalidate the suggestions query to trigger a re-render
-        queryClient.invalidateQueries({ queryKey: ['suggestions'] });
-        
-        await logApiMetrics('amazon-product-processing', startTime, 'success');
-        return processedSuggestion;
+      if (!amazonProduct) {
+        console.log('No Amazon product found for:', suggestion.title);
+        return suggestion;
       }
+
+      const processedSuggestion = {
+        ...suggestion,
+        title: amazonProduct.title || suggestion.title,
+        description: customDescription,
+        priceRange: `${amazonProduct.currency} ${amazonProduct.price}`,
+        amazon_asin: amazonProduct.asin,
+        amazon_url: `https://www.amazon.com/dp/${amazonProduct.asin}`,
+        amazon_price: amazonProduct.price,
+        amazon_image_url: amazonProduct.imageUrl,
+        amazon_rating: amazonProduct.rating,
+        amazon_total_ratings: amazonProduct.totalRatings
+      };
+
+      // Update cache
+      queryClient.setQueryData(cacheKey, processedSuggestion);
       
-      return suggestion;
+      await logApiMetrics('amazon-product-processing', startTime, 'success');
+      return processedSuggestion;
     } catch (error) {
       console.error('Error processing suggestion:', error);
       await logApiMetrics('amazon-product-processing', startTime, 'error', error.message);
@@ -69,51 +66,39 @@ export const useAmazonProductProcessing = () => {
   };
 
   const processSuggestions = async (suggestions: GiftSuggestion[]) => {
-    console.log('Processing suggestions with parallel batches');
-    
+    console.log(`Processing ${suggestions.length} suggestions in parallel batches`);
     const results: GiftSuggestion[] = [];
-    const batches: GiftSuggestion[][] = [];
     
-    // Split suggestions into batches of BATCH_SIZE
+    // Process suggestions in smaller batches
     for (let i = 0; i < suggestions.length; i += BATCH_SIZE) {
-      batches.push(suggestions.slice(i, i + BATCH_SIZE));
-    }
-    
-    // Process each batch in parallel with optimized concurrency
-    for (const batch of batches) {
-      console.log(`Processing batch of ${batch.length} suggestions`);
+      const batchStart = performance.now();
+      const batch = suggestions.slice(i, i + BATCH_SIZE);
       
-      // Process all items in the current batch concurrently
+      // Process all items in current batch concurrently
       const batchResults = await Promise.all(
-        batch.map(async (suggestion) => {
-          try {
-            return await processGiftSuggestion(suggestion);
-          } catch (error) {
-            console.error('Error in batch processing:', error);
-            return suggestion;
-          }
-        })
+        batch.map(suggestion => processGiftSuggestion(suggestion))
       );
       
       results.push(...batchResults);
       
-      // Add a smaller delay between batches to prevent rate limiting while maintaining speed
-      if (batches.indexOf(batch) < batches.length - 1) {
-        await new Promise(resolve => setTimeout(resolve, STAGGER_DELAY));
-      }
-      
-      // Update the suggestions cache with each processed batch
+      // Update cache after each batch
       queryClient.setQueryData(['suggestions'], (old: GiftSuggestion[] | undefined) => {
         if (!old) return results;
         return old.map(oldSuggestion => {
-          const updatedSuggestion = results.find(
-            result => result.title === oldSuggestion.title
-          );
-          return updatedSuggestion || oldSuggestion;
+          const updated = results.find(r => r.title === oldSuggestion.title);
+          return updated || oldSuggestion;
         });
       });
+
+      const batchTime = performance.now() - batchStart;
+      console.log(`Batch ${Math.floor(i / BATCH_SIZE) + 1} completed in ${batchTime.toFixed(2)}ms`);
+      
+      // Add minimal delay between batches to prevent rate limiting
+      if (i + BATCH_SIZE < suggestions.length) {
+        await new Promise(resolve => setTimeout(resolve, STAGGER_DELAY));
+      }
     }
-    
+
     return results;
   };
 
