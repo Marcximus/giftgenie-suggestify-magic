@@ -10,29 +10,12 @@ serve(async (req) => {
   }
 
   try {
-    const { title, description } = await req.json();
-    console.log('Generating title for:', { 
-      originalTitle: title,
-      description: description?.substring(0, 50) + '...' // Log shorter description
-    });
+    const { title } = await req.json();
+    console.log('Generating title:', { originalTitle: title });
 
     if (!title) {
       throw new Error('Title is required');
     }
-
-    // Optimized prompt with fewer tokens
-    const prompt = `Simplify this product title while keeping key features:
-Original: "${title}"
-Context: "${description?.substring(0, 100) || 'Not provided'}"
-
-Rules:
-1. Keep brand if known
-2. Max 5-7 words
-3. Include key features
-4. Remove model numbers
-5. Keep purpose terms
-
-Return ONLY the final title.`;
 
     const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
       method: 'POST',
@@ -47,9 +30,12 @@ Return ONLY the final title.`;
             role: "system",
             content: "You are a product title optimizer. Return only the simplified title."
           },
-          { role: "user", content: prompt }
+          { 
+            role: "user", 
+            content: "Simplify this product title, max 5-7 words. Return ONLY the final title: " + title 
+          }
         ],
-        max_tokens: 50, // Reduced from 100
+        max_tokens: 30,
         temperature: 1.3,
         stream: false
       }),
