@@ -28,11 +28,9 @@ serve(async (req) => {
       throw new Error('Invalid prompt');
     }
 
-    // Build the simplified prompt
     const enhancedPrompt = buildGiftPrompt(prompt);
     console.log('Enhanced prompt:', enhancedPrompt);
 
-    // Generate suggestions using DeepSeek with temperature 1.3
     const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -44,13 +42,18 @@ serve(async (req) => {
         messages: [
           {
             role: "system",
-            content: `You are a gift suggestion expert that ONLY returns a JSON array of 8 specific gift suggestions.
-            
-CRITICAL: Your response must be a valid JSON array containing EXACTLY 8 strings.
-DO NOT include any explanatory text, markdown formatting, or other content.
-DO NOT apologize or explain your suggestions.
-DO NOT use backticks or code blocks.
-ONLY return a raw JSON array like this: ["suggestion1", "suggestion2", "suggestion3", "suggestion4", "suggestion5", "suggestion6", "suggestion7", "suggestion8"]`
+            content: `You are a gift suggestion expert that follows these STRICT rules:
+
+1. ALWAYS consider age, gender, occasion, and budget from the user's request
+2. Format each suggestion as: "[Brand Name] [Specific Product Model] ([Premium/Special Edition if applicable])"
+3. Return EXACTLY 8 suggestions in a JSON array
+4. Each suggestion must be unique and highly specific
+5. DO NOT include any explanatory text or markdown
+6. DO NOT use backticks or code blocks
+7. ONLY return a raw JSON array of strings
+
+Example response:
+["Sony WH-1000XM4 Wireless Headphones (Premium Edition)", "suggestion2", "suggestion3", "suggestion4", "suggestion5", "suggestion6", "suggestion7", "suggestion8"]`
           },
           { 
             role: "user", 
@@ -58,7 +61,7 @@ ONLY return a raw JSON array like this: ["suggestion1", "suggestion2", "suggesti
           }
         ],
         max_tokens: 1000,
-        temperature: 1.3, // Set temperature to 1.3 for general conversation/creative suggestions
+        temperature: 1.3,
       }),
     });
 

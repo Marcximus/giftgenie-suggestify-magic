@@ -1,7 +1,15 @@
 export function buildGiftPrompt(prompt: string): string {
-  return `As an extremly qualified gift suggestion expert, consider age, gender, occasion and budget and suggest 8 varied, unique and highly recommendable gift ideas to a puzzled gift giver based on "${prompt}". 
+  return `Based on the request "${prompt}", suggest 8 varied, unique and highly recommendable gift ideas.
 
-Format each suggestion as: Brand Name Specific Product Model (Premium/Special Edition).
+Consider:
+- Age, gender, and occasion mentioned
+- Any budget constraints specified
+- The recipient's interests and preferences
 
-Return ONLY a JSON array of 8 specific gift suggestions.`;
+Format EACH suggestion as a string in this EXACT format:
+"[Brand Name] [Specific Product Model] ([Premium/Special Edition if applicable])"
+
+Example format: "Sony WH-1000XM4 Wireless Noise-Cancelling Headphones (Premium Edition)"
+
+Return ONLY a JSON array of exactly 8 strings, each following this format.`;
 }
