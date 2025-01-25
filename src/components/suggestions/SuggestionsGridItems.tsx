@@ -19,16 +19,20 @@ export const SuggestionsGridItems = ({
   onMoreLikeThis,
   isLoading
 }: SuggestionsGridItemsProps) => {
-  const [processedSuggestions, setProcessedSuggestions] = useState<Map<number, GiftSuggestion & { optimizedTitle: string }>>(new Map());
+  const [processedSuggestions, setProcessedSuggestions] = useState<(GiftSuggestion & { optimizedTitle: string | null })[]>([]);
   const abortController = useRef<AbortController | null>(null);
 
   const generateTitle = useCallback(async (suggestion: GiftSuggestion, index: number) => {
     const cacheKey = `${suggestion.title}-${suggestion.description}`;
     if (titleCache.has(cacheKey)) {
-      setProcessedSuggestions(prev => new Map(prev).set(index, {
-        ...suggestion,
-        optimizedTitle: titleCache.get(cacheKey)!
-      }));
+      setProcessedSuggestions(prev => {
+        const updated = [...prev];
+        updated[index] = {
+          ...suggestion,
+          optimizedTitle: titleCache.get(cacheKey)!
+        };
+        return updated;
+      });
       return;
     }
 
@@ -45,24 +49,35 @@ export const SuggestionsGridItems = ({
       const optimizedTitle = data.title || suggestion.title;
       titleCache.set(cacheKey, optimizedTitle);
 
-      setProcessedSuggestions(prev => new Map(prev).set(index, {
-        ...suggestion,
-        optimizedTitle
-      }));
+      setProcessedSuggestions(prev => {
+        const updated = [...prev];
+        updated[index] = {
+          ...suggestion,
+          optimizedTitle
+        };
+        return updated;
+      });
     } catch (error) {
       console.error('Error generating title:', error);
-      // On error, use the original title
-      setProcessedSuggestions(prev => new Map(prev).set(index, {
-        ...suggestion,
-        optimizedTitle: suggestion.title
-      }));
+      setProcessedSuggestions(prev => {
+        const updated = [...prev];
+        updated[index] = {
+          ...suggestion,
+          optimizedTitle: suggestion.title
+        };
+        return updated;
+      });
     }
   }, []);
 
   useEffect(() => {
     if (suggestions.length === 0) return;
     
-    setProcessedSuggestions(new Map());
+    // Initialize array with null titles to maintain order
+    setProcessedSuggestions(suggestions.map(suggestion => ({
+      ...suggestion,
+      optimizedTitle: null
+    })));
     
     if (abortController.current) {
       abortController.current.abort();
@@ -126,10 +141,8 @@ export const SuggestionsGridItems = ({
 
   return (
     <>
-      {suggestions.map((suggestion, index) => {
-        const processed = processedSuggestions.get(index);
-
-        if (!processed) {
+      {processedSuggestions.map((suggestion, index) => {
+        if (!suggestion.optimizedTitle) {
           return (
             <div 
               key={`processing-${index}`}
@@ -141,9 +154,9 @@ export const SuggestionsGridItems = ({
           );
         }
 
-        const price = processed.amazon_price 
-          ? processed.amazon_price.toString()
-          : processed.priceRange?.replace('USD ', '') || 'Check price on Amazon';
+        const price = suggestion.amazon_price 
+          ? suggestion.amazon_price.toString()
+          : suggestion.priceRange?.replace('USD ', '') || 'Check price on Amazon';
 
         return (
           <div 
@@ -155,14 +168,14 @@ export const SuggestionsGridItems = ({
             }}
           >
             <ProductCard
-              title={processed.optimizedTitle}
-              description={processed.description}
+              title={suggestion.optimizedTitle}
+              description={suggestion.description}
               price={price}
-              amazonUrl={processed.amazon_url || "#"}
-              imageUrl={processed.amazon_image_url}
-              rating={processed.amazon_rating}
-              totalRatings={processed.amazon_total_ratings}
-              asin={processed.amazon_asin}
+              amazonUrl={suggestion.amazon_url || "#"}
+              imageUrl={suggestion.amazon_image_url}
+              rating={suggestion.amazon_rating}
+              totalRatings={suggestion.amazon_total_ratings}
+              asin={suggestion.amazon_asin}
               onMoreLikeThis={onMoreLikeThis}
             />
           </div>
