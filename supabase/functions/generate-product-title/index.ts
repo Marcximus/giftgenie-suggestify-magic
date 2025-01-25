@@ -11,7 +11,10 @@ serve(async (req) => {
 
   try {
     const { title, description } = await req.json();
-    console.log('Generating title for:', { originalTitle: title, description });
+    console.log('Generating title for:', { 
+      originalTitle: title,
+      description: description?.substring(0, 100) + '...' // Log truncated description
+    });
 
     if (!title) {
       throw new Error('Title is required');
@@ -47,6 +50,8 @@ GOOD: "Harney & Sons Black Tea"
 
 Return ONLY the final title, no explanations or additional text.`;
 
+    console.log('Sending request to DeepSeek API with temperature:', 0.3);
+
     const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -63,26 +68,38 @@ Return ONLY the final title, no explanations or additional text.`;
           { role: "user", content: prompt }
         ],
         max_tokens: 100,
-        temperature: 0.3, // Lower temperature for more consistent outputs
+        temperature: 0.3,
         stream: false
       }),
     });
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('DeepSeek API error:', errorText);
+      console.error('DeepSeek API error:', {
+        status: response.status,
+        statusText: response.statusText,
+        error: errorText
+      });
       throw new Error(`DeepSeek API error: ${response.status}`);
     }
 
     const data = await response.json();
-    console.log('Raw DeepSeek response:', data);
+    console.log('DeepSeek API response:', {
+      rawResponse: data,
+      generatedTitle: data.choices?.[0]?.message?.content
+    });
 
     if (!data.choices?.[0]?.message?.content) {
       throw new Error('Invalid response format from DeepSeek API');
     }
 
     const simplifiedTitle = data.choices[0].message.content.trim();
-    console.log('Generated simplified title:', simplifiedTitle);
+    console.log('Title transformation:', {
+      original: title,
+      simplified: simplifiedTitle,
+      charactersReduced: title.length - simplifiedTitle.length,
+      percentageReduction: ((title.length - simplifiedTitle.length) / title.length * 100).toFixed(1) + '%'
+    });
 
     return new Response(
       JSON.stringify({ title: simplifiedTitle }),
@@ -96,7 +113,11 @@ Return ONLY the final title, no explanations or additional text.`;
     );
       
   } catch (error) {
-    console.error('Error in generate-product-title function:', error);
+    console.error('Error in generate-product-title function:', {
+      error: error.message,
+      stack: error.stack,
+      timestamp: new Date().toISOString()
+    });
     
     return new Response(
       JSON.stringify({ 
