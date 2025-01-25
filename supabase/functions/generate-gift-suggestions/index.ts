@@ -35,11 +35,28 @@ serve(async (req) => {
     // Build a more structured prompt that ensures coverage of all interests
     const enhancedPrompt = `Based on the request "${prompt}", suggest 8 highly specific and thoughtful gift ideas that would genuinely delight the recipient.
 
-IMPORTANT REQUIREMENTS:
+IMPORTANT TITLE FORMATTING RULES:
+1. Format each title as: "[Brand Name] [Essential Model/Product Info] [Key Feature]"
+2. Keep titles concise but informative (5-7 words maximum)
+3. Include brand name ONLY if it's a well-known brand
+4. Include model numbers ONLY if they're significant for identification
+5. Focus on the most distinctive feature that sets the product apart
+6. Remove unnecessary words like "the", "with", "for", "by"
+7. Don't include measurements unless crucial for product identification
+8. Don't include years or dates
+9. Don't use parentheses or brackets
+10. Don't use HTML tags or special characters
+
+EXAMPLES OF GOOD TITLES:
+- "Celestron Nature DX Binoculars" (not "Celestron Nature DX 8x42 Binoculars")
+- "Harney & Sons London Black Tea" (not "Harney & Sons Tower of London Black Tea")
+- "Anti-Squirrel Bird Feeder" (not "The Perky-Pet 114B Squirrel Stumper Bird Feeder")
+
+ADDITIONAL REQUIREMENTS:
 1. MUST include at least 2 gifts related to each interest: ${interests.join(', ')}
 2. Ensure gifts are appropriate for the specified budget
 3. Each suggestion must be from a different product category
-4. Format each suggestion as: "[Brand Name] [Specific Product Model] ([Premium/Special Edition if applicable])"
+4. Avoid similar products or variations of the same item
 
 Return ONLY a JSON array of exactly 8 strings, with no additional text.`;
 
@@ -58,7 +75,7 @@ Return ONLY a JSON array of exactly 8 strings, with no additional text.`;
             role: "system",
             content: `You are a gift suggestion expert that follows these rules:
 1. ALWAYS consider age, gender, occasion, and budget from the user's request
-2. Format each suggestion as: "[Brand Name] [Specific Product Model] ([Premium/Special Edition if applicable])"
+2. Format titles following the EXACT rules provided
 3. Return EXACTLY 8 suggestions in a JSON array
 4. Each suggestion must be HIGHLY SPECIFIC
 5. DO NOT include any explanatory text or markdown

@@ -20,7 +20,7 @@ interface ProductCardProps extends Product {
 }
 
 export const simplifyTitle = (title: string): string => {
-  // Decode HTML entities
+  // Only decode HTML entities and clean up basic formatting
   const doc = new DOMParser().parseFromString(title, 'text/html');
   const decodedTitle = doc.body.textContent || title;
 
