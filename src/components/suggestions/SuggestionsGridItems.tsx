@@ -10,7 +10,6 @@ interface SuggestionsGridItemsProps {
   isLoading: boolean;
 }
 
-// Cache for generated titles to prevent redundant API calls
 const titleCache = new Map<string, string>();
 
 export const SuggestionsGridItems = ({
@@ -19,6 +18,7 @@ export const SuggestionsGridItems = ({
   isLoading
 }: SuggestionsGridItemsProps) => {
   const [processedSuggestions, setProcessedSuggestions] = useState<(GiftSuggestion & { optimizedTitle: string })[]>([]);
+  const [processingIndexes, setProcessingIndexes] = useState<Set<number>>(new Set());
   const abortController = useRef<AbortController | null>(null);
 
   const generateTitle = useCallback(async (originalTitle: string, description: string) => {
@@ -28,22 +28,14 @@ export const SuggestionsGridItems = ({
       return titleCache.get(cacheKey)!;
     }
 
-    const startTime = performance.now();
-    console.log('Generating title for:', originalTitle);
-
     try {
       const { data, error } = await supabase.functions.invoke('generate-product-title', {
         body: { title: originalTitle, description }
       });
 
       if (error) throw error;
-
       const optimizedTitle = data?.title || originalTitle;
       titleCache.set(cacheKey, optimizedTitle);
-
-      const duration = performance.now() - startTime;
-      console.log(`Title generation took ${duration}ms`);
-
       return optimizedTitle;
     } catch (error) {
       console.error('Error generating title:', error);
@@ -52,49 +44,73 @@ export const SuggestionsGridItems = ({
   }, []);
 
   useEffect(() => {
-    if (suggestions.length === 0) return;
-    
-    // Reset state when suggestions change
-    setProcessedSuggestions([]);
-    
-    // Cleanup previous processing
+    if (suggestions.length === 0) {
+      setProcessedSuggestions([]);
+      setProcessingIndexes(new Set());
+      return;
+    }
+
     if (abortController.current) {
       abortController.current.abort();
     }
     abortController.current = new AbortController();
 
-    // Process all suggestions in parallel
     const processSuggestions = async () => {
-      try {
-        console.log('Processing all suggestions in parallel');
-        const startTime = performance.now();
+      const startTime = performance.now();
+      console.log('Starting parallel processing of suggestions');
 
-        const results = await Promise.all(
-          suggestions.map(async (suggestion, index) => {
-            if (abortController.current?.signal.aborted) {
-              throw new Error('Processing aborted');
-            }
+      // Process suggestions in parallel batches of 4
+      const batchSize = 4;
+      const batches = Math.ceil(suggestions.length / batchSize);
 
-            const optimizedTitle = await generateTitle(suggestion.title, suggestion.description);
-            console.log(`Processed suggestion ${index + 1}/${suggestions.length}`);
-            
-            return {
-              ...suggestion,
-              optimizedTitle
-            };
-          })
-        );
+      for (let batchIndex = 0; batchIndex < batches; batchIndex++) {
+        const batchStart = batchIndex * batchSize;
+        const batchEnd = Math.min(batchStart + batchSize, suggestions.length);
+        const batchItems = suggestions.slice(batchStart, batchEnd);
 
-        if (!abortController.current?.signal.aborted) {
-          setProcessedSuggestions(results);
-          const duration = performance.now() - startTime;
-          console.log(`All suggestions processed in ${duration}ms`);
-        }
-      } catch (error) {
-        if (error.message !== 'Processing aborted') {
-          console.error('Error processing suggestions:', error);
+        try {
+          // Process batch in parallel
+          const batchResults = await Promise.all(
+            batchItems.map(async (suggestion, index) => {
+              const globalIndex = batchStart + index;
+              setProcessingIndexes(prev => new Set([...prev, globalIndex]));
+
+              const optimizedTitle = await generateTitle(suggestion.title, suggestion.description);
+              
+              return {
+                ...suggestion,
+                optimizedTitle
+              };
+            })
+          );
+
+          // Update state with batch results while preserving order
+          setProcessedSuggestions(prev => {
+            const newSuggestions = [...prev];
+            batchResults.forEach((result, index) => {
+              newSuggestions[batchStart + index] = result;
+            });
+            return newSuggestions;
+          });
+
+          // Update processing indexes
+          setProcessingIndexes(prev => {
+            const newIndexes = new Set(prev);
+            batchItems.forEach((_, index) => {
+              newIndexes.delete(batchStart + index);
+            });
+            return newIndexes;
+          });
+
+        } catch (error) {
+          if (error.message !== 'Processing aborted') {
+            console.error('Error processing batch:', error);
+          }
         }
       }
+
+      const duration = performance.now() - startTime;
+      console.log(`All suggestions processed in ${duration.toFixed(2)}ms`);
     };
 
     processSuggestions();
@@ -127,8 +143,9 @@ export const SuggestionsGridItems = ({
     <>
       {suggestions.map((suggestion, index) => {
         const processed = processedSuggestions[index];
+        const isProcessing = processingIndexes.has(index);
 
-        if (!processed) {
+        if (!processed && isProcessing) {
           return (
             <div 
               key={`processing-${index}`}
@@ -138,6 +155,10 @@ export const SuggestionsGridItems = ({
               <SuggestionSkeleton />
             </div>
           );
+        }
+
+        if (!processed) {
+          return null;
         }
 
         const price = processed.amazon_price 
