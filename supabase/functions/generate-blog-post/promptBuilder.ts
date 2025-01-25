@@ -17,7 +17,7 @@ CRITICAL: Do not write less than 1500 words on the topic!
    - Format product titles as: <h3>[PRODUCT NAME]</h3>
 
 3. Content Structure:
-   - Write 2-3 funny and engaging paragraphs (EXACTLY 200-300 words total. No More, No Less.) for each product
+   - Write 2-3 engaging paragraphs (EXACTLY 200-300 words total. No More, No Less.) for each product
    - Start with an introduction paragraph about the product
    - Follow with features and benefits
    - End with why it makes a great gift
