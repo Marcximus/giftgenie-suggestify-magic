@@ -3,6 +3,7 @@ import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { ProductImage } from "./ProductImage";
 import { ProductCardContent } from "./product/ProductCardContent";
 import { ProductCardActions } from "./product/ProductCardActions";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Product {
   title: string;
@@ -19,16 +20,22 @@ interface ProductCardProps extends Product {
   onMoreLikeThis?: (title: string) => void;
 }
 
-export const simplifyTitle = (title: string): string => {
-  // Only decode HTML entities and clean up basic formatting
-  const doc = new DOMParser().parseFromString(title, 'text/html');
-  const decodedTitle = doc.body.textContent || title;
+export const simplifyTitle = async (title: string, description?: string): Promise<string> => {
+  try {
+    const { data, error } = await supabase.functions.invoke('generate-product-title', {
+      body: { title, description }
+    });
 
-  // Basic cleanup - remove HTML tags and normalize spaces
-  return decodedTitle
-    .replace(/<[^>]*>/g, '') // Remove HTML tags
-    .replace(/\s+/g, ' ') // Normalize spaces
-    .trim();
+    if (error) {
+      console.error('Error simplifying title:', error);
+      return title;
+    }
+
+    return data.title || title;
+  } catch (error) {
+    console.error('Error in simplifyTitle:', error);
+    return title;
+  }
 };
 
 const ProductCardComponent = ({ 
@@ -41,7 +48,15 @@ const ProductCardComponent = ({
   imageUrl,
   onMoreLikeThis 
 }: ProductCardProps) => {
-  const simplifiedTitle = simplifyTitle(title);
+  const [simplifiedTitle, setSimplifiedTitle] = useState(title);
+
+  useEffect(() => {
+    const updateTitle = async () => {
+      const newTitle = await simplifyTitle(title, description);
+      setSimplifiedTitle(newTitle);
+    };
+    updateTitle();
+  }, [title, description]);
 
   // Prepare schema.org structured data for the product
   const schemaData = {
