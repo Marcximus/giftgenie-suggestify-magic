@@ -26,8 +26,8 @@ serve(async (req) => {
 
     // Create a single prompt for all titles
     const titlesPrompt = titles.map((item, index) => `
-Title ${index + 1}: "${item.title}"
-Description ${index + 1}: "${item.description || 'Not provided'}"
+Product: "${item.title}"
+Description: "${item.description || 'Not provided'}"
 `).join('\n');
 
     const prompt = `As a product title specialist, create clear, concise titles (max 5-7 words) for these products.
@@ -40,13 +40,13 @@ RULES:
 3. Focus on the main purpose/benefit
 
 EXAMPLES:
-BAD: "The Perky-Pet 114B Squirrel Stumper Premium Bird Feeder with Advanced Protection System"
-GOOD: "Anti-Squirrel Bird Feeder"
+Original: "The Perky-Pet 114B Squirrel Stumper Premium Bird Feeder with Advanced Protection System"
+Better: "Anti-Squirrel Bird Feeder"
 
-BAD: "Celestron Nature DX 8x42 Professional Grade Binoculars with ED Glass"
-GOOD: "Celestron Nature Binoculars"
+Original: "Celestron Nature DX 8x42 Professional Grade Binoculars with ED Glass"
+Better: "Celestron Nature Binoculars"
 
-Return ONLY the final titles, one per line, in order.`;
+Return each title on a new line, without numbering or prefixes.`;
 
     console.log('Sending batch request to DeepSeek API');
     const startTime = performance.now();
@@ -67,7 +67,7 @@ Return ONLY the final titles, one per line, in order.`;
           { role: "user", content: prompt }
         ],
         max_tokens: 200,
-        temperature: 0.7,
+        temperature: 1.3,
         stream: false
       }),
     });
@@ -92,11 +92,11 @@ Return ONLY the final titles, one per line, in order.`;
       throw new Error('Invalid response format from DeepSeek API');
     }
 
-    // Split response into array of titles
+    // Split response into array of titles and clean up any numbering or extra whitespace
     const generatedTitles = data.choices[0].message.content
       .split('\n')
       .filter(line => line.trim())
-      .map(title => title.trim());
+      .map(title => title.replace(/^\d+\.\s*/, '').trim()); // Remove any numbering
 
     if (generatedTitles.length !== titles.length) {
       console.warn('Mismatch in number of titles:', {
