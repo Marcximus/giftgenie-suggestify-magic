@@ -44,6 +44,12 @@ export const SuggestionsGridItems = ({
 
     // Process each suggestion individually
     suggestions.forEach(async (suggestion, index) => {
+      if (!suggestion) {
+        console.warn('Received undefined suggestion at index:', index);
+        setProcessingCount(count => count - 1);
+        return;
+      }
+
       try {
         console.log('Processing suggestion:', {
           title: suggestion.title,
@@ -93,6 +99,11 @@ export const SuggestionsGridItems = ({
       {processedSuggestions
         .slice(0, processedCount)
         .map((suggestion, index) => {
+          if (!suggestion) {
+            console.warn('Encountered undefined processed suggestion at index:', index);
+            return null;
+          }
+
           const price = suggestion.amazon_price 
             ? suggestion.amazon_price.toString()
             : suggestion.priceRange?.replace('USD ', '') || 'Check price on Amazon';
