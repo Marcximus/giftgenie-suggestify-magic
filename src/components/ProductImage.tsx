@@ -43,7 +43,8 @@ export const ProductImage = ({ title, imageUrl }: ProductImageProps) => {
   const getOptimizedImageUrl = (url: string, width: number) => {
     if (!url) return genericFallback;
     if (url.includes('unsplash.com')) {
-      return `${url}&w=${width}&q=80`;
+      // Increase quality parameter and remove blur
+      return `${url}&w=${width}&q=95&auto=format&fit=crop`;
     }
     return url;
   };
@@ -51,7 +52,8 @@ export const ProductImage = ({ title, imageUrl }: ProductImageProps) => {
   const getTinyPlaceholder = (url: string) => {
     if (!url) return genericFallback;
     if (url.includes('unsplash.com')) {
-      return `${url}&w=20&q=10&blur=5`;
+      // Increase tiny placeholder quality slightly to reduce blur
+      return `${url}&w=40&q=30&blur=2`;
     }
     return url;
   };
@@ -98,8 +100,8 @@ export const ProductImage = ({ title, imageUrl }: ProductImageProps) => {
     const loadImage = async () => {
       setIsLoading(true);
       
-      // Generate srcset for responsive images
-      const sizes = [300, 600, 900];
+      // Generate srcset for responsive images with higher quality
+      const sizes = [400, 800, 1200];  // Increased sizes for better quality
       const srcset = sizes
         .map(width => getOptimizedImageUrl(currentImageUrl, width))
         .map((url, index) => `${url} ${sizes[index]}w`)
@@ -107,7 +109,7 @@ export const ProductImage = ({ title, imageUrl }: ProductImageProps) => {
 
       // Start preloading the image
       try {
-        await preloadImage(getOptimizedImageUrl(currentImageUrl, 600));
+        await preloadImage(getOptimizedImageUrl(currentImageUrl, 800));  // Increased base size
         if (imageRef.current) {
           imageRef.current.srcset = srcset;
         }
@@ -118,7 +120,7 @@ export const ProductImage = ({ title, imageUrl }: ProductImageProps) => {
       }
 
       // Preload next size up for better responsive behavior
-      const nextSizeUrl = getOptimizedImageUrl(currentImageUrl, 900);
+      const nextSizeUrl = getOptimizedImageUrl(currentImageUrl, 1200);
       if (!loadingQueue.has(nextSizeUrl)) {
         preloadQueue.push(nextSizeUrl);
       }
@@ -142,7 +144,7 @@ export const ProductImage = ({ title, imageUrl }: ProductImageProps) => {
         <img
           src={getTinyPlaceholder(currentImageUrl)}
           alt=""
-          className="absolute inset-0 w-full h-full object-contain blur-lg scale-110 transform"
+          className="absolute inset-0 w-full h-full object-contain blur-sm scale-105 transform"
           aria-hidden="true"
           loading="lazy"
         />
@@ -150,11 +152,11 @@ export const ProductImage = ({ title, imageUrl }: ProductImageProps) => {
       
       <img
         ref={imageRef}
-        srcSet={currentImageUrl ? [300, 600, 900]
+        srcSet={currentImageUrl ? [400, 800, 1200]
           .map(width => `${getOptimizedImageUrl(currentImageUrl, width)} ${width}w`)
           .join(', ') : undefined}
-        sizes="(max-width: 640px) 300px, (max-width: 1024px) 600px, 900px"
-        src={currentImageUrl ? getOptimizedImageUrl(currentImageUrl, 600) : genericFallback}
+        sizes="(max-width: 640px) 400px, (max-width: 1024px) 800px, 1200px"
+        src={currentImageUrl ? getOptimizedImageUrl(currentImageUrl, 800) : genericFallback}
         alt={`Product image of ${title}`}
         className={`w-full h-full object-contain transition-all duration-500 ${
           isLoading ? 'opacity-0' : 'opacity-100'
