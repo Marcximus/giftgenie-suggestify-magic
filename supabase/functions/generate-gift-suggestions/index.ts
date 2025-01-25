@@ -6,7 +6,7 @@ import { validateAndCleanSuggestions } from '../_shared/suggestion-validator.ts'
 import { processSuggestionsInBatches } from '../_shared/batch-processor.ts';
 import { buildGiftPrompt } from '../_shared/prompt-builder.ts';
 
-const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
+const DEEPSEEK_API_KEY = Deno.env.get('DEEPSEEK_API_KEY');
 
 serve(async (req) => {
   const startTime = performance.now();
@@ -32,15 +32,15 @@ serve(async (req) => {
     const enhancedPrompt = buildGiftPrompt(prompt);
     console.log('Enhanced prompt:', enhancedPrompt);
 
-    // Generate suggestions using OpenAI
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    // Generate suggestions using DeepSeek
+    const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${OPENAI_API_KEY}`,
+        'Authorization': `Bearer ${DEEPSEEK_API_KEY}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: "gpt-4o",
+        model: "deepseek-chat",
         messages: [
           {
             role: "system",
@@ -57,21 +57,20 @@ ONLY return a raw JSON array like this: ["suggestion1", "suggestion2", "suggesti
             content: enhancedPrompt
           }
         ],
-        temperature: 0.7,
         max_tokens: 1000,
       }),
     });
 
     if (!response.ok) {
-      console.error('OpenAI API error:', response.status, await response.text());
-      throw new Error(`OpenAI API error: ${response.status}`);
+      console.error('DeepSeek API error:', response.status, await response.text());
+      throw new Error(`DeepSeek API error: ${response.status}`);
     }
 
     const data = await response.json();
-    console.log('OpenAI raw response:', data);
+    console.log('DeepSeek raw response:', data);
     
     const content = data.choices[0].message.content.trim();
-    console.log('Content from OpenAI:', content);
+    console.log('Content from DeepSeek:', content);
     
     // Validate and clean the suggestions
     const suggestions = validateAndCleanSuggestions(content);
