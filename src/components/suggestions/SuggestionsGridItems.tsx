@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { ProductCard } from '../ProductCard';
 import { SuggestionSkeleton } from '../SuggestionSkeleton';
 import { GiftSuggestion } from '@/types/suggestions';
@@ -14,6 +15,8 @@ export const SuggestionsGridItems = ({
   onMoreLikeThis,
   isLoading
 }: SuggestionsGridItemsProps) => {
+  const [processedSuggestions, setProcessedSuggestions] = useState<(GiftSuggestion & { optimizedTitle: string })[]>([]);
+
   const generateTitle = async (originalTitle: string, description: string) => {
     try {
       const { data, error } = await supabase.functions.invoke('generate-product-title', {
@@ -31,6 +34,28 @@ export const SuggestionsGridItems = ({
       return originalTitle;
     }
   };
+
+  useEffect(() => {
+    const processSuggestions = async () => {
+      const processed = await Promise.all(
+        suggestions.map(async (suggestion) => {
+          console.log('Processing suggestion:', {
+            title: suggestion.title,
+            amazonPrice: suggestion.amazon_price,
+            priceRange: suggestion.priceRange
+          });
+
+          const optimizedTitle = await generateTitle(suggestion.title, suggestion.description);
+          return { ...suggestion, optimizedTitle };
+        })
+      );
+      setProcessedSuggestions(processed);
+    };
+
+    if (suggestions.length > 0) {
+      processSuggestions();
+    }
+  }, [suggestions]);
 
   if (isLoading) {
     return (
@@ -51,16 +76,7 @@ export const SuggestionsGridItems = ({
 
   return (
     <>
-      {suggestions.map(async (suggestion, index) => {
-        console.log('Processing suggestion:', {
-          title: suggestion.title,
-          amazonPrice: suggestion.amazon_price,
-          priceRange: suggestion.priceRange
-        });
-
-        // Generate optimized title
-        const optimizedTitle = await generateTitle(suggestion.title, suggestion.description);
-
+      {processedSuggestions.map((suggestion, index) => {
         // Only convert to string if we have a valid price
         const price = suggestion.amazon_price 
           ? suggestion.amazon_price.toString()
@@ -76,7 +92,7 @@ export const SuggestionsGridItems = ({
             }}
           >
             <ProductCard
-              title={optimizedTitle}
+              title={suggestion.optimizedTitle}
               description={suggestion.description}
               price={price}
               amazonUrl={suggestion.amazon_url || "#"}
