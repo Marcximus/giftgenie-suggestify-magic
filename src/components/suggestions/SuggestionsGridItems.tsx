@@ -19,8 +19,6 @@ export const SuggestionsGridItems = ({
   isLoading
 }: SuggestionsGridItemsProps) => {
   const [processedSuggestions, setProcessedSuggestions] = useState<(GiftSuggestion & { optimizedTitle: string })[]>([]);
-  const [processingIndex, setProcessingIndex] = useState<number | null>(null);
-  const processingQueue = useRef<number[]>([]);
   const abortController = useRef<AbortController | null>(null);
 
   const generateTitle = useCallback(async (originalTitle: string, description: string) => {
@@ -53,60 +51,60 @@ export const SuggestionsGridItems = ({
     }
   }, []);
 
-  const processNextInQueue = useCallback(async () => {
-    if (processingIndex !== null || processingQueue.current.length === 0) return;
-
-    const index = processingQueue.current[0];
-    const suggestion = suggestions[index];
-
-    if (!suggestion) {
-      processingQueue.current.shift();
-      return;
-    }
-
-    setProcessingIndex(index);
-    console.log('Processing suggestion:', index);
-
-    try {
-      abortController.current = new AbortController();
-      const optimizedTitle = await generateTitle(suggestion.title, suggestion.description);
-      
-      if (!abortController.current.signal.aborted) {
-        setProcessedSuggestions(prev => {
-          const newSuggestions = [...prev];
-          newSuggestions[index] = { ...suggestion, optimizedTitle };
-          return newSuggestions;
-        });
-      }
-    } catch (error) {
-      console.error('Error processing suggestion:', error);
-    } finally {
-      if (!abortController.current?.signal.aborted) {
-        processingQueue.current.shift();
-        setProcessingIndex(null);
-      }
-    }
-  }, [processingIndex, suggestions, generateTitle]);
-
   useEffect(() => {
     if (suggestions.length === 0) return;
     
     // Reset state when suggestions change
     setProcessedSuggestions([]);
-    setProcessingIndex(null);
-    processingQueue.current = Array.from({ length: suggestions.length }, (_, i) => i);
     
     // Cleanup previous processing
+    if (abortController.current) {
+      abortController.current.abort();
+    }
+    abortController.current = new AbortController();
+
+    // Process all suggestions in parallel
+    const processSuggestions = async () => {
+      try {
+        console.log('Processing all suggestions in parallel');
+        const startTime = performance.now();
+
+        const results = await Promise.all(
+          suggestions.map(async (suggestion, index) => {
+            if (abortController.current?.signal.aborted) {
+              throw new Error('Processing aborted');
+            }
+
+            const optimizedTitle = await generateTitle(suggestion.title, suggestion.description);
+            console.log(`Processed suggestion ${index + 1}/${suggestions.length}`);
+            
+            return {
+              ...suggestion,
+              optimizedTitle
+            };
+          })
+        );
+
+        if (!abortController.current?.signal.aborted) {
+          setProcessedSuggestions(results);
+          const duration = performance.now() - startTime;
+          console.log(`All suggestions processed in ${duration}ms`);
+        }
+      } catch (error) {
+        if (error.message !== 'Processing aborted') {
+          console.error('Error processing suggestions:', error);
+        }
+      }
+    };
+
+    processSuggestions();
+
     return () => {
       if (abortController.current) {
         abortController.current.abort();
       }
     };
-  }, [suggestions]);
-
-  useEffect(() => {
-    processNextInQueue();
-  }, [processNextInQueue, processingIndex]);
+  }, [suggestions, generateTitle]);
 
   if (isLoading) {
     return (
@@ -129,9 +127,8 @@ export const SuggestionsGridItems = ({
     <>
       {suggestions.map((suggestion, index) => {
         const processed = processedSuggestions[index];
-        const isProcessing = !processed && (processingIndex === index || processingQueue.current.includes(index));
 
-        if (isProcessing) {
+        if (!processed) {
           return (
             <div 
               key={`processing-${index}`}
@@ -142,8 +139,6 @@ export const SuggestionsGridItems = ({
             </div>
           );
         }
-
-        if (!processed) return null;
 
         const price = processed.amazon_price 
           ? processed.amazon_price.toString()
