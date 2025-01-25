@@ -23,17 +23,27 @@ Original Title: "${title}"
 Product Description: "${description || 'Not provided'}"
 
 CRITICAL TITLE FORMATTING RULES:
-1. Keep essential product type/category words (e.g., "Cleaning Kit", "Photo Printer", "Gaming Mouse")
+1. Keep essential product feature/type/category words
 2. Include brand name only if it's well-known
-3. Remove unnecessary words like "The", "Premium", "New", "Latest"
-4. Remove model numbers unless crucial for identification
+4. Remove model numbers unless crucial
 5. Maximum 5-7 words
-6. Preserve purpose-specific terms (e.g., "Wireless", "Mechanical", "Ergonomic")
+6. Preserve purpose-specific terms
 
-Examples of good transformations:
-- "The Perky-Pet 114B Squirrel Stumper Premium Bird Feeder with Advanced Protection System" → "Perky-Pet Squirrel-Proof Bird Feeder"
-- "Altura Photo Professional Cleaning Kit for DSLR Cameras and Sensitive Electronics" → "Altura Photo Professional Cleaning Kit"
-- "The Polaroid Now 2nd Generation I-Type Instant Film Camera" → "Polaroid Now Instant Camera"
+STUDY THESE EXAMPLES CAREFULLY:
+BAD: "The Perky-Pet 114B Squirrel Stumper Premium Bird Feeder with Advanced Protection System"
+GOOD: "Anti-Squirrel Bird Feeder"
+
+BAD: "Celestron Nature DX 8x42 Professional Grade Binoculars with ED Glass"
+GOOD: "Celestron Nature Binoculars"
+
+BAD: "SITKA Gear Men's Core Lightweight Hunting Hoody with Advanced Odor Control"
+GOOD: "SITKA Hunting Hoody"
+
+BAD: "The Plano EDGE 3700 Premium Professional Grade Tackle Storage System"
+GOOD: "Plano Utility Box"
+
+BAD: "Harney & Sons Tower of London Premium Loose Leaf Black Tea Blend"
+GOOD: "Harney & Sons Black Tea"
 
 Return ONLY the final title, no explanations or additional text.`;
 
