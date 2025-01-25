@@ -1,11 +1,14 @@
 import { supabase } from "@/integrations/supabase/client";
 import type { AmazonProduct } from './types';
+import { Database } from '@/integrations/supabase/types';
+
+type AmazonCacheRow = Database['public']['Tables']['amazon_product_cache']['Row'];
 
 export const getCachedProduct = async (searchTerm: string, priceRange?: string): Promise<AmazonProduct | null> => {
   try {
     const { data, error } = await supabase
       .from('amazon_product_cache')
-      .select('product_data')
+      .select('*')
       .eq('search_term', searchTerm.toLowerCase())
       .eq('price_range', priceRange || '')
       .single();
@@ -14,16 +17,19 @@ export const getCachedProduct = async (searchTerm: string, priceRange?: string):
     
     if (data) {
       // Update last_accessed and hit_count
+      const cacheRow = data as AmazonCacheRow;
       await supabase
         .from('amazon_product_cache')
         .update({
           last_accessed: new Date().toISOString(),
-          hit_count: data.hit_count + 1
+          hit_count: (cacheRow.hit_count || 0) + 1
         })
         .eq('search_term', searchTerm.toLowerCase())
         .eq('price_range', priceRange || '');
 
-      return data.product_data as AmazonProduct;
+      // Safely cast the stored JSON data to AmazonProduct
+      const productData = cacheRow.product_data as unknown as AmazonProduct;
+      return productData;
     }
 
     return null;
@@ -39,15 +45,17 @@ export const cacheProduct = async (
   priceRange?: string
 ): Promise<void> => {
   try {
+    const cacheEntry = {
+      search_term: searchTerm.toLowerCase(),
+      price_range: priceRange || '',
+      product_data: product as unknown as Json,
+      last_accessed: new Date().toISOString(),
+      expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
+    };
+
     await supabase
       .from('amazon_product_cache')
-      .upsert({
-        search_term: searchTerm.toLowerCase(),
-        price_range: priceRange || '',
-        product_data: product,
-        last_accessed: new Date().toISOString(),
-        expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
-      }, {
+      .upsert(cacheEntry, {
         onConflict: 'search_term,price_range'
       });
   } catch (error) {
