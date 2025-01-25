@@ -46,7 +46,7 @@ serve(async (req) => {
             content: `Create a fun, engaging blog post about: ${title}\n\nIMPORTANT: You MUST generate EXACTLY 10 product recommendations, no more, no less.`
           }
         ],
-        temperature: 0.7,
+        temperature: 1.3, // Updated temperature for better creativity and engagement
         max_tokens: 4000,
         top_p: 0.95,
         presence_penalty: 0.1,
