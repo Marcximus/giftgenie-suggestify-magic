@@ -41,26 +41,27 @@ export const searchProducts = async (
     return [];
   }
 
-  console.log('Starting product search with terms:', searchTerms);
+  console.log('Starting optimized product search with terms:', searchTerms);
   const cleanedTerms = searchTerms.map(cleanSearchTerm);
   
   // Try with exact search terms first
   const { products, errors } = await batchSearchProducts(cleanedTerms, apiKey);
-  if (products.length === searchTerms.length) {
-    return products;
+  
+  // Only retry failed searches if we don't have enough results
+  if (products.length < searchTerms.length) {
+    const failedTerms = searchTerms.filter((_, index) => 
+      !products.some(p => p.title.toLowerCase().includes(cleanedTerms[index].toLowerCase()))
+    );
+    
+    if (failedTerms.length > 0) {
+      console.log('Retrying failed terms with simplified search:', failedTerms);
+      const simplifiedTerms = failedTerms.map(simplifySearchTerm);
+      const { products: fallbackProducts } = await batchSearchProducts(simplifiedTerms, apiKey);
+      return [...products, ...fallbackProducts];
+    }
   }
 
-  // For failed searches, try with simplified terms
-  const failedTerms = searchTerms.filter((_, index) => 
-    !products.some(p => p.title.toLowerCase().includes(cleanedTerms[index].toLowerCase()))
-  );
-  
-  console.log('Retrying failed terms with simplified search:', failedTerms);
-  const simplifiedTerms = failedTerms.map(simplifySearchTerm);
-  const { products: fallbackProducts } = await batchSearchProducts(simplifiedTerms, apiKey);
-
-  // Combine successful products with fallback results
-  return [...products, ...fallbackProducts];
+  return products;
 };
 
 export const formatProduct = (product: any): AmazonProduct => {
