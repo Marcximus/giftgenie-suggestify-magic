@@ -32,38 +32,13 @@ serve(async (req) => {
     const interests = interestsMatch ? interestsMatch[1].split(' and ') : [];
     console.log('Extracted interests:', interests);
 
-    // Build a more structured prompt with clearer title formatting rules
-    const enhancedPrompt = `Based on the request "${prompt}", suggest 8 highly specific and thoughtful gift ideas that would genuinely delight the recipient.
+    const enhancedPrompt = `Based on the request "${prompt}", suggest 8 specific and thoughtful gift ideas that would genuinely delight the recipient.
 
-CRITICAL TITLE FORMATTING RULES:
-1. Each title MUST be 5-7 words maximum
-2. Focus on the essential product information only
-3. Remove unnecessary words like "The", "Premium", "New", "Latest"
-4. Include brand name only if it's well-known
-5. Avoid model numbers and technical specifications
-6. No HTML tags or special characters
-
-STUDY THESE EXAMPLES CAREFULLY:
-BAD: "The Perky-Pet 114B Squirrel Stumper Premium Bird Feeder with Advanced Protection System"
-GOOD: "Anti-Squirrel Bird Feeder"
-
-BAD: "Celestron Nature DX 8x42 Professional Grade Binoculars with ED Glass"
-GOOD: "Celestron Binoculars"
-
-BAD: "SITKA Gear Men's Core Lightweight Hunting Hoody with Advanced Odor Control"
-GOOD: "SITKA Hunting Hoody"
-
-BAD: "The Plano EDGE 3700 Premium Professional Grade Tackle Storage System"
-GOOD: "Plano Utility Box"
-
-BAD: "Harney & Sons Tower of London Premium Loose Leaf Black Tea Blend"
-GOOD: "Harney & Sons Black Tea"
-
-ADDITIONAL REQUIREMENTS:
-1. MUST include at least 2 gifts related to each interest: ${interests.join(', ')}
-2. Ensure gifts are appropriate for the specified budget
-3. Each suggestion must be from a different product category
-4. Avoid similar products or variations of the same item
+Consider:
+- Age, gender, and occasion mentioned
+- CRITICAL: Any budget constraints specified (ok to fluctuate by 20% more or less)
+- The recipient's interests and preferences
+- Avoid suggesting similar items (e.g., don't suggest multiple necklaces or multiple palettes)
 
 Return ONLY a JSON array of exactly 8 strings, with no additional text.`;
 
@@ -86,15 +61,14 @@ Return ONLY a JSON array of exactly 8 strings, with no additional text.`;
             role: "system",
             content: `You are a gift suggestion expert that follows these rules:
 1. ALWAYS consider age, gender, occasion, and budget from the user's request
-2. Format titles following the EXACT rules provided
-3. Return EXACTLY 8 suggestions in a JSON array
-4. Each suggestion must be HIGHLY SPECIFIC
-5. DO NOT include any explanatory text or markdown
-6. DO NOT use backticks or code blocks
-7. ONLY return a raw JSON array of strings
-8. Suggest products that would genuinely interest the recipient
-9. Consider both mainstream and unique gift ideas
-10. MUST include items related to ALL specified interests`
+2. Return EXACTLY 8 suggestions in a JSON array
+3. Each suggestion must be HIGHLY SPECIFIC
+4. DO NOT include any explanatory text or markdown
+5. DO NOT use backticks or code blocks
+6. ONLY return a raw JSON array of strings
+7. Suggest products that would genuinely interest the recipient
+8. Consider both mainstream and unique gift ideas
+9. MUST include items related to ALL specified interests`
           },
           { role: "user", content: enhancedPrompt }
         ],
@@ -151,7 +125,6 @@ Return ONLY a JSON array of exactly 8 strings, with no additional text.`;
         } 
       }
     );
-      
   } catch (error) {
     console.error('Error in generate-gift-suggestions function:', error);
     console.error('Stack trace:', error.stack);
