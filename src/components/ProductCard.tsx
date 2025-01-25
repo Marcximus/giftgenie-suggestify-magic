@@ -68,53 +68,42 @@ const ProductCardComponent = ({
   imageUrl,
   onMoreLikeThis 
 }: ProductCardProps) => {
-  const [simplifiedTitle, setSimplifiedTitle] = useState(title);
-  const [isProcessing, setIsProcessing] = useState(false);
+  const [simplifiedTitle, setSimplifiedTitle] = useState(() => {
+    // Try to get from cache on initial render
+    const cacheKey = `${title}-${description || ''}`;
+    return titleCache.has(cacheKey) ? titleCache.get(cacheKey)! : title;
+  });
 
-  // Memoize the update function to prevent unnecessary re-renders
-  const debouncedUpdateTitle = useMemo(
-    () => debounce(async (title: string, description?: string) => {
-      if (!title || isProcessing) return;
-
-      setIsProcessing(true);
+  // Remove isProcessing state as it's causing unnecessary re-renders
+  const updateTitle = useCallback(
+    debounce(async (title: string, description?: string) => {
       try {
         const newTitle = await simplifyTitle(title, description);
         setSimplifiedTitle(newTitle);
       } catch (error) {
         console.error('Failed to update title:', error);
-      } finally {
-        setIsProcessing(false);
       }
     }, 500),
-    [isProcessing]
+    [] // Empty dependency array since the function doesn't depend on any props or state
   );
 
   // Effect to handle title updates
   useEffect(() => {
-    let isMounted = true;
-
-    const processTitle = async () => {
-      if (!isMounted) return;
-      
-      // Check cache first
-      const cacheKey = `${title}-${description || ''}`;
-      if (titleCache.has(cacheKey)) {
-        setSimplifiedTitle(titleCache.get(cacheKey)!);
-        return;
-      }
-
-      // If not in cache, trigger debounced update
-      debouncedUpdateTitle(title, description);
-    };
-
-    processTitle();
+    const cacheKey = `${title}-${description || ''}`;
+    if (titleCache.has(cacheKey)) {
+      // If in cache, update synchronously
+      setSimplifiedTitle(titleCache.get(cacheKey)!);
+    } else {
+      // If not in cache, trigger async update
+      updateTitle(title, description);
+    }
 
     return () => {
-      isMounted = false;
+      updateTitle.cancel(); // Cancel any pending debounced calls
     };
-  }, [title, description, debouncedUpdateTitle]);
+  }, [title, description]); // Remove updateTitle from dependencies
 
-  // Memoize schema data to prevent unnecessary re-renders
+  // Memoize schema data
   const schemaData = useMemo(() => ({
     "@context": "https://schema.org",
     "@type": "Product",
