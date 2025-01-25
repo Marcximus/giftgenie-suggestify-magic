@@ -46,18 +46,19 @@ export const SearchInput = ({
           className="w-full sm:w-auto rounded-full backdrop-blur-lg bg-gradient-to-r from-purple-500/80 via-blue-500/80 to-purple-500/80 border border-white/20 shadow-[0_8px_32px_rgba(0,0,0,0.12)] hover:shadow-[0_8px_32px_rgba(31,34,245,0.12)] text-white/90 hover:text-white hover:bg-white/20"
         >
           {isLoading ? (
-            <Spinner 
-              variant="infinite" 
-              className="h-4 w-4 [&>path]:stroke-[url(#spinner-gradient)]"
-            >
-              <defs>
+            <>
+              <svg width="0" height="0">
                 <linearGradient id="spinner-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                  <stop offset="0%" style={{ stopColor: '#9b87f5' }} />
-                  <stop offset="50%" style={{ stopColor: '#D946EF' }} />
-                  <stop offset="100%" style={{ stopColor: '#0EA5E9' }} />
+                  <stop offset="0%" stopColor="#9b87f5" />
+                  <stop offset="50%" stopColor="#D946EF" />
+                  <stop offset="100%" stopColor="#0EA5E9" />
                 </linearGradient>
-              </defs>
-            </Spinner>
+              </svg>
+              <Spinner 
+                variant="infinite" 
+                className="h-4 w-4 [&>path]:stroke-[url(#spinner-gradient)]"
+              />
+            </>
           ) : (
             <Search className="h-4 w-4" />
           )}
