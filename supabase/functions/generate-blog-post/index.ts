@@ -54,7 +54,7 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: "gpt-4o", // Updated to use the correct model
+        model: "gpt-4o",
         messages: [
           prompt,
           {
@@ -62,7 +62,7 @@ serve(async (req) => {
             content: `Create a fun, engaging blog post about: ${title}\n\n${demographicContext}\n\nIMPORTANT: You MUST generate EXACTLY 10 product recommendations, no more, no less.`
           }
         ],
-        temperature: 0.5,
+        temperature: 0.6, // Updated temperature from 0.5 to 0.6
         max_tokens: 3500,
         presence_penalty: 0.1,
         frequency_penalty: 0.1,
