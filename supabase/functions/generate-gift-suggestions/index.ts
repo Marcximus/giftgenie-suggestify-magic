@@ -27,7 +27,24 @@ serve(async (req) => {
       throw new Error('Invalid prompt');
     }
 
-    // Single request for all 8 suggestions
+    // Extract interests from the prompt
+    const interestsMatch = prompt.match(/who likes (.*?) with a budget/i);
+    const interests = interestsMatch ? interestsMatch[1].split(' and ') : [];
+    console.log('Extracted interests:', interests);
+
+    // Build a more structured prompt that ensures coverage of all interests
+    const enhancedPrompt = `Based on the request "${prompt}", suggest 8 highly specific and thoughtful gift ideas that would genuinely delight the recipient.
+
+IMPORTANT REQUIREMENTS:
+1. MUST include at least 2 gifts related to each interest: ${interests.join(', ')}
+2. Ensure gifts are appropriate for the specified budget
+3. Each suggestion must be from a different product category
+4. Format each suggestion as: "[Brand Name] [Specific Product Model] ([Premium/Special Edition if applicable])"
+
+Return ONLY a JSON array of exactly 8 strings, with no additional text.`;
+
+    console.log('Enhanced prompt:', enhancedPrompt);
+
     const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -40,7 +57,6 @@ serve(async (req) => {
           {
             role: "system",
             content: `You are a gift suggestion expert that follows these rules:
-
 1. ALWAYS consider age, gender, occasion, and budget from the user's request
 2. Format each suggestion as: "[Brand Name] [Specific Product Model] ([Premium/Special Edition if applicable])"
 3. Return EXACTLY 8 suggestions in a JSON array
@@ -50,31 +66,15 @@ serve(async (req) => {
 7. ONLY return a raw JSON array of strings
 8. Suggest products that would genuinely interest the recipient
 9. Consider both mainstream and unique gift ideas
-10. Feel free to suggest multiple items from the same category if they make sense for the recipient
-
-Example response:
-["Sony WH-1000XM4 Wireless Headphones (Premium Edition)", "suggestion2", "suggestion3", ...]`
-            },
-            { 
-              role: "user", 
-              content: `Based on the request "${prompt}", suggest 8 highly specific and thoughtful gift ideas that would genuinely delight the recipient. Consider their interests and preferences carefully.
-
-Format EACH suggestion as a string in this EXACT format:
-"[Brand Name] [Specific Product Model] ([Premium/Special Edition if applicable])"
-
-Return ONLY a JSON array of exactly 8 strings.`
-            }
-          ],
-          max_tokens: 1000,
-          temperature: 1.3,
-          stream: true,
-        }),
-      });
-
-    if (!response.ok) {
-      console.error('DeepSeek API error:', response.status);
-      throw new Error(`DeepSeek API error: ${response.status}`);
-    }
+10. MUST include items related to ALL specified interests`
+          },
+          { role: "user", content: enhancedPrompt }
+        ],
+        max_tokens: 1000,
+        temperature: 1.3,
+        stream: true,
+      }),
+    });
 
     const reader = response.body?.getReader();
     if (!reader) throw new Error('No reader available');
