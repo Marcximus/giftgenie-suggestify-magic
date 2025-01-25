@@ -1,32 +1,33 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
-import { corsHeaders } from '../_shared/cors.ts';
 
 const DEEPSEEK_API_KEY = Deno.env.get('DEEPSEEK_API_KEY');
 
-interface TitleRequest {
-  titles: Array<{
-    title: string;
-    description?: string;
-  }>;
-}
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
 
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { titles } = await req.json() as TitleRequest;
-    console.log('Batch processing titles:', titles.length);
+    const requestData = await req.json();
+    console.log('Received request data:', requestData);
 
-    if (!titles?.length) {
-      throw new Error('Titles array is required');
+    // Handle both single title and batch requests
+    const titlesToProcess = requestData.titles || [requestData];
+    
+    if (!Array.isArray(titlesToProcess)) {
+      throw new Error('Invalid request format. Expected titles array or single title object');
     }
 
     // Create a single prompt for all titles
-    const titlesPrompt = titles.map((item, index) => `
-Product: "${item.title}"
+    const titlesPrompt = titlesToProcess.map((item, index) => `
+Product ${index + 1}: "${item.title}"
 Description: "${item.description || 'Not provided'}"
 `).join('\n');
 
@@ -48,7 +49,7 @@ Better: "Celestron Nature Binoculars"
 
 Return each title on a new line, without numbering or prefixes.`;
 
-    console.log('Sending batch request to DeepSeek API');
+    console.log('Sending request to DeepSeek API');
     const startTime = performance.now();
 
     const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
@@ -96,23 +97,26 @@ Return each title on a new line, without numbering or prefixes.`;
     const generatedTitles = data.choices[0].message.content
       .split('\n')
       .filter(line => line.trim())
-      .map(title => title.replace(/^\d+\.\s*/, '').trim()); // Remove any numbering
+      .map(title => title.replace(/^\d+\.\s*/, '').trim());
 
-    if (generatedTitles.length !== titles.length) {
+    if (generatedTitles.length !== titlesToProcess.length) {
       console.warn('Mismatch in number of titles:', {
-        requested: titles.length,
+        requested: titlesToProcess.length,
         received: generatedTitles.length
       });
     }
 
+    // If it was a single title request, return just that title
+    const result = requestData.titles ? { titles: generatedTitles } : { title: generatedTitles[0] };
+
     console.log('Batch processing complete:', {
-      requestedTitles: titles.length,
+      requestedTitles: titlesToProcess.length,
       generatedTitles: generatedTitles.length,
       processingTime: `${(performance.now() - startTime).toFixed(2)}ms`
     });
 
     return new Response(
-      JSON.stringify({ titles: generatedTitles }),
+      JSON.stringify(result),
       { 
         headers: { 
           ...corsHeaders, 
