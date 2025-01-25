@@ -118,6 +118,7 @@ const ProductCardComponent = ({
       </CardHeader>
       
       <ProductCardContent 
+        title={simplifiedTitle}
         description={description}
         price={price}
         rating={rating}
