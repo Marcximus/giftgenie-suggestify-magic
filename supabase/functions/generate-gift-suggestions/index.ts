@@ -1,11 +1,74 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
-import { corsHeaders } from '../_shared/cors.ts';
 import { validateAndCleanSuggestions } from '../_shared/suggestion-validator.ts';
 import { processSuggestionsInBatches } from '../_shared/batch-processor.ts';
 
-const DEEPSEEK_API_KEY = Deno.env.get('DEEPSEEK_API_KEY');
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
+
+async function generateTitleFromDescription(description: string): Promise<string> {
+  const DEEPSEEK_API_KEY = Deno.env.get('DEEPSEEK_API_KEY');
+  
+  try {
+    const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${DEEPSEEK_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: "deepseek-chat",
+        messages: [
+          {
+            role: "system",
+            content: `You are a product title generator. Your task is to create clear, concise product titles (5-7 words max) from product descriptions.
+
+RULES:
+1. NO marketing terms (Premium, Luxury, Professional, etc.)
+2. Include brand name only if well-known
+3. Focus on the essential product type and key feature
+4. Remove unnecessary adjectives
+5. Be specific but brief
+
+Examples:
+BAD: "Premium Professional LED Makeup Mirror with 3X Magnification"
+GOOD: "LED Makeup Mirror with Magnification"
+
+BAD: "Luxury Handcrafted Italian Leather Travel Journal Set"
+GOOD: "Leather Travel Journal"
+
+Return ONLY the title, no explanation or additional text.`
+          },
+          {
+            role: "user",
+            content: `Create a clear, concise title (5-7 words max) for this product description: ${description}`
+          }
+        ],
+        temperature: 0.3,
+        max_tokens: 50,
+        stream: false
+      }),
+    });
+
+    if (!response.ok) {
+      console.error('Title generation API error:', await response.text());
+      throw new Error('Failed to generate title');
+    }
+
+    const data = await response.json();
+    console.log('Generated title response:', data);
+    
+    return data.choices[0].message.content.trim()
+      .replace(/["']/g, '')  // Remove quotes
+      .replace(/^\w+:\s*/, ''); // Remove any prefix like "Title:"
+  } catch (error) {
+    console.error('Error generating title:', error);
+    return description.split(' ').slice(0, 6).join(' '); // Fallback to first 6 words
+  }
+}
 
 serve(async (req) => {
   const startTime = performance.now();
@@ -27,56 +90,11 @@ serve(async (req) => {
       throw new Error('Invalid prompt');
     }
 
-    // Extract interests from the prompt
-    const interestsMatch = prompt.match(/who likes (.*?) with a budget/i);
-    const interests = interestsMatch ? interestsMatch[1].split(' and ') : [];
-    console.log('Extracted interests:', interests);
-
-    // Build a more structured prompt with clearer title formatting rules
-    const enhancedPrompt = `Based on the request "${prompt}", suggest 8 highly specific and thoughtful gift ideas that would genuinely delight the recipient.
-
-CRITICAL TITLE FORMATTING RULES:
-1. Each title MUST be 5-7 words maximum
-2. Focus on the essential product information only
-3. Remove unnecessary words like "The", "Premium", "New", "Latest"
-4. Include brand name only if it's well-known
-5. Avoid model numbers and technical specifications
-6. No HTML tags or special characters
-
-STUDY THESE EXAMPLES CAREFULLY:
-BAD: "The Perky-Pet 114B Squirrel Stumper Premium Bird Feeder with Advanced Protection System"
-GOOD: "Anti-Squirrel Bird Feeder"
-
-BAD: "Celestron Nature DX 8x42 Professional Grade Binoculars with ED Glass"
-GOOD: "Celestron Binoculars"
-
-BAD: "SITKA Gear Men's Core Lightweight Hunting Hoody with Advanced Odor Control"
-GOOD: "SITKA Hunting Hoody"
-
-BAD: "The Plano EDGE 3700 Premium Professional Grade Tackle Storage System"
-GOOD: "Plano Utility Box"
-
-BAD: "Harney & Sons Tower of London Premium Loose Leaf Black Tea Blend"
-GOOD: "Harney & Sons Black Tea"
-
-ADDITIONAL REQUIREMENTS:
-1. MUST include at least 2 gifts related to each interest: ${interests.join(', ')}
-2. Ensure gifts are appropriate for the specified budget
-3. Each suggestion must be from a different product category
-4. Avoid similar products or variations of the same item
-
-Return ONLY a JSON array of exactly 8 strings, with no additional text.`;
-
-    console.log('Enhanced prompt:', enhancedPrompt);
-
-    if (!DEEPSEEK_API_KEY) {
-      throw new Error('DEEPSEEK_API_KEY is not configured');
-    }
-
+    // Initial suggestion generation with DeepSeek
     const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${DEEPSEEK_API_KEY}`,
+        'Authorization': `Bearer ${Deno.env.get('DEEPSEEK_API_KEY')}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
@@ -84,21 +102,12 @@ Return ONLY a JSON array of exactly 8 strings, with no additional text.`;
         messages: [
           {
             role: "system",
-            content: `You are a gift suggestion expert that follows these rules:
-1. ALWAYS consider age, gender, occasion, and budget from the user's request
-2. Format titles following the EXACT rules provided
-3. Return EXACTLY 8 suggestions in a JSON array
-4. Each suggestion must be HIGHLY SPECIFIC
-5. DO NOT include any explanatory text or markdown
-6. DO NOT use backticks or code blocks
-7. ONLY return a raw JSON array of strings
-8. Suggest products that would genuinely interest the recipient
-9. Consider both mainstream and unique gift ideas
-10. MUST include items related to ALL specified interests`
+            content: `You are a gift suggestion expert. Generate detailed product descriptions for gift ideas.
+            Focus on describing the product's features and benefits rather than creating fancy titles.
+            Return a JSON array of exactly 8 detailed product descriptions.`
           },
-          { role: "user", content: enhancedPrompt }
+          { role: "user", content: prompt }
         ],
-        max_tokens: 1000,
         temperature: 1.3,
         stream: false
       }),
@@ -117,14 +126,27 @@ Return ONLY a JSON array of exactly 8 strings, with no additional text.`;
       throw new Error('Invalid response format from DeepSeek API');
     }
 
-    const suggestions = validateAndCleanSuggestions(data.choices[0].message.content);
-    console.log('Validated suggestions:', suggestions);
+    const descriptions = validateAndCleanSuggestions(data.choices[0].message.content);
+    console.log('Validated descriptions:', descriptions);
     
-    if (!suggestions || suggestions.length !== 8) {
-      throw new Error('Did not receive exactly 8 suggestions');
+    if (!descriptions || descriptions.length !== 8) {
+      throw new Error('Did not receive exactly 8 descriptions');
     }
 
-    // Process suggestions
+    // Generate clear titles from descriptions
+    console.log('Generating titles from descriptions...');
+    const titlesPromises = descriptions.map(desc => generateTitleFromDescription(desc));
+    const titles = await Promise.all(titlesPromises);
+    
+    console.log('Generated titles:', titles);
+
+    // Combine titles with descriptions
+    const suggestions = descriptions.map((description, index) => ({
+      title: titles[index],
+      description: description
+    }));
+
+    // Process suggestions with Amazon data
     console.log('Processing suggestions:', suggestions);
     const processedProducts = await processSuggestionsInBatches(suggestions);
     console.log('Processed products:', processedProducts);
