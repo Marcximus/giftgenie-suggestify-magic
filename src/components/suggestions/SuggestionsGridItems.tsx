@@ -59,9 +59,6 @@ export const SuggestionsGridItems = ({
       const startTime = performance.now();
       console.log('Starting parallel processing of suggestions');
 
-      // Initialize array with placeholders to maintain order
-      setProcessedSuggestions(new Array(suggestions.length).fill(null));
-
       // Process suggestions in parallel batches of 4
       const batchSize = 4;
       const batches = Math.ceil(suggestions.length / batchSize);
@@ -72,31 +69,39 @@ export const SuggestionsGridItems = ({
         const batchItems = suggestions.slice(batchStart, batchEnd);
 
         try {
-          // Process batch items in parallel
-          await Promise.all(
+          // Process batch in parallel
+          const batchResults = await Promise.all(
             batchItems.map(async (suggestion, index) => {
               const globalIndex = batchStart + index;
               setProcessingIndexes(prev => new Set([...prev, globalIndex]));
 
               const optimizedTitle = await generateTitle(suggestion.title, suggestion.description);
               
-              // Update state while maintaining order
-              setProcessedSuggestions(prev => {
-                const newSuggestions = [...prev];
-                newSuggestions[globalIndex] = {
-                  ...suggestion,
-                  optimizedTitle
-                };
-                return newSuggestions;
-              });
-
-              setProcessingIndexes(prev => {
-                const newIndexes = new Set(prev);
-                newIndexes.delete(globalIndex);
-                return newIndexes;
-              });
+              return {
+                ...suggestion,
+                optimizedTitle
+              };
             })
           );
+
+          // Update state with batch results while preserving order
+          setProcessedSuggestions(prev => {
+            const newSuggestions = [...prev];
+            batchResults.forEach((result, index) => {
+              newSuggestions[batchStart + index] = result;
+            });
+            return newSuggestions;
+          });
+
+          // Update processing indexes
+          setProcessingIndexes(prev => {
+            const newIndexes = new Set(prev);
+            batchItems.forEach((_, index) => {
+              newIndexes.delete(batchStart + index);
+            });
+            return newIndexes;
+          });
+
         } catch (error) {
           if (error.message !== 'Processing aborted') {
             console.error('Error processing batch:', error);
