@@ -1,8 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
-import { validateAndCleanSuggestions } from '../_shared/suggestion-validator.ts';
-import { processSuggestionsInBatches } from '../_shared/batch-processor.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -24,27 +22,17 @@ async function generateTitleFromDescription(description: string): Promise<string
         messages: [
           {
             role: "system",
-            content: `You are a product title generator. Your task is to create clear, concise product titles (5-7 words max) from product descriptions.
-
-RULES:
-1. NO marketing terms (Premium, Luxury, Professional, etc.)
-2. Include brand name only if well-known
-3. Focus on the essential product type and key feature
-4. Remove unnecessary adjectives
-5. Be specific but brief
-
-Examples:
-BAD: "Premium Professional LED Makeup Mirror with 3X Magnification"
-GOOD: "LED Makeup Mirror with Magnification"
-
-BAD: "Luxury Handcrafted Italian Leather Travel Journal Set"
-GOOD: "Leather Travel Journal"
-
-Return ONLY the title, no explanation or additional text.`
+            content: `You are a product title generator. Create clear, concise product titles (5-7 words max) from product descriptions.
+            RULES:
+            1. NO marketing terms (Premium, Luxury, Professional, etc.)
+            2. Include brand name only if well-known
+            3. Focus on essential product type and key feature
+            4. Remove unnecessary adjectives
+            5. Be specific but brief`
           },
           {
             role: "user",
-            content: `Create a clear, concise title (5-7 words max) for this product description: ${description}`
+            content: `Create a clear, concise title for this product description: ${description}`
           }
         ],
         temperature: 0.3,
@@ -62,11 +50,11 @@ Return ONLY the title, no explanation or additional text.`
     console.log('Generated title response:', data);
     
     return data.choices[0].message.content.trim()
-      .replace(/["']/g, '')  // Remove quotes
-      .replace(/^\w+:\s*/, ''); // Remove any prefix like "Title:"
+      .replace(/["']/g, '')
+      .replace(/^\w+:\s*/, '');
   } catch (error) {
     console.error('Error generating title:', error);
-    return description.split(' ').slice(0, 6).join(' '); // Fallback to first 6 words
+    return description.split(' ').slice(0, 6).join(' ');
   }
 }
 
@@ -102,9 +90,15 @@ serve(async (req) => {
         messages: [
           {
             role: "system",
-            content: `You are a gift suggestion expert. Generate detailed product descriptions for gift ideas.
-            Focus on describing the product's features and benefits rather than creating fancy titles.
-            Return a JSON array of exactly 8 detailed product descriptions.`
+            content: `You are a gift suggestion expert. For each gift idea, provide a detailed description focusing on features, benefits, and why it's appropriate for the recipient. Return a JSON array of exactly 8 detailed product descriptions.
+
+            Example format:
+            [
+              "A ceramic teapot with built-in infuser, perfect for brewing loose leaf teas. Features a 32oz capacity and keeps tea warm for hours. Includes a matching cup and saucer set with delicate cat designs.",
+              "An automatic cat water fountain with 2L capacity, featuring a quiet pump and multiple flow settings. Includes replaceable carbon filters and LED lighting for nighttime visibility."
+            ]
+            
+            Focus on practical features and specific details rather than marketing language.`
           },
           { role: "user", content: prompt }
         ],
@@ -126,11 +120,19 @@ serve(async (req) => {
       throw new Error('Invalid response format from DeepSeek API');
     }
 
-    const descriptions = validateAndCleanSuggestions(data.choices[0].message.content);
-    console.log('Validated descriptions:', descriptions);
-    
-    if (!descriptions || descriptions.length !== 8) {
-      throw new Error('Did not receive exactly 8 descriptions');
+    // Parse and validate descriptions
+    let descriptions: string[];
+    try {
+      const content = data.choices[0].message.content;
+      descriptions = Array.isArray(JSON.parse(content)) ? JSON.parse(content) : [];
+      console.log('Parsed descriptions:', descriptions);
+      
+      if (!descriptions || descriptions.length !== 8) {
+        throw new Error('Did not receive exactly 8 descriptions');
+      }
+    } catch (error) {
+      console.error('Error parsing descriptions:', error);
+      throw new Error('Failed to parse descriptions');
     }
 
     // Generate clear titles from descriptions
@@ -146,15 +148,6 @@ serve(async (req) => {
       description: description
     }));
 
-    // Process suggestions with Amazon data
-    console.log('Processing suggestions:', suggestions);
-    const processedProducts = await processSuggestionsInBatches(suggestions);
-    console.log('Processed products:', processedProducts);
-    
-    if (!processedProducts.length) {
-      throw new Error('No products found for suggestions');
-    }
-
     // Log metrics
     await supabase.from('api_metrics').insert({
       endpoint: 'generate-gift-suggestions',
@@ -164,7 +157,7 @@ serve(async (req) => {
     });
 
     return new Response(
-      JSON.stringify({ suggestions: processedProducts }),
+      JSON.stringify({ suggestions }),
       { 
         headers: { 
           ...corsHeaders, 
