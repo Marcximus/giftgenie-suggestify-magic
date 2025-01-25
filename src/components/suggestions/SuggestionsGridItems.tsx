@@ -1,6 +1,7 @@
 import { ProductCard } from '../ProductCard';
 import { SuggestionSkeleton } from '../SuggestionSkeleton';
 import { GiftSuggestion } from '@/types/suggestions';
+import { supabase } from "@/integrations/supabase/client";
 
 interface SuggestionsGridItemsProps {
   suggestions: GiftSuggestion[];
@@ -13,6 +14,24 @@ export const SuggestionsGridItems = ({
   onMoreLikeThis,
   isLoading
 }: SuggestionsGridItemsProps) => {
+  const generateTitle = async (originalTitle: string, description: string) => {
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-product-title', {
+        body: { title: originalTitle, description }
+      });
+
+      if (error) {
+        console.error('Error generating title:', error);
+        return originalTitle;
+      }
+
+      return data?.title || originalTitle;
+    } catch (error) {
+      console.error('Error in title generation:', error);
+      return originalTitle;
+    }
+  };
+
   if (isLoading) {
     return (
       <>
@@ -32,12 +51,15 @@ export const SuggestionsGridItems = ({
 
   return (
     <>
-      {suggestions.map((suggestion, index) => {
+      {suggestions.map(async (suggestion, index) => {
         console.log('Processing suggestion:', {
           title: suggestion.title,
           amazonPrice: suggestion.amazon_price,
           priceRange: suggestion.priceRange
         });
+
+        // Generate optimized title
+        const optimizedTitle = await generateTitle(suggestion.title, suggestion.description);
 
         // Only convert to string if we have a valid price
         const price = suggestion.amazon_price 
@@ -54,7 +76,7 @@ export const SuggestionsGridItems = ({
             }}
           >
             <ProductCard
-              title={suggestion.title}
+              title={optimizedTitle}
               description={suggestion.description}
               price={price}
               amazonUrl={suggestion.amazon_url || "#"}
