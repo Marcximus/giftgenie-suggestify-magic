@@ -1,6 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import type { AmazonProduct } from './types';
-import { Database } from '@/integrations/supabase/types';
+import { Database, Json } from '@/integrations/supabase/types';
 
 type AmazonCacheRow = Database['public']['Tables']['amazon_product_cache']['Row'];
 
