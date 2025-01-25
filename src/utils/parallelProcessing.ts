@@ -1,50 +1,95 @@
 import { supabase } from "@/integrations/supabase/client";
-import { getProductCache, setProductCache } from "./cacheUtils";
-import { GiftSuggestion } from "@/types/suggestions";
+import { toast } from "@/components/ui/use-toast";
 
-export const processProductsInParallel = async (suggestions: GiftSuggestion[]) => {
-  const batchSize = 3; // Process 3 products at a time to avoid rate limits
-  const results: GiftSuggestion[] = [];
+const BATCH_SIZE = 8;
+const MAX_CONCURRENT = 4;
+const DELAY_BETWEEN_BATCHES = 200;
+
+export async function processInParallel<T, R>(
+  items: T[],
+  processFn: (item: T) => Promise<R>,
+  options = { 
+    batchSize: BATCH_SIZE,
+    maxConcurrent: MAX_CONCURRENT,
+    delayBetweenBatches: DELAY_BETWEEN_BATCHES 
+  }
+): Promise<R[]> {
+  const results: R[] = [];
+  const batches: T[][] = [];
   
-  for (let i = 0; i < suggestions.length; i += batchSize) {
-    const batch = suggestions.slice(i, i + batchSize);
-    const batchPromises = batch.map(async (suggestion) => {
-      const cacheKey = `product_${suggestion.title}`;
-      const cachedProduct = await getProductCache(cacheKey);
+  // Split items into batches
+  for (let i = 0; i < items.length; i += options.batchSize) {
+    batches.push(items.slice(i, i + options.batchSize));
+  }
+  
+  console.log(`Processing ${items.length} items in ${batches.length} batches`);
+  
+  for (const batch of batches) {
+    const batchStartTime = performance.now();
+    console.log(`Starting batch of ${batch.length} items`);
+    
+    // Process items in the current batch concurrently
+    const batchPromises = batch.map(async (item, index) => {
+      // Stagger requests within batch to prevent rate limiting
+      await new Promise(resolve => setTimeout(resolve, index * 50));
       
-      if (cachedProduct) {
-        console.log('Using cached product:', suggestion.title);
-        return cachedProduct;
-      }
-
       try {
-        const { data: productData, error } = await supabase.functions.invoke('get-amazon-products', {
-          body: { searchQuery: suggestion.title }
-        });
-
-        if (error) throw error;
-        
-        const enrichedProduct = {
-          ...suggestion,
-          ...productData
-        };
-        
-        await setProductCache(cacheKey, enrichedProduct);
-        return enrichedProduct;
+        return await processFn(item);
       } catch (error) {
-        console.error('Error processing product:', error);
-        return suggestion;
+        console.error('Error processing item:', error);
+        return null;
       }
     });
-
-    const batchResults = await Promise.all(batchPromises);
-    results.push(...batchResults);
     
-    // Add a small delay between batches to respect rate limits
-    if (i + batchSize < suggestions.length) {
-      await new Promise(resolve => setTimeout(resolve, 1000));
+    // Wait for all items in the batch to complete
+    const batchResults = await Promise.all(batchPromises);
+    results.push(...batchResults.filter((r): r is R => r !== null));
+    
+    const batchDuration = performance.now() - batchStartTime;
+    console.log(`Batch completed in ${batchDuration.toFixed(2)}ms`);
+    
+    // Log metrics
+    await supabase.from('api_metrics').insert({
+      endpoint: 'parallel-processing',
+      duration_ms: Math.round(batchDuration),
+      status: 'success'
+    });
+    
+    // Add delay between batches to prevent rate limiting
+    if (batches.indexOf(batch) < batches.length - 1) {
+      await new Promise(resolve => setTimeout(resolve, options.delayBetweenBatches));
     }
   }
   
   return results;
-};
+}
+
+export async function retryWithBackoff<T>(
+  fn: () => Promise<T>,
+  maxRetries = 3,
+  baseDelay = 1000
+): Promise<T> {
+  let lastError: Error | null = null;
+  
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      return await fn();
+    } catch (error) {
+      lastError = error as Error;
+      console.error(`Attempt ${i + 1} failed:`, error);
+      
+      if (i < maxRetries - 1) {
+        const delay = baseDelay * Math.pow(2, i);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+    }
+  }
+  
+  toast({
+    title: "Processing Error",
+    description: "Failed to process some items. Please try again.",
+    variant: "destructive",
+  });
+  
+  throw lastError;
+}

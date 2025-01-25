@@ -5,19 +5,16 @@ import { useQueryClient } from '@tanstack/react-query';
 import { updateSearchFrequency } from '@/utils/searchFrequencyUtils';
 import { generateCustomDescription } from '@/utils/descriptionUtils';
 import { logApiMetrics } from '@/utils/metricsUtils';
+import { processInParallel, retryWithBackoff } from '@/utils/parallelProcessing';
 import { toast } from "@/components/ui/use-toast";
-
-const BATCH_SIZE = 8; // Increased from 4 to 8 for faster processing
-const STAGGER_DELAY = 100; // Keep the same delay between batches
-const MAX_CONCURRENT = 8; // Increased from 4 to 8 to match batch size
 
 export const useAmazonProductProcessing = () => {
   const { getAmazonProduct } = useAmazonProducts();
-  const { processBatch } = useBatchProcessor<GiftSuggestion, GiftSuggestion>();
   const queryClient = useQueryClient();
 
   const processGiftSuggestion = async (suggestion: GiftSuggestion): Promise<GiftSuggestion> => {
     const startTime = performance.now();
+    
     try {
       const normalizedTitle = suggestion.title.toLowerCase().trim();
       const cacheKey = ['amazon-product', normalizedTitle];
@@ -29,9 +26,13 @@ export const useAmazonProductProcessing = () => {
         return cachedData as GiftSuggestion;
       }
 
-      // Run these operations in parallel using Promise.all for better performance
-      const [amazonProduct, customDescription] = await Promise.all([
-        getAmazonProduct(suggestion.title, suggestion.priceRange),
+      // Use retryWithBackoff for the Amazon API call
+      const amazonProduct = await retryWithBackoff(() => 
+        getAmazonProduct(suggestion.title, suggestion.priceRange)
+      );
+      
+      // Process description and search frequency in parallel
+      const [customDescription] = await Promise.all([
         generateCustomDescription(suggestion.title, suggestion.description),
         updateSearchFrequency(suggestion.title)
       ]);
@@ -50,10 +51,8 @@ export const useAmazonProductProcessing = () => {
           amazon_total_ratings: amazonProduct.totalRatings
         };
 
-        // Update the cache with the enriched data
+        // Update cache with enriched data
         queryClient.setQueryData(cacheKey, processedSuggestion);
-        
-        // Invalidate the suggestions query to trigger a re-render
         queryClient.invalidateQueries({ queryKey: ['suggestions'] });
         
         await logApiMetrics('amazon-product-processing', startTime, 'success');
@@ -69,50 +68,20 @@ export const useAmazonProductProcessing = () => {
   };
 
   const processSuggestions = async (suggestions: GiftSuggestion[]) => {
-    console.log('Processing suggestions with parallel batches');
+    console.log('Starting parallel processing of suggestions');
     
-    const results: GiftSuggestion[] = [];
-    const batches: GiftSuggestion[][] = [];
-    
-    // Split suggestions into batches of BATCH_SIZE
-    for (let i = 0; i < suggestions.length; i += BATCH_SIZE) {
-      batches.push(suggestions.slice(i, i + BATCH_SIZE));
-    }
-    
-    // Process each batch in parallel with optimized concurrency
-    for (const batch of batches) {
-      console.log(`Processing batch of ${batch.length} suggestions`);
-      
-      // Process all items in the current batch concurrently
-      const batchResults = await Promise.all(
-        batch.map(async (suggestion) => {
-          try {
-            return await processGiftSuggestion(suggestion);
-          } catch (error) {
-            console.error('Error in batch processing:', error);
-            return suggestion;
-          }
-        })
-      );
-      
-      results.push(...batchResults);
-      
-      // Add a smaller delay between batches to prevent rate limiting while maintaining speed
-      if (batches.indexOf(batch) < batches.length - 1) {
-        await new Promise(resolve => setTimeout(resolve, STAGGER_DELAY));
+    const results = await processInParallel(
+      suggestions,
+      processGiftSuggestion,
+      {
+        batchSize: 8,
+        maxConcurrent: 4,
+        delayBetweenBatches: 200
       }
-      
-      // Update the suggestions cache with each processed batch
-      queryClient.setQueryData(['suggestions'], (old: GiftSuggestion[] | undefined) => {
-        if (!old) return results;
-        return old.map(oldSuggestion => {
-          const updatedSuggestion = results.find(
-            result => result.title === oldSuggestion.title
-          );
-          return updatedSuggestion || oldSuggestion;
-        });
-      });
-    }
+    );
+    
+    // Update the suggestions cache with processed results
+    queryClient.setQueryData(['suggestions'], results);
     
     return results;
   };
