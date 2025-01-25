@@ -1,16 +1,23 @@
+// Define the type for a debounced function
+export interface DebouncedFunction<T extends (...args: any[]) => any> {
+  (...args: Parameters<T>): void;
+  cancel: () => void;
+}
+
 export function debounce<T extends (...args: any[]) => any>(
   func: T,
   wait: number,
   options: { leading?: boolean; trailing?: boolean } = {}
-): (...args: Parameters<T>) => void {
+): DebouncedFunction<T> {
   let timeout: NodeJS.Timeout | null = null;
   let lastArgs: Parameters<T> | null = null;
 
-  return function executedFunction(...args: Parameters<T>) {
+  // Create the debounced function
+  function executedFunction(this: any, ...args: Parameters<T>) {
     const later = () => {
       timeout = null;
       if (options.trailing !== false && lastArgs) {
-        func(...lastArgs);
+        func.apply(this, lastArgs);
         lastArgs = null;
       }
     };
@@ -24,10 +31,21 @@ export function debounce<T extends (...args: any[]) => any>(
     timeout = setTimeout(later, wait);
 
     if (callNow) {
-      func(...args);
+      func.apply(this, args);
       lastArgs = null;
     } else {
       lastArgs = args;
     }
+  }
+
+  // Add cancel method to the function
+  executedFunction.cancel = function() {
+    if (timeout) {
+      clearTimeout(timeout);
+      timeout = null;
+      lastArgs = null;
+    }
   };
+
+  return executedFunction;
 }
