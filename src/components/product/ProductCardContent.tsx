@@ -104,7 +104,7 @@ export const ProductCardContent = ({
   const formattedPrice = formatPrice(price);
 
   return (
-    <div className="p-3 sm:p-4 pt-4 flex-grow flex flex-col">
+    <div className="p-3 sm:p-4 pt-6 flex-grow flex flex-col">
       <p className="text-xs sm:text-sm leading-relaxed line-clamp-3 text-muted-foreground mb-auto">
         {formatDescription(description)}
       </p>

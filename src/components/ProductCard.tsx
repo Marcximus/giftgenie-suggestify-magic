@@ -69,7 +69,7 @@ const ProductCardComponent = ({
           description={description} 
           imageUrl={imageUrl} 
         />
-        <div className="h-[1.75rem] overflow-hidden mt-4 px-3 sm:px-4">
+        <div className="h-[1.75rem] overflow-hidden mt-6 mb-4 px-3 sm:px-4">
           <CardTitle className="text-sm sm:text-base truncate text-center group-hover:text-primary transition-colors duration-200">
             {title}
           </CardTitle>
