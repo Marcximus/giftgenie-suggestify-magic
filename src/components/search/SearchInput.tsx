@@ -2,7 +2,6 @@ import { Button } from "@/components/ui/button";
 import { Search } from 'lucide-react';
 import { RefreshCw } from 'lucide-react';
 import { TypingPlaceholder } from './TypingPlaceholder';
-import { Spinner } from "@/components/ui/spinner";
 
 interface SearchInputProps {
   query: string;
@@ -45,11 +44,7 @@ export const SearchInput = ({
           disabled={isLoading} 
           className="w-full sm:w-auto rounded-full backdrop-blur-lg bg-gradient-to-r from-purple-500/80 via-blue-500/80 to-purple-500/80 border border-white/20 shadow-[0_8px_32px_rgba(0,0,0,0.12)] hover:shadow-[0_8px_32px_rgba(31,34,245,0.12)] text-white/90 hover:text-white hover:bg-white/20"
         >
-          {isLoading ? (
-            <Spinner variant="infinite" className="h-4 w-4" />
-          ) : (
-            <Search className="h-4 w-4" />
-          )}
+          <Search className="h-4 w-4" />
         </Button>
         {!showSelector && (
           <Button 
