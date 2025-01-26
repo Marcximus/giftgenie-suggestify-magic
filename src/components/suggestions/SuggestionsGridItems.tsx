@@ -76,8 +76,8 @@ export const SuggestionsGridItems = ({
 
           console.log(`Processed suggestion ${index + 1}/${suggestions.length}`);
           
-          // Add a small delay between processing each suggestion for smoother visual effect
-          await new Promise(resolve => setTimeout(resolve, 200));
+          // Reduced delay for smoother transitions
+          await new Promise(resolve => setTimeout(resolve, 100));
           
         } catch (error) {
           if (error.message !== 'Processing aborted') {
@@ -105,7 +105,7 @@ export const SuggestionsGridItems = ({
         {Array.from({ length: 8 }).map((_, index) => (
           <div 
             key={`skeleton-${index}`} 
-            className="animate-in fade-in slide-in-from-bottom-4" 
+            className="animate-in fade-in duration-500 ease-out"
             style={{ animationDelay: `${index * 100}ms` }}
             aria-hidden="true"
           >
@@ -122,46 +122,34 @@ export const SuggestionsGridItems = ({
         const processed = processedSuggestions[index];
         const isProcessing = processingIndexes.has(index);
 
-        if (!processed && isProcessing) {
-          return (
-            <div 
-              key={`processing-${index}`}
-              className="animate-in fade-in slide-in-from-bottom-4"
-              style={{ animationDelay: `${index * 100}ms` }}
-            >
-              <SuggestionSkeleton />
-            </div>
-          );
-        }
-
-        if (!processed) {
-          return null;
-        }
-
-        const price = processed.amazon_price 
-          ? processed.amazon_price.toString()
-          : processed.priceRange?.replace('USD ', '') || 'Check price on Amazon';
-
         return (
           <div 
             key={`suggestion-${index}`}
-            className="animate-in fade-in slide-in-from-bottom-4"
+            className={`
+              transform transition-all duration-500 ease-out
+              ${processed ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'}
+            `}
             style={{ 
-              animationDelay: `${index * 100}ms`,
-              animationFillMode: 'forwards' 
+              transitionDelay: `${index * 100}ms`
             }}
           >
-            <ProductCard
-              title={processed.optimizedTitle}
-              description={processed.description}
-              price={price}
-              amazonUrl={processed.amazon_url || "#"}
-              imageUrl={processed.amazon_image_url}
-              rating={processed.amazon_rating}
-              totalRatings={processed.amazon_total_ratings}
-              asin={processed.amazon_asin}
-              onMoreLikeThis={onMoreLikeThis}
-            />
+            {isProcessing ? (
+              <SuggestionSkeleton />
+            ) : processed && (
+              <ProductCard
+                title={processed.optimizedTitle}
+                description={processed.description}
+                price={processed.amazon_price 
+                  ? processed.amazon_price.toString()
+                  : processed.priceRange?.replace('USD ', '') || 'Check price on Amazon'}
+                amazonUrl={processed.amazon_url || "#"}
+                imageUrl={processed.amazon_image_url}
+                rating={processed.amazon_rating}
+                totalRatings={processed.amazon_total_ratings}
+                asin={processed.amazon_asin}
+                onMoreLikeThis={onMoreLikeThis}
+              />
+            )}
           </div>
         );
       })}
