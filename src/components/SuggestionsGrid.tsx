@@ -17,6 +17,7 @@ export const SuggestionsGrid = ({
   onStartOver,
   isLoading 
 }: SuggestionsGridProps) => {
+  // Prepare schema.org structured data for the list of suggestions
   const schemaData = {
     "@context": "https://schema.org",
     "@type": "ItemList",
@@ -47,39 +48,36 @@ export const SuggestionsGrid = ({
       }
     }))
   };
-  
+
   return (
     <>
       <script type="application/ld+json">
         {JSON.stringify(schemaData)}
       </script>
+      <div 
+        className="mt-6 sm:mt-8 md:mt-12 grid gap-4 sm:gap-5 md:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 animate-in fade-in slide-in-from-bottom-4 duration-500 px-4 sm:px-6 md:px-8"
+        role="region"
+        aria-label="Gift suggestions"
+      >
+        <SuggestionsGridItems 
+          suggestions={suggestions}
+          onMoreLikeThis={onMoreLikeThis}
+          isLoading={isLoading}
+        />
+      </div>
       
-      <div className="min-h-[200px] transition-all duration-300">
-        <div 
-          className="mt-6 grid gap-4 sm:gap-5 md:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 animate-in fade-in slide-in-from-bottom-4 duration-500 px-4 sm:px-6 md:px-8"
-          role="region"
-          aria-label="Gift suggestions"
-        >
-          <SuggestionsGridItems 
-            suggestions={suggestions}
-            onMoreLikeThis={onMoreLikeThis}
+      {suggestions.length > 0 && (
+        <div className="flex flex-col items-center mt-8 sm:mt-12">
+          <p className="text-[10px] text-muted-foreground/70 mb-4">
+            Some links may contain affiliate links from Amazon and other vendors
+          </p>
+          <SuggestionsActions
+            onGenerateMore={onGenerateMore}
+            onStartOver={onStartOver}
             isLoading={isLoading}
           />
         </div>
-        
-        {suggestions.length > 0 && !isLoading && (
-          <div className="flex flex-col items-center mt-8 sm:mt-12 animate-in fade-in duration-300">
-            <p className="text-[10px] text-muted-foreground/70 mb-4">
-              Some links may contain affiliate links from Amazon and other vendors
-            </p>
-            <SuggestionsActions
-              onGenerateMore={onGenerateMore}
-              onStartOver={onStartOver}
-              isLoading={isLoading}
-            />
-          </div>
-        )}
-      </div>
+      )}
     </>
   );
 };
