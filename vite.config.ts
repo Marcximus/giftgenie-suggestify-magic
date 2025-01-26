@@ -48,7 +48,6 @@ export default defineConfig(({ mode }) => ({
           'forms': ['react-hook-form', '@hookform/resolvers'],
           'animations': ['framer-motion']
         },
-        // Optimize chunk size
         chunkFileNames: (chunkInfo) => {
           const name = chunkInfo.name;
           if (name === 'vendor' || name === 'ui') {
@@ -59,7 +58,6 @@ export default defineConfig(({ mode }) => ({
       }
     },
     chunkSizeWarningLimit: 1000,
-    // Enable minification optimizations
     minify: 'terser',
     terserOptions: {
       compress: {
