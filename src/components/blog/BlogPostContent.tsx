@@ -26,7 +26,7 @@ export const BlogPostContent = ({ post }: BlogPostContentProps) => {
         '<div class="flex flex-col items-center gap-2 my-6 text-center p-6 bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl shadow-sm">'
       )
       
-      // Restore review container styling
+      // Restore review container styling with gold stars
       .replace(
         /<div[^>]*class="[^"]*review-container[^"]*"[^>]*>/gi, 
         '<div class="flex flex-col items-center gap-2 my-8 text-center p-6 bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl shadow-sm">'
@@ -38,7 +38,7 @@ export const BlogPostContent = ({ post }: BlogPostContentProps) => {
         '<img class="mx-auto my-8 max-w-[250px] sm:max-w-[350px] lg:max-w-[400px] rounded-lg shadow-md"'
       )
       
-      // Restore Amazon button styling
+      // Restore Amazon button styling with orange color
       .replace(
         /<a[^>]*class="[^"]*amazon-button[^"]*"[^>]*>/gi, 
         '<a class="inline-flex items-center justify-center px-4 py-2 bg-[#F97316] hover:bg-[#F97316]/90 text-white rounded-md transition-colors text-sm shadow-sm hover:shadow-md mx-auto mb-8">'
@@ -99,7 +99,9 @@ export const BlogPostContent = ({ post }: BlogPostContentProps) => {
                  [&_a.amazon-button]:shadow-sm [&_a.amazon-button]:hover:shadow-md
                  [&_a.amazon-button]:mx-auto [&_a.amazon-button]:mb-8
                  
-                 [&_div]:not([class*='product-actions']):not([class*='review-container']):text-left"
+                 [&_div]:not([class*='product-actions']):not([class*='review-container']):text-left
+                 
+                 [&_span.text-yellow-400]:text-[#FFB800]"
       dangerouslySetInnerHTML={{ __html: sanitizeContent(post.content) }}
     />
   );
