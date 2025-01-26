@@ -7,15 +7,15 @@ interface BlogPostContentProps {
 export const BlogPostContent = ({ post }: BlogPostContentProps) => {
   return (
     <div 
-      className="prose prose-sm md:prose-base lg:prose-lg mt-0 text-left
-                 max-w-none w-full mx-0
-                 [&>:first-child]:mt-0
+      className="prose prose-sm md:prose-base lg:prose-lg
+                 !max-w-none !w-full
+                 [&>*]:!text-left [&>*]:!mx-0
                  
                  prose-p:text-sm md:prose-p:text-base lg:prose-p:text-lg
                  prose-p:leading-relaxed prose-p:mb-4
                  
                  prose-h1:text-2xl sm:prose-h1:text-3xl md:prose-h1:text-4xl lg:prose-h1:text-5xl
-                 prose-h1:font-bold prose-h1:mb-6 prose-h1:text-left
+                 prose-h1:font-bold prose-h1:mb-6
                  
                  prose-h2:text-xl sm:prose-h2:text-2xl md:prose-h2:text-3xl
                  prose-h2:font-semibold prose-h2:mt-6 prose-h2:mb-4
@@ -26,14 +26,14 @@ export const BlogPostContent = ({ post }: BlogPostContentProps) => {
                  prose-ul:list-disc prose-ul:pl-4 sm:prose-ul:pl-6 prose-ul:mb-4
                  prose-ol:list-decimal prose-ol:pl-4 sm:prose-ol:pl-6 prose-ol:mb-4
                  
-                 prose-img:w-full prose-img:max-w-lg prose-img:mx-auto
-                 prose-img:h-auto prose-img:aspect-square prose-img:my-4 sm:prose-img:my-6
-                 prose-img:object-contain prose-img:rounded-lg prose-img:shadow-md
+                 prose-img:w-full prose-img:!max-w-none prose-img:!mx-0
+                 prose-img:h-auto prose-img:my-4 sm:prose-img:my-6
+                 prose-img:rounded-lg prose-img:shadow-md
                  
                  prose-a:text-primary prose-a:font-medium prose-a:no-underline
                  hover:prose-a:text-primary/90
                  
-                 [&_div.flex]:justify-center [&_div.flex]:w-full [&_div.flex]:my-2
+                 [&_div.flex]:w-full [&_div.flex]:my-2
                  
                  [&_div.product-actions]:flex [&_div.product-actions]:flex-col
                  [&_div.product-actions]:items-center [&_div.product-actions]:gap-2
