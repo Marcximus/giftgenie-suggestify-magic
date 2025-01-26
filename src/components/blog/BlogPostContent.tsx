@@ -6,14 +6,22 @@ interface BlogPostContentProps {
 
 export const BlogPostContent = ({ post }: BlogPostContentProps) => {
   return (
-    <div className="prose prose-sm md:prose-base lg:prose-lg xl:prose-xl max-w-none">
+    <div className="mx-auto px-4 sm:px-6 lg:px-8">
       <div 
-        className="text-left max-w-4xl mx-auto px-4 sm:px-6 lg:px-8
+        className="text-left max-w-4xl mx-auto
+                   [&>*]:text-left
+                   prose prose-sm md:prose-base lg:prose-lg xl:prose-xl
+                   prose-p:text-left
+                   prose-headings:text-left
+                   prose-h1:text-left
+                   prose-h2:text-left
+                   prose-h3:text-left
+                   
                    prose-p:text-sm md:prose-p:text-base lg:prose-p:text-lg xl:prose-p:text-xl
                    prose-p:leading-relaxed prose-p:mb-6 lg:prose-p:mb-8
                    
                    prose-h1:text-2xl sm:prose-h1:text-3xl md:prose-h1:text-4xl lg:prose-h1:text-5xl xl:prose-h1:text-6xl
-                   prose-h1:font-bold prose-h1:mb-8 lg:prose-h1:mb-12 prose-h1:text-center
+                   prose-h1:font-bold prose-h1:mb-8 lg:prose-h1:mb-12
                    
                    prose-h2:text-xl sm:prose-h2:text-2xl md:prose-h2:text-3xl lg:prose-h2:text-4xl
                    prose-h2:font-semibold prose-h2:mt-8 lg:prose-h2:mt-12 prose-h2:mb-6
