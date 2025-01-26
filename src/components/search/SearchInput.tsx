@@ -21,10 +21,13 @@ export const SearchInput = ({
   showSelector 
 }: SearchInputProps) => {
   return (
-    <form onSubmit={onSubmit} className="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full">
+    <form onSubmit={onSubmit} className="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full" aria-label="Gift search form">
       <div className="flex-1 min-w-0 group">
         <div className="relative">
           <textarea
+            id="gift-search"
+            name="gift-search"
+            aria-label="Search for gift ideas"
             placeholder=""
             value={query}
             onChange={onQueryChange}
@@ -41,19 +44,21 @@ export const SearchInput = ({
       <div className="flex gap-2 shrink-0">
         <Button 
           type="submit" 
-          disabled={isLoading} 
+          disabled={isLoading}
+          aria-label="Search for gifts"
           className="w-full sm:w-auto rounded-full backdrop-blur-lg bg-gradient-to-r from-purple-500/80 via-blue-500/80 to-purple-500/80 border border-white/20 shadow-[0_8px_32px_rgba(0,0,0,0.12)] hover:shadow-[0_8px_32px_rgba(31,34,245,0.12)] text-white/90 hover:text-white hover:bg-white/20"
         >
-          <Search className="h-4 w-4" />
+          <Search className="h-4 w-4" aria-hidden="true" />
         </Button>
         {!showSelector && (
           <Button 
             type="button" 
             variant="outline" 
             onClick={onReset}
+            aria-label="Start new search"
             className="flex items-center gap-2 w-full sm:w-auto whitespace-nowrap shadow-sm hover:shadow-md transition-all duration-200 hover:bg-secondary/80"
           >
-            <RefreshCw className="h-4 w-4" />
+            <RefreshCw className="h-4 w-4" aria-hidden="true" />
             <span className="text-xs sm:text-sm">New Search</span>
           </Button>
         )}
