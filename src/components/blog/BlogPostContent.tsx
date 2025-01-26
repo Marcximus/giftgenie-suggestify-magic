@@ -20,8 +20,7 @@ export const BlogPostContent = ({ post }: BlogPostContentProps) => {
 
   return (
     <div 
-      className="prose prose-sm md:prose-base lg:prose-lg mx-auto px-4 sm:px-6 lg:px-8
-                 max-w-4xl w-full
+      className="prose prose-sm md:prose-base lg:prose-lg
                  prose-p:text-sm md:prose-p:text-base lg:prose-p:text-lg
                  prose-p:leading-relaxed prose-p:mb-4
                  
