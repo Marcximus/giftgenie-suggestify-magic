@@ -35,7 +35,7 @@ export const SearchInput = ({
             style={{ lineHeight: '1.5' }}
           />
           {!query && (
-            <div className="absolute top-2 sm:top-3 left-2 sm:left-3 text-muted-foreground pointer-events-none">
+            <div className="absolute top-2 sm:top-3 left-2 sm:left-3 text-[#8E9196] pointer-events-none">
               E.g., "<TypingPlaceholder />"
             </div>
           )}
