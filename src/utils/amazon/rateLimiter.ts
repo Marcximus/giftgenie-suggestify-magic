@@ -1,3 +1,5 @@
+import { AMAZON_CONFIG } from './config';
+
 interface RequestLog {
   timestamp: number;
   endpoint: string;
