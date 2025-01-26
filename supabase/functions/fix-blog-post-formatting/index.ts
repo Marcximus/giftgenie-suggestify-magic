@@ -1,13 +1,20 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
-import { corsHeaders } from '../_shared/cors.ts'
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+}
 
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
 
   try {
+    console.log('Starting blog post formatting fix...')
+    
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
@@ -18,14 +25,21 @@ serve(async (req) => {
       .from('blog_posts')
       .select('id, content, slug')
 
-    if (fetchError) throw fetchError
+    if (fetchError) {
+      console.error('Error fetching posts:', fetchError)
+      throw fetchError
+    }
+
     if (!posts || posts.length === 0) {
+      console.log('No posts found to process')
       throw new Error('No posts found')
     }
 
+    console.log(`Found ${posts.length} posts to process`)
     const results = []
 
     for (const post of posts) {
+      console.log(`Processing post: ${post.slug}`)
       let formattedContent = post.content
 
       // Center the headline (h1)
@@ -58,6 +72,12 @@ serve(async (req) => {
         .update({ content: formattedContent })
         .eq('id', post.id)
 
+      if (updateError) {
+        console.error(`Error updating post ${post.slug}:`, updateError)
+      } else {
+        console.log(`Successfully updated post: ${post.slug}`)
+      }
+
       results.push({
         slug: post.slug,
         success: !updateError,
@@ -78,6 +98,7 @@ serve(async (req) => {
     )
 
   } catch (error) {
+    console.error('Error in fix-blog-post-formatting:', error)
     return new Response(
       JSON.stringify({ error: error.message }),
       {
