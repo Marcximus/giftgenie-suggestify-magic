@@ -7,6 +7,8 @@ interface BlogPostContentProps {
 export const BlogPostContent = ({ post }: BlogPostContentProps) => {
   // Remove problematic inline styles from content
   const sanitizeContent = (content: string) => {
+    console.log('Original content:', content);
+    
     return content
       // Remove float styles
       .replace(/style="[^"]*float:\s*(?:left|right)[^"]*"/gi, '')
@@ -22,22 +24,18 @@ export const BlogPostContent = ({ post }: BlogPostContentProps) => {
       .replace(/style="[^"]*max-width[^"]*"/gi, '')
       // Remove any remaining style attributes
       .replace(/style="[^"]*"/gi, '')
+      // Center review sections with enforced text sizes - MOVED THIS UP in the chain
+      .replace(
+        /<div[^>]*class=["'][^"']*review-text[^"']*["']/gi,
+        '<div class="review-text !text-center !text-base !md:text-lg !lg:text-xl prose-p:!text-base prose-p:!md:text-lg prose-p:!lg:text-xl"'
+      )
       // Force div containers to be full width and left-aligned, but exclude product-actions and review containers
-      .replace(/<div(?!\s+class=["'][^"']*(?:product-actions|review-container)[^"']*["'])/gi, '<div class="w-full text-left"')
+      .replace(/<div(?!\s+class=["'][^"']*(?:product-actions|review-container|review-text)[^"']*["'])/gi, '<div class="w-full text-left"')
       // Center h1 tags (titles) with adjusted margins
       .replace(/<h1/gi, '<h1 class="!text-center mt-4 sm:mt-8 mb-6 sm:mb-12 px-8"')
-      // Center product actions container - made more specific
+      // Center product actions container
       .replace(/<div[^>]*class=["'][^"']*product-actions[^"']*["']/gi, '<div class="product-actions flex flex-col items-center gap-4 my-8"')
-      // Center review sections with enforced text sizes
-      .replace(
-        /<div[^>]*class=["'][^"']*flex\s+items-center[^"']*["']/gi, 
-        '<div class="!text-center !flex !justify-center !text-sm !md:text-base !lg:text-lg prose-p:!text-sm prose-p:!md:text-base prose-p:!lg:text-lg"'
-      )
-      .replace(
-        /<div[^>]*class=["'][^"']*review-text[^"']*["']/gi, 
-        '<div class="!text-center !text-sm !md:text-base !lg:text-lg prose-p:!text-sm prose-p:!md:text-base prose-p:!lg:text-lg"'
-      )
-      // Wrap Amazon button in a centered div and style it - made more specific
+      // Wrap Amazon button in a centered div and style it
       .replace(
         /<a[^>]*href=["']([^"']+)["'][^>]*class=["'][^"']*amazon-button[^"']*["'][^>]*>/gi,
         '<div class="text-center w-full mt-5 mb-7"><a href="$1" target="_blank" rel="noopener noreferrer" class="amazon-button !inline-block px-6 py-3 sm:px-8 sm:py-3 bg-[#F97316] hover:bg-[#F97316]/90 text-white rounded-lg transition-colors text-base sm:text-lg font-medium shadow-sm hover:shadow-md">'
@@ -45,6 +43,8 @@ export const BlogPostContent = ({ post }: BlogPostContentProps) => {
       // Close the Amazon button wrapper properly
       .replace(/<\/a>\s*(?=<\/div>|<hr|$)/gi, '</a></div>');
   };
+
+  console.log('Final sanitized content:', sanitizeContent(post.content));
 
   return (
     <div 
@@ -94,8 +94,8 @@ export const BlogPostContent = ({ post }: BlogPostContentProps) => {
                  [&_a.amazon-button]:shadow-sm [&_a.amazon-button]:hover:shadow-md
                  [&_a.amazon-button]:active:scale-95
                  
-                 [&_.review-text_p]:!text-sm [&_.review-text_p]:!md:text-base [&_.review-text_p]:!lg:text-lg
-                 [&_.review-text]:!text-sm [&_.review-text]:!md:text-base [&_.review-text]:!lg:text-lg"
+                 [&_.review-text]:!text-base [&_.review-text]:!md:text-lg [&_.review-text]:!lg:text-xl
+                 [&_.review-text_p]:!text-base [&_.review-text_p]:!md:text-lg [&_.review-text_p]:!lg:text-xl"
       dangerouslySetInnerHTML={{ __html: sanitizeContent(post.content) }}
     />
   );
