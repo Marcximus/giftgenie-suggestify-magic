@@ -25,9 +25,12 @@ const EXCLUDED_KEYWORDS = [
   'instruction', 'tutorial', 'handbook', 'textbook'
 ];
 
-const isGiftAppropriate = (title: string, description: string = ''): boolean => {
+const isGiftAppropriate = (title: string | undefined, description: string = ''): boolean => {
+  if (!title) return false;
+  
   const lowerTitle = title.toLowerCase();
-  const lowerDesc = description.toLowerCase();
+  const lowerDesc = (description || '').toLowerCase();
+  
   return !EXCLUDED_KEYWORDS.some(keyword => 
     lowerTitle.includes(keyword) || lowerDesc.includes(keyword));
 };
@@ -81,7 +84,7 @@ async function searchAmazonProduct(
 
     // Find first gift-appropriate product
     const giftProduct = searchData.data.products.find((p: any) => 
-      p.asin && isGiftAppropriate(p.title, p.product_description)
+      p?.asin && isGiftAppropriate(p?.title, p?.product_description)
     );
 
     if (!giftProduct) {
@@ -117,8 +120,8 @@ async function searchAmazonProduct(
       : extractPrice(giftProduct.product_price);
 
     const result: AmazonProduct = {
-      title: detailsData?.data?.product_title || giftProduct.title,
-      description: detailsData?.data?.product_description || giftProduct.product_description || giftProduct.title,
+      title: detailsData?.data?.product_title || giftProduct.title || '',
+      description: detailsData?.data?.product_description || giftProduct.product_description || giftProduct.title || '',
       price: price,
       currency: 'USD',
       imageUrl: detailsData?.data?.product_photo || giftProduct.product_photo || giftProduct.thumbnail,
