@@ -34,8 +34,11 @@ export const BlogPostContent = ({ post }: BlogPostContentProps) => {
       // Center review sections
       .replace(/<div[^>]*class="[^"]*flex items-center[^"]*">/gi, '<div class="!text-center !flex !justify-center">')
       .replace(/<div[^>]*class="[^"]*review-text[^"]*">/gi, '<div class="!text-center">')
-      // Wrap Amazon buttons with ShineBorder
-      .replace(/<a([^>]*class="[^"]*amazon-button[^"]*"[^>]*)>/gi, '<div class="flex justify-center"><div class="relative"><div class="absolute inset-0"><div class="shine-border-wrapper"></div></div><a$1>');
+      // Wrap Amazon buttons with ShineBorder container
+      .replace(
+        /<a([^>]*class="[^"]*amazon-button[^"]*"[^>]*)>/gi, 
+        '<div class="flex justify-center"><div class="shine-border-wrapper"></div><a$1>'
+      );
   };
 
   return (
