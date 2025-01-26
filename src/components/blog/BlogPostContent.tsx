@@ -20,15 +20,24 @@ export const BlogPostContent = ({ post }: BlogPostContentProps) => {
       // Ensure regular paragraphs are left-aligned with consistent spacing
       .replace(/<p[^>]*>/gi, '<p class="!text-left !my-4 !leading-relaxed !mx-0">')
       
-      // Center product-related content
-      .replace(/<div[^>]*class="[^"]*product-actions[^"]*"[^>]*>/gi, '<div class="!flex !flex-col !items-center !gap-2 !my-6 !text-center">')
-      .replace(/<div[^>]*class="[^"]*review-container[^"]*"[^>]*>/gi, '<div class="!flex !flex-col !items-center !gap-2 !my-8 !text-center">')
+      // Center product-related content with restored styling
+      .replace(
+        /<div[^>]*class="[^"]*product-actions[^"]*"[^>]*>/gi, 
+        '<div class="!flex !flex-col !items-center !gap-2 !my-6 !text-center !p-6 !bg-gradient-to-r !from-gray-50 !to-gray-100 !rounded-xl !shadow-sm">'
+      )
+      .replace(
+        /<div[^>]*class="[^"]*review-container[^"]*"[^>]*>/gi, 
+        '<div class="!flex !flex-col !items-center !gap-2 !my-8 !text-center !p-6 !bg-gradient-to-r !from-gray-50 !to-gray-100 !rounded-xl !shadow-sm">'
+      )
       
       // Format images consistently
       .replace(/<img/gi, '<img class="!mx-auto !my-8 !max-w-[250px] sm:!max-w-[350px] lg:!max-w-[400px] !rounded-lg !shadow-md"')
       
       // Format Amazon buttons consistently
-      .replace(/<a[^>]*class="[^"]*amazon-button[^"]*"[^>]*>/gi, '<a class="!inline-flex !items-center !justify-center !px-4 !py-2 !bg-[#F97316] hover:!bg-[#F97316]/90 !text-white !rounded-md !transition-colors !text-sm !shadow-sm hover:!shadow-md !mx-auto !mb-8">');
+      .replace(
+        /<a[^>]*class="[^"]*amazon-button[^"]*"[^>]*>/gi, 
+        '<a class="!inline-flex !items-center !justify-center !px-4 !py-2 !bg-[#F97316] hover:!bg-[#F97316]/90 !text-white !rounded-md !transition-colors !text-sm !shadow-sm hover:!shadow-md !mx-auto !mb-8">'
+      );
   };
 
   return (
@@ -66,10 +75,16 @@ export const BlogPostContent = ({ post }: BlogPostContentProps) => {
                  [&_div.product-actions]:!flex [&_div.product-actions]:!flex-col
                  [&_div.product-actions]:!items-center [&_div.product-actions]:!gap-2
                  [&_div.product-actions]:!my-6 [&_div.product-actions]:!text-center
+                 [&_div.product-actions]:!p-6 [&_div.product-actions]:!bg-gradient-to-r
+                 [&_div.product-actions]:!from-gray-50 [&_div.product-actions]:!to-gray-100
+                 [&_div.product-actions]:!rounded-xl [&_div.product-actions]:!shadow-sm
                  
                  [&_div.review-container]:!flex [&_div.review-container]:!flex-col
                  [&_div.review-container]:!items-center [&_div.review-container]:!gap-2
                  [&_div.review-container]:!my-8 [&_div.review-container]:!text-center
+                 [&_div.review-container]:!p-6 [&_div.review-container]:!bg-gradient-to-r
+                 [&_div.review-container]:!from-gray-50 [&_div.review-container]:!to-gray-100
+                 [&_div.review-container]:!rounded-xl [&_div.review-container]:!shadow-sm
                  
                  [&_a.amazon-button]:!inline-flex [&_a.amazon-button]:!items-center 
                  [&_a.amazon-button]:!justify-center [&_a.amazon-button]:!px-4 [&_a.amazon-button]:!py-2
