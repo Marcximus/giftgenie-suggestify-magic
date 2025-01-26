@@ -31,39 +31,19 @@ export default defineConfig(({ mode }) => ({
     cssMinify: true,
     rollupOptions: {
       output: {
-        manualChunks: (id) => {
-          if (id.includes('node_modules')) {
-            if (id.includes('react') || id.includes('react-dom')) {
-              return 'vendor';
-            }
-            if (id.includes('@radix-ui')) {
-              return 'ui';
-            }
-            if (id.includes('recharts')) {
-              return 'charts';
-            }
-            if (id.includes('lucide-react')) {
-              return 'icons';
-            }
-            if (id.includes('@tanstack/react-query')) {
-              return 'query';
-            }
-            if (id.includes('react-hook-form') || id.includes('@hookform/resolvers')) {
-              return 'forms';
-            }
-            if (id.includes('framer-motion')) {
-              return 'animations';
-            }
-          }
-          // Group components by feature
-          if (id.includes('/components/suggestions/')) {
-            return 'suggestions';
-          }
-          return null;
+        manualChunks: {
+          vendor: ['react', 'react-dom'],
+          ui: ['@radix-ui/react-dialog', '@radix-ui/react-slot', '@radix-ui/react-toast', '@radix-ui/react-label', '@radix-ui/react-select', '@radix-ui/react-checkbox'],
+          charts: ['recharts'],
+          icons: ['lucide-react'],
+          query: ['@tanstack/react-query'],
+          forms: ['react-hook-form', '@hookform/resolvers'],
+          animations: ['framer-motion'],
+          suggestions: ['/components/suggestions/']
         },
-        chunkFileNames: 'assets/[name]-[hash].js',
-        entryFileNames: 'assets/[name]-[hash].js',
-        assetFileNames: 'assets/[name]-[hash].[ext]'
+        chunkFileNames: 'assets/[name].[hash].js',
+        entryFileNames: 'assets/[name].[hash].js',
+        assetFileNames: 'assets/[name].[hash].[ext]'
       }
     },
     chunkSizeWarningLimit: 1000,
@@ -94,7 +74,8 @@ export default defineConfig(({ mode }) => ({
       '@radix-ui/react-toast',
       '@radix-ui/react-label',
       '@radix-ui/react-select',
-      '@radix-ui/react-checkbox'
+      '@radix-ui/react-checkbox',
+      '@tanstack/react-query'
     ]
   }
 }));
