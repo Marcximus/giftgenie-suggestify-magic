@@ -15,12 +15,16 @@ export const BlogPostContent = ({ post }: BlogPostContentProps) => {
       // Remove margin styles
       .replace(/style="[^"]*margin[^"]*"/gi, '')
       // Remove text-align styles
-      .replace(/style="[^"]*text-align[^"]*"/gi, '');
+      .replace(/style="[^"]*text-align[^"]*"/gi, '')
+      // Remove padding styles
+      .replace(/style="[^"]*padding[^"]*"/gi, '')
+      // Remove max-width styles
+      .replace(/style="[^"]*max-width[^"]*"/gi, '');
   };
 
   return (
     <div 
-      className="prose prose-sm md:prose-base lg:prose-lg w-full m-0 p-0
+      className="prose prose-sm md:prose-base lg:prose-lg w-full !max-w-none !m-0 !p-0
                  prose-p:text-sm md:prose-p:text-base lg:prose-p:text-lg
                  prose-p:leading-relaxed prose-p:mb-4
                  
