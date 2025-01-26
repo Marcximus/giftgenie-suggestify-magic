@@ -48,7 +48,7 @@ export const formatProductHtml = (
         />
       </div>
       ${reviewInfo}
-      <div class="mt-4">
+      <div class="product-actions mt-4">
         <a 
           href="${affiliateLink}" 
           target="_blank" 

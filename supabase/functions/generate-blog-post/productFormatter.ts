@@ -55,7 +55,7 @@ export const formatProductHtml = (
     ${imageHtml}
     ${priceDisplay}
     ${reviewInfo}
-    <div class="mt-4 mb-8">
+    <div class="product-actions mt-4 mb-8">
       <a href="${affiliateLink}" 
          target="_blank" 
          rel="noopener noreferrer" 
