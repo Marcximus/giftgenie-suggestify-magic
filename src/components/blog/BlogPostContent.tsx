@@ -20,12 +20,7 @@ export const BlogPostContent = ({ post }: BlogPostContentProps) => {
 
   return (
     <div 
-      className="prose prose-sm md:prose-base lg:prose-lg
-                 !max-w-none !w-full
-                 [&>*]:!text-left [&>*]:!mx-0 [&>*]:!w-full
-                 [&_div]:!text-left [&_div]:!mx-0 [&_div]:!w-full
-                 [&_p]:!text-left [&_p]:!mx-0 [&_p]:!w-full
-                 
+      className="prose prose-sm md:prose-base lg:prose-lg mx-auto
                  prose-p:text-sm md:prose-p:text-base lg:prose-p:text-lg
                  prose-p:leading-relaxed prose-p:mb-4
                  
@@ -41,8 +36,7 @@ export const BlogPostContent = ({ post }: BlogPostContentProps) => {
                  prose-ul:list-disc prose-ul:pl-4 sm:prose-ul:pl-6 prose-ul:mb-4
                  prose-ol:list-decimal prose-ol:pl-4 sm:prose-ol:pl-6 prose-ol:mb-4
                  
-                 prose-img:w-full prose-img:!max-w-none prose-img:!mx-0
-                 prose-img:h-auto prose-img:my-4 sm:prose-img:my-6
+                 prose-img:w-full prose-img:h-auto prose-img:my-4 sm:prose-img:my-6
                  prose-img:rounded-lg prose-img:shadow-md
                  
                  prose-a:text-primary prose-a:font-medium prose-a:no-underline
