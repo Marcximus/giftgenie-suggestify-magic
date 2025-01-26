@@ -23,21 +23,21 @@ export const BlogPostContent = ({ post }: BlogPostContentProps) => {
       // Remove any remaining style attributes
       .replace(/style="[^"]*"/gi, '')
       // Force div containers to be full width and left-aligned, but exclude product-actions and review containers
-      // Updated regex to be more forgiving of whitespace and line breaks
       .replace(/<div(?!\s+class=["'][^"']*(?:product-actions|review-container)[^"']*["'])/gi, '<div class="w-full text-left"')
       // Center h1 tags (titles) with adjusted margins
       .replace(/<h1/gi, '<h1 class="!text-center mt-4 sm:mt-8 mb-6 sm:mb-12 px-8"')
       // Center product actions container - made more specific
-      .replace(/<div[^>]*class=["'][^"']*product-actions[^"']*["']/gi, '<div class="product-actions flex flex-col items-center gap-4 my-6"')
+      .replace(/<div[^>]*class=["'][^"']*product-actions[^"']*["']/gi, '<div class="product-actions flex flex-col items-center gap-4 my-8"')
       // Center review sections - made more specific
       .replace(/<div[^>]*class=["'][^"']*flex\s+items-center[^"']*["']/gi, '<div class="!text-center !flex !justify-center"')
       .replace(/<div[^>]*class=["'][^"']*review-text[^"']*["']/gi, '<div class="!text-center"')
       // Wrap Amazon button in a centered div and style it - made more specific
       .replace(
-        /<a[^>]*class=["'][^"']*amazon-button[^"']*["']/gi, 
-        '<div class="text-center w-full"><a class="amazon-button !inline-block px-4 py-2 bg-[#F97316] hover:bg-[#F97316]/90 text-white rounded-md transition-colors text-sm shadow-sm hover:shadow-md">'
+        /<a[^>]*href=["']([^"']+)["'][^>]*class=["'][^"']*amazon-button[^"']*["'][^>]*>/gi,
+        '<div class="text-center w-full mt-6 mb-8"><a href="$1" target="_blank" rel="noopener noreferrer" class="amazon-button !inline-block px-6 py-3 sm:px-8 sm:py-3 bg-[#F97316] hover:bg-[#F97316]/90 text-white rounded-lg transition-colors text-base sm:text-lg font-medium shadow-sm hover:shadow-md">'
       )
-      .replace(/<\/a>(?=\s*(?:<\/div>|<hr|$))/gi, '</a></div>');
+      // Close the Amazon button wrapper properly
+      .replace(/<\/a>\s*(?=<\/div>|<hr|$)/gi, '</a></div>');
   };
 
   return (
@@ -77,10 +77,12 @@ export const BlogPostContent = ({ post }: BlogPostContentProps) => {
                  [&_div.product-actions]:my-6 [&_div.product-actions]:!text-center
                  
                  [&_a.amazon-button]:!inline-block
-                 [&_a.amazon-button]:px-4 [&_a.amazon-button]:py-2 
+                 [&_a.amazon-button]:px-6 [&_a.amazon-button]:py-3 
+                 [&_a.amazon-button]:sm:px-8 [&_a.amazon-button]:sm:py-3
                  [&_a.amazon-button]:bg-[#F97316] [&_a.amazon-button]:hover:bg-[#F97316]/90 
-                 [&_a.amazon-button]:text-white [&_a.amazon-button]:rounded-md 
-                 [&_a.amazon-button]:transition-colors [&_a.amazon-button]:text-sm
+                 [&_a.amazon-button]:text-white [&_a.amazon-button]:rounded-lg
+                 [&_a.amazon-button]:transition-colors [&_a.amazon-button]:text-base
+                 [&_a.amazon-button]:sm:text-lg [&_a.amazon-button]:font-medium
                  [&_a.amazon-button]:shadow-sm [&_a.amazon-button]:hover:shadow-md
                  [&_a.amazon-button]:active:scale-95"
       dangerouslySetInnerHTML={{ __html: sanitizeContent(post.content) }}
