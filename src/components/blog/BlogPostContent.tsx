@@ -5,11 +5,26 @@ interface BlogPostContentProps {
 }
 
 export const BlogPostContent = ({ post }: BlogPostContentProps) => {
+  // Remove problematic inline styles from content
+  const sanitizeContent = (content: string) => {
+    return content
+      // Remove float styles
+      .replace(/style="[^"]*float:\s*(?:left|right)[^"]*"/gi, '')
+      // Remove fixed width styles
+      .replace(/style="[^"]*width:\s*\d+[^"]*"/gi, '')
+      // Remove margin styles
+      .replace(/style="[^"]*margin[^"]*"/gi, '')
+      // Remove text-align styles
+      .replace(/style="[^"]*text-align[^"]*"/gi, '');
+  };
+
   return (
     <div 
       className="prose prose-sm md:prose-base lg:prose-lg
                  !max-w-none !w-full
-                 [&>*]:!text-left [&>*]:!mx-0
+                 [&>*]:!text-left [&>*]:!mx-0 [&>*]:!w-full
+                 [&_div]:!text-left [&_div]:!mx-0 [&_div]:!w-full
+                 [&_p]:!text-left [&_p]:!mx-0 [&_p]:!w-full
                  
                  prose-p:text-sm md:prose-p:text-base lg:prose-p:text-lg
                  prose-p:leading-relaxed prose-p:mb-4
@@ -52,7 +67,7 @@ export const BlogPostContent = ({ post }: BlogPostContentProps) => {
                  [&_a.perfect-gift-button]:transition-all [&_a.perfect-gift-button]:duration-300
                  [&_a.perfect-gift-button]:shadow-md [&_a.perfect-gift-button]:hover:shadow-lg
                  [&_a.perfect-gift-button]:hover:opacity-90 [&_a.perfect-gift-button]:active:scale-95"
-      dangerouslySetInnerHTML={{ __html: post.content }}
+      dangerouslySetInnerHTML={{ __html: sanitizeContent(post.content) }}
     />
   );
 };
