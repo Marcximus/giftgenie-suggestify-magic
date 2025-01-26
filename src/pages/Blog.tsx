@@ -80,6 +80,7 @@ const Blog = () => {
         <Helmet>
           <title>Gift Ideas - Get The Gift</title>
           <meta name="description" content="Discover gift-giving tips, ideas, and inspiration on our blog. Learn about the latest trends and get expert advice on finding the perfect gift." />
+          <link rel="canonical" href="https://getthegift.ai/blog" />
         </Helmet>
         <div className="container mx-auto px-4 py-6">
           <div className="text-center mb-8">
@@ -115,6 +116,7 @@ const Blog = () => {
       <Helmet>
         <title>Gift Ideas - Get The Gift</title>
         <meta name="description" content="Discover gift-giving tips, ideas, and inspiration on our blog. Learn about the latest trends and get expert advice on finding the perfect gift." />
+        <link rel="canonical" href="https://getthegift.ai/blog" />
         <meta property="og:title" content="Gift Ideas - Get The Gift" />
         <meta property="og:description" content="Discover gift-giving tips, ideas, and inspiration on our blog. Learn about the latest trends and get expert advice on finding the perfect gift." />
         {posts?.[0]?.image_url && (
