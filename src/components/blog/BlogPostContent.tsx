@@ -24,9 +24,9 @@ export const BlogPostContent = ({ post }: BlogPostContentProps) => {
       .replace(/style="[^"]*"/gi, '')
       // Force div containers to be full width and left-aligned, except for product-actions and review containers
       .replace(/<div(?!\s+class="[^"]*(?:product-actions|review-container))/gi, '<div class="w-full text-left"')
-      // Center h1 tags (titles)
-      .replace(/<h1/gi, '<h1 class="!text-center mt-8 mb-12"')
-      // Center review sections (similar to h1 approach)
+      // Center h1 tags (titles) with adjusted margins
+      .replace(/<h1/gi, '<h1 class="!text-center mt-4 sm:mt-8 mb-6 sm:mb-12 px-8"')
+      // Center review sections
       .replace(/<div[^>]*class="[^"]*flex items-center[^"]*">/gi, '<div class="!text-center !flex !justify-center">')
       .replace(/<div[^>]*class="[^"]*review-text[^"]*">/gi, '<div class="!text-center">');
   };
@@ -39,7 +39,8 @@ export const BlogPostContent = ({ post }: BlogPostContentProps) => {
                  prose-p:leading-relaxed prose-p:mb-4 prose-p:w-full prose-p:text-left
                  
                  prose-h1:text-2xl sm:prose-h1:text-3xl md:prose-h1:text-4xl lg:prose-h1:text-5xl
-                 prose-h1:font-bold prose-h1:mb-6 prose-h1:w-full prose-h1:!text-center
+                 prose-h1:font-bold prose-h1:mb-4 sm:prose-h1:mb-6 prose-h1:w-full prose-h1:!text-center
+                 prose-h1:px-4 sm:prose-h1:px-8
                  
                  prose-h2:text-xl sm:prose-h2:text-2xl md:prose-h2:text-3xl
                  prose-h2:font-semibold prose-h2:mt-6 prose-h2:mb-4 prose-h2:w-full prose-h2:text-left
