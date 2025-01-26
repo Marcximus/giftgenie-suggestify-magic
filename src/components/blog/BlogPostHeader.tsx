@@ -21,7 +21,7 @@ export const BlogPostHeader = ({ post }: BlogPostHeaderProps) => {
         </h1>
 
         {post.image_url && !imageError && (
-          <div className="w-full aspect-[16/9] relative overflow-hidden sm:rounded-lg mt-2 sm:mt-4 mb-2 sm:mb-4 shadow-xl animate-fade-in sm:scale-90 md:scale-90 lg:scale-90">
+          <div className="w-full aspect-[16/9] relative overflow-hidden sm:rounded-lg mt-2 sm:mt-2 mb-2 sm:mb-4 shadow-xl animate-fade-in sm:scale-90 md:scale-90 lg:scale-90">
             <img 
               src={post.image_url} 
               alt={post.image_alt_text || post.title}
