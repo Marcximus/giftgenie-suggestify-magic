@@ -34,7 +34,7 @@ export const BlogPostContent = ({ post }: BlogPostContentProps) => {
       // Wrap Amazon button in a centered div and style it - made more specific
       .replace(
         /<a[^>]*href=["']([^"']+)["'][^>]*class=["'][^"']*amazon-button[^"']*["'][^>]*>/gi,
-        '<div class="text-center w-full mt-6 mb-8"><a href="$1" target="_blank" rel="noopener noreferrer" class="amazon-button !inline-block px-6 py-3 sm:px-8 sm:py-3 bg-[#F97316] hover:bg-[#F97316]/90 text-white rounded-lg transition-colors text-base sm:text-lg font-medium shadow-sm hover:shadow-md">'
+        '<div class="text-center w-full mt-8 mb-12"><a href="$1" target="_blank" rel="noopener noreferrer" class="amazon-button !inline-block px-6 py-3 sm:px-8 sm:py-3 bg-[#F97316] hover:bg-[#F97316]/90 text-white rounded-lg transition-colors text-base sm:text-lg font-medium shadow-sm hover:shadow-md">'
       )
       // Close the Amazon button wrapper properly
       .replace(/<\/a>\s*(?=<\/div>|<hr|$)/gi, '</a></div>');
