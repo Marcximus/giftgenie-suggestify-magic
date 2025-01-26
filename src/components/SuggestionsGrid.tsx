@@ -67,11 +67,16 @@ export const SuggestionsGrid = ({
       </div>
       
       {suggestions.length > 0 && (
-        <SuggestionsActions
-          onGenerateMore={onGenerateMore}
-          onStartOver={onStartOver}
-          isLoading={isLoading}
-        />
+        <div className="flex flex-col items-center mt-8 sm:mt-12">
+          <p className="text-[10px] text-muted-foreground/70 mb-4">
+            Some links may contain affiliate links from Amazon and other vendors
+          </p>
+          <SuggestionsActions
+            onGenerateMore={onGenerateMore}
+            onStartOver={onStartOver}
+            isLoading={isLoading}
+          />
+        </div>
       )}
     </>
   );
