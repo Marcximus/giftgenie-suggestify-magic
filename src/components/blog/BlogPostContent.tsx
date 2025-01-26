@@ -63,6 +63,8 @@ export const BlogPostContent = ({ post }: BlogPostContentProps) => {
                  prose-img:w-full prose-img:h-auto prose-img:my-4 sm:prose-img:my-6
                  prose-img:rounded-lg prose-img:shadow-md
                  prose-img:max-w-[270px] sm:prose-img:max-w-[360px] lg:prose-img:max-w-[450px]
+                 prose-img:max-h-[400px] sm:prose-img:max-h-[500px] lg:prose-img:max-h-[600px]
+                 prose-img:object-contain
                  prose-img:mx-auto
                  
                  prose-a:text-primary prose-a:font-medium prose-a:no-underline
