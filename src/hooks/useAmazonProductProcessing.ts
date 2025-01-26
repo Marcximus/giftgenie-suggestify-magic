@@ -41,11 +41,9 @@ export const useAmazonProductProcessing = () => {
             console.log('Amazon API response:', result);
             return result;
           },
-          {
-            maxRetries: 3,
-            baseDelay: 1000,
-            maxDelay: 5000
-          }
+          3, // maxRetries
+          1000, // baseDelay
+          5000 // maxDelay
         )
       );
       
