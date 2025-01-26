@@ -26,12 +26,14 @@ export const BlogPostContent = ({ post }: BlogPostContentProps) => {
       .replace(/<div(?!\s+class="[^"]*(?:product-actions|review-container))/gi, '<div class="w-full text-left"')
       // Center h1 tags (titles) with adjusted margins
       .replace(/<h1/gi, '<h1 class="!text-center mt-4 sm:mt-8 mb-6 sm:mb-12 px-8"')
-      // Center product actions container with text-align center on the parent
-      .replace(/<div[^>]*class="[^"]*product-actions[^"]*">/gi, '<div class="product-actions !text-center !flex !flex-col !items-center !justify-center !gap-4 my-6" style="text-align: center !important;">')
+      // Center product actions container with flex display and center alignment
+      .replace(/<div[^>]*class="[^"]*product-actions[^"]*">/gi, '<div class="product-actions !flex !flex-col !items-center !justify-center !gap-4 my-6"><div class="!flex !justify-center !w-full">')
+      // Add closing div for the flex container
+      .replace(/<\/div>(?=\s*<\/div>\s*(?:<hr|$))/gi, '</div></div>')
       // Center review sections
       .replace(/<div[^>]*class="[^"]*flex items-center[^"]*">/gi, '<div class="!text-center !flex !justify-center">')
       .replace(/<div[^>]*class="[^"]*review-text[^"]*">/gi, '<div class="!text-center">')
-      // Style Amazon buttons without w-full and ensure proper centering
+      // Style Amazon buttons with flex container
       .replace(/<a[^>]*class="[^"]*amazon-button[^"]*">/gi, '<a class="amazon-button !inline-flex !items-center !justify-center px-4 py-2 bg-[#F97316] hover:bg-[#F97316]/90 text-white rounded-md transition-colors text-sm shadow-sm hover:shadow-md">');
   };
 
