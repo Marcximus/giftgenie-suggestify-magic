@@ -65,10 +65,7 @@ const BlogPost = () => {
         relatedPosts: relatedPosts || []
       };
     },
-    staleTime: 0, // Always fetch fresh data
-    gcTime: 0, // Don't cache at all (formerly cacheTime)
-    refetchOnMount: true, // Refetch when component mounts
-    refetchOnWindowFocus: true, // Refetch when window gains focus
+    retry: 1,
   });
 
   if (isLoading) {
