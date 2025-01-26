@@ -1,42 +1,34 @@
-export const extractPrice = (priceData: any): number | undefined => {
-  console.log('Extracting price from:', {
-    raw: priceData,
-    type: typeof priceData,
-    isObject: typeof priceData === 'object',
-    hasCurrentPrice: priceData?.current_price !== undefined
-  });
-
-  // If it's already a valid number, return it
-  if (typeof priceData === 'number' && !isNaN(priceData)) {
-    return priceData;
-  }
-
-  // Handle price object with current_price
-  if (priceData && typeof priceData === 'object') {
-    if ('current_price' in priceData) {
-      const currentPrice = parseFloat(String(priceData.current_price));
-      if (!isNaN(currentPrice)) return currentPrice;
+export const parsePriceRange = (priceRange: string): { min: number; max: number } | null => {
+  try {
+    // Remove currency symbol and any whitespace
+    const cleanRange = priceRange.replace(/[^0-9-]/g, '');
+    
+    // Split on hyphen
+    const [min, max] = cleanRange.split('-').map(Number);
+    
+    if (isNaN(min) || isNaN(max)) {
+      console.error('Invalid price range format:', priceRange);
+      return null;
     }
-    if ('price' in priceData) {
-      const price = parseFloat(String(priceData.price));
-      if (!isNaN(price)) return price;
-    }
-  }
 
-  // Handle string prices
-  if (typeof priceData === 'string') {
-    const cleanPrice = priceData.replace(/[^0-9.]/g, '');
-    const price = parseFloat(cleanPrice);
-    if (!isNaN(price)) return price;
+    return { min, max };
+  } catch (error) {
+    console.error('Error parsing price range:', error);
+    return null;
   }
-
-  console.log('Failed to extract valid price from:', priceData);
-  return undefined;
 };
 
-export const formatPriceForDisplay = (price: number | undefined): string => {
-  if (typeof price !== 'number' || isNaN(price)) {
-    return 'Check price on Amazon';
-  }
-  return `USD ${price.toFixed(2)}`;
+export const validatePriceInRange = (price: number, min: number, max: number, tolerance = 0.2): boolean => {
+  // Allow for 20% tolerance as specified
+  const minWithTolerance = min * (1 - tolerance);
+  const maxWithTolerance = max * (1 + tolerance);
+  
+  return price >= minWithTolerance && price <= maxWithTolerance;
+};
+
+export const extractPrice = (priceStr: string | null | undefined): number | undefined => {
+  if (!priceStr) return undefined;
+  const cleanPrice = priceStr.replace(/[^0-9.]/g, '');
+  const price = parseFloat(cleanPrice);
+  return isNaN(price) ? undefined : price;
 };
