@@ -1,9 +1,9 @@
 import { AmazonProduct } from './types.ts';
 import { searchAmazonProducts } from './amazon-search.ts';
 
-const BATCH_SIZE = 8; // Keep frontend batch size at 8
-const PROCESS_SIZE = 4; // But process 4 at a time
-const BATCH_DELAY = 200; // Increase delay between batches
+const BATCH_SIZE = 4; // Reduced from 8 to 4
+const PROCESS_SIZE = 4; // Keep process size at 4
+const BATCH_DELAY = 200;
 
 export async function processSuggestionsInBatches(suggestions: string[]): Promise<AmazonProduct[]> {
   const batches: string[][] = [];

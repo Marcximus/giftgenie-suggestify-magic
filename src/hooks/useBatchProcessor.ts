@@ -21,7 +21,7 @@ export const useBatchProcessor = <T, R>() => {
     const {
       processFn,
       onError = console.error,
-      batchSize = AMAZON_CONFIG.MAX_CONCURRENT_REQUESTS,
+      batchSize = 4, // Reduced from 8 to 4
       staggerDelay = AMAZON_CONFIG.STAGGER_DELAY,
       parallel = true
     } = options;

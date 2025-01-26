@@ -1,7 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/use-toast";
 
-const BATCH_SIZE = 8;
+const BATCH_SIZE = 4; // Reduced from 8 to 4
 const MAX_CONCURRENT = 4;
 const DELAY_BETWEEN_BATCHES = 200;
 
