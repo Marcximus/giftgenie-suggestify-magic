@@ -11,26 +11,24 @@ export const RelatedPosts = ({ currentPostId, currentPostSlug }: RelatedPostsPro
   const { data: relatedPosts } = useQuery({
     queryKey: ["related-posts", currentPostId],
     queryFn: async () => {
-      // First try to get posts with similar titles for relevance
       const { data: relevantPosts, error: relevantError } = await supabase
         .from("blog_posts")
         .select("title, slug, image_url, excerpt, meta_description")
         .neq("id", currentPostId)
         .neq("slug", currentPostSlug)
         .lt("published_at", new Date().toISOString())
-        .order("created_at", { ascending: false })  // Use created_at to avoid time-based bias
-        .limit(12);  // Get more posts initially for random selection
+        .order("created_at", { ascending: false })
+        .limit(12);
 
       if (relevantError) {
         console.error("Error fetching related posts:", relevantError);
         throw relevantError;
       }
 
-      // If we have posts, randomly select 6 of them
       if (relevantPosts && relevantPosts.length > 6) {
         return relevantPosts
-          .sort(() => Math.random() - 0.5)  // Shuffle the array
-          .slice(0, 6);  // Take first 6 posts after shuffling
+          .sort(() => Math.random() - 0.5)
+          .slice(0, 6);
       }
 
       return relevantPosts || [];
@@ -41,9 +39,11 @@ export const RelatedPosts = ({ currentPostId, currentPostSlug }: RelatedPostsPro
 
   return (
     <nav className="mt-12 pt-8 border-t" aria-label="Related gift ideas">
-      <h2 className="text-2xl font-bold mb-6 bg-gradient-to-r from-[#9b87f5] via-[#D946EF] to-[#0EA5E9] text-transparent bg-clip-text">
-        More Gift Ideas
-      </h2>
+      <Link to="/blog" className="block">
+        <h2 className="text-2xl font-bold mb-6 bg-gradient-to-r from-[#9b87f5] via-[#D946EF] to-[#0EA5E9] text-transparent bg-clip-text hover:opacity-80 transition-opacity">
+          More Gift Ideas
+        </h2>
+      </Link>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {relatedPosts.map((post) => (
           <article key={post.slug} className="group">
