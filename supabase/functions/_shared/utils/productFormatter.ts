@@ -48,12 +48,12 @@ export const formatProductHtml = (
         />
       </div>
       ${reviewInfo}
-      <div class="product-actions mt-4">
+      <div class="product-actions flex items-center justify-center mt-4">
         <a 
           href="${affiliateLink}" 
           target="_blank" 
           rel="noopener noreferrer" 
-          class="amazon-button"
+          class="amazon-button inline-flex items-center justify-center"
         >
           View on Amazon
         </a>

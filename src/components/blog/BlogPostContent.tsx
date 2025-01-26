@@ -33,9 +33,9 @@ export const BlogPostContent = ({ post }: BlogPostContentProps) => {
       // Center review sections
       .replace(/<div[^>]*class="[^"]*flex items-center[^"]*">/gi, '<div class="!text-center !flex !justify-center">')
       .replace(/<div[^>]*class="[^"]*review-text[^"]*">/gi, '<div class="!text-center">')
-      // Center Amazon buttons and their containers using the same approach as reviews
-      .replace(/<div[^>]*class="[^"]*product-actions[^"]*">/gi, '<div class="!text-center !flex !justify-center !flex-col !items-center">')
-      .replace(/<a[^>]*class="[^"]*amazon-button[^"]*">/gi, '<a class="amazon-button !text-center !inline-flex !justify-center !items-center">');
+      // Center Amazon buttons and their containers using consistent classes
+      .replace(/<div[^>]*class="[^"]*product-actions[^"]*">/gi, '<div class="!text-center !flex !justify-center !flex-col !items-center product-actions">')
+      .replace(/<a[^>]*class="[^"]*amazon-button[^"]*">/gi, '<a class="amazon-button !inline-flex !justify-center !items-center">')
   };
 
   return (
@@ -70,10 +70,10 @@ export const BlogPostContent = ({ post }: BlogPostContentProps) => {
                  
                  [&_div.flex]:w-full [&_div.flex]:my-2 [&_div.flex]:justify-center
                  
-                 [&_div.product-actions]:w-full [&_div.product-actions]:my-2
+                 [&_div.product-actions]:w-full [&_div.product-actions]:my-4
                  [&_div.product-actions]:!flex [&_div.product-actions]:!justify-center [&_div.product-actions]:!items-center [&_div.product-actions]:!flex-col
                  
-                 [&_a.amazon-button]:inline-flex [&_a.amazon-button]:items-center [&_a.amazon-button]:px-4 [&_a.amazon-button]:py-2 
+                 [&_a.amazon-button]:!inline-flex [&_a.amazon-button]:!items-center [&_a.amazon-button]:px-4 [&_a.amazon-button]:py-2 
                  [&_a.amazon-button]:bg-[#F97316] [&_a.amazon-button]:hover:bg-[#F97316]/90 
                  [&_a.amazon-button]:text-white [&_a.amazon-button]:rounded-md 
                  [&_a.amazon-button]:transition-colors [&_a.amazon-button]:text-sm
