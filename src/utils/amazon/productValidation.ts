@@ -1,11 +1,5 @@
 import { AmazonProduct } from '@/types/amazon';
 
-// Minimum requirements for product quality
-const MINIMUM_RATING = 3.5;
-const MINIMUM_REVIEWS = 10;
-const MINIMUM_TITLE_LENGTH = 10;
-const MAXIMUM_TITLE_LENGTH = 200;
-
 // Blacklisted terms that indicate irrelevant products
 const BLACKLISTED_TERMS = [
   'cancel subscription',
@@ -34,10 +28,8 @@ const EXCLUDED_CATEGORIES = [
 ];
 
 export const validateProductTitle = (title: string): boolean => {
-  if (!title || 
-      title.length < MINIMUM_TITLE_LENGTH || 
-      title.length > MAXIMUM_TITLE_LENGTH) {
-    console.log('Title length validation failed:', title);
+  if (!title) {
+    console.log('Missing title');
     return false;
   }
 
@@ -72,12 +64,12 @@ export const validateProductRating = (
     return true; // Don't exclude products just because they're new
   }
 
-  if (rating < MINIMUM_RATING) {
+  if (rating < 3.5) {
     console.log('Rating too low:', rating);
     return false;
   }
 
-  if (totalRatings < MINIMUM_REVIEWS) {
+  if (totalRatings < 10) {
     console.log('Not enough reviews:', totalRatings);
     return false;
   }
