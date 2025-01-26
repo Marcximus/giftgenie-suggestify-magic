@@ -7,9 +7,8 @@ interface BlogPostContentProps {
 export const BlogPostContent = ({ post }: BlogPostContentProps) => {
   return (
     <div 
-      className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8
-                 prose prose-sm md:prose-base lg:prose-lg xl:prose-xl 
-                 text-left prose-p:text-sm md:prose-p:text-base 
+      className="prose prose-sm md:prose-base lg:prose-lg xl:prose-xl 
+                 prose-p:text-sm md:prose-p:text-base 
                  lg:prose-p:text-lg xl:prose-p:text-xl
                  prose-p:leading-relaxed prose-p:mb-6 lg:prose-p:mb-8
                  
@@ -53,7 +52,7 @@ export const BlogPostContent = ({ post }: BlogPostContentProps) => {
                  [&_a.perfect-gift-button]:shadow-md [&_a.perfect-gift-button]:hover:shadow-lg
                  [&_a.perfect-gift-button]:hover:opacity-90 [&_a.perfect-gift-button]:active:scale-95
                  
-                 max-w-none"
+                 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8"
       dangerouslySetInnerHTML={{ __html: post.content }}
     />
   );
