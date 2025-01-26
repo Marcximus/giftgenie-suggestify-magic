@@ -24,13 +24,11 @@ export const BlogPostContent = ({ post }: BlogPostContentProps) => {
       .replace(/style="[^"]*"/gi, '')
       // Force div containers to be full width and left-aligned, except for product-actions and review containers
       .replace(/<div(?!\s+class="[^"]*(?:product-actions|review-container))/gi, '<div class="w-full text-left"')
-      // First, wrap the entire review section (including stars and text) in a container
-      .replace(
-        /(<div[^>]*class="[^"]*flex items-center[^"]*">.*?<\/div>(?:\s*<div[^>]*>.*?<\/div>)*)/gi,
-        '<div class="review-container !flex !flex-col !items-center !w-full !my-4 !text-center">$1</div>'
-      )
       // Center h1 tags (titles)
-      .replace(/<h1/gi, '<h1 class="!text-center"');
+      .replace(/<h1/gi, '<h1 class="!text-center"')
+      // Center review sections (similar to h1 approach)
+      .replace(/<div[^>]*class="[^"]*flex items-center[^"]*">/gi, '<div class="!text-center !flex !justify-center">')
+      .replace(/<div[^>]*class="[^"]*review-text[^"]*">/gi, '<div class="!text-center">');
   };
 
   return (
@@ -59,20 +57,11 @@ export const BlogPostContent = ({ post }: BlogPostContentProps) => {
                  
                  [&>*]:w-full [&>*]:!max-w-none [&>*]:!mx-0 [&>*]:!px-0 [&>*]:text-left
                  
-                 [&_div.flex]:w-full [&_div.flex]:my-2
+                 [&_div.flex]:w-full [&_div.flex]:my-2 [&_div.flex]:justify-center
                  
                  [&_div.product-actions]:flex [&_div.product-actions]:flex-col
                  [&_div.product-actions]:items-center [&_div.product-actions]:gap-2
                  [&_div.product-actions]:my-2 [&_div.product-actions]:!text-center
-                 
-                 [&_div.review-container]:!flex [&_div.review-container]:!flex-col
-                 [&_div.review-container]:!items-center [&_div.review-container]:!w-full
-                 [&_div.review-container]:!my-4 [&_div.review-container]:!text-center
-                 [&_div.review-container_*]:!text-center
-                 [&_div.review-container_div]:!justify-center
-                 [&_div.review-container_div]:!items-center
-                 [&_div.review-container_div]:!text-center
-                 [&_div.review-container_span]:!text-center
                  
                  [&_a.amazon-button]:inline-flex [&_a.amazon-button]:items-center [&_a.amazon-button]:px-4 [&_a.amazon-button]:py-2 
                  [&_a.amazon-button]:bg-[#F97316] [&_a.amazon-button]:hover:bg-[#F97316]/90 
