@@ -1,1 +1,1 @@
-// This file is now empty as we've removed caching functionality
+// This file is intentionally empty as caching has been removed
