@@ -21,7 +21,7 @@ const Index = () => {
   return (
     <ErrorBoundary>
       <IndexMeta />
-      <main className="min-h-screen bg-gradient-to-br from-background via-secondary/30 to-primary/5">
+      <main className="bg-gradient-to-br from-background via-secondary/30 to-primary/5">
         <div className="container mx-auto px-2 max-w-7xl">
           <BreadcrumbNav />
           <header>
@@ -53,7 +53,7 @@ const Index = () => {
         </div>
 
         {suggestions.length > 0 && (
-          <footer className="text-center py-1 mt-2">
+          <footer className="text-center py-1">
             <p className="text-[10px] text-muted-foreground/70 bg-background/80 backdrop-blur-sm py-1">
               Some links may contain affiliate links from Amazon and other vendors
             </p>
