@@ -50,7 +50,7 @@ export const LoadingMessage = ({ isLoading }: LoadingMessageProps) => {
   return (
     <div className="flex flex-col items-center justify-center space-y-14 mt-12 sm:mt-16 ml-[-8%] sm:ml-[-4%]">
       <Spinner variant="infinite" className="w-16 h-16 sm:w-20 sm:h-20" />
-      <p className="text-[#8E9196] text-center text-sm md:text-base font-medium max-w-md px-4 ml-[5%]">
+      <p className="text-[#8E9196] text-center text-sm md:text-base font-medium max-w-md px-4 ml-[5%] animate-pulse-text">
         {shuffledMessages[currentLoadingMessage]}
       </p>
     </div>
