@@ -28,9 +28,15 @@ export const BlogPostContent = ({ post }: BlogPostContentProps) => {
       .replace(/<h1/gi, '<h1 class="!text-center mt-4 sm:mt-8 mb-6 sm:mb-12 px-8"')
       // Center product actions container - made more specific
       .replace(/<div[^>]*class=["'][^"']*product-actions[^"']*["']/gi, '<div class="product-actions flex flex-col items-center gap-4 my-8"')
-      // Center review sections - made more specific and update font size
-      .replace(/<div[^>]*class=["'][^"']*flex\s+items-center[^"']*["']/gi, '<div class="!text-center !flex !justify-center text-sm md:text-base lg:text-lg"')
-      .replace(/<div[^>]*class=["'][^"']*review-text[^"']*["']/gi, '<div class="!text-center text-sm md:text-base lg:text-lg"')
+      // Center review sections with enforced text sizes
+      .replace(
+        /<div[^>]*class=["'][^"']*flex\s+items-center[^"']*["']/gi, 
+        '<div class="!text-center !flex !justify-center !text-sm !md:text-base !lg:text-lg prose-p:!text-sm prose-p:!md:text-base prose-p:!lg:text-lg"'
+      )
+      .replace(
+        /<div[^>]*class=["'][^"']*review-text[^"']*["']/gi, 
+        '<div class="!text-center !text-sm !md:text-base !lg:text-lg prose-p:!text-sm prose-p:!md:text-base prose-p:!lg:text-lg"'
+      )
       // Wrap Amazon button in a centered div and style it - made more specific
       .replace(
         /<a[^>]*href=["']([^"']+)["'][^>]*class=["'][^"']*amazon-button[^"']*["'][^>]*>/gi,
