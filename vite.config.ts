@@ -76,5 +76,16 @@ export default defineConfig(({ mode }) => ({
   },
   optimizeDeps: {
     include: ['react', 'react-dom', 'react-router-dom']
+  },
+  // Add proper MIME type handling
+  assetsInclude: ['**/*.js', '**/*.mjs'],
+  // Ensure correct content type headers
+  headers: {
+    '/*.js': {
+      'Content-Type': 'application/javascript'
+    },
+    '/*.mjs': {
+      'Content-Type': 'application/javascript'
+    }
   }
 }));
