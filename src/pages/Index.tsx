@@ -22,7 +22,7 @@ const Index = () => {
     <ErrorBoundary>
       <IndexMeta />
       <main className="min-h-screen bg-gradient-to-br from-background via-secondary/30 to-primary/5">
-        <div className="container mx-auto px-2 pt-4 sm:pt-6 pb-8 max-w-7xl">
+        <div className="container mx-auto px-2 pt-2 sm:pt-6 pb-4 sm:pb-8 max-w-7xl">
           <BreadcrumbNav />
           <header>
             <h1 className="sr-only">GiftGenie - AI-Powered Gift Suggestions</h1>
@@ -31,7 +31,7 @@ const Index = () => {
             </Suspense>
           </header>
           
-          <section aria-label="Gift Suggestions" className="mb-8">
+          <section aria-label="Gift Suggestions" className="mb-4 sm:mb-8">
             {suggestions.length > 0 && (
               <Suspense fallback={
                 <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
