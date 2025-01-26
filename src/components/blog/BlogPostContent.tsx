@@ -5,7 +5,6 @@ interface BlogPostContentProps {
 }
 
 export const BlogPostContent = ({ post }: BlogPostContentProps) => {
-  // Remove problematic inline styles from content
   const sanitizeContent = (content: string) => {
     return content
       // Remove float styles
@@ -27,12 +26,9 @@ export const BlogPostContent = ({ post }: BlogPostContentProps) => {
       // Center h1 tags (titles) with adjusted margins
       .replace(/<h1/gi, '<h1 class="!text-center mt-4 sm:mt-8 mb-6 sm:mb-12 px-8"')
       // Center product actions container and ensure flex column layout for vertical stacking
-      .replace(/<div[^>]*class="[^"]*product-actions[^"]*">/gi, '<div class="product-actions !flex !flex-col !items-center !justify-center !gap-4 my-6">')
-      // Center review sections
-      .replace(/<div[^>]*class="[^"]*flex items-center[^"]*">/gi, '<div class="!text-center !flex !justify-center">')
-      .replace(/<div[^>]*class="[^"]*review-text[^"]*">/gi, '<div class="!text-center">')
+      .replace(/<div[^>]*class="[^"]*product-actions[^"]*">/gi, '<div class="product-actions !flex !flex-col !items-center !justify-center !gap-4 !text-center !w-auto !mx-auto my-6">')
       // Style Amazon buttons without w-full and ensure proper centering
-      .replace(/<a[^>]*class="[^"]*amazon-button[^"]*">/gi, '<a class="amazon-button !inline-flex !items-center !justify-center px-4 py-2 bg-[#F97316] hover:bg-[#F97316]/90 text-white rounded-md transition-colors text-sm shadow-sm hover:shadow-md">');
+      .replace(/<a[^>]*class="[^"]*amazon-button[^"]*">/gi, '<a class="amazon-button !inline-flex !items-center !justify-center !w-auto px-4 py-2 bg-[#F97316] hover:bg-[#F97316]/90 text-white rounded-md transition-colors text-sm shadow-sm hover:shadow-md">');
   };
 
   return (
@@ -63,15 +59,18 @@ export const BlogPostContent = ({ post }: BlogPostContentProps) => {
                  prose-a:text-primary prose-a:font-medium prose-a:no-underline
                  hover:prose-a:text-primary/90
                  
-                 [&>*]:w-full [&>*]:!max-w-none [&>*]:!mx-0 [&>*]:!px-0 [&>*]:text-left
+                 [&>*]:w-full [&>*]:!max-w-none [&>*]:!mx-0 [&>*]:!px-0
                  
                  [&_div.flex]:w-full [&_div.flex]:my-2 [&_div.flex]:justify-center
                  
-                 [&_div.product-actions]:flex [&_div.product-actions]:flex-col
-                 [&_div.product-actions]:items-center [&_div.product-actions]:gap-4
-                 [&_div.product-actions]:my-6 [&_div.product-actions]:!text-center
+                 [&_div.product-actions]:!flex [&_div.product-actions]:!flex-col
+                 [&_div.product-actions]:!items-center [&_div.product-actions]:!gap-4
+                 [&_div.product-actions]:!my-6 [&_div.product-actions]:!text-center
+                 [&_div.product-actions]:!w-auto [&_div.product-actions]:!mx-auto
                  
-                 [&_a.amazon-button]:inline-flex [&_a.amazon-button]:items-center [&_a.amazon-button]:px-4 [&_a.amazon-button]:py-2 
+                 [&_a.amazon-button]:!inline-flex [&_a.amazon-button]:!items-center 
+                 [&_a.amazon-button]:!justify-center [&_a.amazon-button]:!w-auto
+                 [&_a.amazon-button]:px-4 [&_a.amazon-button]:py-2 
                  [&_a.amazon-button]:bg-[#F97316] [&_a.amazon-button]:hover:bg-[#F97316]/90 
                  [&_a.amazon-button]:text-white [&_a.amazon-button]:rounded-md 
                  [&_a.amazon-button]:transition-colors [&_a.amazon-button]:text-sm
