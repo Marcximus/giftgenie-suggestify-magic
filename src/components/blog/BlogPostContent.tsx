@@ -52,7 +52,7 @@ export const BlogPostContent = ({ post }: BlogPostContentProps) => {
                  [&_a.perfect-gift-button]:shadow-md [&_a.perfect-gift-button]:hover:shadow-lg
                  [&_a.perfect-gift-button]:hover:opacity-90 [&_a.perfect-gift-button]:active:scale-95
                  
-                 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8"
+                 max-w-none px-4 sm:px-6 lg:px-8"
       dangerouslySetInnerHTML={{ __html: post.content }}
     />
   );
