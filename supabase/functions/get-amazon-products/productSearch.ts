@@ -4,6 +4,22 @@ import { cleanSearchTerm } from './searchUtils.ts';
 import { parsePriceRange, validatePriceInRange, extractPrice } from './priceUtils.ts';
 import type { AmazonProduct } from './types.ts';
 
+// Map common gift categories to Amazon browse node IDs
+const CATEGORY_MAP = {
+  skincare: '11060451',
+  beauty: '3760911',
+  music: '5174',
+  electronics: '172282',
+  books: '283155',
+  fashion: '7141123011',
+  sports: '3375251',
+  toys: '165793011',
+  home: '1055398',
+  kitchen: '284507',
+  office: '1064954',
+  pets: '2619533011'
+};
+
 export const searchProducts = async (
   searchTerm: string,
   apiKey: string,
@@ -23,11 +39,25 @@ export const searchProducts = async (
 
   const cleanedTerm = cleanSearchTerm(searchTerm);
   console.log('Cleaned search term:', cleanedTerm);
-  
+
+  // Detect relevant categories from the search term
+  const detectedCategories = Object.entries(CATEGORY_MAP)
+    .filter(([category]) => 
+      searchTerm.toLowerCase().includes(category) ||
+      cleanedTerm.toLowerCase().includes(category)
+    )
+    .map(([_, nodeId]) => nodeId);
+
   const url = new URL(`https://${RAPIDAPI_HOST}/search`);
   url.searchParams.append('query', cleanedTerm);
   url.searchParams.append('country', 'US');
-  url.searchParams.append('category_id', 'aps');
+  
+  // Use detected category if available, otherwise use a general gifts category
+  if (detectedCategories.length > 0) {
+    url.searchParams.append('category_id', detectedCategories[0]);
+  } else {
+    url.searchParams.append('category_id', 'aps');
+  }
 
   // Parse price range if provided
   let priceConstraints = null;
@@ -69,6 +99,7 @@ export const searchProducts = async (
     console.log('Amazon API raw response:', {
       hasData: !!searchData.data,
       productsCount: searchData.data?.products?.length || 0,
+      categories: detectedCategories,
       firstProduct: searchData.data?.products?.[0] ? {
         title: searchData.data.products[0].title,
         hasPrice: !!searchData.data.products[0].product_price,
@@ -85,82 +116,57 @@ export const searchProducts = async (
       return null;
     }
 
-    // Filter products by price if constraints exist
-    let validProducts = searchData.data.products;
-    if (priceConstraints) {
-      validProducts = validProducts.filter(product => {
-        const price = extractPrice(product.product_price);
-        console.log('Product price validation:', {
-          title: product.title,
-          rawPrice: product.product_price,
-          extractedPrice: price,
-          min: priceConstraints?.min,
-          max: priceConstraints?.max,
-          isValid: price ? validatePriceInRange(price, priceConstraints.min, priceConstraints.max) : false
-        });
+    // Filter products by price and relevance
+    let validProducts = searchData.data.products.filter(product => {
+      // Check if the product title contains any blacklisted terms
+      const blacklistedTerms = ['cancel subscription', 'guide', 'manual', 'how to'];
+      const hasBlacklistedTerm = blacklistedTerms.some(term => 
+        product.title.toLowerCase().includes(term)
+      );
+      
+      if (hasBlacklistedTerm) {
+        console.log('Product filtered out - contains blacklisted term:', product.title);
+        return false;
+      }
 
-        if (!price) {
-          console.log('Product filtered out - no valid price:', product.title);
-          return false;
-        }
-        const isValid = validatePriceInRange(price, priceConstraints.min, priceConstraints.max);
-        if (!isValid) {
+      // Validate price if constraints exist
+      if (priceConstraints) {
+        const price = extractPrice(product.product_price);
+        if (!price || !validatePriceInRange(price, priceConstraints.min, priceConstraints.max)) {
           console.log('Product filtered out - price out of range:', {
             title: product.title,
             price,
-            min: priceConstraints.min,
-            max: priceConstraints.max
+            constraints: priceConstraints
           });
+          return false;
         }
-        return isValid;
-      });
-
-      console.log('Filtered products by price range:', {
-        original: searchData.data.products.length,
-        filtered: validProducts.length,
-        priceRange: priceConstraints
-      });
-
-      if (validProducts.length === 0) {
-        console.log('No products found within price range');
-        return null;
       }
-    }
 
-    const product = validProducts[0];
-    console.log('Selected product details:', {
-      title: product.title,
-      price: product.product_price,
-      hasImage: !!product.product_photo,
-      imageUrl: product.product_photo,
-      hasAsin: !!product.asin,
-      asin: product.asin,
-      rating: product.product_star_rating,
-      totalRatings: product.product_num_ratings
+      return true;
     });
 
-    if (!product.asin || !product.product_photo) {
-      console.warn('Product missing required data:', {
-        title: product.title,
-        hasAsin: !!product.asin,
-        hasImage: !!product.product_photo,
-        rawProduct: product
-      });
+    console.log('Filtered products:', {
+      original: searchData.data.products.length,
+      filtered: validProducts.length,
+      priceRange: priceConstraints
+    });
+
+    if (validProducts.length === 0) {
+      console.log('No valid products found after filtering');
       return null;
     }
 
-    const formattedProduct = formatProduct(product);
-    console.log('Final formatted product:', {
-      title: formattedProduct.title,
-      hasPrice: formattedProduct.price !== undefined,
-      price: formattedProduct.price,
-      hasImage: !!formattedProduct.imageUrl,
-      imageUrl: formattedProduct.imageUrl,
-      hasAsin: !!formattedProduct.asin,
-      asin: formattedProduct.asin
-    });
-
-    return formattedProduct;
+    const product = validProducts[0];
+    return {
+      title: product.title,
+      description: product.product_description || product.title,
+      price: extractPrice(product.product_price),
+      currency: 'USD',
+      imageUrl: product.product_photo || product.thumbnail,
+      rating: product.product_star_rating ? parseFloat(product.product_star_rating) : undefined,
+      totalRatings: product.product_num_ratings ? parseInt(product.product_num_ratings.toString(), 10) : undefined,
+      asin: product.asin
+    };
   } catch (error) {
     console.error('Error in Amazon product search:', {
       error: error.message,
@@ -169,39 +175,4 @@ export const searchProducts = async (
     });
     throw error;
   }
-};
-
-const formatProduct = (product: any): AmazonProduct => {
-  console.log('Formatting product input:', {
-    hasTitle: !!product.title,
-    hasDescription: !!product.product_description,
-    hasPrice: !!product.product_price,
-    hasImage: !!product.product_photo,
-    hasAsin: !!product.asin,
-    rawPrice: product.product_price,
-    rawImage: product.product_photo
-  });
-
-  const formattedProduct = {
-    title: product.title,
-    description: product.product_description || product.title,
-    price: extractPrice(product.product_price),
-    currency: 'USD',
-    imageUrl: product.product_photo || product.thumbnail,
-    rating: product.product_star_rating ? parseFloat(product.product_star_rating) : undefined,
-    totalRatings: product.product_num_ratings ? parseInt(product.product_num_ratings.toString(), 10) : undefined,
-    asin: product.asin
-  };
-
-  console.log('Formatted product result:', {
-    title: formattedProduct.title,
-    hasPrice: formattedProduct.price !== undefined,
-    price: formattedProduct.price,
-    hasImage: !!formattedProduct.imageUrl,
-    imageUrl: formattedProduct.imageUrl,
-    hasAsin: !!formattedProduct.asin,
-    asin: formattedProduct.asin
-  });
-
-  return formattedProduct;
 };
