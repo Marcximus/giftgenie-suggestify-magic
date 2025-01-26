@@ -25,31 +25,26 @@ const EXCLUDED_KEYWORDS = [
   'instruction', 'tutorial', 'handbook', 'textbook'
 ];
 
-const isGiftAppropriate = (product: any): boolean => {
-  if (!product || typeof product !== 'object') {
-    console.log('Invalid product object:', product);
-    return false;
-  }
-
-  const title = product.title || '';
-  const description = product.product_description || '';
-
-  if (!title) {
-    console.log('Product missing title:', product);
-    return false;
-  }
-
+const isGiftAppropriate = (title: string, description: string = ''): boolean => {
   const lowerTitle = title.toLowerCase();
   const lowerDesc = description.toLowerCase();
   
-  const isAppropriate = !EXCLUDED_KEYWORDS.some(keyword => 
-    lowerTitle.includes(keyword) || lowerDesc.includes(keyword));
-
-  if (!isAppropriate) {
-    console.log('Product filtered out by keywords:', { title, keywords: EXCLUDED_KEYWORDS });
+  // Check for excluded keywords
+  if (EXCLUDED_KEYWORDS.some(keyword => 
+    lowerTitle.includes(keyword) || lowerDesc.includes(keyword))) {
+    console.log('Product filtered out due to excluded keywords:', title);
+    return false;
   }
 
-  return isAppropriate;
+  // Check for digital-only products
+  if (lowerTitle.includes('kindle') || 
+      lowerTitle.includes('ebook') || 
+      lowerTitle.includes('digital')) {
+    console.log('Product filtered out as digital-only:', title);
+    return false;
+  }
+
+  return true;
 };
 
 const extractPrice = (priceStr: string | null | undefined): number | undefined => {
@@ -62,13 +57,10 @@ const extractPrice = (priceStr: string | null | undefined): number | undefined =
 async function searchAmazonProduct(
   searchTerm: string,
   apiKey: string,
+  priceRange?: string,
+  context: string = 'gift'
 ): Promise<AmazonProduct | null> {
-  console.log('Starting Amazon search with term:', searchTerm);
-  
-  if (!searchTerm?.trim()) {
-    console.error('Invalid search term:', searchTerm);
-    throw new Error('Search term is required');
-  }
+  console.log('Starting Amazon search with term:', searchTerm, { priceRange, context });
   
   const searchParams = new URLSearchParams({
     query: searchTerm.trim(),
@@ -78,48 +70,48 @@ async function searchAmazonProduct(
   });
 
   try {
-    const searchUrl = `https://${RAPIDAPI_HOST}/search?${searchParams.toString()}`;
-    console.log('Making request to:', searchUrl);
+    console.log('Making request to Amazon API with params:', searchParams.toString());
     
-    const searchResponse = await fetch(searchUrl, {
-      headers: {
-        'X-RapidAPI-Key': apiKey,
-        'X-RapidAPI-Host': RAPIDAPI_HOST,
+    const searchResponse = await fetch(
+      `https://${RAPIDAPI_HOST}/search?${searchParams.toString()}`,
+      {
+        headers: {
+          'X-RapidAPI-Key': apiKey,
+          'X-RapidAPI-Host': RAPIDAPI_HOST,
+        }
       }
-    });
+    );
 
     if (!searchResponse.ok) {
       console.error('Amazon Search API error:', {
         status: searchResponse.status,
         statusText: searchResponse.statusText
       });
-      throw new Error(`API error: ${searchResponse.status}`);
+      return null;
     }
 
     const searchData = await searchResponse.json();
-    console.log('Search API response products count:', searchData.data?.products?.length || 0);
+    console.log('Raw Amazon API response:', {
+      hasData: !!searchData.data,
+      productsCount: searchData.data?.products?.length || 0
+    });
 
     if (!searchData.data?.products?.length) {
       console.log('No products found in search results');
       return null;
     }
 
-    // Find first gift-appropriate product
+    // Filter and find the first gift-appropriate product
     const giftProduct = searchData.data.products.find((p: any) => 
-      p?.asin && isGiftAppropriate(p)
+      p.asin && isGiftAppropriate(p.title, p.product_description)
     );
 
     if (!giftProduct) {
-      console.log('No gift-appropriate products found');
+      console.log('No gift-appropriate products found in results');
       return null;
     }
 
-    console.log('Found appropriate product:', {
-      title: giftProduct.title,
-      asin: giftProduct.asin
-    });
-
-    // Get detailed product information
+    // Get detailed product information using ASIN
     const detailsResponse = await fetch(
       `https://${RAPIDAPI_HOST}/product-details?asin=${giftProduct.asin}&country=US`,
       {
@@ -133,18 +125,26 @@ async function searchAmazonProduct(
     let detailsData;
     if (detailsResponse.ok) {
       detailsData = await detailsResponse.json();
-      console.log('Product details fetched successfully for ASIN:', giftProduct.asin);
-    } else {
-      console.error('Failed to get product details:', detailsResponse.status);
+      console.log('Product details response:', {
+        title: detailsData.data?.product_title,
+        price: detailsData.data?.product_price,
+        originalPrice: detailsData.data?.product_original_price
+      });
     }
 
     const price = detailsData?.data?.product_price 
       ? extractPrice(detailsData.data.product_price)
       : extractPrice(giftProduct.product_price);
 
+    console.log('Final price extraction:', {
+      detailsPrice: detailsData?.data?.product_price,
+      searchPrice: giftProduct.product_price,
+      extractedPrice: price
+    });
+
     const result: AmazonProduct = {
-      title: detailsData?.data?.product_title || giftProduct.title || 'Product Title Not Available',
-      description: detailsData?.data?.product_description || giftProduct.product_description || giftProduct.title || 'No description available',
+      title: detailsData?.data?.product_title || giftProduct.title,
+      description: detailsData?.data?.product_description || giftProduct.product_description || giftProduct.title,
       price: price,
       currency: 'USD',
       imageUrl: detailsData?.data?.product_photo || giftProduct.product_photo || giftProduct.thumbnail,
@@ -157,7 +157,9 @@ async function searchAmazonProduct(
       title: result.title,
       asin: result.asin,
       hasImage: !!result.imageUrl,
-      hasPrice: result.price !== undefined
+      hasPrice: result.price !== undefined,
+      price: result.price,
+      isGiftAppropriate: isGiftAppropriate(result.title, result.description)
     });
 
     return result;
@@ -167,19 +169,25 @@ async function searchAmazonProduct(
       searchTerm,
       stack: error.stack
     });
-    throw error;
+    return null;
   }
 }
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, {
+      headers: corsHeaders
+    });
   }
 
   try {
-    const { searchTerm } = await req.json();
+    console.log('Received request:', req.method);
+    const { searchTerm, priceRange, context = 'gift' } = await req.json();
     
+    console.log('Request payload:', { searchTerm, priceRange, context });
+
     if (!searchTerm) {
+      console.error('Missing search term in request');
       return new Response(
         JSON.stringify({ error: 'Search term is required' }),
         { 
@@ -201,8 +209,22 @@ serve(async (req) => {
       );
     }
 
-    const product = await searchAmazonProduct(searchTerm, apiKey);
+    console.log('Processing request:', { searchTerm, priceRange, context });
+
+    const product = await searchAmazonProduct(searchTerm, apiKey, priceRange, context);
     
+    if (!product) {
+      console.log('No product found for search term:', searchTerm);
+      return new Response(
+        JSON.stringify({ product: null }),
+        { 
+          status: 200,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
+    }
+
+    console.log('Successfully found product, returning response');
     return new Response(
       JSON.stringify({ product }),
       { 

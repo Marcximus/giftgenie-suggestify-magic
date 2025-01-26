@@ -40,20 +40,7 @@
   }
 }
 
-/* Essential utility classes only */
-.search-container {
-  @apply max-w-3xl mx-auto px-4 py-6;
-}
-
-.results-grid {
-  @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-6;
-}
-
-.loading-spinner {
-  @apply animate-spin h-8 w-8 text-primary;
-}
-
-/* Optimize touch targets on mobile */
+/* Improve touch target sizes on mobile */
 @media (max-width: 640px) {
   button, 
   [role="button"],
@@ -66,4 +53,39 @@
   textarea {
     @apply min-h-[44px];
   }
+}
+
+/* Essential utility classes only */
+.search-container {
+  @apply max-w-3xl mx-auto px-4 py-8 sm:py-12;
+}
+
+.results-grid {
+  @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mt-8;
+}
+
+.product-card {
+  @apply bg-white rounded-lg shadow-md transition-transform duration-200 hover:scale-105;
+}
+
+.loading-spinner {
+  @apply animate-spin h-8 w-8 text-primary;
+}
+
+/* Handle text overflow */
+textarea {
+  @apply transition-all duration-200;
+  min-height: 44px;
+}
+
+textarea:focus {
+  height: auto;
+}
+
+/* Prevent text selection during touch interactions */
+.touch-manipulation {
+  touch-action: manipulation;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
 }

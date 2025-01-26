@@ -24,7 +24,7 @@ export default defineConfig(({ mode }) => ({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
-    }
+    },
   },
   build: {
     cssCodeSplit: true,
@@ -32,34 +32,14 @@ export default defineConfig(({ mode }) => ({
     rollupOptions: {
       output: {
         manualChunks: {
-          vendor: ['react', 'react-dom'],
-          ui: [
-            '@radix-ui/react-dialog',
-            '@radix-ui/react-slot',
-            '@radix-ui/react-toast',
-            '@radix-ui/react-label',
-            '@radix-ui/react-select',
-            '@radix-ui/react-checkbox'
-          ],
-          charts: ['recharts'],
-          icons: ['lucide-react'],
-          query: ['@tanstack/react-query'],
-          forms: ['react-hook-form', '@hookform/resolvers'],
-          animations: ['framer-motion']
-        },
-        chunkFileNames: 'assets/[name].[hash].js',
-        entryFileNames: 'assets/[name].[hash].js',
-        assetFileNames: 'assets/[name].[hash].[ext]'
+          'vendor': ['react', 'react-dom', 'react-router-dom'],
+          'ui': ['@radix-ui/react-dialog', '@radix-ui/react-slot', '@radix-ui/react-toast'],
+          'charts': ['recharts'],
+          'icons': ['lucide-react']
+        }
       }
     },
-    chunkSizeWarningLimit: 1000,
-    minify: 'terser',
-    terserOptions: {
-      compress: {
-        drop_console: true,
-        drop_debugger: true
-      }
-    }
+    chunkSizeWarningLimit: 1000
   },
   css: {
     postcss: {
@@ -68,20 +48,5 @@ export default defineConfig(({ mode }) => ({
         autoprefixer,
       ]
     }
-  },
-  optimizeDeps: {
-    include: [
-      'react', 
-      'react-dom', 
-      'react-router-dom',
-      'tailwind-merge',
-      '@radix-ui/react-dialog',
-      '@radix-ui/react-slot',
-      '@radix-ui/react-toast',
-      '@radix-ui/react-label',
-      '@radix-ui/react-select',
-      '@radix-ui/react-checkbox',
-      '@tanstack/react-query'
-    ]
   }
 }));

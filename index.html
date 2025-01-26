@@ -1,25 +1,16 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <!-- Preload critical assets -->
-    <link rel="preload" as="style" href="/src/index.css">
-    <link rel="preload" as="style" href="/src/App.css">
-    
-    <!-- Preconnect to critical domains -->
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    
-    <!-- Deferred Google Analytics -->
+    <!-- Google tag (gtag.js) - Deferred loading -->
+    <script defer src="https://www.googletagmanager.com/gtag/js?id=G-DB54W7MG31"></script>
     <script>
       window.dataLayer = window.dataLayer || [];
       function gtag(){dataLayer.push(arguments);}
       gtag('js', new Date());
       gtag('config', 'G-DB54W7MG31', {
-        send_page_view: false,
-        transport_url: 'https://www.googletagmanager.com',
-        transport_type: 'beacon'
+        send_page_view: false // Defer page view tracking until after critical content loads
       });
     </script>
-    <script defer src="https://www.googletagmanager.com/gtag/js?id=G-DB54W7MG31"></script>
 
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -28,6 +19,8 @@
     <title>Get The Gift - AI-Powered Gift Suggestions | Find Perfect Gifts</title>
     <link rel="icon" type="image/png" href="/lovable-uploads/89d8ebcd-a5f6-4614-a505-80ed3d467943.png" />
     <meta name="description" content="Discover thoughtful, personalized gift ideas with our AI-powered gift suggestion engine. From birthdays to anniversaries, find the perfect present for any occasion, budget, or recipient. Our smart technology helps you choose meaningful gifts that show you care, with detailed recommendations and real product reviews." />
+    <meta name="keywords" content="gift suggestions, AI gift finder, personalized gifts, gift recommendations, gift ideas, Get The Gift" />
+    <meta name="author" content="Get The Gift" />
     
     <!-- Critical CSS Inline -->
     <style>
@@ -43,20 +36,9 @@
         -webkit-text-size-adjust: 100%;
         background-color: hsl(var(--background));
         color: hsl(var(--foreground));
-        text-rendering: optimizeLegibility;
-        -webkit-font-smoothing: antialiased;
-      }
-      /* Pre-paint gradient background */
-      .bg-gradient-preload {
-        background: linear-gradient(to right, rgba(168, 85, 247, 0.8), rgba(59, 130, 246, 0.8), rgba(168, 85, 247, 0.8));
-        position: absolute;
-        width: 1px;
-        height: 1px;
-        clip: rect(1px, 1px, 1px, 1px);
-        overflow: hidden;
       }
     </style>
-
+    
     <!-- DNS Prefetch and Preconnect -->
     <link rel="preconnect" href="https://www.amazon.com" crossorigin />
     <link rel="dns-prefetch" href="https://www.amazon.com" />
@@ -116,12 +98,11 @@
     <meta name="robots" content="index, follow" />
     <link rel="canonical" href="https://getthegift.ai" />
   </head>
+
   <body>
-    <!-- Pre-paint gradient -->
-    <div class="bg-gradient-preload" aria-hidden="true"></div>
     <div id="root"></div>
-    <!-- Required Lovable script -->
-    <script src="https://cdn.gpteng.co/gptengineer.js" type="module"></script>
+    <!-- Ensure proper MIME type and module support -->
+    <script type="module" src="https://cdn.gpteng.co/gptengineer.js" crossorigin="anonymous"></script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

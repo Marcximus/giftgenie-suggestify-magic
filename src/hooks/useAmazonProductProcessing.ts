@@ -19,7 +19,6 @@ export const useAmazonProductProcessing = () => {
     const operationMark = markOperation(`process-suggestion-${suggestion.title}`);
     
     try {
-      console.log('Processing suggestion:', suggestion.title);
       const normalizedTitle = suggestion.title.toLowerCase().trim();
       const cacheKey = ['amazon-product', normalizedTitle];
       const cachedData = queryClient.getQueryData(cacheKey);
@@ -35,14 +34,7 @@ export const useAmazonProductProcessing = () => {
       const amazonProduct = await trackSlowOperation(
         'amazon-api-call',
         1000, // 1 second threshold for API calls
-        () => retryWithBackoff(
-          async () => {
-            const result = await getAmazonProduct(suggestion.title, suggestion.priceRange);
-            console.log('Amazon API response:', result);
-            return result;
-          },
-          3 // maxRetries
-        )
+        () => retryWithBackoff(() => getAmazonProduct(suggestion.title, suggestion.priceRange))
       );
       
       // Process description and search frequency in parallel
@@ -60,17 +52,11 @@ export const useAmazonProductProcessing = () => {
       ]);
       
       if (amazonProduct && amazonProduct.asin) {
-        console.log('Successfully processed Amazon product:', {
-          title: amazonProduct.title,
-          asin: amazonProduct.asin,
-          price: amazonProduct.price
-        });
-
         const processedSuggestion = {
           ...suggestion,
           title: amazonProduct.title || suggestion.title,
           description: customDescription,
-          priceRange: amazonProduct.price ? `USD ${amazonProduct.price}` : suggestion.priceRange,
+          priceRange: `${amazonProduct.currency} ${amazonProduct.price}`,
           amazon_asin: amazonProduct.asin,
           amazon_url: `https://www.amazon.com/dp/${amazonProduct.asin}`,
           amazon_price: amazonProduct.price,
@@ -86,19 +72,12 @@ export const useAmazonProductProcessing = () => {
         await logApiMetrics('amazon-product-processing', startTime, 'success');
         operationMark.end();
         return processedSuggestion;
-      } else {
-        console.warn('No Amazon product data found for:', suggestion.title);
       }
       
       operationMark.end();
       return suggestion;
     } catch (error) {
       console.error('Error processing suggestion:', error);
-      toast({
-        title: "Error processing product",
-        description: "Failed to fetch product details. Please try again.",
-        variant: "destructive"
-      });
       await logApiMetrics('amazon-product-processing', startTime, 'error', error.message);
       operationMark.end();
       return suggestion;
@@ -109,7 +88,7 @@ export const useAmazonProductProcessing = () => {
     const startTime = performance.now();
     const operationMark = markOperation('process-suggestions-batch');
     
-    console.log('Starting parallel processing of suggestions:', suggestions.length);
+    console.log('Starting parallel processing of suggestions');
     
     try {
       const results = await trackSlowOperation(
@@ -119,9 +98,9 @@ export const useAmazonProductProcessing = () => {
           suggestions,
           processGiftSuggestion,
           {
-            batchSize: 4, // Reduced from 8 to improve reliability
-            maxConcurrent: 2, // Reduced from 4 to avoid rate limits
-            delayBetweenBatches: 500 // Increased delay between batches
+            batchSize: 8,
+            maxConcurrent: 4,
+            delayBetweenBatches: 200
           }
         )
       );
@@ -134,11 +113,6 @@ export const useAmazonProductProcessing = () => {
       return results;
     } catch (error) {
       console.error('Error in batch processing:', error);
-      toast({
-        title: "Error processing suggestions",
-        description: "Failed to process some suggestions. Please try again.",
-        variant: "destructive"
-      });
       await logApiMetrics('batch-processing', startTime, 'error', error.message);
       operationMark.end();
       throw error;
