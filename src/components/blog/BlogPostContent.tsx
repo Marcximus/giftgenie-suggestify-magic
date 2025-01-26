@@ -22,12 +22,25 @@ export const BlogPostContent = ({ post }: BlogPostContentProps) => {
       .replace(/style="[^"]*max-width[^"]*"/gi, '')
       // Remove any remaining style attributes
       .replace(/style="[^"]*"/gi, '')
-      // Force div containers to be full width and left-aligned, except for product-actions and review sections
+      // Force div containers to be full width and left-aligned
       .replace(/<div(?!\s+class="[^"]*(?:product-actions|product-review))/gi, '<div class="w-full text-left"')
-      // Remove any width classes, except for product-actions and review sections
+      // Remove any width classes from non-product sections
       .replace(/class="(?![^"]*(?:product-actions|product-review))[^"]*(?:w-\d+\/\d+|max-w-[^\s"]*)[^"]*"/gi, 'class="w-full text-left"')
-      // Ensure product reviews are centered with proper spacing
-      .replace(/<div class="product-review/gi, '<div class="product-review mx-auto text-center flex flex-col items-center justify-center w-full max-w-2xl mb-4"');
+      // Transform product review sections with specific centering classes
+      .replace(
+        /<div class="[^"]*product-review[^"]*"[^>]*>/gi, 
+        '<div class="product-review-container mx-auto my-8 flex flex-col items-center justify-center max-w-2xl text-center">'
+      )
+      // Center all elements within product reviews
+      .replace(
+        /(<div class="[^"]*product-review[^"]*"[^>]*>)([\s\S]*?)(<\/div>)/gi,
+        (match, start, content, end) => {
+          const centeredContent = content
+            .replace(/<p/g, '<p class="text-center w-full mb-4"')
+            .replace(/<span/g, '<span class="text-center block w-full"');
+          return start + centeredContent + end;
+        }
+      );
   };
 
   return (
@@ -62,12 +75,12 @@ export const BlogPostContent = ({ post }: BlogPostContentProps) => {
                  [&_div.product-actions]:items-center [&_div.product-actions]:gap-2
                  [&_div.product-actions]:my-2 [&_div.product-actions]:!text-center
                  
-                 [&_div.product-review]:flex [&_div.product-review]:flex-col
-                 [&_div.product-review]:items-center [&_div.product-review]:justify-center
-                 [&_div.product-review]:w-full [&_div.product-review]:max-w-2xl
-                 [&_div.product-review]:mx-auto [&_div.product-review]:mb-4
-                 [&_div.product-review]:!text-center [&_div.product-review_*]:!text-center
-                 [&_div.product-review_p]:!text-center [&_div.product-review_span]:!text-center
+                 [&_div.product-review-container]:flex [&_div.product-review-container]:flex-col
+                 [&_div.product-review-container]:items-center [&_div.product-review-container]:justify-center
+                 [&_div.product-review-container]:w-full [&_div.product-review-container]:max-w-2xl
+                 [&_div.product-review-container]:mx-auto [&_div.product-review-container]:my-8
+                 [&_div.product-review-container]:text-center [&_div.product-review-container_*]:!text-center
+                 [&_div.product-review-container_p]:!text-center [&_div.product-review-container_span]:!text-center
                  
                  [&_a.amazon-button]:inline-flex [&_a.amazon-button]:items-center [&_a.amazon-button]:px-4 [&_a.amazon-button]:py-2 
                  [&_a.amazon-button]:bg-[#F97316] [&_a.amazon-button]:hover:bg-[#F97316]/90 
