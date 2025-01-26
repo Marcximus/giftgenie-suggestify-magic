@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { AmazonProduct } from '@/utils/amazon/types';
 import { AMAZON_CONFIG } from '@/utils/amazon/config';
 import { searchWithFallback } from '@/utils/amazon/searchUtils';
-import { getCachedProduct, cacheProduct } from '@/utils/amazon/cacheUtils';
 import { withRetry } from '@/utils/amazon/retryUtils';
 import { toast } from "@/components/ui/use-toast";
 
@@ -26,10 +25,6 @@ export const useAmazonProducts = () => {
 
   const getAmazonProduct = async (searchTerm: string, priceRange: string): Promise<AmazonProduct | null> => {
     try {
-      const cacheKey = `${searchTerm}-${priceRange}`;
-      const cached = getCachedProduct<AmazonProduct>(cacheKey);
-      if (cached) return cached;
-
       if (isRateLimited()) {
         await new Promise(resolve => setTimeout(resolve, RATE_LIMIT.RETRY_AFTER * 1000));
       }
@@ -42,12 +37,7 @@ export const useAmazonProducts = () => {
         1000
       );
       
-      if (product) {
-        cacheProduct(cacheKey, product);
-        return product;
-      }
-
-      return null;
+      return product || null;
 
     } catch (error: any) {
       console.error('Error getting Amazon product:', error);

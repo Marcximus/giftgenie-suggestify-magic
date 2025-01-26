@@ -25,7 +25,7 @@ export const useAmazonProductProcessing = () => {
       
       if (cachedData) {
         console.log('Cache hit for:', suggestion.title);
-        await logApiMetrics('amazon-product-processing', startTime, 'success', undefined, true);
+        await logApiMetrics('amazon-product-processing', startTime, 'success');
         operationMark.end();
         return cachedData as GiftSuggestion;
       }
