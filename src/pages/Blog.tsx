@@ -61,6 +61,44 @@ const Blog = () => {
     }
   });
 
+  // Pre-render loading state with content-placeholder
+  if (isLoading) {
+    return (
+      <>
+        <Helmet>
+          <title>Gift Ideas - Get The Gift</title>
+          <meta name="description" content="Discover gift-giving tips, ideas, and inspiration on our blog. Learn about the latest trends and get expert advice on finding the perfect gift." />
+        </Helmet>
+        <div className="container mx-auto px-4 py-6">
+          <div className="text-center mb-8">
+            {/* Optimized heading with inline styles for immediate visibility */}
+            <h1 
+              className="text-3xl sm:text-4xl md:text-5xl font-bold bg-clip-text text-transparent mb-4"
+              style={{
+                backgroundImage: 'linear-gradient(to right, rgb(147, 51, 234, 0.8), rgb(59, 130, 246, 0.8), rgb(147, 51, 234, 0.8))',
+                display: 'inline-block'
+              }}
+            >
+              Perfect Gift Ideas
+            </h1>
+            {/* Loading placeholder for subtitle */}
+            <div className="h-16 bg-gray-200 animate-pulse rounded max-w-2xl mx-auto mb-4" />
+          </div>
+          <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+            {[...Array(6)].map((_, i) => (
+              <Card key={i} className="h-[40px] flex overflow-hidden">
+                <div className="w-[40px] bg-gray-200 animate-pulse" />
+                <div className="flex-1 p-2">
+                  <div className="h-3 bg-gray-200 animate-pulse rounded w-3/4" />
+                </div>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </>
+    );
+  }
+
   if (error) {
     console.error("Rendering error state:", error);
     return (
@@ -71,42 +109,6 @@ const Blog = () => {
           <p className="text-sm text-gray-500 mt-2">{(error as Error).message}</p>
         </div>
       </div>
-    );
-  }
-
-  if (isLoading) {
-    return (
-      <>
-        <Helmet>
-          <title>Gift Ideas - Get The Gift</title>
-          <meta name="description" content="Discover gift-giving tips, ideas, and inspiration on our blog. Learn about the latest trends and get expert advice on finding the perfect gift." />
-        </Helmet>
-        <div className="container mx-auto px-4 py-6">
-          <div className="text-center mb-8">
-            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold bg-gradient-to-r from-purple-500/80 via-blue-500/80 to-purple-500/80 inline-block text-transparent bg-clip-text mb-4">
-              Perfect Gift Ideas
-            </h1>
-            <p className="text-[0.7rem] sm:text-xs md:text-sm text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-              Our suggestions feel tailor-made because they practically are. We use <span className="animate-pulse-text text-primary">AI</span> and <span className="animate-pulse-text text-primary">internet magic</span> to find the absolute best gift ideas and popular presents. Thanks to us, you can spend less time gift hunting and more time celebrating (or binge-watching your favorite show—we won't judge).
-            </p>
-          </div>
-          <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-            {[...Array(6)].map((_, i) => (
-              <Card key={i} className="animate-pulse h-[40px] flex overflow-hidden">
-                <div className="w-[40px] bg-gray-200"></div>
-                <div className="flex-1 p-2">
-                  <div className="h-3 bg-gray-200 rounded w-3/4"></div>
-                </div>
-              </Card>
-            ))}
-          </div>
-          <footer className="mt-8 text-center">
-            <p className="text-xs text-muted-foreground">
-              Some links may contain affiliate links from Amazon and other vendors
-            </p>
-          </footer>
-        </div>
-      </>
     );
   }
 
@@ -123,11 +125,19 @@ const Blog = () => {
       </Helmet>
       <div className="container mx-auto px-4 py-6">
         <div className="text-center mb-8">
-          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold bg-gradient-to-r from-purple-500/80 via-blue-500/80 to-purple-500/80 inline-block text-transparent bg-clip-text mb-4">
+          <h1 
+            className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 bg-clip-text text-transparent"
+            style={{
+              backgroundImage: 'linear-gradient(to right, rgb(147, 51, 234, 0.8), rgb(59, 130, 246, 0.8), rgb(147, 51, 234, 0.8))',
+              display: 'inline-block'
+            }}
+          >
             Perfect Gift Ideas
           </h1>
           <p className="text-[0.7rem] sm:text-xs md:text-sm text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-            Our suggestions feel tailor-made because they practically are. We use <span className="animate-pulse-text text-primary">AI</span> and <span className="animate-pulse-text text-primary">internet magic</span> to find the absolute best gift ideas and popular presents. Thanks to us, you can spend less time gift hunting and more time celebrating (or binge-watching your favorite show—we won't judge).
+            Our suggestions feel tailor-made because they practically are. We use{' '}
+            <span className="text-primary">AI</span> and{' '}
+            <span className="text-primary">internet magic</span> to find the absolute best gift ideas and popular presents. Thanks to us, you can spend less time gift hunting and more time celebrating (or binge-watching your favorite show—we won't judge).
           </p>
         </div>
         <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
@@ -141,6 +151,7 @@ const Blog = () => {
                         src={post.image_url} 
                         alt={post.title}
                         className="object-cover w-full h-full transform transition-transform duration-300 group-hover:scale-105"
+                        loading="lazy"
                       />
                     </div>
                   )}
