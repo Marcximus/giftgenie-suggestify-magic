@@ -4,6 +4,36 @@ import type { AmazonProduct } from './types';
 import { extractPrice } from './priceUtils';
 import { batchSearchProducts } from './batchProcessor';
 
+// Map common gift categories to Amazon browse node IDs
+const CATEGORY_MAP = {
+  'gifts': '2972638011',
+  'electronics': '172282',
+  'toys': '165793011',
+  'home': '1055398',
+  'fashion': '7141123011',
+  'beauty': '3760911',
+  'books': '283155',
+  'sports': '3375251',
+  'office': '1064954'
+};
+
+// Expanded blacklist for better filtering
+const BLACKLISTED_TERMS = [
+  'cancel subscription',
+  'guide',
+  'manual',
+  'how to',
+  'instruction',
+  'handbook',
+  'tutorial',
+  'subscription',
+  'cancel',
+  'refund',
+  'return policy',
+  'warranty claim',
+  'customer service'
+];
+
 const cleanSearchTerm = (searchTerm: string): string => {
   return searchTerm
     .replace(/\([^)]*\)/g, '')
@@ -13,13 +43,20 @@ const cleanSearchTerm = (searchTerm: string): string => {
     .trim();
 };
 
-export const simplifySearchTerm = (searchTerm: string): string => {
-  return searchTerm
+export const simplifySearchTerm = (searchTerm: string, preserveContext = true): string => {
+  let simplified = searchTerm
     .replace(/\([^)]*\)/g, '')
     .replace(/\b(?:edition|version|series)\b/gi, '')
-    .replace(/-.*$/, '')
-    .replace(/\d+(?:\s*-\s*\d+)?\s*(?:gb|tb|inch|"|cm|mm)/gi, '')
     .trim();
+    
+  if (!preserveContext) {
+    simplified = simplified
+      .replace(/-.*$/, '')
+      .replace(/\d+(?:\s*-\s*\d+)?\s*(?:gb|tb|inch|"|cm|mm)/gi, '')
+      .trim();
+  }
+  
+  return simplified;
 };
 
 export const getFallbackSearchTerms = (searchTerm: string): string[] => {
@@ -27,30 +64,44 @@ export const getFallbackSearchTerms = (searchTerm: string): string[] => {
     .filter(word => !['with', 'and', 'in', 'for', 'by', 'the', 'a', 'an'].includes(word.toLowerCase()))
     .filter(word => word.length > 2);
   
-  return words.length > 2 
-    ? [words.slice(0, 3).join(' '), [words[0], words[words.length - 1]].join(' ')]
-    : [words.join(' ')];
+  const searchTerms = [];
+  
+  // Preserve more context in fallback terms
+  if (words.length > 3) {
+    searchTerms.push(words.slice(0, 3).join(' '));
+    searchTerms.push([words[0], words[1], words[words.length - 1]].join(' '));
+  } else {
+    searchTerms.push(words.join(' '));
+  }
+  
+  return [...new Set(searchTerms)];
 };
 
-// Minimum quality thresholds
-const MINIMUM_RATING = 3.5;
-const MINIMUM_REVIEWS = 10;
+const validateSearchTerm = (term: string): boolean => {
+  const lowercaseTerm = term.toLowerCase();
+  
+  // Check for blacklisted terms
+  if (BLACKLISTED_TERMS.some(blacklisted => 
+    lowercaseTerm.includes(blacklisted.toLowerCase())
+  )) {
+    console.log('Search term contains blacklisted phrase:', term);
+    return false;
+  }
 
-// Blacklisted terms indicating irrelevant products
-const BLACKLISTED_TERMS = [
-  'cancel subscription',
-  'guide',
-  'manual',
-  'how to',
-  'instruction',
-  'handbook',
-  'tutorial'
-];
+  // Ensure minimum search term quality
+  if (term.length < 3 || term.split(' ').length < 2) {
+    console.log('Search term too short or simple:', term);
+    return false;
+  }
+
+  return true;
+};
 
 const validateProduct = (product: any, priceRange?: { min: number; max: number }): boolean => {
-  // Check for blacklisted terms in title
+  // Check for blacklisted terms in title and description
   const hasBlacklistedTerm = BLACKLISTED_TERMS.some(term => 
-    product.title.toLowerCase().includes(term)
+    (product.title?.toLowerCase().includes(term) || 
+     product.product_description?.toLowerCase().includes(term))
   );
   
   if (hasBlacklistedTerm) {
@@ -58,19 +109,19 @@ const validateProduct = (product: any, priceRange?: { min: number; max: number }
     return false;
   }
 
-  // Validate rating if available
+  // Validate rating (minimum 3.5 stars)
   if (product.product_star_rating) {
     const rating = parseFloat(product.product_star_rating);
-    if (rating < MINIMUM_RATING) {
+    if (rating < 3.5) {
       console.log('Product filtered - low rating:', rating);
       return false;
     }
   }
 
-  // Validate number of reviews if available
+  // Validate number of reviews (minimum 10)
   if (product.product_num_ratings) {
     const reviews = parseInt(product.product_num_ratings);
-    if (reviews < MINIMUM_REVIEWS) {
+    if (reviews < 10) {
       console.log('Product filtered - insufficient reviews:', reviews);
       return false;
     }
@@ -85,13 +136,20 @@ const validateProduct = (product: any, priceRange?: { min: number; max: number }
     }
   }
 
-  // Ensure product has required fields
-  if (!product.asin || !product.title || !product.product_photo) {
-    console.log('Product filtered - missing required fields');
-    return false;
-  }
-
   return true;
+};
+
+export const formatProduct = (product: any): AmazonProduct => {
+  return {
+    title: product.title,
+    description: product.product_description || product.title,
+    price: extractPrice(product.product_price),
+    currency: 'USD',
+    imageUrl: product.product_photo || product.thumbnail,
+    rating: product.product_star_rating ? parseFloat(product.product_star_rating) : undefined,
+    totalRatings: product.product_num_ratings ? parseInt(product.product_num_ratings.toString(), 10) : undefined,
+    asin: product.asin
+  };
 };
 
 export const searchProducts = async (
@@ -103,40 +161,34 @@ export const searchProducts = async (
     return [];
   }
 
-  console.log('Starting optimized product search with terms:', searchTerms);
-  const cleanedTerms = searchTerms.map(cleanSearchTerm);
+  // Pre-validate search terms
+  const validSearchTerms = searchTerms
+    .map(cleanSearchTerm)
+    .filter(validateSearchTerm);
+
+  if (!validSearchTerms.length) {
+    console.log('No valid search terms after filtering');
+    return [];
+  }
+
+  console.log('Starting product search with validated terms:', validSearchTerms);
   
   // Try with exact search terms first
-  const { products, errors } = await batchSearchProducts(cleanedTerms, apiKey);
+  const { products, errors } = await batchSearchProducts(validSearchTerms, apiKey);
   
-  // Only retry failed searches if we don't have enough results
+  // Only retry failed searches with simplified terms if needed
   if (products.length < searchTerms.length) {
-    const failedTerms = searchTerms.filter((_, index) => 
-      !products.some(p => p.title.toLowerCase().includes(cleanedTerms[index].toLowerCase()))
+    const failedTerms = validSearchTerms.filter((_, index) => 
+      !products.some(p => p.title.toLowerCase().includes(validSearchTerms[index].toLowerCase()))
     );
     
     if (failedTerms.length > 0) {
       console.log('Retrying failed terms with simplified search:', failedTerms);
-      const simplifiedTerms = failedTerms.map(simplifySearchTerm);
+      const simplifiedTerms = failedTerms.map(term => simplifySearchTerm(term, true));
       const { products: fallbackProducts } = await batchSearchProducts(simplifiedTerms, apiKey);
       return [...products, ...fallbackProducts];
     }
   }
 
   return products;
-};
-
-export const formatProduct = (product: any): AmazonProduct => {
-  const price = extractPrice(product.product_price);
-  
-  return {
-    title: product.title,
-    description: product.product_description || product.title,
-    price,
-    currency: 'USD',
-    imageUrl: product.product_photo || product.thumbnail,
-    rating: product.product_star_rating ? parseFloat(product.product_star_rating) : undefined,
-    totalRatings: product.product_num_ratings ? parseInt(product.product_num_ratings.toString(), 10) : undefined,
-    asin: product.asin
-  };
 };

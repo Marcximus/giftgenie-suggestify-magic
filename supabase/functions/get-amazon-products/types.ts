@@ -8,3 +8,13 @@ export interface AmazonProduct {
   totalRatings?: number;
   asin: string;
 }
+
+export interface SearchResult {
+  products: AmazonProduct[];
+  errors: string[];
+}
+
+export interface PriceRange {
+  min: number;
+  max: number;
+}
