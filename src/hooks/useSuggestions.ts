@@ -74,13 +74,13 @@ export const useSuggestions = () => {
     
     // Extract key product characteristics from the title
     const keywords = title.toLowerCase()
-      .replace(/[^\w\s]/g, ' ') // Remove special characters
+      .replace(/[^\w\s]/g, ' ')
       .split(' ')
       .filter(word => 
         !['with', 'and', 'in', 'for', 'by', 'the', 'a', 'an'].includes(word)
       )
       .filter(word => word.length > 2)
-      .slice(0, 3) // Take up to 3 significant words
+      .slice(0, 3)
       .join(' ');
     
     // Extract context from the last query
@@ -109,7 +109,6 @@ export const useSuggestions = () => {
     const genderInstruction = genderContext ? 
       `IMPORTANT: Only suggest gifts appropriate for ${genderContext} recipients.` : '';
     
-    // Build a more focused prompt that emphasizes similarity
     const contextualPrompt = `Find me 8 gift suggestions that are very similar to "${keywords}" in terms of type, style, and purpose. Focus on products that serve a similar function or appeal to people who would like "${title}". ${ageContext} ${budgetContext} ${genderInstruction}
 
 IMPORTANT GUIDELINES:

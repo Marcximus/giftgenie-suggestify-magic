@@ -47,60 +47,43 @@ export const SuggestionsGridItems = ({
 
     const processSuggestions = async () => {
       const startTime = performance.now();
-      console.log('Starting parallel processing of suggestions');
+      console.log('Starting incremental processing of suggestions');
 
-      // Process suggestions in parallel batches of 4
-      const batchSize = 4;
-      const batches = Math.ceil(suggestions.length / batchSize);
+      // Initialize array with placeholders
+      setProcessedSuggestions(new Array(suggestions.length).fill(null));
 
-      for (let batchIndex = 0; batchIndex < batches; batchIndex++) {
-        const batchStart = batchIndex * batchSize;
-        const batchEnd = Math.min(batchStart + batchSize, suggestions.length);
-        const batchItems = suggestions.slice(batchStart, batchEnd);
-
+      // Process each suggestion individually
+      suggestions.forEach(async (suggestion, index) => {
         try {
-          // Process batch in parallel
-          const batchResults = await Promise.all(
-            batchItems.map(async (suggestion, index) => {
-              const globalIndex = batchStart + index;
-              setProcessingIndexes(prev => new Set([...prev, globalIndex]));
+          setProcessingIndexes(prev => new Set([...prev, index]));
 
-              const optimizedTitle = await generateTitle(suggestion.title, suggestion.description);
-              
-              return {
-                ...suggestion,
-                optimizedTitle
-              };
-            })
-          );
-
-          // Update state with batch results while preserving order
+          const optimizedTitle = await generateTitle(suggestion.title, suggestion.description);
+          
           setProcessedSuggestions(prev => {
             const newSuggestions = [...prev];
-            batchResults.forEach((result, index) => {
-              newSuggestions[batchStart + index] = result;
-            });
+            newSuggestions[index] = {
+              ...suggestion,
+              optimizedTitle
+            };
             return newSuggestions;
           });
 
-          // Update processing indexes
           setProcessingIndexes(prev => {
             const newIndexes = new Set(prev);
-            batchItems.forEach((_, index) => {
-              newIndexes.delete(batchStart + index);
-            });
+            newIndexes.delete(index);
             return newIndexes;
           });
 
+          console.log(`Processed suggestion ${index + 1}/${suggestions.length}`);
         } catch (error) {
           if (error.message !== 'Processing aborted') {
-            console.error('Error processing batch:', error);
+            console.error(`Error processing suggestion ${index}:`, error);
           }
         }
-      }
+      });
 
       const duration = performance.now() - startTime;
-      console.log(`All suggestions processed in ${duration.toFixed(2)}ms`);
+      console.log(`Processing started, total setup time: ${duration.toFixed(2)}ms`);
     };
 
     processSuggestions();
@@ -112,7 +95,7 @@ export const SuggestionsGridItems = ({
     };
   }, [suggestions, generateTitle]);
 
-  if (isLoading) {
+  if (isLoading && suggestions.length === 0) {
     return (
       <>
         {Array.from({ length: 8 }).map((_, index) => (
