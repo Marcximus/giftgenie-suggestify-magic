@@ -22,17 +22,21 @@ export const BlogPostContent = ({ post }: BlogPostContentProps) => {
       .replace(/style="[^"]*max-width[^"]*"/gi, '')
       // Remove any remaining style attributes
       .replace(/style="[^"]*"/gi, '')
-      // Force div containers to be full width and left-aligned, except for product-actions and review containers
-      .replace(/<div(?!\s+class="[^"]*(?:product-actions|review-container))/gi, '<div class="w-full text-left"')
+      // Force div containers to be full width and left-aligned, but exclude product-actions and review containers
+      // Updated regex to be more forgiving of whitespace and line breaks
+      .replace(/<div(?!\s+class=["'][^"']*(?:product-actions|review-container)[^"']*["'])/gi, '<div class="w-full text-left"')
       // Center h1 tags (titles) with adjusted margins
       .replace(/<h1/gi, '<h1 class="!text-center mt-4 sm:mt-8 mb-6 sm:mb-12 px-8"')
-      // Center product actions container
-      .replace(/<div[^>]*class="[^"]*product-actions[^"]*">/gi, '<div class="product-actions flex flex-col items-center gap-4 my-6">')
-      // Center review sections
-      .replace(/<div[^>]*class="[^"]*flex items-center[^"]*">/gi, '<div class="!text-center !flex !justify-center">')
-      .replace(/<div[^>]*class="[^"]*review-text[^"]*">/gi, '<div class="!text-center">')
-      // Wrap Amazon button in a centered div and style it
-      .replace(/<a[^>]*class="[^"]*amazon-button[^"]*">/gi, '<div class="text-center w-full"><a class="amazon-button !inline-block px-4 py-2 bg-[#F97316] hover:bg-[#F97316]/90 text-white rounded-md transition-colors text-sm shadow-sm hover:shadow-md">')
+      // Center product actions container - made more specific
+      .replace(/<div[^>]*class=["'][^"']*product-actions[^"']*["']/gi, '<div class="product-actions flex flex-col items-center gap-4 my-6"')
+      // Center review sections - made more specific
+      .replace(/<div[^>]*class=["'][^"']*flex\s+items-center[^"']*["']/gi, '<div class="!text-center !flex !justify-center"')
+      .replace(/<div[^>]*class=["'][^"']*review-text[^"']*["']/gi, '<div class="!text-center"')
+      // Wrap Amazon button in a centered div and style it - made more specific
+      .replace(
+        /<a[^>]*class=["'][^"']*amazon-button[^"']*["']/gi, 
+        '<div class="text-center w-full"><a class="amazon-button !inline-block px-4 py-2 bg-[#F97316] hover:bg-[#F97316]/90 text-white rounded-md transition-colors text-sm shadow-sm hover:shadow-md">'
+      )
       .replace(/<\/a>(?=\s*(?:<\/div>|<hr|$))/gi, '</a></div>');
   };
 
