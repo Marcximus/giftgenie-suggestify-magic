@@ -1,10 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <!-- Preload critical assets -->
-    <link rel="preload" href="/src/index.css" as="style">
-    <link rel="preload" href="/src/App.css" as="style">
-    
     <!-- Google tag (gtag.js) - Deferred loading -->
     <script defer src="https://www.googletagmanager.com/gtag/js?id=G-DB54W7MG31"></script>
     <script>
@@ -12,7 +8,7 @@
       function gtag(){dataLayer.push(arguments);}
       gtag('js', new Date());
       gtag('config', 'G-DB54W7MG31', {
-        send_page_view: false
+        send_page_view: false // Defer page view tracking until after critical content loads
       });
     </script>
 
@@ -23,31 +19,17 @@
     <title>Get The Gift - AI-Powered Gift Suggestions | Find Perfect Gifts</title>
     <link rel="icon" type="image/png" href="/lovable-uploads/89d8ebcd-a5f6-4614-a505-80ed3d467943.png" />
     <meta name="description" content="Discover thoughtful, personalized gift ideas with our AI-powered gift suggestion engine. From birthdays to anniversaries, find the perfect present for any occasion, budget, or recipient. Our smart technology helps you choose meaningful gifts that show you care, with detailed recommendations and real product reviews." />
+    <meta name="keywords" content="gift suggestions, AI gift finder, personalized gifts, gift recommendations, gift ideas, Get The Gift" />
+    <meta name="author" content="Get The Gift" />
     
     <!-- Critical CSS Inline -->
     <style>
+      /* Base styles needed for initial render */
       :root {
         --background: 0 0% 100%;
         --foreground: 222.2 84% 4.9%;
         --primary: 235 84% 59%;
-        --card: 0 0% 100%;
-        --card-foreground: 222.2 84% 4.9%;
-        --popover: 0 0% 100%;
-        --popover-foreground: 222.2 84% 4.9%;
-        --primary-foreground: 210 40% 98%;
-        --secondary: 210 40% 96.1%;
-        --secondary-foreground: 222.2 47.4% 11.2%;
-        --muted: 210 40% 96.1%;
-        --muted-foreground: 215.4 16.3% 46.9%;
-        --accent: 210 40% 96.1%;
-        --accent-foreground: 222.2 47.4% 11.2%;
-        --destructive: 0 84.2% 60.2%;
-        --destructive-foreground: 210 40% 98%;
-        --border: 214.3 31.8% 91.4%;
-        --input: 214.3 31.8% 91.4%;
-        --ring: 235 84% 59%;
       }
-      
       body {
         margin: 0;
         font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
@@ -55,50 +37,7 @@
         background-color: hsl(var(--background));
         color: hsl(var(--foreground));
       }
-      
-      /* Critical layout classes */
-      .container { width: 100%; margin-left: auto; margin-right: auto; }
-      .flex { display: flex; }
-      .items-center { align-items: center; }
-      .justify-center { justify-content: center; }
-      .min-h-screen { min-height: 100vh; }
-      
-      /* Preload gradient animation */
-      @keyframes gradient {
-        0% { background-position: 0% 50%; }
-        50% { background-position: 100% 50%; }
-        100% { background-position: 0% 50%; }
-      }
-      .gradient-text {
-        background-size: 200% auto;
-        background-clip: text;
-        -webkit-background-clip: text;
-        color: transparent;
-        animation: gradient 3s ease infinite;
-        background-image: linear-gradient(
-          to right,
-          rgb(147, 51, 234, 0.8),
-          rgb(59, 130, 246, 0.8),
-          rgb(147, 51, 234, 0.8)
-        );
-      }
-      
-      /* Loading animation */
-      @keyframes spin {
-        to { transform: rotate(360deg); }
-      }
-      .animate-spin {
-        animation: spin 1s linear infinite;
-      }
     </style>
-    
-    <!-- Defer non-critical CSS -->
-    <link rel="stylesheet" href="/src/index.css" media="print" onload="this.media='all'">
-    <link rel="stylesheet" href="/src/App.css" media="print" onload="this.media='all'">
-    <noscript>
-      <link rel="stylesheet" href="/src/index.css">
-      <link rel="stylesheet" href="/src/App.css">
-    </noscript>
     
     <!-- DNS Prefetch and Preconnect -->
     <link rel="preconnect" href="https://www.amazon.com" crossorigin />
@@ -162,8 +101,8 @@
 
   <body>
     <div id="root"></div>
-    <!-- Ensure proper MIME type and loading order -->
-    <script type="module" src="https://cdn.gpteng.co/gptengineer.js"></script>
+    <!-- Ensure proper MIME type and module support -->
+    <script type="module" src="https://cdn.gpteng.co/gptengineer.js" crossorigin="anonymous"></script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

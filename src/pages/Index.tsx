@@ -5,19 +5,8 @@ import { SuggestionSkeleton } from '@/components/SuggestionSkeleton';
 import { IndexMeta } from '@/components/IndexMeta';
 import { BreadcrumbNav } from '@/components/BreadcrumbNav';
 
-// Lazy load components that aren't needed immediately
-const SearchHeader = lazy(() => import('@/components/SearchHeader').then(module => ({ 
-  default: module.SearchHeader 
-})));
-
-const SuggestionsGrid = lazy(() => import('@/components/SuggestionsGrid').then(module => ({ 
-  default: module.SuggestionsGrid 
-})));
-
-// Loading fallback for search
-const SearchLoader = () => (
-  <div className="h-[200px] animate-pulse bg-gray-100/50 rounded-lg backdrop-blur-sm" />
-);
+const SearchHeader = lazy(() => import('@/components/SearchHeader').then(module => ({ default: module.SearchHeader })));
+const SuggestionsGrid = lazy(() => import('@/components/SuggestionsGrid').then(module => ({ default: module.SuggestionsGrid })));
 
 const Index = () => {
   const {
@@ -37,7 +26,7 @@ const Index = () => {
           <BreadcrumbNav />
           <header>
             <h1 className="sr-only">GiftGenie - AI-Powered Gift Suggestions</h1>
-            <Suspense fallback={<SearchLoader />}>
+            <Suspense fallback={<div className="h-[200px] animate-pulse bg-gray-100 rounded-lg" />}>
               <SearchHeader onSearch={handleSearch} isLoading={isLoading} />
             </Suspense>
           </header>

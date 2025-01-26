@@ -32,17 +32,10 @@ export default defineConfig(({ mode }) => ({
     rollupOptions: {
       output: {
         manualChunks: {
-          'vendor': ['react', 'react-dom'],
-          'router': ['react-router-dom'],
-          'ui': [
-            '@radix-ui/react-dialog', 
-            '@radix-ui/react-slot', 
-            '@radix-ui/react-toast'
-          ],
+          'vendor': ['react', 'react-dom', 'react-router-dom'],
+          'ui': ['@radix-ui/react-dialog', '@radix-ui/react-slot', '@radix-ui/react-toast'],
           'charts': ['recharts'],
-          'icons': ['lucide-react'],
-          'query': ['@tanstack/react-query'],
-          'supabase': ['@supabase/supabase-js']
+          'icons': ['lucide-react']
         }
       }
     },
