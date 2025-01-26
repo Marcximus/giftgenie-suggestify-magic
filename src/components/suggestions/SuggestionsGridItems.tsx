@@ -47,26 +47,26 @@ export const SuggestionsGridItems = ({
 
     const processSuggestions = async () => {
       const startTime = performance.now();
-      console.log('Starting incremental processing of suggestions');
+      console.log('Starting sequential processing of suggestions');
 
       // Initialize array with placeholders
-      setProcessedSuggestions(new Array(suggestions.length).fill(null));
+      setProcessedSuggestions([]);
 
-      // Process each suggestion individually
-      suggestions.forEach(async (suggestion, index) => {
+      // Process suggestions sequentially
+      for (let index = 0; index < suggestions.length; index++) {
         try {
           setProcessingIndexes(prev => new Set([...prev, index]));
-
+          
+          const suggestion = suggestions[index];
           const optimizedTitle = await generateTitle(suggestion.title, suggestion.description);
           
-          setProcessedSuggestions(prev => {
-            const newSuggestions = [...prev];
-            newSuggestions[index] = {
+          setProcessedSuggestions(prev => [
+            ...prev,
+            {
               ...suggestion,
               optimizedTitle
-            };
-            return newSuggestions;
-          });
+            }
+          ]);
 
           setProcessingIndexes(prev => {
             const newIndexes = new Set(prev);
@@ -75,15 +75,19 @@ export const SuggestionsGridItems = ({
           });
 
           console.log(`Processed suggestion ${index + 1}/${suggestions.length}`);
+          
+          // Add a small delay between processing each suggestion for smoother visual effect
+          await new Promise(resolve => setTimeout(resolve, 200));
+          
         } catch (error) {
           if (error.message !== 'Processing aborted') {
             console.error(`Error processing suggestion ${index}:`, error);
           }
         }
-      });
+      }
 
       const duration = performance.now() - startTime;
-      console.log(`Processing started, total setup time: ${duration.toFixed(2)}ms`);
+      console.log(`Processing completed, total time: ${duration.toFixed(2)}ms`);
     };
 
     processSuggestions();
