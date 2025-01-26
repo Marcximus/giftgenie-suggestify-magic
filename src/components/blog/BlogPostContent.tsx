@@ -27,7 +27,7 @@ export const BlogPostContent = ({ post }: BlogPostContentProps) => {
       // Center h1 tags (titles) with adjusted margins
       .replace(/<h1/gi, '<h1 class="!text-center mt-4 sm:mt-8 mb-6 sm:mb-12 px-8"')
       // Center product actions container and ensure flex column layout for vertical stacking
-      .replace(/<div[^>]*class="[^"]*product-actions[^"]*">/gi, '<div class="product-actions !flex !flex-col !items-center !justify-center !gap-4 my-6">')
+      .replace(/<div[^>]*class="[^"]*product-actions[^"]*">/gi, '<div class="product-actions !text-center !flex !flex-col !items-center !justify-center !gap-4 my-6">')
       // Center review sections
       .replace(/<div[^>]*class="[^"]*flex items-center[^"]*">/gi, '<div class="!text-center !flex !justify-center">')
       .replace(/<div[^>]*class="[^"]*review-text[^"]*">/gi, '<div class="!text-center">')
