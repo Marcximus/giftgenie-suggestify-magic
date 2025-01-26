@@ -24,10 +24,10 @@ export const BlogPostContent = ({ post }: BlogPostContentProps) => {
       .replace(/style="[^"]*"/gi, '')
       // Force div containers to be full width and left-aligned, except for product-actions and review containers
       .replace(/<div(?!\s+class="[^"]*(?:product-actions|review-container))/gi, '<div class="w-full text-left"')
-      // Wrap review sections in a centered container
+      // Wrap review sections in a centered container with !important flags
       .replace(
         /(<div[^>]*class="[^"]*flex items-center[^"]*">(?:.*?)<span[^>]*class="[^"]*text-yellow-400[^"]*">.*?<\/span>.*?<\/div>)/gi,
-        '<div class="review-container flex flex-col items-center w-full my-4">$1</div>'
+        '<div class="review-container !flex !flex-col !items-center !w-full !my-4 !text-center">$1</div>'
       );
   };
 
@@ -63,9 +63,9 @@ export const BlogPostContent = ({ post }: BlogPostContentProps) => {
                  [&_div.product-actions]:items-center [&_div.product-actions]:gap-2
                  [&_div.product-actions]:my-2 [&_div.product-actions]:!text-center
                  
-                 [&_div.review-container]:flex [&_div.review-container]:flex-col
-                 [&_div.review-container]:items-center [&_div.review-container]:w-full
-                 [&_div.review-container]:my-4 [&_div.review-container]:!text-center
+                 [&_div.review-container]:!flex [&_div.review-container]:!flex-col
+                 [&_div.review-container]:!items-center [&_div.review-container]:!w-full
+                 [&_div.review-container]:!my-4 [&_div.review-container]:!text-center
                  [&_div.review-container_*]:!text-center
                  
                  [&_a.amazon-button]:inline-flex [&_a.amazon-button]:items-center [&_a.amazon-button]:px-4 [&_a.amazon-button]:py-2 
