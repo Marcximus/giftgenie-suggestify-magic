@@ -10,8 +10,6 @@ interface SuggestionsGridItemsProps {
   isLoading: boolean;
 }
 
-const titleCache = new Map<string, string>();
-
 export const SuggestionsGridItems = ({
   suggestions,
   onMoreLikeThis,
@@ -22,21 +20,13 @@ export const SuggestionsGridItems = ({
   const abortController = useRef<AbortController | null>(null);
 
   const generateTitle = useCallback(async (originalTitle: string, description: string) => {
-    const cacheKey = `${originalTitle}-${description}`;
-    if (titleCache.has(cacheKey)) {
-      console.log('Cache hit for title:', originalTitle);
-      return titleCache.get(cacheKey)!;
-    }
-
     try {
       const { data, error } = await supabase.functions.invoke('generate-product-title', {
         body: { title: originalTitle, description }
       });
 
       if (error) throw error;
-      const optimizedTitle = data?.title || originalTitle;
-      titleCache.set(cacheKey, optimizedTitle);
-      return optimizedTitle;
+      return data?.title || originalTitle;
     } catch (error) {
       console.error('Error generating title:', error);
       return originalTitle;

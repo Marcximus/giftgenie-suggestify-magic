@@ -9,45 +9,8 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      amazon_product_cache: {
-        Row: {
-          created_at: string | null
-          expires_at: string | null
-          hit_count: number | null
-          id: string
-          last_accessed: string | null
-          price_range: string | null
-          product_data: Json
-          search_context: string | null
-          search_term: string
-        }
-        Insert: {
-          created_at?: string | null
-          expires_at?: string | null
-          hit_count?: number | null
-          id?: string
-          last_accessed?: string | null
-          price_range?: string | null
-          product_data: Json
-          search_context?: string | null
-          search_term: string
-        }
-        Update: {
-          created_at?: string | null
-          expires_at?: string | null
-          hit_count?: number | null
-          id?: string
-          last_accessed?: string | null
-          price_range?: string | null
-          product_data?: Json
-          search_context?: string | null
-          search_term?: string
-        }
-        Relationships: []
-      }
       api_metrics: {
         Row: {
-          cache_hit: boolean | null
           created_at: string | null
           duration_ms: number
           endpoint: string
@@ -56,7 +19,6 @@ export type Database = {
           status: string
         }
         Insert: {
-          cache_hit?: boolean | null
           created_at?: string | null
           duration_ms: number
           endpoint: string
@@ -65,7 +27,6 @@ export type Database = {
           status: string
         }
         Update: {
-          cache_hit?: boolean | null
           created_at?: string | null
           duration_ms?: number
           endpoint?: string

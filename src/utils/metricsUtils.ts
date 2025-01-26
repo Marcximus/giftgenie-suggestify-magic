@@ -6,7 +6,6 @@ interface PerformanceMetric {
   duration_ms: number;
   status: string;
   error_message?: string;
-  cache_hit?: boolean;
 }
 
 const metrics: PerformanceMetric[] = [];
@@ -17,8 +16,7 @@ export const logApiMetrics = async (
   endpoint: string,
   startTime: number,
   status: string,
-  errorMessage?: string,
-  cacheHit: boolean = false
+  errorMessage?: string
 ) => {
   const duration = Math.round(performance.now() - startTime);
   console.log(`Performance metric - ${endpoint}: ${duration}ms (${status})`);
@@ -27,8 +25,7 @@ export const logApiMetrics = async (
     endpoint,
     duration_ms: duration,
     status,
-    error_message: errorMessage,
-    cache_hit: cacheHit
+    error_message: errorMessage
   };
   
   metrics.push(metric);
