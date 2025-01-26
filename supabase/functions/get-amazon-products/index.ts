@@ -20,6 +20,33 @@ interface AmazonProduct {
   asin: string;
 }
 
+const EXCLUDED_KEYWORDS = [
+  'cancel', 'subscription', 'guide', 'manual', 'how to',
+  'instruction', 'tutorial', 'handbook', 'textbook'
+];
+
+const isGiftAppropriate = (title: string, description: string = ''): boolean => {
+  const lowerTitle = title.toLowerCase();
+  const lowerDesc = description.toLowerCase();
+  
+  // Check for excluded keywords
+  if (EXCLUDED_KEYWORDS.some(keyword => 
+    lowerTitle.includes(keyword) || lowerDesc.includes(keyword))) {
+    console.log('Product filtered out due to excluded keywords:', title);
+    return false;
+  }
+
+  // Check for digital-only products
+  if (lowerTitle.includes('kindle') || 
+      lowerTitle.includes('ebook') || 
+      lowerTitle.includes('digital')) {
+    console.log('Product filtered out as digital-only:', title);
+    return false;
+  }
+
+  return true;
+};
+
 const extractPrice = (priceStr: string | null | undefined): number | undefined => {
   if (!priceStr) return undefined;
   const cleanPrice = priceStr.replace(/[^0-9.]/g, '');
@@ -30,9 +57,10 @@ const extractPrice = (priceStr: string | null | undefined): number | undefined =
 async function searchAmazonProduct(
   searchTerm: string,
   apiKey: string,
-  priceRange?: string
+  priceRange?: string,
+  context: string = 'gift'
 ): Promise<AmazonProduct | null> {
-  console.log('Starting Amazon search with term:', searchTerm, { priceRange });
+  console.log('Starting Amazon search with term:', searchTerm, { priceRange, context });
   
   const searchParams = new URLSearchParams({
     query: searchTerm.trim(),
@@ -73,22 +101,19 @@ async function searchAmazonProduct(
       return null;
     }
 
-    let product = searchData.data.products[0];
-    
-    if (!product.asin) {
-      console.log('First product has no ASIN, searching for product with ASIN...');
-      const productWithAsin = searchData.data.products.find((p: any) => p.asin);
-      if (!productWithAsin) {
-        console.log('No product with ASIN found in results');
-        return null;
-      }
-      product = productWithAsin;
-      console.log('Found alternative product with ASIN:', product.asin);
+    // Filter and find the first gift-appropriate product
+    const giftProduct = searchData.data.products.find((p: any) => 
+      p.asin && isGiftAppropriate(p.title, p.product_description)
+    );
+
+    if (!giftProduct) {
+      console.log('No gift-appropriate products found in results');
+      return null;
     }
 
     // Get detailed product information using ASIN
     const detailsResponse = await fetch(
-      `https://${RAPIDAPI_HOST}/product-details?asin=${product.asin}&country=US`,
+      `https://${RAPIDAPI_HOST}/product-details?asin=${giftProduct.asin}&country=US`,
       {
         headers: {
           'X-RapidAPI-Key': apiKey,
@@ -107,26 +132,25 @@ async function searchAmazonProduct(
       });
     }
 
-    // Extract price from product details or search result
     const price = detailsData?.data?.product_price 
       ? extractPrice(detailsData.data.product_price)
-      : extractPrice(product.product_price);
+      : extractPrice(giftProduct.product_price);
 
     console.log('Final price extraction:', {
       detailsPrice: detailsData?.data?.product_price,
-      searchPrice: product.product_price,
+      searchPrice: giftProduct.product_price,
       extractedPrice: price
     });
 
     const result: AmazonProduct = {
-      title: detailsData?.data?.product_title || product.title,
-      description: detailsData?.data?.product_description || product.product_description || product.title,
+      title: detailsData?.data?.product_title || giftProduct.title,
+      description: detailsData?.data?.product_description || giftProduct.product_description || giftProduct.title,
       price: price,
       currency: 'USD',
-      imageUrl: detailsData?.data?.product_photo || product.product_photo || product.thumbnail,
+      imageUrl: detailsData?.data?.product_photo || giftProduct.product_photo || giftProduct.thumbnail,
       rating: detailsData?.data?.product_star_rating ? parseFloat(detailsData.data.product_star_rating) : undefined,
       totalRatings: detailsData?.data?.product_num_ratings ? parseInt(detailsData.data.product_num_ratings, 10) : undefined,
-      asin: product.asin,
+      asin: giftProduct.asin,
     };
 
     console.log('Final processed product:', {
@@ -134,7 +158,8 @@ async function searchAmazonProduct(
       asin: result.asin,
       hasImage: !!result.imageUrl,
       hasPrice: result.price !== undefined,
-      price: result.price
+      price: result.price,
+      isGiftAppropriate: isGiftAppropriate(result.title, result.description)
     });
 
     return result;
@@ -157,9 +182,9 @@ serve(async (req) => {
 
   try {
     console.log('Received request:', req.method);
-    const { searchTerm, priceRange } = await req.json();
+    const { searchTerm, priceRange, context = 'gift' } = await req.json();
     
-    console.log('Request payload:', { searchTerm, priceRange });
+    console.log('Request payload:', { searchTerm, priceRange, context });
 
     if (!searchTerm) {
       console.error('Missing search term in request');
@@ -184,9 +209,9 @@ serve(async (req) => {
       );
     }
 
-    console.log('Processing request:', { searchTerm, priceRange });
+    console.log('Processing request:', { searchTerm, priceRange, context });
 
-    const product = await searchAmazonProduct(searchTerm, apiKey, priceRange);
+    const product = await searchAmazonProduct(searchTerm, apiKey, priceRange, context);
     
     if (!product) {
       console.log('No product found for search term:', searchTerm);

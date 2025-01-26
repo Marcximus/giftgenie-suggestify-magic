@@ -1,6 +1,7 @@
 interface CacheItem<T> {
   value: T;
   timestamp: number;
+  context: string;
 }
 
 const CACHE_EXPIRY = 24 * 60 * 60 * 1000; // 24 hours
@@ -55,8 +56,8 @@ const clearStaleCache = () => {
   }
 };
 
-// Get cached product with localStorage fallback
-export const getCachedProduct = <T>(key: string): T | null => {
+// Get cached product with localStorage fallback and context filtering
+export const getCachedProduct = <T>(key: string, context: string = 'gift'): T | null => {
   // Initialize cache if needed
   if (MEMORY_CACHE.size === 0) {
     initializeCache();
@@ -67,17 +68,19 @@ export const getCachedProduct = <T>(key: string): T | null => {
   
   // Check memory cache first
   const cached = MEMORY_CACHE.get(key);
-  if (cached && Date.now() - cached.timestamp < CACHE_EXPIRY) {
-    console.log('Memory cache hit for:', key);
+  if (cached && 
+      Date.now() - cached.timestamp < CACHE_EXPIRY && 
+      cached.context === context) {
+    console.log('Memory cache hit for:', key, 'with context:', context);
     return cached.value;
   }
   
-  console.log('Cache miss for:', key);
+  console.log('Cache miss for:', key, 'with context:', context);
   return null;
 };
 
-// Cache product in both memory and localStorage
-export const cacheProduct = <T>(key: string, value: T): void => {
+// Cache product in both memory and localStorage with context
+export const cacheProduct = <T>(key: string, value: T, context: string = 'gift'): void => {
   if (MEMORY_CACHE.size === 0) {
     initializeCache();
   }
@@ -86,12 +89,13 @@ export const cacheProduct = <T>(key: string, value: T): void => {
   
   const cacheEntry: CacheItem<T> = {
     value,
-    timestamp: Date.now()
+    timestamp: Date.now(),
+    context
   };
 
   MEMORY_CACHE.set(key, cacheEntry);
   saveCacheToStorage();
-  console.log('Cached product:', key);
+  console.log('Cached product:', key, 'with context:', context);
 };
 
 // Initialize cache when module loads
