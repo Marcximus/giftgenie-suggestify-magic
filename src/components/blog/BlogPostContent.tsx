@@ -22,17 +22,20 @@ export const BlogPostContent = ({ post }: BlogPostContentProps) => {
       .replace(/style="[^"]*max-width[^"]*"/gi, '')
       // Remove any remaining style attributes
       .replace(/style="[^"]*"/gi, '')
-      // Force div containers to be full width and left-aligned
+      // Force div containers to be full width and left-aligned, except for product-actions and review containers
       .replace(/<div(?!\s+class="[^"]*(?:product-actions|review-container))/gi, '<div class="w-full text-left"')
-      // Center h1 tags (titles)
+      // Center h1 tags (titles) with adjusted margins
       .replace(/<h1/gi, '<h1 class="!text-center mt-4 sm:mt-8 mb-6 sm:mb-12 px-8"')
-      // Add spacing between product titles and images
+      // Add spacing between product titles and images with larger margins
       .replace(/<h3/gi, '<h3 class="!mb-16 !mt-16 text-xl font-semibold"')
-      // Wrap Amazon buttons in center tags with specific class
-      .replace(/<div[^>]*class="[^"]*product-actions[^"]*">/gi, '<div class="amazon-button-container"><center>')
-      .replace(/<\/div>(?=\s*(?:<\/div>|$))/gi, '</center></div>')
-      // Add spacing between images and reviews
-      .replace(/<div[^>]*class="[^"]*review-container[^"]*">/gi, '<div class="!mt-8 !mb-0 review-container">');
+      // Add spacing between images and reviews (reduced margin)
+      .replace(/<div[^>]*class="[^"]*review-container[^"]*">/gi, '<div class="!mt-8 !mb-0 review-container">')
+      // Center review sections
+      .replace(/<div[^>]*class="[^"]*flex items-center[^"]*">/gi, '<div class="!text-center !flex !justify-center">')
+      .replace(/<div[^>]*class="[^"]*review-text[^"]*">/gi, '<div class="!text-center">')
+      // Center Amazon buttons and their containers using the same approach as reviews
+      .replace(/<div[^>]*class="[^"]*product-actions[^"]*">/gi, '<div class="!text-center product-actions">')
+      .replace(/<a[^>]*class="[^"]*amazon-button[^"]*">/gi, '<a class="amazon-button !text-center !inline-block">');
   };
 
   return (
@@ -67,21 +70,24 @@ export const BlogPostContent = ({ post }: BlogPostContentProps) => {
                  
                  [&_div.flex]:w-full [&_div.flex]:my-2 [&_div.flex]:justify-center
                  
-                 [&_div.amazon-button-container]:w-full [&_div.amazon-button-container]:my-8
+                 [&_div.product-actions]:w-full [&_div.product-actions]:my-2
+                 [&_div.product-actions]:!text-center
                  
-                 [&_a.amazon-button]:inline-block [&_a.amazon-button]:px-4 [&_a.amazon-button]:py-2 
+                 [&_a.amazon-button]:inline-flex [&_a.amazon-button]:items-center [&_a.amazon-button]:px-4 [&_a.amazon-button]:py-2 
                  [&_a.amazon-button]:bg-[#F97316] [&_a.amazon-button]:hover:bg-[#F97316]/90 
                  [&_a.amazon-button]:text-white [&_a.amazon-button]:rounded-md 
                  [&_a.amazon-button]:transition-colors [&_a.amazon-button]:text-sm
                  [&_a.amazon-button]:shadow-sm [&_a.amazon-button]:hover:shadow-md
-                 [&_a.amazon-button]:active:scale-95
+                 [&_a.amazon-button]:active:scale-95 [&_a.amazon-button]:!text-center
                  
                  [&_a.perfect-gift-button]:inline-block [&_a.perfect-gift-button]:px-8 [&_a.perfect-gift-button]:py-4
                  [&_a.perfect-gift-button]:bg-gradient-to-r [&_a.perfect-gift-button]:from-primary/80 [&_a.perfect-gift-button]:to-blue-500/80
                  [&_a.perfect-gift-button]:text-white [&_a.perfect-gift-button]:font-medium [&_a.perfect-gift-button]:rounded-lg
                  [&_a.perfect-gift-button]:transition-all [&_a.perfect-gift-button]:duration-300
                  [&_a.perfect-gift-button]:shadow-md [&_a.perfect-gift-button]:hover:shadow-lg
-                 [&_a.perfect-gift-button]:hover:opacity-90 [&_a.perfect-gift-button]:active:scale-95"
+                 [&_a.perfect-gift-button]:hover:opacity-90 [&_a.perfect-gift-button]:active:scale-95
+                 
+                 [&_div.review-container]:!mt-8 [&_div.review-container]:!mb-0"
       dangerouslySetInnerHTML={{ __html: sanitizeContent(post.content) }}
     />
   );
