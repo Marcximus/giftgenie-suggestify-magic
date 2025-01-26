@@ -17,7 +17,8 @@ export const searchProducts = async (
   console.log('Starting Amazon product search with:', {
     searchTerm,
     priceRange,
-    hasApiKey: !!apiKey
+    hasApiKey: !!apiKey,
+    timestamp: new Date().toISOString()
   });
 
   const cleanedTerm = cleanSearchTerm(searchTerm);
@@ -71,9 +72,12 @@ export const searchProducts = async (
       firstProduct: searchData.data?.products?.[0] ? {
         title: searchData.data.products[0].title,
         hasPrice: !!searchData.data.products[0].product_price,
+        priceValue: searchData.data.products[0].product_price,
         hasImage: !!searchData.data.products[0].product_photo,
-        hasAsin: !!searchData.data.products[0].asin
-      } : null
+        imageUrl: searchData.data.products[0].product_photo,
+        hasAsin: !!searchData.data.products[0].asin,
+        asin: searchData.data.products[0].asin
+      } : 'No products found'
     });
 
     if (!searchData.data?.products?.length) {
@@ -86,6 +90,15 @@ export const searchProducts = async (
     if (priceConstraints) {
       validProducts = validProducts.filter(product => {
         const price = extractPrice(product.product_price);
+        console.log('Product price validation:', {
+          title: product.title,
+          rawPrice: product.product_price,
+          extractedPrice: price,
+          min: priceConstraints?.min,
+          max: priceConstraints?.max,
+          isValid: price ? validatePriceInRange(price, priceConstraints.min, priceConstraints.max) : false
+        });
+
         if (!price) {
           console.log('Product filtered out - no valid price:', product.title);
           return false;
@@ -115,23 +128,39 @@ export const searchProducts = async (
     }
 
     const product = validProducts[0];
-    console.log('Selected product:', {
+    console.log('Selected product details:', {
       title: product.title,
       price: product.product_price,
       hasImage: !!product.product_photo,
-      hasAsin: !!product.asin
+      imageUrl: product.product_photo,
+      hasAsin: !!product.asin,
+      asin: product.asin,
+      rating: product.product_star_rating,
+      totalRatings: product.product_num_ratings
     });
 
     if (!product.asin || !product.product_photo) {
       console.warn('Product missing required data:', {
         title: product.title,
         hasAsin: !!product.asin,
-        hasImage: !!product.product_photo
+        hasImage: !!product.product_photo,
+        rawProduct: product
       });
       return null;
     }
 
-    return formatProduct(product);
+    const formattedProduct = formatProduct(product);
+    console.log('Final formatted product:', {
+      title: formattedProduct.title,
+      hasPrice: formattedProduct.price !== undefined,
+      price: formattedProduct.price,
+      hasImage: !!formattedProduct.imageUrl,
+      imageUrl: formattedProduct.imageUrl,
+      hasAsin: !!formattedProduct.asin,
+      asin: formattedProduct.asin
+    });
+
+    return formattedProduct;
   } catch (error) {
     console.error('Error in Amazon product search:', {
       error: error.message,
@@ -143,6 +172,16 @@ export const searchProducts = async (
 };
 
 const formatProduct = (product: any): AmazonProduct => {
+  console.log('Formatting product input:', {
+    hasTitle: !!product.title,
+    hasDescription: !!product.product_description,
+    hasPrice: !!product.product_price,
+    hasImage: !!product.product_photo,
+    hasAsin: !!product.asin,
+    rawPrice: product.product_price,
+    rawImage: product.product_photo
+  });
+
   const formattedProduct = {
     title: product.title,
     description: product.product_description || product.title,
@@ -154,11 +193,14 @@ const formatProduct = (product: any): AmazonProduct => {
     asin: product.asin
   };
 
-  console.log('Formatted product:', {
+  console.log('Formatted product result:', {
     title: formattedProduct.title,
     hasPrice: formattedProduct.price !== undefined,
+    price: formattedProduct.price,
     hasImage: !!formattedProduct.imageUrl,
-    hasAsin: !!formattedProduct.asin
+    imageUrl: formattedProduct.imageUrl,
+    hasAsin: !!formattedProduct.asin,
+    asin: formattedProduct.asin
   });
 
   return formattedProduct;
