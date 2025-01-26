@@ -58,8 +58,8 @@ export const SuggestionsGrid = ({
           mt-6 sm:mt-8 grid gap-4 sm:gap-5 md:gap-6 
           grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 
           px-4 sm:px-6 md:px-8
-          transition-opacity duration-300
-          ${suggestions.length > 0 ? 'opacity-100' : 'opacity-0'}
+          transition-all duration-500 ease-in-out
+          ${suggestions.length > 0 && !isLoading ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}
         `}
         role="region"
         aria-label="Gift suggestions"
@@ -71,12 +71,8 @@ export const SuggestionsGrid = ({
         />
       </div>
       
-      {suggestions.length > 0 && (
-        <div className={`
-          flex flex-col items-center mt-8 sm:mt-12
-          transition-opacity duration-300 ease-in-out
-          ${isLoading ? 'opacity-0' : 'opacity-100'}
-        `}>
+      {suggestions.length > 0 && !isLoading && (
+        <div className="flex flex-col items-center mt-8 sm:mt-12 transition-all duration-500 ease-in-out">
           <p className="text-[10px] text-muted-foreground/70 mb-4">
             Some links may contain affiliate links from Amazon and other vendors
           </p>

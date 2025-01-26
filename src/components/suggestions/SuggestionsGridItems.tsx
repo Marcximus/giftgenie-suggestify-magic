@@ -48,14 +48,11 @@ export const SuggestionsGridItems = ({
     abortController.current = new AbortController();
 
     const processSuggestions = async () => {
-      const startTime = performance.now();
-      console.log('Starting sequential processing of suggestions');
-
       setProcessedSuggestions([]);
       setIsTransitioning(true);
 
       // Add a small delay before starting to process suggestions
-      await new Promise(resolve => setTimeout(resolve, 300));
+      await new Promise(resolve => setTimeout(resolve, 500));
 
       for (let index = 0; index < suggestions.length; index++) {
         try {
@@ -79,9 +76,6 @@ export const SuggestionsGridItems = ({
             newIndexes.delete(index);
             return newIndexes;
           });
-
-          console.log(`Processed suggestion ${index + 1}/${suggestions.length}`);
-          
         } catch (error) {
           if (error.message !== 'Processing aborted') {
             console.error(`Error processing suggestion ${index}:`, error);
@@ -90,8 +84,6 @@ export const SuggestionsGridItems = ({
       }
 
       setIsTransitioning(false);
-      const duration = performance.now() - startTime;
-      console.log(`Processing completed, total time: ${duration.toFixed(2)}ms`);
     };
 
     processSuggestions();
@@ -103,7 +95,7 @@ export const SuggestionsGridItems = ({
     };
   }, [suggestions, generateTitle]);
 
-  if (isLoading && suggestions.length === 0) {
+  if (isLoading) {
     return (
       <>
         {Array.from({ length: 8 }).map((_, index) => (
@@ -130,7 +122,7 @@ export const SuggestionsGridItems = ({
           <div 
             key={`suggestion-${index}`}
             className={`
-              transform transition-all duration-400 ease-out
+              transform transition-all duration-500 ease-out
               ${processed ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'}
               ${isTransitioning ? 'transition-none' : ''}
             `}

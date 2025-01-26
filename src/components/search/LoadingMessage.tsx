@@ -25,7 +25,7 @@ export const LoadingMessage = ({ isLoading }: LoadingMessageProps) => {
       setIsVisible(true);
       shuffleMessages();
     } else {
-      // Delay hiding to allow for fade out animation
+      // Add a delay before hiding to allow for fade out animation
       const timer = setTimeout(() => {
         setIsVisible(false);
       }, 300);
@@ -59,9 +59,10 @@ export const LoadingMessage = ({ isLoading }: LoadingMessageProps) => {
     <div 
       className={`
         flex flex-col items-center justify-center space-y-14 mt-12 sm:mt-16 
-        transition-opacity duration-300 ease-in-out
-        ${isLoading ? 'opacity-100' : 'opacity-0'}
+        transition-all duration-500 ease-in-out
+        ${isLoading ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}
       `}
+      aria-live="polite"
     >
       <Spinner variant="infinite" className="w-16 h-16 sm:w-20 sm:h-20" />
       <p className="text-[#8E9196] text-center text-sm md:text-base font-medium max-w-md px-4 animate-pulse-text">
