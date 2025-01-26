@@ -66,7 +66,7 @@ const BlogPost = () => {
       };
     },
     staleTime: 0, // Always fetch fresh data
-    cacheTime: 0, // Don't cache at all
+    gcTime: 0, // Don't cache at all (formerly cacheTime)
     refetchOnMount: true, // Refetch when component mounts
     refetchOnWindowFocus: true, // Refetch when window gains focus
   });
