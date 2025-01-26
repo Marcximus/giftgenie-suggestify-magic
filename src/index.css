@@ -2,6 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Only include critical custom styles here */
 @layer base {
   :root {
     --background: 0 0% 100%;
@@ -40,21 +41,6 @@
   }
 }
 
-/* Improve touch target sizes on mobile */
-@media (max-width: 640px) {
-  button, 
-  [role="button"],
-  a {
-    @apply min-h-[44px] min-w-[44px];
-  }
-  
-  input,
-  select,
-  textarea {
-    @apply min-h-[44px];
-  }
-}
-
 /* Essential utility classes only */
 .search-container {
   @apply max-w-3xl mx-auto px-4 py-8 sm:py-12;
@@ -88,4 +74,19 @@ textarea:focus {
   -webkit-touch-callout: none;
   -webkit-user-select: none;
   user-select: none;
+}
+
+/* Mobile optimizations */
+@media (max-width: 640px) {
+  button, 
+  [role="button"],
+  a {
+    @apply min-h-[44px] min-w-[44px];
+  }
+  
+  input,
+  select,
+  textarea {
+    @apply min-h-[44px];
+  }
 }
