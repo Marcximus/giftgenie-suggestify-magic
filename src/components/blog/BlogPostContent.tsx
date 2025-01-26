@@ -6,10 +6,9 @@ interface BlogPostContentProps {
 
 export const BlogPostContent = ({ post }: BlogPostContentProps) => {
   return (
-    <div className="prose prose-sm md:prose-base lg:prose-lg xl:prose-xl 
-                    mx-auto px-4 sm:px-6 lg:px-8 max-w-none">
+    <div className="prose prose-sm md:prose-base lg:prose-lg xl:prose-xl max-w-none">
       <div 
-        className="text-left max-w-4xl mx-auto
+        className="text-left max-w-4xl mx-auto px-4 sm:px-6 lg:px-8
                    prose-p:text-sm md:prose-p:text-base lg:prose-p:text-lg xl:prose-p:text-xl
                    prose-p:leading-relaxed prose-p:mb-6 lg:prose-p:mb-8
                    
