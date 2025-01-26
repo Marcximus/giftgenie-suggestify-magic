@@ -34,7 +34,7 @@ export const BlogPostContent = ({ post }: BlogPostContentProps) => {
       // Wrap Amazon button in a centered div and style it - made more specific
       .replace(
         /<a[^>]*href=["']([^"']+)["'][^>]*class=["'][^"']*amazon-button[^"']*["'][^>]*>/gi,
-        '<div class="text-center w-full mt-6 mb-8"><a href="$1" target="_blank" rel="noopener noreferrer" class="amazon-button !inline-block px-6 py-3 sm:px-8 sm:py-3 bg-[#F97316] hover:bg-[#F97316]/90 text-white rounded-lg transition-colors text-base sm:text-lg font-medium shadow-sm hover:shadow-md">'
+        '<div class="text-center w-full mt-5 mb-7"><a href="$1" target="_blank" rel="noopener noreferrer" class="amazon-button !inline-block px-6 py-3 sm:px-8 sm:py-3 bg-[#F97316] hover:bg-[#F97316]/90 text-white rounded-lg transition-colors text-base sm:text-lg font-medium shadow-sm hover:shadow-md">'
       )
       // Close the Amazon button wrapper properly
       .replace(/<\/a>\s*(?=<\/div>|<hr|$)/gi, '</a></div>');
@@ -60,7 +60,7 @@ export const BlogPostContent = ({ post }: BlogPostContentProps) => {
                  prose-ul:list-disc prose-ul:pl-4 sm:prose-ul:pl-6 prose-ul:mb-4 prose-ul:w-full prose-ul:text-left
                  prose-ol:list-decimal prose-ol:pl-4 sm:prose-ol:pl-6 prose-ol:mb-4 prose-ol:w-full prose-ol:text-left
                  
-                 prose-img:w-full prose-img:h-auto prose-img:my-4 sm:prose-img:my-6
+                 prose-img:w-full prose-img:h-auto prose-img:my-5 sm:prose-img:my-7
                  prose-img:rounded-lg prose-img:shadow-md
                  prose-img:max-w-[270px] sm:prose-img:max-w-[360px] lg:prose-img:max-w-[450px]
                  prose-img:max-h-[400px] sm:prose-img:max-h-[500px] lg:prose-img:max-h-[600px]
