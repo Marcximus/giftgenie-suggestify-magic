@@ -6,9 +6,9 @@ interface BlogPostContentProps {
 
 export const BlogPostContent = ({ post }: BlogPostContentProps) => {
   return (
-    <div className="prose prose-sm md:prose-base lg:prose-lg w-full max-w-none animate-fade-in">
+    <div className="prose prose-sm md:prose-base lg:prose-lg mx-auto max-w-none animate-fade-in">
       <div 
-        className="text-left px-4 sm:px-6 lg:px-8
+        className="text-left max-w-3xl mx-auto px-4 sm:px-6 lg:px-8
                    prose-p:text-sm md:prose-p:text-base lg:prose-p:text-lg
                    prose-p:leading-relaxed prose-p:mb-4
                    
