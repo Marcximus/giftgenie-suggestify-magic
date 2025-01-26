@@ -17,7 +17,9 @@ export default defineConfig(({ mode }) => ({
     }
   },
   plugins: [
-    react(),
+    react({
+      jsxImportSource: '@emotion/react',
+    }),
     mode === 'development' &&
     componentTagger(),
   ].filter(Boolean),
@@ -25,6 +27,7 @@ export default defineConfig(({ mode }) => ({
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
+    dedupe: ['react', 'react-dom'],
   },
   build: {
     cssCodeSplit: true,
@@ -47,13 +50,6 @@ export default defineConfig(({ mode }) => ({
           'query': ['@tanstack/react-query'],
           'forms': ['react-hook-form', '@hookform/resolvers'],
           'animations': ['framer-motion']
-        },
-        chunkFileNames: (chunkInfo) => {
-          const name = chunkInfo.name;
-          if (name === 'vendor' || name === 'ui') {
-            return 'assets/[name]-[hash].js';
-          }
-          return 'assets/[name]-[hash].js';
         }
       }
     },
@@ -75,17 +71,9 @@ export default defineConfig(({ mode }) => ({
     }
   },
   optimizeDeps: {
-    include: ['react', 'react-dom', 'react-router-dom']
+    include: ['react', 'react-dom', 'react-router-dom', 'tailwind-merge']
   },
-  // Add proper MIME type handling
-  assetsInclude: ['**/*.js', '**/*.mjs'],
-  // Ensure correct content type headers
-  headers: {
-    '/*.js': {
-      'Content-Type': 'application/javascript'
-    },
-    '/*.mjs': {
-      'Content-Type': 'application/javascript'
-    }
+  esbuild: {
+    jsxInject: `import React from 'react'`
   }
 }));
