@@ -54,11 +54,7 @@ export const SuggestionsGrid = ({
         {JSON.stringify(schemaData)}
       </script>
       <div 
-        className={`
-          mt-6 sm:mt-8 grid gap-4 sm:gap-5 md:gap-6 
-          grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 
-          px-4 sm:px-6 md:px-8
-        `}
+        className="mt-6 sm:mt-8 grid gap-4 sm:gap-5 md:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 px-4 sm:px-6 md:px-8"
         role="region"
         aria-label="Gift suggestions"
       >
@@ -70,7 +66,7 @@ export const SuggestionsGrid = ({
       </div>
       
       {suggestions.length > 0 && !isLoading && (
-        <div className="flex flex-col items-center mt-8 sm:mt-12 animate-in fade-in slide-in-from-bottom duration-1000 delay-1000">
+        <div className="flex flex-col items-center mt-8 sm:mt-12 animate-in fade-in slide-in-from-bottom duration-1000 delay-[2000ms]">
           <p className="text-[10px] text-muted-foreground/70 mb-4">
             Some links may contain affiliate links from Amazon and other vendors
           </p>
