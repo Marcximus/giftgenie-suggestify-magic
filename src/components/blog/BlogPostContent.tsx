@@ -26,8 +26,8 @@ export const BlogPostContent = ({ post }: BlogPostContentProps) => {
       .replace(/<div(?!\s+class="[^"]*(?:product-actions|product-review))/gi, '<div class="w-full text-left"')
       // Remove any width classes, except for product-actions and review sections
       .replace(/class="(?![^"]*(?:product-actions|product-review))[^"]*(?:w-\d+\/\d+|max-w-[^\s"]*)[^"]*"/gi, 'class="w-full text-left"')
-      // Ensure product reviews are centered
-      .replace(/<div class="product-review/gi, '<div class="product-review flex flex-col items-center text-center w-full');
+      // Ensure product reviews are centered with proper spacing
+      .replace(/<div class="product-review/gi, '<div class="product-review mx-auto text-center flex flex-col items-center justify-center w-full max-w-2xl mb-4"');
   };
 
   return (
@@ -63,9 +63,11 @@ export const BlogPostContent = ({ post }: BlogPostContentProps) => {
                  [&_div.product-actions]:my-2 [&_div.product-actions]:!text-center
                  
                  [&_div.product-review]:flex [&_div.product-review]:flex-col
-                 [&_div.product-review]:items-center [&_div.product-review]:w-full
-                 [&_div.product-review]:my-4 [&_div.product-review]:!text-center
-                 [&_div.product-review_*]:!text-center
+                 [&_div.product-review]:items-center [&_div.product-review]:justify-center
+                 [&_div.product-review]:w-full [&_div.product-review]:max-w-2xl
+                 [&_div.product-review]:mx-auto [&_div.product-review]:mb-4
+                 [&_div.product-review]:!text-center [&_div.product-review_*]:!text-center
+                 [&_div.product-review_p]:!text-center [&_div.product-review_span]:!text-center
                  
                  [&_a.amazon-button]:inline-flex [&_a.amazon-button]:items-center [&_a.amazon-button]:px-4 [&_a.amazon-button]:py-2 
                  [&_a.amazon-button]:bg-[#F97316] [&_a.amazon-button]:hover:bg-[#F97316]/90 
