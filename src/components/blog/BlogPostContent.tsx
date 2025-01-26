@@ -5,40 +5,42 @@ interface BlogPostContentProps {
 }
 
 export const BlogPostContent = ({ post }: BlogPostContentProps) => {
-  // Remove problematic inline styles from content
+  // Enhanced sanitization function with v2 formatting rules
   const sanitizeContent = (content: string) => {
     return content
-      // Remove float styles
+      // Remove problematic inline styles
       .replace(/style="[^"]*float:\s*(?:left|right)[^"]*"/gi, '')
-      // Remove fixed width styles
       .replace(/style="[^"]*width:\s*\d+[^"]*"/gi, '')
-      // Remove margin styles
       .replace(/style="[^"]*margin[^"]*"/gi, '')
-      // Remove text-align styles
       .replace(/style="[^"]*text-align[^"]*"/gi, '')
-      // Remove padding styles
       .replace(/style="[^"]*padding[^"]*"/gi, '')
-      // Remove max-width styles
       .replace(/style="[^"]*max-width[^"]*"/gi, '')
-      // Remove any remaining style attributes
       .replace(/style="[^"]*"/gi, '')
-      // Force div containers to be full width and left-aligned
+      
+      // Enhanced container formatting
       .replace(/<div(?!\s+class="[^"]*(?:product-actions|review-container))/gi, '<div class="w-full text-left"')
-      // Center h1 tags (titles) with adjusted margins
-      .replace(/<h1/gi, '<h1 class="!text-center !mt-4 sm:!mt-8 !mb-6 sm:!mb-12 !px-8"')
-      // Add spacing between product titles and images
-      .replace(/<h3/gi, '<h3 class="!mb-8 !mt-16 !text-xl !font-semibold"')
-      // Add spacing between images and reviews
-      .replace(/<div[^>]*class="[^"]*review-container[^"]*">/gi, '<div class="!mt-8 !mb-0 review-container">')
-      // Center review sections
-      .replace(/<div[^>]*class="[^"]*flex items-center[^"]*">/gi, '<div class="!text-center !flex !justify-center">')
-      .replace(/<div[^>]*class="[^"]*review-text[^"]*">/gi, '<div class="!text-center">');
+      
+      // Improved title formatting with consistent spacing
+      .replace(/<h1/gi, '<h1 class="!text-center !mt-8 sm:!mt-12 !mb-8 sm:!mb-16 !text-3xl sm:!text-4xl md:!text-5xl !font-bold !px-4 sm:!px-8"')
+      
+      // Product titles with consistent spacing
+      .replace(/<h3/gi, '<h3 class="!text-xl sm:!text-2xl !font-semibold !mt-16 !mb-8 !text-left"')
+      
+      // Review container spacing and alignment
+      .replace(/<div[^>]*class="[^"]*review-container[^"]*">/gi, '<div class="!mt-8 !mb-12 review-container">')
+      
+      // Center review sections while maintaining consistent spacing
+      .replace(/<div[^>]*class="[^"]*flex items-center[^"]*">/gi, '<div class="!flex !justify-center !items-center !gap-2 !my-4">')
+      .replace(/<div[^>]*class="[^"]*review-text[^"]*">/gi, '<div class="!text-center !mt-4 !mb-8">')
+      
+      // Ensure proper image formatting and spacing
+      .replace(/<img/gi, '<img class="!mx-auto !my-8 !max-w-[250px] sm:!max-w-[350px] lg:!max-w-[400px] !rounded-lg !shadow-md"');
   };
 
   return (
     <div 
       className="prose prose-sm md:prose-base lg:prose-lg w-full !max-w-none !m-0
-                 px-6 sm:px-8 md:px-16 lg:px-32
+                 px-4 sm:px-6 md:px-8 lg:px-16 xl:px-32
                  prose-p:text-sm md:prose-p:text-base lg:prose-p:text-lg
                  prose-p:leading-relaxed prose-p:mb-4 prose-p:w-full prose-p:text-left
                  
@@ -85,7 +87,7 @@ export const BlogPostContent = ({ post }: BlogPostContentProps) => {
                  [&_a.perfect-gift-button]:shadow-md [&_a.perfect-gift-button]:hover:shadow-lg
                  [&_a.perfect-gift-button]:hover:opacity-90 [&_a.perfect-gift-button]:active:scale-95
                  
-                 [&_div.review-container]:!mt-8 [&_div.review-container]:!mb-0"
+                 [&_div.review-container]:!mt-8 [&_div.review-container]:!mb-12"
       dangerouslySetInnerHTML={{ __html: sanitizeContent(post.content) }}
     />
   );
