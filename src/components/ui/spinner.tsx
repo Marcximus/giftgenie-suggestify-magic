@@ -54,8 +54,9 @@ const Infinite = ({ size = 24, className, ...props }: SpinnerVariantProps) => (
     >
       <defs>
         <linearGradient id="spinner-gradient-global" x1="0%" y1="0%" x2="100%" y2="0%">
-          <stop offset="0%" stopColor="currentColor" />
-          <stop offset="100%" stopColor="currentColor" />
+          <stop offset="0%" stopColor="#9b87f5" />
+          <stop offset="50%" stopColor="#D946EF" />
+          <stop offset="100%" stopColor="#0EA5E9" />
         </linearGradient>
       </defs>
       <path
