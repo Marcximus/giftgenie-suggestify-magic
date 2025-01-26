@@ -23,7 +23,7 @@ export const useBatchProcessor = <T, R>() => {
     const {
       processFn,
       onError = console.error,
-      batchSize = 4,
+      batchSize = AMAZON_CONFIG.BATCH_SIZE,
       staggerDelay = AMAZON_CONFIG.STAGGER_DELAY,
       parallel = true,
       endpoint = 'default'
@@ -44,7 +44,7 @@ export const useBatchProcessor = <T, R>() => {
           toast({
             title: "Processing paused",
             description: "Waiting a moment before continuing...",
-            variant: "warning",
+            variant: "destructive",
           });
           await sleep(AMAZON_CONFIG.BASE_RETRY_DELAY);
         }

@@ -30,7 +30,7 @@ export const withRetry = async <T>(
         toast({
           title: "Rate limit reached",
           description: `Waiting ${retryAfter} seconds before retrying...`,
-          variant: "warning",
+          variant: "destructive",
         });
         
         await sleep(retryAfter * 1000);

@@ -1,6 +1,3 @@
-import { RateLimitConfig } from './types';
-import { AMAZON_CONFIG } from './config';
-
 interface RequestLog {
   timestamp: number;
   endpoint: string;
@@ -33,21 +30,20 @@ export const logRequest = (endpoint: string): void => {
   });
 };
 
-export const calculateBackoffDelay = (
-  retryCount: number,
-  config: RateLimitConfig = {
-    MAX_RETRIES: AMAZON_CONFIG.MAX_RETRIES,
-    BASE_DELAY: AMAZON_CONFIG.BASE_RETRY_DELAY,
-    BACKOFF_FACTOR: AMAZON_CONFIG.BACKOFF_FACTOR
-  }
-): number => {
+export const calculateBackoffDelay = (retryCount: number): number => {
+  const baseDelay = AMAZON_CONFIG.BASE_RETRY_DELAY;
+  const maxDelay = AMAZON_CONFIG.MAX_BACKOFF_DELAY;
+  const backoffFactor = AMAZON_CONFIG.BACKOFF_FACTOR;
+  
+  // Calculate exponential backoff with jitter
   const delay = Math.min(
-    config.BASE_DELAY * Math.pow(config.BACKOFF_FACTOR, retryCount),
-    AMAZON_CONFIG.MAX_BACKOFF_DELAY
+    baseDelay * Math.pow(backoffFactor, retryCount),
+    maxDelay
   );
   
-  // Add jitter to prevent thundering herd
-  return delay + (Math.random() * 200);
+  // Add random jitter (±20% of delay)
+  const jitter = delay * 0.2 * (Math.random() * 2 - 1);
+  return delay + jitter;
 };
 
 export const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
