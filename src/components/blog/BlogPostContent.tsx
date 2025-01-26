@@ -20,7 +20,7 @@ export const BlogPostContent = ({ post }: BlogPostContentProps) => {
 
   return (
     <div 
-      className="prose prose-sm md:prose-base lg:prose-lg max-w-none
+      className="prose prose-sm md:prose-base lg:prose-lg max-w-none w-full mx-0 text-left
                  prose-p:text-sm md:prose-p:text-base lg:prose-p:text-lg
                  prose-p:leading-relaxed prose-p:mb-4
                  
@@ -60,11 +60,7 @@ export const BlogPostContent = ({ post }: BlogPostContentProps) => {
                  [&_a.perfect-gift-button]:text-white [&_a.perfect-gift-button]:font-medium [&_a.perfect-gift-button]:rounded-lg
                  [&_a.perfect-gift-button]:transition-all [&_a.perfect-gift-button]:duration-300
                  [&_a.perfect-gift-button]:shadow-md [&_a.perfect-gift-button]:hover:shadow-lg
-                 [&_a.perfect-gift-button]:hover:opacity-90 [&_a.perfect-gift-button]:active:scale-95
-                 
-                 [&_*]:text-left
-                 
-                 mx-auto max-w-[65ch] text-left"
+                 [&_a.perfect-gift-button]:hover:opacity-90 [&_a.perfect-gift-button]:active:scale-95"
       dangerouslySetInnerHTML={{ __html: sanitizeContent(post.content) }}
     />
   );
