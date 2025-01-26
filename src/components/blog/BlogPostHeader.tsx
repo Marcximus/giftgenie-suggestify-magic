@@ -15,13 +15,13 @@ export const BlogPostHeader = ({ post }: BlogPostHeaderProps) => {
   };
 
   return (
-    <header className="mb-6 sm:mb-8">
+    <header className="mb-6 sm:mb-8 max-w-[500px] sm:max-w-[700px] lg:max-w-[900px] mx-auto px-4 sm:px-6">
       <h1 className="sr-only">
         {post.title}
       </h1>
 
       {post.image_url && !imageError && (
-        <div className="max-w-[600px] sm:max-w-[800px] lg:max-w-[1000px] mx-auto w-full aspect-[21/9] relative overflow-hidden rounded-lg mb-6 shadow-xl animate-fade-in">
+        <div className="w-full aspect-[21/9] relative overflow-hidden rounded-lg mb-6 shadow-xl animate-fade-in">
           <img 
             src={post.image_url} 
             alt={post.image_alt_text || post.title}
