@@ -49,16 +49,17 @@ export const SuggestionsGridItems = ({
       const startTime = performance.now();
       console.log('Starting sequential processing of suggestions');
 
-      // Initialize array with placeholders
       setProcessedSuggestions([]);
 
-      // Process suggestions sequentially
       for (let index = 0; index < suggestions.length; index++) {
         try {
           setProcessingIndexes(prev => new Set([...prev, index]));
           
           const suggestion = suggestions[index];
           const optimizedTitle = await generateTitle(suggestion.title, suggestion.description);
+          
+          // Add a consistent delay between items
+          await new Promise(resolve => setTimeout(resolve, 300));
           
           setProcessedSuggestions(prev => [
             ...prev,
@@ -75,9 +76,6 @@ export const SuggestionsGridItems = ({
           });
 
           console.log(`Processed suggestion ${index + 1}/${suggestions.length}`);
-          
-          // Reduced delay for smoother transitions
-          await new Promise(resolve => setTimeout(resolve, 100));
           
         } catch (error) {
           if (error.message !== 'Processing aborted') {
@@ -106,7 +104,7 @@ export const SuggestionsGridItems = ({
           <div 
             key={`skeleton-${index}`} 
             className="animate-in fade-in duration-500 ease-out"
-            style={{ animationDelay: `${index * 100}ms` }}
+            style={{ animationDelay: `${index * 150}ms` }}
             aria-hidden="true"
           >
             <SuggestionSkeleton />
@@ -126,11 +124,11 @@ export const SuggestionsGridItems = ({
           <div 
             key={`suggestion-${index}`}
             className={`
-              transform transition-all duration-500 ease-out
+              transform transition-all duration-700 ease-out
               ${processed ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'}
             `}
             style={{ 
-              transitionDelay: `${index * 100}ms`
+              transitionDelay: `${index * 150}ms`
             }}
           >
             {isProcessing ? (
