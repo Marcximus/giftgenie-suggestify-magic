@@ -58,8 +58,8 @@ export const SuggestionsGridItems = ({
           const suggestion = suggestions[index];
           const optimizedTitle = await generateTitle(suggestion.title, suggestion.description);
           
-          // Add a consistent delay between items
-          await new Promise(resolve => setTimeout(resolve, 300));
+          // Shorter delay between items
+          await new Promise(resolve => setTimeout(resolve, 200));
           
           setProcessedSuggestions(prev => [
             ...prev,
@@ -103,8 +103,8 @@ export const SuggestionsGridItems = ({
         {Array.from({ length: 8 }).map((_, index) => (
           <div 
             key={`skeleton-${index}`} 
-            className="animate-in fade-in duration-500 ease-out"
-            style={{ animationDelay: `${index * 150}ms` }}
+            className="animate-in fade-in duration-300 ease-out"
+            style={{ animationDelay: `${index * 100}ms` }}
             aria-hidden="true"
           >
             <SuggestionSkeleton />
@@ -124,11 +124,11 @@ export const SuggestionsGridItems = ({
           <div 
             key={`suggestion-${index}`}
             className={`
-              transform transition-all duration-700 ease-out
+              transform transition-all duration-400 ease-out
               ${processed ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'}
             `}
             style={{ 
-              transitionDelay: `${index * 150}ms`
+              transitionDelay: `${index * 100}ms`
             }}
           >
             {isProcessing ? (
