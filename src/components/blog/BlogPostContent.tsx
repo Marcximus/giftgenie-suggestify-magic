@@ -7,7 +7,7 @@ interface BlogPostContentProps {
 export const BlogPostContent = ({ post }: BlogPostContentProps) => {
   const sanitizeContent = (content: string) => {
     return content
-      // Remove problematic inline styles
+      // Remove problematic inline styles that might affect alignment
       .replace(/style="[^"]*float:\s*(?:left|right)[^"]*"/gi, '')
       .replace(/style="[^"]*width:\s*\d+[^"]*"/gi, '')
       .replace(/style="[^"]*margin[^"]*"/gi, '')
@@ -16,21 +16,33 @@ export const BlogPostContent = ({ post }: BlogPostContentProps) => {
       .replace(/style="[^"]*max-width[^"]*"/gi, '')
       .replace(/style="[^"]*"/gi, '')
       
-      // Standardize product sections
+      // Standardize product sections with proper centering
       .replace(/<div(?!\s+class="[^"]*(?:product-section|product-actions|review-container))/gi, '<div class="w-full text-left"')
       
       // Center product titles
       .replace(/<h3/gi, '<h3 class="text-xl font-semibold text-center mt-16 mb-8"')
       
-      // Standardize product actions container
-      .replace(/<div[^>]*class="[^"]*product-actions[^"]*">/gi, '<div class="product-actions flex justify-center items-center w-full my-4">')
+      // Standardize product actions container with strong centering classes
+      .replace(
+        /<div[^>]*class="[^"]*product-actions[^"]*">/gi, 
+        '<div class="product-actions flex justify-center items-center w-full my-4">'
+      )
       
-      // Center review sections
-      .replace(/<div[^>]*class="[^"]*review-container[^"]*">/gi, '<div class="review-container flex flex-col items-center my-8">')
-      .replace(/<div[^>]*class="[^"]*review-text[^"]*">/gi, '<div class="review-text text-center max-w-2xl mx-auto">')
+      // Ensure review containers are centered
+      .replace(
+        /<div[^>]*class="[^"]*review-container[^"]*">/gi, 
+        '<div class="review-container flex flex-col items-center my-8">'
+      )
+      .replace(
+        /<div[^>]*class="[^"]*review-text[^"]*">/gi, 
+        '<div class="review-text text-center max-w-2xl mx-auto">'
+      )
       
-      // Standardize Amazon button containers
-      .replace(/<a[^>]*class="[^"]*amazon-button[^"]*">/gi, '<a class="amazon-button inline-flex items-center justify-center px-6 py-2 bg-[#F97316] hover:bg-[#F97316]/90 text-white rounded-md shadow-sm transition-all duration-200">');
+      // Standardize Amazon button with proper centering classes
+      .replace(
+        /<a[^>]*class="[^"]*amazon-button[^"]*">/gi, 
+        '<a class="amazon-button inline-flex items-center justify-center px-6 py-2 bg-[#F97316] hover:bg-[#F97316]/90 text-white rounded-md shadow-sm transition-all duration-200">'
+      );
   };
 
   return (
@@ -58,6 +70,10 @@ export const BlogPostContent = ({ post }: BlogPostContentProps) => {
                  
                  [&_.product-actions]:flex [&_.product-actions]:justify-center [&_.product-actions]:items-center
                  [&_.product-actions]:w-full [&_.product-actions]:my-4
+                 
+                 [&_.review-container]:flex [&_.review-container]:flex-col [&_.review-container]:items-center
+                 [&_.review-container]:w-full [&_.review-container]:my-8
+                 [&_.review-text]:text-center [&_.review-text]:max-w-2xl [&_.review-text]:mx-auto
                  
                  [&_.amazon-button]:inline-flex [&_.amazon-button]:items-center [&_.amazon-button]:justify-center
                  [&_.amazon-button]:px-6 [&_.amazon-button]:py-2 [&_.amazon-button]:bg-[#F97316]
