@@ -18,7 +18,6 @@ export type Database = {
           last_accessed: string | null
           price_range: string | null
           product_data: Json
-          search_context: string | null
           search_term: string
         }
         Insert: {
@@ -29,7 +28,6 @@ export type Database = {
           last_accessed?: string | null
           price_range?: string | null
           product_data: Json
-          search_context?: string | null
           search_term: string
         }
         Update: {
@@ -40,7 +38,6 @@ export type Database = {
           last_accessed?: string | null
           price_range?: string | null
           product_data?: Json
-          search_context?: string | null
           search_term?: string
         }
         Relationships: []
