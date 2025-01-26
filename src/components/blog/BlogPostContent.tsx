@@ -22,14 +22,14 @@ export const BlogPostContent = ({ post }: BlogPostContentProps) => {
       .replace(/style="[^"]*max-width[^"]*"/gi, '')
       // Remove any remaining style attributes
       .replace(/style="[^"]*"/gi, '')
-      // Force div containers to be full width and left-aligned, except for product-actions and review containers
+      // Force div containers to be full width and left-aligned
       .replace(/<div(?!\s+class="[^"]*(?:product-actions|review-container))/gi, '<div class="w-full text-left"')
       // Center h1 tags (titles) with adjusted margins
-      .replace(/<h1/gi, '<h1 class="!text-center mt-4 sm:mt-8 mb-6 sm:mb-12 px-8"')
-      // Add spacing between product titles and images with larger margins
-      .replace(/<h3/gi, '<h3 class="!mb-8 !mt-16 text-xl font-semibold"')
+      .replace(/<h1/gi, '<h1 class="!text-center !mt-4 sm:!mt-8 !mb-6 sm:!mb-12 !px-8"')
+      // Add spacing between product titles and images
+      .replace(/<h3/gi, '<h3 class="!mb-8 !mt-16 !text-xl !font-semibold"')
       // Add spacing between images and reviews
-      .replace(/<div[^>]*class="[^"]*review-container[^"]*">/gi, '<div class="!mt-8 review-container">')
+      .replace(/<div[^>]*class="[^"]*review-container[^"]*">/gi, '<div class="!mt-8 !mb-0 review-container">')
       // Center review sections
       .replace(/<div[^>]*class="[^"]*flex items-center[^"]*">/gi, '<div class="!text-center !flex !justify-center">')
       .replace(/<div[^>]*class="[^"]*review-text[^"]*">/gi, '<div class="!text-center">');
