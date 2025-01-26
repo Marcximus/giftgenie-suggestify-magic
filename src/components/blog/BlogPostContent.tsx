@@ -8,6 +8,7 @@ export const BlogPostContent = ({ post }: BlogPostContentProps) => {
   return (
     <div 
       className="prose prose-sm md:prose-base lg:prose-lg mt-0 text-left
+                 max-w-none w-full mx-0
                  [&>:first-child]:mt-0
                  
                  prose-p:text-sm md:prose-p:text-base lg:prose-p:text-lg
