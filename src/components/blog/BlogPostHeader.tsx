@@ -10,15 +10,14 @@ export const BlogPostHeader = ({ post }: BlogPostHeaderProps) => {
   const [imageError, setImageError] = useState(false);
 
   const handleImageError = () => {
+    console.error(`Failed to load image: ${post.image_url}`);
     setImageError(true);
   };
 
   return (
-    <header className="w-full">
-      <div className="w-full flex flex-col items-center">
-        <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold 
-                       text-center mb-4 sm:mb-6 
-                       px-8 sm:px-12 md:px-16 lg:px-20">
+    <header className="w-full flex flex-col items-center">
+      <div className="w-full max-w-[1080px] sm:max-w-[1080px] mx-auto px-0 sm:px-6 lg:px-8">
+        <h1 className="sr-only">
           {post.title}
         </h1>
 
