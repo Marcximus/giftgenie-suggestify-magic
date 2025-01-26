@@ -51,14 +51,6 @@ const Index = () => {
             )}
           </section>
         </div>
-
-        {suggestions.length > 0 && (
-          <footer className="text-center">
-            <p className="text-[10px] text-muted-foreground/70 bg-background/80 backdrop-blur-sm py-1">
-              Some links may contain affiliate links from Amazon and other vendors
-            </p>
-          </footer>
-        )}
       </main>
     </ErrorBoundary>
   );
