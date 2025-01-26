@@ -1,8 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Button } from "@/components/ui/button";
-import { ChevronLeft } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
 import { BlogPostHeader } from "@/components/blog/BlogPostHeader";
 import { BlogPostContent } from "@/components/blog/BlogPostContent";
@@ -92,18 +90,7 @@ const BlogPost = () => {
       <BlogPostMeta post={post} />
       <article className="min-h-screen bg-gradient-to-b from-background to-muted/20">
         <div className="w-full">
-          <div className="px-4 sm:px-6">
-            <Button 
-              onClick={() => navigate("/blog")} 
-              variant="ghost" 
-              className="mb-6 sm:mb-8 hover:bg-primary/10"
-            >
-              <ChevronLeft className="mr-2 h-4 w-4" />
-              More Ideas
-            </Button>
-            
-            <BlogPostHeader post={post} />
-          </div>
+          <BlogPostHeader post={post} />
           <BlogPostContent post={post} />
           <div className="px-4 sm:px-6">
             <RelatedPosts currentPostId={post.id} currentPostSlug={post.slug} />
