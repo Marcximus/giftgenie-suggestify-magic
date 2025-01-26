@@ -1,5 +1,4 @@
 import { Tables } from "@/integrations/supabase/types";
-import { Calendar, User, Clock } from "lucide-react";
 import { useState } from "react";
 
 interface BlogPostHeaderProps {
@@ -31,21 +30,6 @@ export const BlogPostHeader = ({ post }: BlogPostHeaderProps) => {
             />
           </div>
         )}
-
-        <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground mb-6">
-          <div className="flex items-center gap-1">
-            <User className="w-3 h-3" />
-            <span>{post.author}</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <Calendar className="w-3 h-3" />
-            <span>{new Date(post.published_at || "").toLocaleDateString()}</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <Clock className="w-3 h-3" />
-            <span>{new Date(post.published_at || "").toLocaleTimeString()}</span>
-          </div>
-        </div>
       </div>
     </header>
   );
