@@ -25,14 +25,31 @@ const EXCLUDED_KEYWORDS = [
   'instruction', 'tutorial', 'handbook', 'textbook'
 ];
 
-const isGiftAppropriate = (title: string | undefined, description: string = ''): boolean => {
-  if (!title) return false;
-  
+const isGiftAppropriate = (product: any): boolean => {
+  if (!product || typeof product !== 'object') {
+    console.log('Invalid product object:', product);
+    return false;
+  }
+
+  const title = product.title || '';
+  const description = product.product_description || '';
+
+  if (!title) {
+    console.log('Product missing title:', product);
+    return false;
+  }
+
   const lowerTitle = title.toLowerCase();
-  const lowerDesc = (description || '').toLowerCase();
+  const lowerDesc = description.toLowerCase();
   
-  return !EXCLUDED_KEYWORDS.some(keyword => 
+  const isAppropriate = !EXCLUDED_KEYWORDS.some(keyword => 
     lowerTitle.includes(keyword) || lowerDesc.includes(keyword));
+
+  if (!isAppropriate) {
+    console.log('Product filtered out by keywords:', { title, keywords: EXCLUDED_KEYWORDS });
+  }
+
+  return isAppropriate;
 };
 
 const extractPrice = (priceStr: string | null | undefined): number | undefined => {
@@ -47,6 +64,11 @@ async function searchAmazonProduct(
   apiKey: string,
 ): Promise<AmazonProduct | null> {
   console.log('Starting Amazon search with term:', searchTerm);
+  
+  if (!searchTerm?.trim()) {
+    console.error('Invalid search term:', searchTerm);
+    throw new Error('Search term is required');
+  }
   
   const searchParams = new URLSearchParams({
     query: searchTerm.trim(),
@@ -75,7 +97,7 @@ async function searchAmazonProduct(
     }
 
     const searchData = await searchResponse.json();
-    console.log('Search API response:', JSON.stringify(searchData, null, 2));
+    console.log('Search API response products count:', searchData.data?.products?.length || 0);
 
     if (!searchData.data?.products?.length) {
       console.log('No products found in search results');
@@ -84,13 +106,18 @@ async function searchAmazonProduct(
 
     // Find first gift-appropriate product
     const giftProduct = searchData.data.products.find((p: any) => 
-      p?.asin && isGiftAppropriate(p?.title, p?.product_description)
+      p?.asin && isGiftAppropriate(p)
     );
 
     if (!giftProduct) {
       console.log('No gift-appropriate products found');
       return null;
     }
+
+    console.log('Found appropriate product:', {
+      title: giftProduct.title,
+      asin: giftProduct.asin
+    });
 
     // Get detailed product information
     const detailsResponse = await fetch(
@@ -106,11 +133,7 @@ async function searchAmazonProduct(
     let detailsData;
     if (detailsResponse.ok) {
       detailsData = await detailsResponse.json();
-      console.log('Product details response:', {
-        title: detailsData.data?.product_title,
-        price: detailsData.data?.product_price,
-        rating: detailsData.data?.product_rating
-      });
+      console.log('Product details fetched successfully for ASIN:', giftProduct.asin);
     } else {
       console.error('Failed to get product details:', detailsResponse.status);
     }
@@ -120,8 +143,8 @@ async function searchAmazonProduct(
       : extractPrice(giftProduct.product_price);
 
     const result: AmazonProduct = {
-      title: detailsData?.data?.product_title || giftProduct.title || '',
-      description: detailsData?.data?.product_description || giftProduct.product_description || giftProduct.title || '',
+      title: detailsData?.data?.product_title || giftProduct.title || 'Product Title Not Available',
+      description: detailsData?.data?.product_description || giftProduct.product_description || giftProduct.title || 'No description available',
       price: price,
       currency: 'USD',
       imageUrl: detailsData?.data?.product_photo || giftProduct.product_photo || giftProduct.thumbnail,
@@ -134,9 +157,7 @@ async function searchAmazonProduct(
       title: result.title,
       asin: result.asin,
       hasImage: !!result.imageUrl,
-      hasPrice: result.price !== undefined,
-      price: result.price,
-      rating: result.rating
+      hasPrice: result.price !== undefined
     });
 
     return result;
