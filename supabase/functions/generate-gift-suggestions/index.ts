@@ -59,7 +59,7 @@ Return ONLY a JSON array of exactly 8 strings`;
         messages: [
           {
             role: "system",
-            content: "You are a gift suggestion expert. Budget is HIGHLY important to you."
+            content: "You are a gift suggestion expert. Staying within a given price range is HIGHLY important to you. You like recommending premium gifts."
           },
           { role: "user", content: enhancedPrompt }
         ],
