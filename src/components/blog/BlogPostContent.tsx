@@ -27,9 +27,9 @@ export const BlogPostContent = ({ post }: BlogPostContentProps) => {
       // Center h1 tags (titles) with adjusted margins
       .replace(/<h1/gi, '<h1 class="!text-center mt-4 sm:mt-8 mb-6 sm:mb-12 px-8"')
       // Add spacing between product titles and images
-      .replace(/<h3/gi, '<h3 class="mb-6 mt-8"')
+      .replace(/<h3/gi, '<h3 class="!mb-8 !mt-12 text-xl font-semibold"')
       // Add spacing between images and reviews
-      .replace(/<div[^>]*class="[^"]*review-container[^"]*">/gi, '<div class="mt-8 review-container">')
+      .replace(/<div[^>]*class="[^"]*review-container[^"]*">/gi, '<div class="!mt-10 review-container">')
       // Center review sections
       .replace(/<div[^>]*class="[^"]*flex items-center[^"]*">/gi, '<div class="!text-center !flex !justify-center">')
       .replace(/<div[^>]*class="[^"]*review-text[^"]*">/gi, '<div class="!text-center">');
@@ -50,12 +50,12 @@ export const BlogPostContent = ({ post }: BlogPostContentProps) => {
                  prose-h2:font-semibold prose-h2:mt-6 prose-h2:mb-4 prose-h2:w-full prose-h2:text-left
                  
                  prose-h3:text-lg sm:prose-h3:text-xl md:prose-h3:text-2xl
-                 prose-h3:font-semibold prose-h3:mt-4 prose-h3:mb-3 prose-h3:w-full prose-h3:text-left
+                 prose-h3:font-semibold prose-h3:!mt-12 prose-h3:!mb-8 prose-h3:w-full prose-h3:text-left
                  
                  prose-ul:list-disc prose-ul:pl-4 sm:prose-ul:pl-6 prose-ul:mb-4 prose-ul:w-full prose-ul:text-left
                  prose-ol:list-decimal prose-ol:pl-4 sm:prose-ol:pl-6 prose-ol:mb-4 prose-ol:w-full prose-ol:text-left
                  
-                 prose-img:w-full prose-img:h-auto prose-img:my-4 sm:prose-img:my-6
+                 prose-img:w-full prose-img:h-auto prose-img:!my-8 sm:prose-img:!my-10
                  prose-img:rounded-lg prose-img:shadow-md
                  prose-img:max-w-[300px] sm:prose-img:max-w-[400px] lg:prose-img:max-w-[500px]
                  prose-img:mx-auto
