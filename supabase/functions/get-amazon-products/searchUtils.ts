@@ -32,6 +32,68 @@ export const getFallbackSearchTerms = (searchTerm: string): string[] => {
     : [words.join(' ')];
 };
 
+// Minimum quality thresholds
+const MINIMUM_RATING = 3.5;
+const MINIMUM_REVIEWS = 10;
+
+// Blacklisted terms indicating irrelevant products
+const BLACKLISTED_TERMS = [
+  'cancel subscription',
+  'guide',
+  'manual',
+  'how to',
+  'instruction',
+  'handbook',
+  'tutorial'
+];
+
+const validateProduct = (product: any, priceRange?: { min: number; max: number }): boolean => {
+  // Check for blacklisted terms in title
+  const hasBlacklistedTerm = BLACKLISTED_TERMS.some(term => 
+    product.title.toLowerCase().includes(term)
+  );
+  
+  if (hasBlacklistedTerm) {
+    console.log('Product filtered - contains blacklisted term:', product.title);
+    return false;
+  }
+
+  // Validate rating if available
+  if (product.product_star_rating) {
+    const rating = parseFloat(product.product_star_rating);
+    if (rating < MINIMUM_RATING) {
+      console.log('Product filtered - low rating:', rating);
+      return false;
+    }
+  }
+
+  // Validate number of reviews if available
+  if (product.product_num_ratings) {
+    const reviews = parseInt(product.product_num_ratings);
+    if (reviews < MINIMUM_REVIEWS) {
+      console.log('Product filtered - insufficient reviews:', reviews);
+      return false;
+    }
+  }
+
+  // Validate price if range specified
+  if (priceRange && product.product_price) {
+    const price = extractPrice(product.product_price);
+    if (!price || price < priceRange.min || price > priceRange.max) {
+      console.log('Product filtered - price out of range:', price);
+      return false;
+    }
+  }
+
+  // Ensure product has required fields
+  if (!product.asin || !product.title || !product.product_photo) {
+    console.log('Product filtered - missing required fields');
+    return false;
+  }
+
+  return true;
+};
+
 export const searchProducts = async (
   searchTerms: string[],
   apiKey: string
