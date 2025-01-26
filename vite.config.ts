@@ -14,9 +14,6 @@ export default defineConfig(({ mode }) => ({
         target: 'https://ckcqttsdpxfbpkzljctl.functions.supabase.co/functions/v1/generate-sitemap',
         changeOrigin: true
       }
-    },
-    headers: {
-      'Content-Type': 'application/javascript'
     }
   },
   plugins: [
