@@ -22,7 +22,7 @@ const Index = () => {
     <ErrorBoundary>
       <IndexMeta />
       <main className="min-h-screen bg-gradient-to-br from-background via-secondary/30 to-primary/5">
-        <div className="container mx-auto px-2 sm:px-4 py-2 sm:py-8 md:py-12 max-w-7xl">
+        <div className="container mx-auto px-2 sm:px-4 py-2 sm:py-4 max-w-7xl">
           <BreadcrumbNav />
           <header>
             <h1 className="sr-only">GiftGenie - AI-Powered Gift Suggestions</h1>
@@ -31,7 +31,7 @@ const Index = () => {
             </Suspense>
           </header>
           
-          <section aria-label="Gift Suggestions" className="mt-4 sm:mt-8">
+          <section aria-label="Gift Suggestions" className="mt-4">
             {suggestions.length > 0 && (
               <Suspense fallback={
                 <div className="grid gap-4 sm:gap-5 md:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
@@ -52,11 +52,13 @@ const Index = () => {
           </section>
         </div>
 
-        <footer className="text-center z-10 py-2 mb-20 sm:mb-24">
-          <p className="text-[10px] text-muted-foreground/70 bg-background/80 backdrop-blur-sm py-1">
-            Some links may contain affiliate links from Amazon and other vendors
-          </p>
-        </footer>
+        {suggestions.length > 0 && (
+          <footer className="text-center py-2 mt-4">
+            <p className="text-[10px] text-muted-foreground/70 bg-background/80 backdrop-blur-sm py-1">
+              Some links may contain affiliate links from Amazon and other vendors
+            </p>
+          </footer>
+        )}
       </main>
     </ErrorBoundary>
   );
