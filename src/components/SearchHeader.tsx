@@ -9,7 +9,7 @@ interface SearchHeaderProps {
 
 export const SearchHeader = ({ onSearch, isLoading }: SearchHeaderProps) => {
   return (
-    <div className="space-y-2">
+    <div className="space-y-4">
       <SearchBox onSearch={onSearch} isLoading={isLoading} />
       <LoadingMessage isLoading={isLoading} />
     </div>
