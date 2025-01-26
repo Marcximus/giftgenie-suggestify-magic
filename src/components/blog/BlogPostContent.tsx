@@ -23,9 +23,11 @@ export const BlogPostContent = ({ post }: BlogPostContentProps) => {
       // Remove any remaining style attributes
       .replace(/style="[^"]*"/gi, '')
       // Force div containers to be full width and left-aligned, except for product-actions and review sections
-      .replace(/<div(?!\s+class="[^"]*(?:product-actions|flex flex-col items-center gap-2 my-6))/gi, '<div class="w-full text-left"')
+      .replace(/<div(?!\s+class="[^"]*(?:product-actions|product-review))/gi, '<div class="w-full text-left"')
       // Remove any width classes, except for product-actions and review sections
-      .replace(/class="(?![^"]*(?:product-actions|flex flex-col items-center gap-2 my-6))[^"]*(?:w-\d+\/\d+|max-w-[^\s"]*)[^"]*"/gi, 'class="w-full text-left"');
+      .replace(/class="(?![^"]*(?:product-actions|product-review))[^"]*(?:w-\d+\/\d+|max-w-[^\s"]*)[^"]*"/gi, 'class="w-full text-left"')
+      // Ensure product reviews are centered
+      .replace(/<div class="product-review/gi, '<div class="product-review flex flex-col items-center text-center w-full');
   };
 
   return (
@@ -60,9 +62,10 @@ export const BlogPostContent = ({ post }: BlogPostContentProps) => {
                  [&_div.product-actions]:items-center [&_div.product-actions]:gap-2
                  [&_div.product-actions]:my-2 [&_div.product-actions]:!text-center
                  
-                 [&_div.flex.flex-col.items-center.gap-2.my-6]:!text-center
-                 [&_div.flex.flex-col.items-center.gap-2.my-6]:mx-auto
-                 [&_div.flex.flex-col.items-center.gap-2.my-6_*]:!text-center
+                 [&_div.product-review]:flex [&_div.product-review]:flex-col
+                 [&_div.product-review]:items-center [&_div.product-review]:w-full
+                 [&_div.product-review]:my-4 [&_div.product-review]:!text-center
+                 [&_div.product-review_*]:!text-center
                  
                  [&_a.amazon-button]:inline-flex [&_a.amazon-button]:items-center [&_a.amazon-button]:px-4 [&_a.amazon-button]:py-2 
                  [&_a.amazon-button]:bg-[#F97316] [&_a.amazon-button]:hover:bg-[#F97316]/90 
