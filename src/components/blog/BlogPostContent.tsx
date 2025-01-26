@@ -22,21 +22,17 @@ export const BlogPostContent = ({ post }: BlogPostContentProps) => {
       .replace(/style="[^"]*max-width[^"]*"/gi, '')
       // Remove any remaining style attributes
       .replace(/style="[^"]*"/gi, '')
-      // Force div containers to be full width and left-aligned, except for product-actions and review containers
+      // Force div containers to be full width and left-aligned
       .replace(/<div(?!\s+class="[^"]*(?:product-actions|review-container))/gi, '<div class="w-full text-left"')
-      // Center h1 tags (titles) with adjusted margins
+      // Center h1 tags (titles)
       .replace(/<h1/gi, '<h1 class="!text-center mt-4 sm:mt-8 mb-6 sm:mb-12 px-8"')
-      // Add spacing between product titles and images with larger margins
+      // Add spacing between product titles and images
       .replace(/<h3/gi, '<h3 class="!mb-16 !mt-16 text-xl font-semibold"')
-      // Add spacing between images and reviews (reduced margin)
-      .replace(/<div[^>]*class="[^"]*review-container[^"]*">/gi, '<div class="!mt-8 !mb-0 review-container">')
-      // Center review sections
-      .replace(/<div[^>]*class="[^"]*flex items-center[^"]*">/gi, '<div class="!text-center !flex !justify-center">')
-      .replace(/<div[^>]*class="[^"]*review-text[^"]*">/gi, '<div class="!text-center">')
-      // Wrap Amazon buttons in center tags
-      .replace(/<div[^>]*class="[^"]*product-actions[^"]*">/gi, '<div class="product-actions"><center>')
+      // Wrap Amazon buttons in center tags with specific class
+      .replace(/<div[^>]*class="[^"]*product-actions[^"]*">/gi, '<div class="amazon-button-container"><center>')
       .replace(/<\/div>(?=\s*(?:<\/div>|$))/gi, '</center></div>')
-      .replace(/<a[^>]*class="[^"]*amazon-button[^"]*">/gi, '<a class="amazon-button">');
+      // Add spacing between images and reviews
+      .replace(/<div[^>]*class="[^"]*review-container[^"]*">/gi, '<div class="!mt-8 !mb-0 review-container">');
   };
 
   return (
@@ -71,9 +67,9 @@ export const BlogPostContent = ({ post }: BlogPostContentProps) => {
                  
                  [&_div.flex]:w-full [&_div.flex]:my-2 [&_div.flex]:justify-center
                  
-                 [&_div.product-actions]:w-full [&_div.product-actions]:my-2
+                 [&_div.amazon-button-container]:w-full [&_div.amazon-button-container]:my-8
                  
-                 [&_a.amazon-button]:inline-flex [&_a.amazon-button]:items-center [&_a.amazon-button]:px-4 [&_a.amazon-button]:py-2 
+                 [&_a.amazon-button]:inline-block [&_a.amazon-button]:px-4 [&_a.amazon-button]:py-2 
                  [&_a.amazon-button]:bg-[#F97316] [&_a.amazon-button]:hover:bg-[#F97316]/90 
                  [&_a.amazon-button]:text-white [&_a.amazon-button]:rounded-md 
                  [&_a.amazon-button]:transition-colors [&_a.amazon-button]:text-sm
