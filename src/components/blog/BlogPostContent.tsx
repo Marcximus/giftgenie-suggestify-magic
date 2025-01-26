@@ -51,7 +51,9 @@ export const BlogPostContent = ({ post }: BlogPostContentProps) => {
                    [&_a.perfect-gift-button]:text-white [&_a.perfect-gift-button]:font-medium [&_a.perfect-gift-button]:rounded-lg
                    [&_a.perfect-gift-button]:transition-all [&_a.perfect-gift-button]:duration-300
                    [&_a.perfect-gift-button]:shadow-md [&_a.perfect-gift-button]:hover:shadow-lg
-                   [&_a.perfect-gift-button]:hover:opacity-90 [&_a.perfect-gift-button]:active:scale-95"
+                   [&_a.perfect-gift-button]:hover:opacity-90 [&_a.perfect-gift-button]:active:scale-95
+                   
+                   px-4 sm:px-6 lg:px-8"
         dangerouslySetInnerHTML={{ __html: post.content }}
       />
     </div>
