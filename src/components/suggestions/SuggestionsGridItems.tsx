@@ -51,8 +51,8 @@ export const SuggestionsGridItems = ({
       setProcessedSuggestions([]);
       setIsTransitioning(true);
 
-      // Add a small delay before starting to process suggestions
-      await new Promise(resolve => setTimeout(resolve, 700));
+      // Add a delay before starting to process suggestions
+      await new Promise(resolve => setTimeout(resolve, 1000));
 
       for (let index = 0; index < suggestions.length; index++) {
         try {
@@ -122,12 +122,11 @@ export const SuggestionsGridItems = ({
           <div 
             key={`suggestion-${index}`}
             className={`
-              transform transition-all duration-700 ease-in-out
-              ${processed ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'}
-              ${isTransitioning ? 'transition-none' : ''}
+              animate-in fade-in slide-in-from-bottom duration-500
+              ${processed ? '' : 'opacity-0'}
             `}
             style={{ 
-              transitionDelay: `${index * 150}ms`
+              animationDelay: `${index * 200}ms`
             }}
           >
             {isProcessing ? (
