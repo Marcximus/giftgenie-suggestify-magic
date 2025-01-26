@@ -17,53 +17,64 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    const { data: post } = await supabase
+    // Get all blog posts
+    const { data: posts, error: fetchError } = await supabase
       .from('blog_posts')
-      .select('content')
-      .eq('slug', 'the-10-best-gifts-for-dads')
-      .single()
+      .select('id, content, slug')
 
-    if (!post) {
-      throw new Error('Post not found')
+    if (fetchError) throw fetchError
+    if (!posts || posts.length === 0) {
+      throw new Error('No posts found')
     }
 
-    // Format the content
-    let formattedContent = post.content
-    
-    // Center the headline (h1)
-    formattedContent = formattedContent.replace(
-      /<h1[^>]*>/g,
-      '<h1 class="text-center mb-8">'
-    )
+    const results = []
 
-    // Center product titles (h3)
-    formattedContent = formattedContent.replace(
-      /<h3[^>]*>/g,
-      '<h3 class="text-center mb-4">'
-    )
+    for (const post of posts) {
+      let formattedContent = post.content
 
-    // Left align paragraphs
-    formattedContent = formattedContent.replace(
-      /<p[^>]*>/g,
-      '<p class="text-left mb-4">'
-    )
+      // Center the headline (h1)
+      formattedContent = formattedContent.replace(
+        /(<h1[^>]*>)/g,
+        '<h1 style="text-align: center !important;" class="!text-center mt-4 sm:mt-8 mb-6 sm:mb-12 px-8">'
+      )
 
-    // Center Amazon buttons
-    formattedContent = formattedContent.replace(
-      /<a[^>]*class="[^"]*amazon-button[^"]*"[^>]*>/g,
-      (match) => match.replace(/class="([^"]*)"/, 'class="$1 mx-auto block text-center"')
-    )
+      // Center product titles (h3)
+      formattedContent = formattedContent.replace(
+        /(<h3[^>]*>)/g,
+        '<h3 style="text-align: center !important;" class="!text-center !mb-16 !mt-16 text-xl font-semibold">'
+      )
 
-    // Update the post
-    const { error: updateError } = await supabase
-      .from('blog_posts')
-      .update({ content: formattedContent })
-      .eq('slug', 'the-10-best-gifts-for-dads')
+      // Left align paragraphs and ensure proper spacing
+      formattedContent = formattedContent.replace(
+        /(<p[^>]*>)/g,
+        '<p style="text-align: left !important;" class="!text-left mb-4">'
+      )
 
-    if (updateError) throw updateError
+      // Center Amazon buttons and add proper spacing
+      formattedContent = formattedContent.replace(
+        /<div[^>]*class="[^"]*product-actions[^"]*"[^>]*>/g,
+        '<div class="!text-center flex flex-col items-center gap-2 my-2">'
+      )
+
+      // Update the post with formatted content
+      const { error: updateError } = await supabase
+        .from('blog_posts')
+        .update({ content: formattedContent })
+        .eq('id', post.id)
+
+      results.push({
+        slug: post.slug,
+        success: !updateError,
+        error: updateError?.message
+      })
+    }
 
     return new Response(
-      JSON.stringify({ success: true }),
+      JSON.stringify({ 
+        success: true,
+        results,
+        processed: results.length
+      }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 200,
