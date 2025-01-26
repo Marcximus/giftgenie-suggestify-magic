@@ -4,20 +4,7 @@ import type { AmazonProduct } from './types';
 import { extractPrice } from './priceUtils';
 import { batchSearchProducts } from './batchProcessor';
 
-// Map common gift categories to Amazon browse node IDs
-const CATEGORY_MAP = {
-  'gifts': '2972638011',
-  'electronics': '172282',
-  'toys': '165793011',
-  'home': '1055398',
-  'fashion': '7141123011',
-  'beauty': '3760911',
-  'books': '283155',
-  'sports': '3375251',
-  'office': '1064954'
-};
-
-// Expanded blacklist for better filtering
+// Only block terms that indicate non-product content
 const BLACKLISTED_TERMS = [
   'cancel subscription',
   'guide',
@@ -66,7 +53,6 @@ export const getFallbackSearchTerms = (searchTerm: string): string[] => {
   
   const searchTerms = [];
   
-  // Preserve more context in fallback terms
   if (words.length > 3) {
     searchTerms.push(words.slice(0, 3).join(' '));
     searchTerms.push([words[0], words[1], words[words.length - 1]].join(' '));
@@ -80,7 +66,6 @@ export const getFallbackSearchTerms = (searchTerm: string): string[] => {
 const validateSearchTerm = (term: string): boolean => {
   const lowercaseTerm = term.toLowerCase();
   
-  // Check for blacklisted terms
   if (BLACKLISTED_TERMS.some(blacklisted => 
     lowercaseTerm.includes(blacklisted.toLowerCase())
   )) {
@@ -88,7 +73,6 @@ const validateSearchTerm = (term: string): boolean => {
     return false;
   }
 
-  // Ensure minimum search term quality
   if (term.length < 3 || term.split(' ').length < 2) {
     console.log('Search term too short or simple:', term);
     return false;
@@ -98,7 +82,6 @@ const validateSearchTerm = (term: string): boolean => {
 };
 
 const validateProduct = (product: any, priceRange?: { min: number; max: number }): boolean => {
-  // Check for blacklisted terms in title and description
   const hasBlacklistedTerm = BLACKLISTED_TERMS.some(term => 
     (product.title?.toLowerCase().includes(term) || 
      product.product_description?.toLowerCase().includes(term))
@@ -109,7 +92,6 @@ const validateProduct = (product: any, priceRange?: { min: number; max: number }
     return false;
   }
 
-  // Validate rating (minimum 3.5 stars)
   if (product.product_star_rating) {
     const rating = parseFloat(product.product_star_rating);
     if (rating < 3.5) {
@@ -118,7 +100,6 @@ const validateProduct = (product: any, priceRange?: { min: number; max: number }
     }
   }
 
-  // Validate number of reviews (minimum 10)
   if (product.product_num_ratings) {
     const reviews = parseInt(product.product_num_ratings);
     if (reviews < 10) {
@@ -127,7 +108,6 @@ const validateProduct = (product: any, priceRange?: { min: number; max: number }
     }
   }
 
-  // Validate price if range specified
   if (priceRange && product.product_price) {
     const price = extractPrice(product.product_price);
     if (!price || price < priceRange.min || price > priceRange.max) {
@@ -161,7 +141,6 @@ export const searchProducts = async (
     return [];
   }
 
-  // Pre-validate search terms
   const validSearchTerms = searchTerms
     .map(cleanSearchTerm)
     .filter(validateSearchTerm);
@@ -173,10 +152,8 @@ export const searchProducts = async (
 
   console.log('Starting product search with validated terms:', validSearchTerms);
   
-  // Try with exact search terms first
   const { products, errors } = await batchSearchProducts(validSearchTerms, apiKey);
   
-  // Only retry failed searches with simplified terms if needed
   if (products.length < searchTerms.length) {
     const failedTerms = validSearchTerms.filter((_, index) => 
       !products.some(p => p.title.toLowerCase().includes(validSearchTerms[index].toLowerCase()))
