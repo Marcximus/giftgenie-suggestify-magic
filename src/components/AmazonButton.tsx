@@ -62,7 +62,7 @@ export const AmazonButton = ({ title, asin }: AmazonButtonProps) => {
 
   return (
     <Button 
-      className="bg-[#F97316] hover:bg-[#F97316]/90 shadow-sm text-sm py-1 px-6 transition-all duration-200" 
+      className="w-full bg-[#F97316] hover:bg-[#F97316]/90 shadow-sm text-sm py-1 transition-all duration-200" 
       onClick={handleClick}
       disabled={isLoading || !asin}
       aria-label={asin ? "View on Amazon" : "Product not available"}

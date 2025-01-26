@@ -26,13 +26,9 @@ export const BlogPostContent = ({ post }: BlogPostContentProps) => {
       .replace(/<div(?!\s+class="[^"]*(?:product-actions|review-container))/gi, '<div class="w-full text-left"')
       // Center h1 tags (titles) with adjusted margins
       .replace(/<h1/gi, '<h1 class="!text-center mt-4 sm:mt-8 mb-6 sm:mb-12 px-8"')
-      // Center review sections with flex-col
-      .replace(/<div[^>]*class="[^"]*flex items-center[^"]*">/gi, '<div class="!text-center !flex !flex-col !justify-center !items-center gap-2">')
-      .replace(/<div[^>]*class="[^"]*review-text[^"]*">/gi, '<div class="!text-center">')
-      // Update product-actions container to use flex-col
-      .replace(/<div[^>]*class="[^"]*product-actions[^"]*">/gi, '<div class="!flex !flex-col !justify-center !items-center gap-2 my-4 product-actions">')
-      // Update amazon-button to remove w-full
-      .replace(/class="amazon-button[^"]*"/gi, 'class="amazon-button inline-flex items-center justify-center px-6 py-2 bg-[#F97316] hover:bg-[#F97316]/90 text-white rounded-md transition-colors text-sm shadow-sm hover:shadow-md"');
+      // Center review sections
+      .replace(/<div[^>]*class="[^"]*flex items-center[^"]*">/gi, '<div class="!text-center !flex !justify-center">')
+      .replace(/<div[^>]*class="[^"]*review-text[^"]*">/gi, '<div class="!text-center">');
   };
 
   return (
@@ -69,7 +65,21 @@ export const BlogPostContent = ({ post }: BlogPostContentProps) => {
                  
                  [&_div.product-actions]:flex [&_div.product-actions]:flex-col
                  [&_div.product-actions]:items-center [&_div.product-actions]:gap-2
-                 [&_div.product-actions]:my-2 [&_div.product-actions]:!text-center"
+                 [&_div.product-actions]:my-2 [&_div.product-actions]:!text-center
+                 
+                 [&_a.amazon-button]:inline-flex [&_a.amazon-button]:items-center [&_a.amazon-button]:px-4 [&_a.amazon-button]:py-2 
+                 [&_a.amazon-button]:bg-[#F97316] [&_a.amazon-button]:hover:bg-[#F97316]/90 
+                 [&_a.amazon-button]:text-white [&_a.amazon-button]:rounded-md 
+                 [&_a.amazon-button]:transition-colors [&_a.amazon-button]:text-sm
+                 [&_a.amazon-button]:shadow-sm [&_a.amazon-button]:hover:shadow-md
+                 [&_a.amazon-button]:active:scale-95
+                 
+                 [&_a.perfect-gift-button]:inline-block [&_a.perfect-gift-button]:px-8 [&_a.perfect-gift-button]:py-4
+                 [&_a.perfect-gift-button]:bg-gradient-to-r [&_a.perfect-gift-button]:from-primary/80 [&_a.perfect-gift-button]:to-blue-500/80
+                 [&_a.perfect-gift-button]:text-white [&_a.perfect-gift-button]:font-medium [&_a.perfect-gift-button]:rounded-lg
+                 [&_a.perfect-gift-button]:transition-all [&_a.perfect-gift-button]:duration-300
+                 [&_a.perfect-gift-button]:shadow-md [&_a.perfect-gift-button]:hover:shadow-lg
+                 [&_a.perfect-gift-button]:hover:opacity-90 [&_a.perfect-gift-button]:active:scale-95"
       dangerouslySetInnerHTML={{ __html: sanitizeContent(post.content) }}
     />
   );
