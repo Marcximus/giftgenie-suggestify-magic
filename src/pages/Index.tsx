@@ -22,7 +22,7 @@ const Index = () => {
     <ErrorBoundary>
       <IndexMeta />
       <main className="bg-gradient-to-br from-background via-secondary/30 to-primary/5">
-        <div className="container mx-auto px-2 max-w-7xl">
+        <div className="container mx-auto px-2 pt-4 sm:pt-6 max-w-7xl">
           <BreadcrumbNav />
           <header>
             <h1 className="sr-only">GiftGenie - AI-Powered Gift Suggestions</h1>
