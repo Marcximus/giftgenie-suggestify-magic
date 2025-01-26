@@ -52,7 +52,7 @@ export const SuggestionsGridItems = ({
       setIsTransitioning(true);
 
       // Add a small delay before starting to process suggestions
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await new Promise(resolve => setTimeout(resolve, 700));
 
       for (let index = 0; index < suggestions.length; index++) {
         try {
@@ -122,12 +122,12 @@ export const SuggestionsGridItems = ({
           <div 
             key={`suggestion-${index}`}
             className={`
-              transform transition-all duration-500 ease-out
-              ${processed ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'}
+              transform transition-all duration-700 ease-in-out
+              ${processed ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'}
               ${isTransitioning ? 'transition-none' : ''}
             `}
             style={{ 
-              transitionDelay: `${index * 100}ms`
+              transitionDelay: `${index * 150}ms`
             }}
           >
             {isProcessing ? (
