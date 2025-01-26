@@ -28,8 +28,8 @@ export const BlogPostContent = ({ post }: BlogPostContentProps) => {
       .replace(/<h1/gi, '<h1 class="!text-center mt-4 sm:mt-8 mb-6 sm:mb-12 px-8"')
       // Add spacing between product titles and images with larger margins
       .replace(/<h3/gi, '<h3 class="!mb-16 !mt-16 text-xl font-semibold"')
-      // Add spacing between images and reviews (reduced margin)
-      .replace(/<div[^>]*class="[^"]*review-container[^"]*">/gi, '<div class="!mt-8 !mb-0 review-container">')
+      // Add spacing between images and reviews
+      .replace(/<div[^>]*class="[^"]*review-container[^"]*">/gi, '<div class="!mt-8 review-container">')
       // Center review sections
       .replace(/<div[^>]*class="[^"]*flex items-center[^"]*">/gi, '<div class="!text-center !flex !justify-center">')
       .replace(/<div[^>]*class="[^"]*review-text[^"]*">/gi, '<div class="!text-center">');
@@ -55,7 +55,7 @@ export const BlogPostContent = ({ post }: BlogPostContentProps) => {
                  prose-ul:list-disc prose-ul:pl-4 sm:prose-ul:pl-6 prose-ul:mb-4 prose-ul:w-full prose-ul:text-left
                  prose-ol:list-decimal prose-ol:pl-4 sm:prose-ol:pl-6 prose-ol:mb-4 prose-ol:w-full prose-ol:text-left
                  
-                 prose-img:w-full prose-img:h-auto prose-img:!my-16
+                 prose-img:w-full prose-img:h-auto prose-img:!mt-16 prose-img:!mb-8
                  prose-img:rounded-lg prose-img:shadow-md
                  prose-img:max-w-[250px] sm:prose-img:max-w-[350px] lg:prose-img:max-w-[400px]
                  prose-img:mx-auto
