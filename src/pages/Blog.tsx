@@ -3,8 +3,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
 import { Card } from "@/components/ui/card";
 import { Link } from "react-router-dom";
-import { Helmet } from "react-helmet";
 import { toast } from "@/components/ui/use-toast";
+import { BlogMeta } from "@/components/blog/meta/BlogMeta";
 
 const Blog = () => {
   console.log("Blog component initialized");
@@ -77,11 +77,7 @@ const Blog = () => {
   if (isLoading) {
     return (
       <>
-        <Helmet>
-          <title>Gift Ideas - Get The Gift</title>
-          <meta name="description" content="Discover gift-giving tips, ideas, and inspiration on our blog. Learn about the latest trends and get expert advice on finding the perfect gift." />
-          <link rel="canonical" href="https://getthegift.ai/blog" />
-        </Helmet>
+        <BlogMeta />
         <div className="container mx-auto px-4 py-6">
           <div className="text-center mb-8">
             <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold bg-gradient-to-r from-purple-500/80 via-blue-500/80 to-purple-500/80 inline-block text-transparent bg-clip-text mb-4">
@@ -113,16 +109,7 @@ const Blog = () => {
 
   return (
     <>
-      <Helmet>
-        <title>Gift Ideas - Get The Gift</title>
-        <meta name="description" content="Discover gift-giving tips, ideas, and inspiration on our blog. Learn about the latest trends and get expert advice on finding the perfect gift." />
-        <link rel="canonical" href="https://getthegift.ai/blog" />
-        <meta property="og:title" content="Gift Ideas - Get The Gift" />
-        <meta property="og:description" content="Discover gift-giving tips, ideas, and inspiration on our blog. Learn about the latest trends and get expert advice on finding the perfect gift." />
-        {posts?.[0]?.image_url && (
-          <meta property="og:image" content={posts[0].image_url} />
-        )}
-      </Helmet>
+      <BlogMeta />
       <div className="container mx-auto px-4 py-6">
         <div className="text-center mb-8">
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold bg-gradient-to-r from-purple-500/80 via-blue-500/80 to-purple-500/80 inline-block text-transparent bg-clip-text mb-4">
