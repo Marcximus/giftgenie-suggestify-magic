@@ -17,7 +17,6 @@ export const SuggestionsGrid = ({
   onStartOver,
   isLoading 
 }: SuggestionsGridProps) => {
-  // Prepare schema.org structured data for the list of suggestions
   const schemaData = {
     "@context": "https://schema.org",
     "@type": "ItemList",
@@ -48,7 +47,7 @@ export const SuggestionsGrid = ({
       }
     }))
   };
-
+  
   return (
     <>
       <script type="application/ld+json">
