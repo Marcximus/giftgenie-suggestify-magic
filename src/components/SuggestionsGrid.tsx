@@ -86,8 +86,8 @@ export const SuggestionsGrid = ({
               }
             `}
           </style>
-          <p className="text-[10px] text-muted-foreground/70 mb-4">
-            Some links may contain affiliate links from Amazon and other vendors
+          <p className="text-sm text-muted-foreground mb-6 text-center px-4">
+            Products shown may include affiliate links from Amazon and other vendors
           </p>
           <SuggestionsActions
             onGenerateMore={onGenerateMore}
