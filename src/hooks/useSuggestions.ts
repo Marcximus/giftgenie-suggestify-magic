@@ -27,8 +27,7 @@ export const useSuggestions = () => {
           await supabase.from('api_metrics').insert({
             endpoint: 'generate-suggestions',
             duration_ms: Math.round(performance.now() - startTime),
-            status: 'success',
-            cache_hit: false
+            status: 'success'
           });
           
           return results;
@@ -42,8 +41,7 @@ export const useSuggestions = () => {
           endpoint: 'generate-suggestions',
           duration_ms: Math.round(performance.now() - startTime),
           status: 'error',
-          error_message: error.message,
-          cache_hit: false
+          error_message: error.message
         });
         
         throw error;
@@ -55,7 +53,6 @@ export const useSuggestions = () => {
     }
   });
 
-  // Optimized debounce settings
   const debouncedSearch = debounce(async (query: string) => {
     setLastQuery(query);
     await fetchSuggestions(query);
