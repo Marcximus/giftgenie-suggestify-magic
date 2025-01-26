@@ -9,6 +9,7 @@ interface LoadingMessageProps {
 export const LoadingMessage = ({ isLoading }: LoadingMessageProps) => {
   const [currentLoadingMessage, setCurrentLoadingMessage] = useState(0);
   const [shuffledMessages, setShuffledMessages] = useState<string[]>([]);
+  const [isVisible, setIsVisible] = useState(false);
 
   // Function to shuffle messages but keep "Here we go..." at the end
   const shuffleMessages = () => {
@@ -21,7 +22,14 @@ export const LoadingMessage = ({ isLoading }: LoadingMessageProps) => {
 
   useEffect(() => {
     if (isLoading) {
+      setIsVisible(true);
       shuffleMessages();
+    } else {
+      // Delay hiding to allow for fade out animation
+      const timer = setTimeout(() => {
+        setIsVisible(false);
+      }, 300);
+      return () => clearTimeout(timer);
     }
   }, [isLoading]);
 
@@ -45,12 +53,18 @@ export const LoadingMessage = ({ isLoading }: LoadingMessageProps) => {
     };
   }, [isLoading, shuffledMessages.length]);
 
-  if (!isLoading || shuffledMessages.length === 0) return null;
+  if (!isVisible || shuffledMessages.length === 0) return null;
 
   return (
-    <div className="flex flex-col items-center justify-center space-y-14 mt-12 sm:mt-16 ml-[-8%] sm:ml-[-4%]">
+    <div 
+      className={`
+        flex flex-col items-center justify-center space-y-14 mt-12 sm:mt-16 
+        transition-opacity duration-300 ease-in-out
+        ${isLoading ? 'opacity-100' : 'opacity-0'}
+      `}
+    >
       <Spinner variant="infinite" className="w-16 h-16 sm:w-20 sm:h-20" />
-      <p className="text-[#8E9196] text-center text-sm md:text-base font-medium max-w-md px-4 ml-[5%] animate-pulse-text">
+      <p className="text-[#8E9196] text-center text-sm md:text-base font-medium max-w-md px-4 animate-pulse-text">
         {shuffledMessages[currentLoadingMessage]}
       </p>
     </div>

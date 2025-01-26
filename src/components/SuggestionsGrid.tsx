@@ -17,7 +17,6 @@ export const SuggestionsGrid = ({
   onStartOver,
   isLoading 
 }: SuggestionsGridProps) => {
-  // Prepare schema.org structured data for the list of suggestions
   const schemaData = {
     "@context": "https://schema.org",
     "@type": "ItemList",
@@ -55,7 +54,13 @@ export const SuggestionsGrid = ({
         {JSON.stringify(schemaData)}
       </script>
       <div 
-        className="mt-6 sm:mt-8 md:mt-12 grid gap-4 sm:gap-5 md:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 animate-in fade-in slide-in-from-bottom-4 duration-500 px-4 sm:px-6 md:px-8"
+        className={`
+          mt-6 sm:mt-8 grid gap-4 sm:gap-5 md:gap-6 
+          grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 
+          px-4 sm:px-6 md:px-8
+          transition-opacity duration-300
+          ${suggestions.length > 0 ? 'opacity-100' : 'opacity-0'}
+        `}
         role="region"
         aria-label="Gift suggestions"
       >
@@ -67,7 +72,11 @@ export const SuggestionsGrid = ({
       </div>
       
       {suggestions.length > 0 && (
-        <div className="flex flex-col items-center mt-8 sm:mt-12">
+        <div className={`
+          flex flex-col items-center mt-8 sm:mt-12
+          transition-opacity duration-300 ease-in-out
+          ${isLoading ? 'opacity-0' : 'opacity-100'}
+        `}>
           <p className="text-[10px] text-muted-foreground/70 mb-4">
             Some links may contain affiliate links from Amazon and other vendors
           </p>

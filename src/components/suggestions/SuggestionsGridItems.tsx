@@ -17,6 +17,7 @@ export const SuggestionsGridItems = ({
 }: SuggestionsGridItemsProps) => {
   const [processedSuggestions, setProcessedSuggestions] = useState<(GiftSuggestion & { optimizedTitle: string })[]>([]);
   const [processingIndexes, setProcessingIndexes] = useState<Set<number>>(new Set());
+  const [isTransitioning, setIsTransitioning] = useState(false);
   const abortController = useRef<AbortController | null>(null);
 
   const generateTitle = useCallback(async (originalTitle: string, description: string) => {
@@ -37,6 +38,7 @@ export const SuggestionsGridItems = ({
     if (suggestions.length === 0) {
       setProcessedSuggestions([]);
       setProcessingIndexes(new Set());
+      setIsTransitioning(false);
       return;
     }
 
@@ -50,6 +52,10 @@ export const SuggestionsGridItems = ({
       console.log('Starting sequential processing of suggestions');
 
       setProcessedSuggestions([]);
+      setIsTransitioning(true);
+
+      // Add a small delay before starting to process suggestions
+      await new Promise(resolve => setTimeout(resolve, 300));
 
       for (let index = 0; index < suggestions.length; index++) {
         try {
@@ -58,7 +64,6 @@ export const SuggestionsGridItems = ({
           const suggestion = suggestions[index];
           const optimizedTitle = await generateTitle(suggestion.title, suggestion.description);
           
-          // Shorter delay between items
           await new Promise(resolve => setTimeout(resolve, 200));
           
           setProcessedSuggestions(prev => [
@@ -84,6 +89,7 @@ export const SuggestionsGridItems = ({
         }
       }
 
+      setIsTransitioning(false);
       const duration = performance.now() - startTime;
       console.log(`Processing completed, total time: ${duration.toFixed(2)}ms`);
     };
@@ -126,6 +132,7 @@ export const SuggestionsGridItems = ({
             className={`
               transform transition-all duration-400 ease-out
               ${processed ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'}
+              ${isTransitioning ? 'transition-none' : ''}
             `}
             style={{ 
               transitionDelay: `${index * 100}ms`
