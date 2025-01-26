@@ -48,11 +48,15 @@ export const LoadingMessage = ({ isLoading }: LoadingMessageProps) => {
   if (!isLoading || shuffledMessages.length === 0) return null;
 
   return (
-    <div className="flex flex-col items-center gap-6">
-      <Spinner variant="infinite" className="w-16 h-16 sm:w-20 sm:h-20" />
-      <p className="text-[#8E9196] text-center text-sm md:text-base font-medium px-4">
-        {shuffledMessages[currentLoadingMessage]}
-      </p>
+    <div className="w-full flex flex-col items-center justify-center space-y-8 py-8">
+      <div className="flex justify-center w-full">
+        <Spinner variant="infinite" className="w-16 h-16 sm:w-20 sm:h-20" />
+      </div>
+      <div className="w-full max-w-md px-4">
+        <p className="text-[#8E9196] text-center text-sm md:text-base font-medium">
+          {shuffledMessages[currentLoadingMessage]}
+        </p>
+      </div>
     </div>
   );
 };
