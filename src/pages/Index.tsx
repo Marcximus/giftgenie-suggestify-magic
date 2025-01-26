@@ -52,7 +52,7 @@ const Index = () => {
           </section>
         </div>
 
-        <footer className="fixed bottom-20 sm:bottom-24 left-0 right-0 text-center z-10">
+        <footer className="text-center z-10 py-2 mb-20 sm:mb-24">
           <p className="text-[10px] text-muted-foreground/70 bg-background/80 backdrop-blur-sm py-1">
             Some links may contain affiliate links from Amazon and other vendors
           </p>
