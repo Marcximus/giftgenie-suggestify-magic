@@ -15,14 +15,13 @@ export const BlogPostHeader = ({ post }: BlogPostHeaderProps) => {
   };
 
   return (
-    <>
-      {/* SEO title hidden visually but present in DOM */}
+    <header className="mb-6 sm:mb-8">
       <h1 className="sr-only">
         {post.title}
       </h1>
 
       {post.image_url && !imageError && (
-        <div className="w-full aspect-[21/9] relative overflow-hidden rounded-lg mb-6 sm:mb-8 shadow-xl animate-fade-in">
+        <div className="w-full aspect-[21/9] relative overflow-hidden rounded-lg mb-6 shadow-xl animate-fade-in">
           <img 
             src={post.image_url} 
             alt={post.image_alt_text || post.title}
@@ -32,7 +31,7 @@ export const BlogPostHeader = ({ post }: BlogPostHeaderProps) => {
         </div>
       )}
       
-      <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground mb-6 sm:mb-8 animate-fade-in">
+      <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
         <div className="flex items-center gap-1">
           <User className="w-4 h-4" />
           <span>{post.author}</span>
@@ -46,6 +45,6 @@ export const BlogPostHeader = ({ post }: BlogPostHeaderProps) => {
           <span>{new Date(post.published_at || "").toLocaleTimeString()}</span>
         </div>
       </div>
-    </>
+    </header>
   );
 };

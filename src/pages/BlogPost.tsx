@@ -91,7 +91,7 @@ const BlogPost = () => {
     <>
       <BlogPostMeta post={post} />
       <article className="min-h-screen bg-gradient-to-b from-background to-muted/20">
-        <div className="container mx-auto px-2 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-12 max-w-5xl">
+        <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-12">
           <Button 
             onClick={() => navigate("/blog")} 
             variant="ghost" 
