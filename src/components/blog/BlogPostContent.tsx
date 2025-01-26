@@ -26,6 +26,10 @@ export const BlogPostContent = ({ post }: BlogPostContentProps) => {
       .replace(/<div(?!\s+class="[^"]*(?:product-actions|review-container))/gi, '<div class="w-full text-left"')
       // Center h1 tags (titles) with adjusted margins
       .replace(/<h1/gi, '<h1 class="!text-center mt-4 sm:mt-8 mb-6 sm:mb-12 px-8"')
+      // Add spacing between product titles and images
+      .replace(/<h3/gi, '<h3 class="mb-6 mt-8"')
+      // Add spacing between images and reviews
+      .replace(/<div[^>]*class="[^"]*review-container[^"]*">/gi, '<div class="mt-8 review-container">')
       // Center review sections
       .replace(/<div[^>]*class="[^"]*flex items-center[^"]*">/gi, '<div class="!text-center !flex !justify-center">')
       .replace(/<div[^>]*class="[^"]*review-text[^"]*">/gi, '<div class="!text-center">');
