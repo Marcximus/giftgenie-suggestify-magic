@@ -62,7 +62,9 @@ export const BlogPostContent = ({ post }: BlogPostContentProps) => {
                  [&_a.perfect-gift-button]:shadow-md [&_a.perfect-gift-button]:hover:shadow-lg
                  [&_a.perfect-gift-button]:hover:opacity-90 [&_a.perfect-gift-button]:active:scale-95
                  
-                 [&_*]:text-left"
+                 [&_*]:text-left
+                 
+                 mx-auto max-w-[65ch] text-left"
       dangerouslySetInnerHTML={{ __html: sanitizeContent(post.content) }}
     />
   );
