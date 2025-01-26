@@ -24,37 +24,46 @@ export default defineConfig(({ mode }) => ({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
-    },
+    }
   },
   build: {
     cssCodeSplit: true,
     cssMinify: true,
     rollupOptions: {
       output: {
-        manualChunks: {
-          'vendor': ['react', 'react-dom'],
-          'router': ['react-router-dom'],
-          'ui': [
-            '@radix-ui/react-dialog', 
-            '@radix-ui/react-slot', 
-            '@radix-ui/react-toast',
-            '@radix-ui/react-label',
-            '@radix-ui/react-select',
-            '@radix-ui/react-checkbox'
-          ],
-          'charts': ['recharts'],
-          'icons': ['lucide-react'],
-          'query': ['@tanstack/react-query'],
-          'forms': ['react-hook-form', '@hookform/resolvers'],
-          'animations': ['framer-motion']
-        },
-        chunkFileNames: (chunkInfo) => {
-          const name = chunkInfo.name;
-          if (name === 'vendor' || name === 'ui') {
-            return 'assets/[name]-[hash].js';
+        manualChunks: (id) => {
+          if (id.includes('node_modules')) {
+            if (id.includes('react') || id.includes('react-dom')) {
+              return 'vendor';
+            }
+            if (id.includes('@radix-ui')) {
+              return 'ui';
+            }
+            if (id.includes('recharts')) {
+              return 'charts';
+            }
+            if (id.includes('lucide-react')) {
+              return 'icons';
+            }
+            if (id.includes('@tanstack/react-query')) {
+              return 'query';
+            }
+            if (id.includes('react-hook-form') || id.includes('@hookform/resolvers')) {
+              return 'forms';
+            }
+            if (id.includes('framer-motion')) {
+              return 'animations';
+            }
           }
-          return 'assets/[name]-[hash].js';
-        }
+          // Group components by feature
+          if (id.includes('/components/suggestions/')) {
+            return 'suggestions';
+          }
+          return null;
+        },
+        chunkFileNames: 'assets/[name]-[hash].js',
+        entryFileNames: 'assets/[name]-[hash].js',
+        assetFileNames: 'assets/[name]-[hash].[ext]'
       }
     },
     chunkSizeWarningLimit: 1000,
@@ -75,6 +84,17 @@ export default defineConfig(({ mode }) => ({
     }
   },
   optimizeDeps: {
-    include: ['react', 'react-dom', 'react-router-dom']
+    include: [
+      'react', 
+      'react-dom', 
+      'react-router-dom',
+      'tailwind-merge',
+      '@radix-ui/react-dialog',
+      '@radix-ui/react-slot',
+      '@radix-ui/react-toast',
+      '@radix-ui/react-label',
+      '@radix-ui/react-select',
+      '@radix-ui/react-checkbox'
+    ]
   }
 }));
