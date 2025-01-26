@@ -7,8 +7,10 @@ interface BlogPostContentProps {
 export const BlogPostContent = ({ post }: BlogPostContentProps) => {
   const sanitizeContent = (content: string) => {
     return content
-      // First, clean up any problematic inline styles
+      // First, aggressively clean up any problematic inline styles and alignments
       .replace(/style="[^"]*"/gi, '')
+      .replace(/align="[^"]*"/gi, '')
+      .replace(/class="[^"]*"/gi, '')
       
       // Format headings consistently
       .replace(/<h1[^>]*>/gi, '<h1 class="!text-center !mt-8 sm:!mt-12 !mb-8 sm:!mb-16 !text-3xl sm:!text-4xl md:!text-5xl !font-bold !px-4 sm:!px-8">')
@@ -16,7 +18,7 @@ export const BlogPostContent = ({ post }: BlogPostContentProps) => {
       .replace(/<h3[^>]*>/gi, '<h3 class="!text-left !text-lg sm:!text-xl md:!text-2xl !font-semibold !mt-16 !mb-8">')
       
       // Ensure paragraphs are left-aligned with consistent spacing
-      .replace(/<p[^>]*>/gi, '<p class="!text-left !my-4 !leading-relaxed">')
+      .replace(/<p[^>]*>/gi, '<p class="!text-left !my-4 !leading-relaxed !mx-0">')
       
       // Center product-related content
       .replace(/<div[^>]*class="[^"]*product-actions[^"]*"[^>]*>/gi, '<div class="!flex !flex-col !items-center !gap-2 !my-6">')
@@ -36,6 +38,7 @@ export const BlogPostContent = ({ post }: BlogPostContentProps) => {
                  
                  prose-p:text-sm md:prose-p:text-base lg:prose-p:text-lg
                  prose-p:leading-relaxed prose-p:mb-4 prose-p:w-full prose-p:text-left
+                 prose-p:!mx-0
                  
                  prose-h1:text-2xl sm:prose-h1:text-3xl md:prose-h1:text-4xl lg:prose-h1:text-5xl
                  prose-h1:font-bold prose-h1:mb-4 sm:prose-h1:mb-6 prose-h1:w-full prose-h1:!text-center
@@ -74,7 +77,9 @@ export const BlogPostContent = ({ post }: BlogPostContentProps) => {
                  [&_a.amazon-button]:!text-white [&_a.amazon-button]:!rounded-md
                  [&_a.amazon-button]:!transition-colors [&_a.amazon-button]:!text-sm
                  [&_a.amazon-button]:!shadow-sm [&_a.amazon-button]:hover:!shadow-md
-                 [&_a.amazon-button]:!mx-auto [&_a.amazon-button]:!mb-8"
+                 [&_a.amazon-button]:!mx-auto [&_a.amazon-button]:!mb-8
+                 
+                 [&_div]:!text-left"
       dangerouslySetInnerHTML={{ __html: sanitizeContent(post.content) }}
     />
   );
