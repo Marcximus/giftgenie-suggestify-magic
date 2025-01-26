@@ -60,8 +60,9 @@ export const BlogPostContent = ({ post }: BlogPostContentProps) => {
                  prose-h2:text-xl sm:prose-h2:text-2xl md:prose-h2:text-3xl
                  prose-h2:font-semibold prose-h2:mt-6 prose-h2:mb-4 prose-h2:w-full prose-h2:text-left
                  
-                 prose-h3:text-lg sm:prose-h3:text-xl md:prose-h3:text-2xl
-                 prose-h3:font-semibold prose-h3:mt-4 prose-h3:mb-3 prose-h3:w-full prose-h3:text-left
+                 prose-h3:text-xl sm:prose-h3:text-2xl md:prose-h3:text-3xl lg:prose-h3:text-4xl
+                 prose-h3:font-semibold prose-h3:mt-8 prose-h3:mb-6 prose-h3:w-full prose-h3:text-left
+                 prose-h3:text-gray-800 prose-h3:leading-tight
                  
                  prose-ul:list-disc prose-ul:pl-4 sm:prose-ul:pl-6 prose-ul:mb-4 prose-ul:w-full prose-ul:text-left
                  prose-ol:list-decimal prose-ol:pl-4 sm:prose-ol:pl-6 prose-ol:mb-4 prose-ol:w-full prose-ol:text-left
