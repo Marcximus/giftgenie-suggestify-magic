@@ -32,14 +32,41 @@ export default defineConfig(({ mode }) => ({
     rollupOptions: {
       output: {
         manualChunks: {
-          'vendor': ['react', 'react-dom', 'react-router-dom'],
-          'ui': ['@radix-ui/react-dialog', '@radix-ui/react-slot', '@radix-ui/react-toast'],
+          'vendor': ['react', 'react-dom'],
+          'router': ['react-router-dom'],
+          'ui': [
+            '@radix-ui/react-dialog', 
+            '@radix-ui/react-slot', 
+            '@radix-ui/react-toast',
+            '@radix-ui/react-label',
+            '@radix-ui/react-select',
+            '@radix-ui/react-checkbox'
+          ],
           'charts': ['recharts'],
-          'icons': ['lucide-react']
+          'icons': ['lucide-react'],
+          'query': ['@tanstack/react-query'],
+          'forms': ['react-hook-form', '@hookform/resolvers'],
+          'animations': ['framer-motion']
+        },
+        // Optimize chunk size
+        chunkFileNames: (chunkInfo) => {
+          const name = chunkInfo.name;
+          if (name === 'vendor' || name === 'ui') {
+            return 'assets/[name]-[hash].js';
+          }
+          return 'assets/[name]-[hash].js';
         }
       }
     },
-    chunkSizeWarningLimit: 1000
+    chunkSizeWarningLimit: 1000,
+    // Enable minification optimizations
+    minify: 'terser',
+    terserOptions: {
+      compress: {
+        drop_console: true,
+        drop_debugger: true
+      }
+    }
   },
   css: {
     postcss: {
@@ -48,5 +75,8 @@ export default defineConfig(({ mode }) => ({
         autoprefixer,
       ]
     }
+  },
+  optimizeDeps: {
+    include: ['react', 'react-dom', 'react-router-dom']
   }
 }));

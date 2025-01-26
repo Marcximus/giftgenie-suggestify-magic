@@ -8,16 +8,18 @@
     <!-- Preconnect to critical domains -->
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     
-    <!-- Google tag (gtag.js) - Deferred loading -->
-    <script defer src="https://www.googletagmanager.com/gtag/js?id=G-DB54W7MG31"></script>
+    <!-- Deferred Google Analytics -->
     <script>
       window.dataLayer = window.dataLayer || [];
       function gtag(){dataLayer.push(arguments);}
       gtag('js', new Date());
       gtag('config', 'G-DB54W7MG31', {
-        send_page_view: false
+        send_page_view: false,
+        transport_url: 'https://www.googletagmanager.com',
+        transport_type: 'beacon'
       });
     </script>
+    <script defer src="https://www.googletagmanager.com/gtag/js?id=G-DB54W7MG31"></script>
 
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
