@@ -34,7 +34,7 @@ export const BlogPostContent = ({ post }: BlogPostContentProps) => {
   return (
     <div 
       className="prose prose-sm md:prose-base lg:prose-lg w-full !max-w-none !m-0
-                 px-6 sm:px-8 md:px-12 lg:px-16
+                 px-6 sm:px-8 md:px-12 lg:px-20
                  prose-p:text-sm md:prose-p:text-base lg:prose-p:text-lg
                  prose-p:leading-relaxed prose-p:mb-4 prose-p:w-full prose-p:text-left
                  
