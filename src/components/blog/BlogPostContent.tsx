@@ -7,18 +7,20 @@ interface BlogPostContentProps {
 export const BlogPostContent = ({ post }: BlogPostContentProps) => {
   return (
     <div 
-      className="prose prose-sm md:prose-base lg:prose-lg w-full max-w-none animate-fade-in
+      className="prose prose-sm md:prose-base lg:prose-lg w-full max-w-none
+                 [&>*]:text-left
+                 
                  prose-p:text-sm md:prose-p:text-base lg:prose-p:text-lg
-                 prose-p:leading-relaxed prose-p:mb-4
+                 prose-p:leading-relaxed prose-p:mb-4 prose-p:text-left
                  
                  prose-h1:text-2xl sm:prose-h1:text-3xl md:prose-h1:text-4xl lg:prose-h1:text-5xl
                  prose-h1:font-bold prose-h1:mb-6 prose-h1:text-left
                  
                  prose-h2:text-xl sm:prose-h2:text-2xl md:prose-h2:text-3xl
-                 prose-h2:font-semibold prose-h2:mt-6 prose-h2:mb-4
+                 prose-h2:font-semibold prose-h2:mt-6 prose-h2:mb-4 prose-h2:text-left
                  
                  prose-h3:text-lg sm:prose-h3:text-xl md:prose-h3:text-2xl
-                 prose-h3:font-semibold prose-h3:mt-4 prose-h3:mb-3
+                 prose-h3:font-semibold prose-h3:mt-4 prose-h3:mb-3 prose-h3:text-left
                  
                  prose-ul:list-disc prose-ul:pl-4 sm:prose-ul:pl-6 prose-ul:mb-4
                  prose-ol:list-decimal prose-ol:pl-4 sm:prose-ol:pl-6 prose-ol:mb-4
