@@ -17,12 +17,12 @@ export const BlogPostContent = ({ post }: BlogPostContentProps) => {
       .replace(/<h2[^>]*>/gi, '<h2 class="!text-left !text-xl sm:!text-2xl md:!text-3xl !font-semibold !mt-12 !mb-6">')
       .replace(/<h3[^>]*>/gi, '<h3 class="!text-left !text-lg sm:!text-xl md:!text-2xl !font-semibold !mt-16 !mb-8">')
       
-      // Ensure paragraphs are left-aligned with consistent spacing
+      // Ensure regular paragraphs are left-aligned with consistent spacing
       .replace(/<p[^>]*>/gi, '<p class="!text-left !my-4 !leading-relaxed !mx-0">')
       
       // Center product-related content
-      .replace(/<div[^>]*class="[^"]*product-actions[^"]*"[^>]*>/gi, '<div class="!flex !flex-col !items-center !gap-2 !my-6">')
-      .replace(/<div[^>]*class="[^"]*review-container[^"]*"[^>]*>/gi, '<div class="!flex !flex-col !items-center !gap-2 !my-8">')
+      .replace(/<div[^>]*class="[^"]*product-actions[^"]*"[^>]*>/gi, '<div class="!flex !flex-col !items-center !gap-2 !my-6 !text-center">')
+      .replace(/<div[^>]*class="[^"]*review-container[^"]*"[^>]*>/gi, '<div class="!flex !flex-col !items-center !gap-2 !my-8 !text-center">')
       
       // Format images consistently
       .replace(/<img/gi, '<img class="!mx-auto !my-8 !max-w-[250px] sm:!max-w-[350px] lg:!max-w-[400px] !rounded-lg !shadow-md"')
@@ -79,7 +79,7 @@ export const BlogPostContent = ({ post }: BlogPostContentProps) => {
                  [&_a.amazon-button]:!shadow-sm [&_a.amazon-button]:hover:!shadow-md
                  [&_a.amazon-button]:!mx-auto [&_a.amazon-button]:!mb-8
                  
-                 [&_div]:!text-left"
+                 [&_div]:not([class*='product-actions']):not([class*='review-container']):!text-left"
       dangerouslySetInnerHTML={{ __html: sanitizeContent(post.content) }}
     />
   );
