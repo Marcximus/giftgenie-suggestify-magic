@@ -1,5 +1,4 @@
 import { Tables } from "@/integrations/supabase/types";
-import { ShineBorder } from "@/components/ui/shine-border";
 
 interface BlogPostContentProps {
   post: Tables<"blog_posts">;
@@ -33,12 +32,7 @@ export const BlogPostContent = ({ post }: BlogPostContentProps) => {
       .replace(/<div[^>]*class="[^"]*review-container[^"]*">/gi, '<div class="!mt-8 review-container">')
       // Center review sections
       .replace(/<div[^>]*class="[^"]*flex items-center[^"]*">/gi, '<div class="!text-center !flex !justify-center">')
-      .replace(/<div[^>]*class="[^"]*review-text[^"]*">/gi, '<div class="!text-center">')
-      // Wrap Amazon buttons with ShineBorder container
-      .replace(
-        /<a([^>]*class="[^"]*amazon-button[^"]*"[^>]*)>/gi, 
-        '<div class="flex justify-center"><div class="shine-border-wrapper"></div><a$1>'
-      );
+      .replace(/<div[^>]*class="[^"]*review-text[^"]*">/gi, '<div class="!text-center">');
   };
 
   return (
@@ -91,21 +85,8 @@ export const BlogPostContent = ({ post }: BlogPostContentProps) => {
                  [&_a.perfect-gift-button]:shadow-md [&_a.perfect-gift-button]:hover:shadow-lg
                  [&_a.perfect-gift-button]:hover:opacity-90 [&_a.perfect-gift-button]:active:scale-95
                  
-                 [&_div.review-container]:!mt-8 [&_div.review-container]:!mb-0
-                 
-                 [&_div.shine-border-wrapper]:relative [&_div.shine-border-wrapper]:w-full"
-      dangerouslySetInnerHTML={{ __html: sanitizeContent(post.content).replace(
-        /<div class="shine-border-wrapper"><\/div>/g,
-        `<div class="shine-border-wrapper">
-          ${ShineBorder({
-            borderRadius: 8,
-            borderWidth: 2,
-            duration: 8,
-            color: ["#F97316", "#FB923C", "#FDBA74"],
-            className: "!min-w-0 !min-h-0 !p-0 !bg-transparent",
-            children: null
-          })}
-        </div>`
-      ) }} />
+                 [&_div.review-container]:!mt-8 [&_div.review-container]:!mb-0"
+      dangerouslySetInnerHTML={{ __html: sanitizeContent(post.content) }}
+    />
   );
 };
