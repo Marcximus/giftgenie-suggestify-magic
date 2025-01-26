@@ -31,8 +31,9 @@ export const BlogPostContent = ({ post }: BlogPostContentProps) => {
       // Center review sections
       .replace(/<div[^>]*class="[^"]*flex items-center[^"]*">/gi, '<div class="!text-center !flex !justify-center">')
       .replace(/<div[^>]*class="[^"]*review-text[^"]*">/gi, '<div class="!text-center">')
-      // Style Amazon buttons with mx-auto for horizontal centering
-      .replace(/<a[^>]*class="[^"]*amazon-button[^"]*">/gi, '<a class="amazon-button !inline-block mx-auto px-4 py-2 bg-[#F97316] hover:bg-[#F97316]/90 text-white rounded-md transition-colors text-sm shadow-sm hover:shadow-md">');
+      // Wrap Amazon button in a centered div and style it
+      .replace(/<a[^>]*class="[^"]*amazon-button[^"]*">/gi, '<div class="text-center w-full"><a class="amazon-button !inline-block px-4 py-2 bg-[#F97316] hover:bg-[#F97316]/90 text-white rounded-md transition-colors text-sm shadow-sm hover:shadow-md">')
+      .replace(/<\/a>(?=\s*(?:<\/div>|<hr|$))/gi, '</a></div>');
   };
 
   return (
@@ -71,7 +72,7 @@ export const BlogPostContent = ({ post }: BlogPostContentProps) => {
                  [&_div.product-actions]:items-center [&_div.product-actions]:gap-4
                  [&_div.product-actions]:my-6 [&_div.product-actions]:!text-center
                  
-                 [&_a.amazon-button]:!inline-block [&_a.amazon-button]:mx-auto
+                 [&_a.amazon-button]:!inline-block
                  [&_a.amazon-button]:px-4 [&_a.amazon-button]:py-2 
                  [&_a.amazon-button]:bg-[#F97316] [&_a.amazon-button]:hover:bg-[#F97316]/90 
                  [&_a.amazon-button]:text-white [&_a.amazon-button]:rounded-md 
