@@ -92,7 +92,10 @@ export const BlogPostContent = ({ post }: BlogPostContentProps) => {
                  [&_a.amazon-button]:transition-colors [&_a.amazon-button]:text-base
                  [&_a.amazon-button]:sm:text-lg [&_a.amazon-button]:font-medium
                  [&_a.amazon-button]:shadow-sm [&_a.amazon-button]:hover:shadow-md
-                 [&_a.amazon-button]:active:scale-95"
+                 [&_a.amazon-button]:active:scale-95
+                 
+                 [&_.review-text_p]:!text-sm [&_.review-text_p]:!md:text-base [&_.review-text_p]:!lg:text-lg
+                 [&_.review-text]:!text-sm [&_.review-text]:!md:text-base [&_.review-text]:!lg:text-lg"
       dangerouslySetInnerHTML={{ __html: sanitizeContent(post.content) }}
     />
   );
