@@ -25,7 +25,7 @@ export const BlogPostContent = ({ post }: BlogPostContentProps) => {
       // Force div containers to be full width and left-aligned, except for product-actions and review containers
       .replace(/<div(?!\s+class="[^"]*(?:product-actions|review-container))/gi, '<div class="w-full text-left"')
       // Center h1 tags (titles)
-      .replace(/<h1/gi, '<h1 class="!text-center"')
+      .replace(/<h1/gi, '<h1 class="!text-center mt-8 mb-12"')
       // Center review sections (similar to h1 approach)
       .replace(/<div[^>]*class="[^"]*flex items-center[^"]*">/gi, '<div class="!text-center !flex !justify-center">')
       .replace(/<div[^>]*class="[^"]*review-text[^"]*">/gi, '<div class="!text-center">');
