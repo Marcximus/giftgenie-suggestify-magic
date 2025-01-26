@@ -30,6 +30,7 @@ export const AmazonButton = ({ title, asin }: AmazonButtonProps) => {
         return `https://www.amazon.com/dp/${productAsin}/ref=nosim?tag=${cachedAssociateId}`;
       }
       
+      // If no valid ASIN, show a toast and return null
       console.warn('No valid ASIN available for product:', searchTerm);
       toast({
         title: "Product not found",
@@ -51,23 +52,22 @@ export const AmazonButton = ({ title, asin }: AmazonButtonProps) => {
   };
 
   const handleClick = async (e: React.MouseEvent) => {
-    e.stopPropagation();
+    e.stopPropagation(); // Prevent any parent click handlers
     const url = await getAmazonUrl(title, asin);
     if (url) {
+      // Open in new tab with noopener and noreferrer for security
       window.open(url, '_blank', 'noopener,noreferrer');
     }
   };
 
   return (
-    <div className="product-actions flex justify-center items-center w-full my-4">
-      <Button 
-        className="amazon-button bg-[#F97316] hover:bg-[#F97316]/90 shadow-sm text-sm py-1 px-6 transition-all duration-200 w-auto" 
-        onClick={handleClick}
-        disabled={isLoading || !asin}
-        aria-label={asin ? "View on Amazon" : "Product not available"}
-      >
-        {isLoading ? "Loading..." : "View on Amazon"}
-      </Button>
-    </div>
+    <Button 
+      className="w-full bg-[#F97316] hover:bg-[#F97316]/90 shadow-sm text-sm py-1 transition-all duration-200" 
+      onClick={handleClick}
+      disabled={isLoading || !asin}
+      aria-label={asin ? "View on Amazon" : "Product not available"}
+    >
+      {isLoading ? "Loading..." : "View on Amazon"}
+    </Button>
   );
 };

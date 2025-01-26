@@ -277,27 +277,6 @@ export type Database = {
           },
         ]
       }
-      blog_posts_backup_content: {
-        Row: {
-          content: string | null
-          content_format_version: string | null
-          id: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          content?: string | null
-          content_format_version?: string | null
-          id?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          content?: string | null
-          content_format_version?: string | null
-          id?: string | null
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
       popular_searches: {
         Row: {
           created_at: string | null
