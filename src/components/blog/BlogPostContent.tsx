@@ -32,7 +32,10 @@ export const BlogPostContent = ({ post }: BlogPostContentProps) => {
       .replace(/<div[^>]*class="[^"]*review-container[^"]*">/gi, '<div class="!mt-8 !mb-0 review-container">')
       // Center review sections
       .replace(/<div[^>]*class="[^"]*flex items-center[^"]*">/gi, '<div class="!text-center !flex !justify-center">')
-      .replace(/<div[^>]*class="[^"]*review-text[^"]*">/gi, '<div class="!text-center">');
+      .replace(/<div[^>]*class="[^"]*review-text[^"]*">/gi, '<div class="!text-center">')
+      // Center Amazon buttons and their containers
+      .replace(/<div[^>]*class="[^"]*product-actions[^"]*">/gi, '<div class="!flex !flex-col !items-center !justify-center product-actions">')
+      .replace(/<a[^>]*class="[^"]*amazon-button[^"]*">/gi, '<a class="amazon-button !mx-auto !block">');
   };
 
   return (
@@ -76,7 +79,7 @@ export const BlogPostContent = ({ post }: BlogPostContentProps) => {
                  [&_a.amazon-button]:text-white [&_a.amazon-button]:rounded-md 
                  [&_a.amazon-button]:transition-colors [&_a.amazon-button]:text-sm
                  [&_a.amazon-button]:shadow-sm [&_a.amazon-button]:hover:shadow-md
-                 [&_a.amazon-button]:active:scale-95
+                 [&_a.amazon-button]:active:scale-95 [&_a.amazon-button]:mx-auto
                  
                  [&_a.perfect-gift-button]:inline-block [&_a.perfect-gift-button]:px-8 [&_a.perfect-gift-button]:py-4
                  [&_a.perfect-gift-button]:bg-gradient-to-r [&_a.perfect-gift-button]:from-primary/80 [&_a.perfect-gift-button]:to-blue-500/80
