@@ -72,13 +72,20 @@ export const SuggestionsGrid = ({
       
       {suggestions.length > 0 && !isLoading && (
         <div 
-          className="flex flex-col items-center mt-8 sm:mt-12 animate-in fade-in slide-in-from-bottom duration-1000"
+          className="flex flex-col items-center mt-8 sm:mt-12"
           style={{ 
-            animationDelay: `${totalAnimationDuration}ms`,
-            opacity: 0,
-            animation: `fade-in 1000ms ease-out ${totalAnimationDuration}ms forwards`
+            animation: `fadeIn 1000ms ease-out ${totalAnimationDuration}ms forwards`,
+            opacity: 0
           }}
         >
+          <style>
+            {`
+              @keyframes fadeIn {
+                from { opacity: 0; transform: translateY(10px); }
+                to { opacity: 1; transform: translateY(0); }
+              }
+            `}
+          </style>
           <p className="text-[10px] text-muted-foreground/70 mb-4">
             Some links may contain affiliate links from Amazon and other vendors
           </p>
