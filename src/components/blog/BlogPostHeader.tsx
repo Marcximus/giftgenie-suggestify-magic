@@ -1,5 +1,4 @@
 import { Tables } from "@/integrations/supabase/types";
-import { Calendar, User, Clock } from "lucide-react";
 import { useState } from "react";
 
 interface BlogPostHeaderProps {
@@ -9,41 +8,35 @@ interface BlogPostHeaderProps {
 export const BlogPostHeader = ({ post }: BlogPostHeaderProps) => {
   const [imageError, setImageError] = useState(false);
 
-  const handleImageError = () => {
-    console.error(`Failed to load image: ${post.image_url}`);
-    setImageError(true);
-  };
-
   return (
-    <header className="mb-6 sm:mb-8">
-      <h1 className="sr-only">
+    <header className="mb-8 sm:mb-12">
+      <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-center mb-6 sm:mb-8 
+                     bg-clip-text text-transparent bg-gradient-to-r from-primary to-blue-500
+                     animate-gradient bg-[length:200%_auto]">
         {post.title}
       </h1>
 
       {post.image_url && !imageError && (
-        <div className="max-w-[600px] sm:max-w-[800px] lg:max-w-[1000px] mx-auto w-full aspect-[21/9] relative overflow-hidden rounded-lg mb-6 shadow-xl animate-fade-in">
+        <div className="max-w-[500px] sm:max-w-[700px] lg:max-w-[900px] mx-auto w-full aspect-[21/9] relative overflow-hidden rounded-lg mb-6 shadow-xl animate-fade-in">
           <img 
             src={post.image_url} 
             alt={post.image_alt_text || post.title}
             className="absolute inset-0 w-full h-full object-cover"
-            onError={handleImageError}
+            onError={() => setImageError(true)}
           />
         </div>
       )}
-      
-      <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
-        <div className="flex items-center gap-1">
-          <User className="w-4 h-4" />
-          <span>{post.author}</span>
-        </div>
-        <div className="flex items-center gap-1">
-          <Calendar className="w-4 h-4" />
-          <span>{new Date(post.published_at || "").toLocaleDateString()}</span>
-        </div>
-        <div className="flex items-center gap-1">
-          <Clock className="w-4 h-4" />
-          <span>{new Date(post.published_at || "").toLocaleTimeString()}</span>
-        </div>
+
+      <div className="text-center text-muted-foreground">
+        <time dateTime={post.published_at}>
+          {new Date(post.published_at).toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+          })}
+        </time>
+        <span className="mx-2">•</span>
+        <span>{post.author}</span>
       </div>
     </header>
   );
