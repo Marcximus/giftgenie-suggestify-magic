@@ -38,5 +38,13 @@ export default defineConfig(({ mode }) => ({
       }
     },
     chunkSizeWarningLimit: 1000
+  },
+  css: {
+    postcss: {
+      plugins: [
+        require('autoprefixer'),
+        require('tailwindcss'),
+      ]
+    }
   }
 }));

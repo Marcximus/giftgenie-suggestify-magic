@@ -25,9 +25,7 @@
     --ring: 235 84% 59%;
     --radius: 0.75rem;
   }
-}
-
-@layer base {
+  
   * {
     @apply border-border;
   }
@@ -40,23 +38,24 @@
     @apply bg-background text-foreground antialiased pb-8 sm:pb-28;
     font-feature-settings: "rlig" 1, "calt" 1;
   }
+}
+
+/* Improve touch target sizes on mobile */
+@media (max-width: 640px) {
+  button, 
+  [role="button"],
+  a {
+    @apply min-h-[44px] min-w-[44px];
+  }
   
-  /* Improve touch target sizes on mobile */
-  @media (max-width: 640px) {
-    button, 
-    [role="button"],
-    a {
-      @apply min-h-[44px] min-w-[44px];
-    }
-    
-    input,
-    select,
-    textarea {
-      @apply min-h-[44px];
-    }
+  input,
+  select,
+  textarea {
+    @apply min-h-[44px];
   }
 }
 
+/* Essential utility classes only */
 .search-container {
   @apply max-w-3xl mx-auto px-4 py-8 sm:py-12;
 }
