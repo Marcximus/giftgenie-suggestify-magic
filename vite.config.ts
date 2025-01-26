@@ -17,9 +17,7 @@ export default defineConfig(({ mode }) => ({
     }
   },
   plugins: [
-    react({
-      jsxImportSource: '@emotion/react',
-    }),
+    react(),
     mode === 'development' &&
     componentTagger(),
   ].filter(Boolean),
@@ -27,7 +25,6 @@ export default defineConfig(({ mode }) => ({
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
-    dedupe: ['react', 'react-dom'],
   },
   build: {
     cssCodeSplit: true,
@@ -50,6 +47,13 @@ export default defineConfig(({ mode }) => ({
           'query': ['@tanstack/react-query'],
           'forms': ['react-hook-form', '@hookform/resolvers'],
           'animations': ['framer-motion']
+        },
+        chunkFileNames: (chunkInfo) => {
+          const name = chunkInfo.name;
+          if (name === 'vendor' || name === 'ui') {
+            return 'assets/[name]-[hash].js';
+          }
+          return 'assets/[name]-[hash].js';
         }
       }
     },
@@ -71,9 +75,6 @@ export default defineConfig(({ mode }) => ({
     }
   },
   optimizeDeps: {
-    include: ['react', 'react-dom', 'react-router-dom', 'tailwind-merge']
-  },
-  esbuild: {
-    jsxInject: `import React from 'react'`
+    include: ['react', 'react-dom', 'react-router-dom']
   }
 }));
