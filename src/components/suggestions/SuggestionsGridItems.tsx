@@ -17,7 +17,6 @@ export const SuggestionsGridItems = ({
 }: SuggestionsGridItemsProps) => {
   const [processedSuggestions, setProcessedSuggestions] = useState<(GiftSuggestion & { optimizedTitle: string })[]>([]);
   const [processingIndexes, setProcessingIndexes] = useState<Set<number>>(new Set());
-  const [isTransitioning, setIsTransitioning] = useState(false);
   const abortController = useRef<AbortController | null>(null);
 
   const generateTitle = useCallback(async (originalTitle: string, description: string) => {
@@ -38,7 +37,6 @@ export const SuggestionsGridItems = ({
     if (suggestions.length === 0) {
       setProcessedSuggestions([]);
       setProcessingIndexes(new Set());
-      setIsTransitioning(false);
       return;
     }
 
@@ -48,28 +46,39 @@ export const SuggestionsGridItems = ({
     abortController.current = new AbortController();
 
     const processSuggestions = async () => {
-      setProcessedSuggestions([]);
-      setIsTransitioning(true);
-
-      // Add a delay before starting to process suggestions
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Reset processed suggestions but keep existing ones
+      setProcessedSuggestions(prev => prev.filter(p => 
+        suggestions.some(s => s.title === p.title)
+      ));
 
       for (let index = 0; index < suggestions.length; index++) {
         try {
+          // Skip if already processed
+          if (processedSuggestions.some(p => p.title === suggestions[index].title)) {
+            continue;
+          }
+
           setProcessingIndexes(prev => new Set([...prev, index]));
           
           const suggestion = suggestions[index];
           const optimizedTitle = await generateTitle(suggestion.title, suggestion.description);
           
-          await new Promise(resolve => setTimeout(resolve, 200));
+          // Add small delay to prevent overwhelming the UI
+          await new Promise(resolve => setTimeout(resolve, 100));
           
-          setProcessedSuggestions(prev => [
-            ...prev,
-            {
-              ...suggestion,
-              optimizedTitle
+          setProcessedSuggestions(prev => {
+            // Avoid duplicates
+            if (prev.some(p => p.title === suggestion.title)) {
+              return prev;
             }
-          ]);
+            return [
+              ...prev,
+              {
+                ...suggestion,
+                optimizedTitle
+              }
+            ];
+          });
 
           setProcessingIndexes(prev => {
             const newIndexes = new Set(prev);
@@ -82,8 +91,6 @@ export const SuggestionsGridItems = ({
           }
         }
       }
-
-      setIsTransitioning(false);
     };
 
     processSuggestions();
@@ -95,10 +102,10 @@ export const SuggestionsGridItems = ({
     };
   }, [suggestions, generateTitle]);
 
-  if (isLoading) {
+  if (isLoading && suggestions.length === 0) {
     return (
       <>
-        {Array.from({ length: 8 }).map((_, index) => (
+        {Array.from({ length: 4 }).map((_, index) => (
           <div 
             key={`skeleton-${index}`} 
             className="animate-in fade-in duration-300 ease-out"
@@ -115,7 +122,7 @@ export const SuggestionsGridItems = ({
   return (
     <>
       {suggestions.map((suggestion, index) => {
-        const processed = processedSuggestions[index];
+        const processed = processedSuggestions.find(p => p.title === suggestion.title);
         const isProcessing = processingIndexes.has(index);
 
         return (
