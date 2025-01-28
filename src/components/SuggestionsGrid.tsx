@@ -65,8 +65,10 @@ export const SuggestionsGrid = ({
         />
       </div>
       
-      {suggestions.length > 0 && !isLoading && (
-        <div className="flex flex-col items-center mt-8 sm:mt-12">
+      {suggestions.length > 0 && !isLoading && suggestions.every(s => 
+        suggestions.findIndex(ps => ps.title === s.title) !== -1
+      ) && (
+        <div className="flex flex-col items-center mt-8 sm:mt-12 animate-in fade-in duration-300">
           <p className="text-sm text-muted-foreground mb-6 text-center px-4">
             Products shown may include affiliate links from Amazon and other vendors
           </p>
