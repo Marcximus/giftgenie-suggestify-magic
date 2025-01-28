@@ -38,7 +38,7 @@ Example formats:
 - "This [product] delivers [key benefit] for [recipient type], featuring [main feature]."
 - "Crafted with [quality], this [product] provides [benefit] perfect for [specific use]."
 
-Return ONLY an array of descriptions in JSON format, no additional text.`
+Return ONLY an array of strings in JSON format, no additional text or markdown.`
           },
           {
             role: "user",
@@ -57,15 +57,35 @@ Return ONLY an array of descriptions in JSON format, no additional text.`
     }
 
     const data = await response.json();
-    console.log('Generated descriptions:', data.choices[0].message.content);
+    console.log('Raw OpenAI response:', data.choices[0].message.content);
     
-    // Parse the response into an array of descriptions
-    const generatedDescriptions = JSON.parse(data.choices[0].message.content);
+    // Clean and parse the response
+    let cleanedContent = data.choices[0].message.content;
+    // Remove any markdown code blocks
+    cleanedContent = cleanedContent.replace(/```json\n|\n```/g, '');
+    // Remove any trailing/leading whitespace
+    cleanedContent = cleanedContent.trim();
     
-    // Validate word count for each description
-    const validatedDescriptions = generatedDescriptions.map((desc: string) => {
-      const wordCount = desc.trim().split(/\s+/).length;
-      console.log('Word count:', wordCount);
+    // Parse the cleaned content
+    let generatedDescriptions;
+    try {
+      generatedDescriptions = JSON.parse(cleanedContent);
+    } catch (error) {
+      console.error('Failed to parse OpenAI response:', error);
+      console.log('Cleaned content that failed to parse:', cleanedContent);
+      throw new Error('Failed to parse OpenAI response into valid JSON');
+    }
+    
+    // Validate the parsed descriptions
+    if (!Array.isArray(generatedDescriptions)) {
+      throw new Error('Expected an array of descriptions from OpenAI');
+    }
+
+    // Ensure all descriptions are strings and properly formatted
+    const validatedDescriptions = generatedDescriptions.map((desc: any) => {
+      if (typeof desc !== 'string') {
+        throw new Error('Each description must be a string');
+      }
       return desc.trim();
     });
 
