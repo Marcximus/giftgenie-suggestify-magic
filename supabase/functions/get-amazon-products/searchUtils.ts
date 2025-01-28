@@ -1,10 +1,9 @@
-import { corsHeaders } from '../_shared/cors';
-import { RAPIDAPI_HOST } from './config';
-import type { AmazonProduct } from './types';
-import { extractPrice } from './priceUtils';
-import { batchSearchProducts } from './batchProcessor';
+import { corsHeaders } from '../_shared/cors.ts';
+import { RAPIDAPI_HOST } from './config.ts';
+import type { AmazonProduct } from './types.ts';
+import { extractPrice } from './priceUtils.ts';
+import { batchSearchProducts } from './batchProcessor.ts';
 
-// Only block terms that indicate non-product content
 const BLACKLISTED_TERMS = [
   'cancel subscription',
   'guide',
