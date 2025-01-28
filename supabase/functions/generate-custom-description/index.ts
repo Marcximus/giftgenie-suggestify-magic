@@ -20,6 +20,8 @@ serve(async (req) => {
       throw new Error('Expected an array of description requests');
     }
 
+    console.log('Processing descriptions batch:', descriptions.length);
+
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -31,15 +33,11 @@ serve(async (req) => {
         messages: [
           {
             role: "system",
-            content: `You are a concise product description writer. Your task is to:
-1. Create descriptions that are EXACTLY 18 WORDS OR LESS
-2. Focus on the main benefit or feature
-3. Use clear, professional language
-4. Avoid marketing fluff
-5. Be specific and factual
+            content: `You are a concise product description writer. Your task is to create descriptions that are EXACTLY 18 WORDS OR LESS.
+Focus on the main benefit or feature. Use clear, professional language. Avoid marketing fluff. Be specific and factual.
 
-IMPORTANT: You must ONLY return a JSON array of strings, nothing else. No markdown, no explanations.
-Example response format: ["Description 1", "Description 2"]`
+CRITICAL: Return ONLY a plain JSON array of strings. No code blocks, no markdown, no explanations.
+Example: ["First product description", "Second product description"]`
           },
           {
             role: "user",
@@ -54,27 +52,23 @@ Example response format: ["Description 1", "Description 2"]`
     });
 
     if (!response.ok) {
-      console.error('OpenAI API error:', response.status);
+      console.error('OpenAI API error:', await response.text());
       throw new Error(`OpenAI API error: ${response.status}`);
     }
 
     const data = await response.json();
     console.log('Raw OpenAI response:', data.choices[0].message.content);
     
-    // Clean and parse the response
-    let cleanedContent = data.choices[0].message.content;
+    let cleanedContent = data.choices[0].message.content.trim();
     
-    // Remove any markdown formatting
-    cleanedContent = cleanedContent
-      .replace(/```json\n?/g, '')
-      .replace(/```\n?/g, '')
-      .replace(/^\s*\[\s*\n?/, '[')
-      .replace(/\s*\]\s*$/, ']')
-      .trim();
+    // Extract just the array part if there's any extra text
+    const arrayMatch = cleanedContent.match(/\[[\s\S]*\]/);
+    if (arrayMatch) {
+      cleanedContent = arrayMatch[0];
+    }
     
     console.log('Cleaned content:', cleanedContent);
     
-    // Parse the cleaned content
     let generatedDescriptions;
     try {
       generatedDescriptions = JSON.parse(cleanedContent);
@@ -84,13 +78,11 @@ Example response format: ["Description 1", "Description 2"]`
       throw new Error('Failed to parse OpenAI response into valid JSON');
     }
     
-    // Validate the parsed descriptions
     if (!Array.isArray(generatedDescriptions)) {
       console.error('Invalid response format:', generatedDescriptions);
       throw new Error('Expected an array of descriptions from OpenAI');
     }
 
-    // Ensure all descriptions are strings and properly formatted
     const validatedDescriptions = generatedDescriptions.map((desc: any, index: number) => {
       if (typeof desc !== 'string') {
         console.error(`Invalid description at index ${index}:`, desc);
@@ -99,6 +91,11 @@ Example response format: ["Description 1", "Description 2"]`
       const trimmed = desc.trim();
       const wordCount = trimmed.split(/\s+/).length;
       console.log(`Description ${index + 1} word count:`, wordCount);
+      
+      if (wordCount > 18) {
+        console.warn(`Description ${index + 1} exceeds 18 words (${wordCount} words)`);
+      }
+      
       return trimmed;
     });
 
