@@ -5,6 +5,7 @@ import { searchWithFallback } from '@/utils/amazon/searchUtils';
 import { withRetry } from '@/utils/amazon/retryUtils';
 import { toast } from "@/components/ui/use-toast";
 import { isRateLimited, logRequest, getRemainingRequests } from '@/utils/amazon/rateLimiter';
+import { amazonRequestQueue } from '@/utils/amazon/requestQueue';
 
 export const useAmazonProducts = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -20,10 +21,13 @@ export const useAmazonProducts = () => {
 
       logRequest(endpoint);
       
-      const product = await withRetry(
-        () => searchWithFallback(searchTerm, priceRange),
-        AMAZON_CONFIG.MAX_RETRY_ATTEMPTS,
-        AMAZON_CONFIG.BASE_RETRY_DELAY
+      // Queue the request with retry logic
+      const product = await amazonRequestQueue.add(
+        () => withRetry(
+          () => searchWithFallback(searchTerm, priceRange),
+          AMAZON_CONFIG.MAX_RETRY_ATTEMPTS,
+          AMAZON_CONFIG.BASE_RETRY_DELAY
+        )
       );
       
       return product || null;
