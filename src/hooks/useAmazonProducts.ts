@@ -4,21 +4,7 @@ import { AMAZON_CONFIG } from '@/utils/amazon/config';
 import { searchWithFallback } from '@/utils/amazon/searchUtils';
 import { withRetry } from '@/utils/amazon/retryUtils';
 import { toast } from "@/components/ui/use-toast";
-
-const RATE_LIMIT = {
-  MAX_REQUESTS: 25,
-  WINDOW_MS: 60000,
-  RETRY_AFTER: 30
-};
-
-const requestLog: { timestamp: number }[] = [];
-
-const isRateLimited = () => {
-  const now = Date.now();
-  const windowStart = now - RATE_LIMIT.WINDOW_MS;
-  requestLog.splice(0, requestLog.findIndex(req => req.timestamp > windowStart));
-  return requestLog.length >= RATE_LIMIT.MAX_REQUESTS;
-};
+import { isRateLimited, logRequest, getRemainingRequests } from '@/utils/amazon/rateLimiter';
 
 export const useAmazonProducts = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -26,15 +12,17 @@ export const useAmazonProducts = () => {
   const getAmazonProduct = async (searchTerm: string, priceRange: string): Promise<AmazonProduct | null> => {
     try {
       if (isRateLimited()) {
-        await new Promise(resolve => setTimeout(resolve, RATE_LIMIT.RETRY_AFTER * 1000));
+        const remainingRequests = getRemainingRequests();
+        console.log(`Rate limited. Remaining requests: ${remainingRequests}`);
+        await new Promise(resolve => setTimeout(resolve, AMAZON_CONFIG.BASE_RETRY_DELAY));
       }
 
-      requestLog.push({ timestamp: Date.now() });
+      logRequest();
       
       const product = await withRetry(
         () => searchWithFallback(searchTerm, priceRange),
-        2,
-        1000
+        AMAZON_CONFIG.MAX_RETRY_ATTEMPTS,
+        AMAZON_CONFIG.BASE_RETRY_DELAY
       );
       
       return product || null;
@@ -43,7 +31,7 @@ export const useAmazonProducts = () => {
       console.error('Error getting Amazon product:', error);
       
       if (error.status === 429) {
-        const retryAfter = error.retryAfter || RATE_LIMIT.RETRY_AFTER;
+        const retryAfter = error.retryAfter || AMAZON_CONFIG.BASE_RETRY_DELAY;
         toast({
           title: "Too many requests",
           description: "Please wait a moment before trying again",
