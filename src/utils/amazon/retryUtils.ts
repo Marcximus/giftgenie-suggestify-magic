@@ -45,10 +45,7 @@ export const withRetry = async <T>(
       }
       
       // Calculate exponential backoff delay
-      const backoffDelay = Math.min(
-        baseDelay * Math.pow(2, retryCount - 1) + Math.random() * 1000,
-        maxDelay
-      );
+      const backoffDelay = calculateBackoffDelay(retryCount, baseDelay, maxDelay);
       
       console.log(`Backing off for ${backoffDelay}ms before retry ${retryCount}`);
       await sleep(backoffDelay);
