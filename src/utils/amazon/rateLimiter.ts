@@ -1,33 +1,42 @@
-export const calculateBackoffDelay = (attempt: number, baseDelay = 1000, maxDelay = 10000): number => {
-  const delay = Math.min(
-    baseDelay * Math.pow(2, attempt - 1) + Math.random() * 1000,
-    maxDelay
-  );
-  return delay;
+interface RequestLog {
+  timestamp: number;
+  endpoint: string;
+}
+
+const requestLog: RequestLog[] = [];
+
+export const AMAZON_CONFIG = {
+  BASE_RETRY_DELAY: 1000,
+  MAX_RETRIES: 3,
+  BATCH_SIZE: 4,
+  STAGGER_DELAY: 200
 };
 
-export const sleep = (ms: number): Promise<void> => {
-  return new Promise(resolve => setTimeout(resolve, ms));
-};
-
-const requestLog: { timestamp: number }[] = [];
-const RATE_LIMIT = {
-  MAX_REQUESTS: 25,
-  WINDOW_MS: 60000,
-  RETRY_AFTER: 30
-};
-
-export const isRateLimited = () => {
+export const isRateLimited = (endpoint: string): boolean => {
   const now = Date.now();
-  const windowStart = now - RATE_LIMIT.WINDOW_MS;
-  requestLog.splice(0, requestLog.findIndex(req => req.timestamp > windowStart));
-  return requestLog.length >= RATE_LIMIT.MAX_REQUESTS;
+  const windowStart = now - 60000; // 1 minute window
+  
+  // Clean up old requests
+  const recentRequests = requestLog.filter(req => 
+    req.timestamp > windowStart && req.endpoint === endpoint
+  );
+  
+  // Update request log
+  const activeRequests = requestLog.filter(req => 
+    !(req.timestamp <= windowStart && req.endpoint === endpoint)
+  );
+  requestLog.length = 0;
+  requestLog.push(...activeRequests);
+  
+  return recentRequests.length >= 30; // 30 requests per minute limit
 };
 
-export const logRequest = () => {
-  requestLog.push({ timestamp: Date.now() });
+export const logRequest = (endpoint: string): void => {
+  requestLog.push({ 
+    timestamp: Date.now(),
+    endpoint 
+  });
 };
 
-export const getRemainingRequests = () => {
-  return RATE_LIMIT.MAX_REQUESTS - requestLog.length;
-};
+export const sleep = (ms: number): Promise<void> => 
+  new Promise(resolve => setTimeout(resolve, ms));
