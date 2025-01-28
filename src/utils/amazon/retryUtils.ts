@@ -57,7 +57,7 @@ export const withRetry = async <T>(
 
 export const retryWithTimeout = async <T>(
   fn: () => Promise<T>,
-  timeout: number = 8000,
+  timeout: number = 5000, // Reduced from 8000 to 5000ms
   maxRetries: number = 3
 ): Promise<T> => {
   const timeoutPromise = new Promise<never>((_, reject) => {
