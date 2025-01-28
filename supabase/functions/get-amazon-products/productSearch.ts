@@ -40,6 +40,18 @@ export const searchProducts = async (
   const cleanedTerm = cleanSearchTerm(searchTerm);
   console.log('Cleaned search term:', cleanedTerm);
 
+  // Parse price range and apply 20% tolerance
+  let minPrice, maxPrice;
+  if (priceRange) {
+    const range = parsePriceRange(priceRange);
+    if (range) {
+      // Apply 20% tolerance to min and max prices
+      minPrice = Math.floor(range.min * 0.8); // Allow 20% below minimum
+      maxPrice = Math.ceil(range.max * 1.2); // Allow 20% above maximum
+      console.log('Price range with tolerance:', { original: range, adjusted: { min: minPrice, max: maxPrice }});
+    }
+  }
+
   // Detect relevant categories from the search term
   const detectedCategories = Object.entries(CATEGORY_MAP)
     .filter(([category]) => 
@@ -59,15 +71,12 @@ export const searchProducts = async (
     url.searchParams.append('category_id', 'aps');
   }
 
-  // Parse price range if provided
-  let priceConstraints = null;
-  if (priceRange) {
-    priceConstraints = parsePriceRange(priceRange);
-    if (priceConstraints) {
-      url.searchParams.append('min_price', priceConstraints.min.toString());
-      url.searchParams.append('max_price', priceConstraints.max.toString());
-      console.log('Added price constraints:', priceConstraints);
-    }
+  // Add price constraints to the API request
+  if (minPrice !== undefined) {
+    url.searchParams.append('min_price', minPrice.toString());
+  }
+  if (maxPrice !== undefined) {
+    url.searchParams.append('max_price', maxPrice.toString());
   }
 
   try {
@@ -80,11 +89,9 @@ export const searchProducts = async (
     });
 
     if (!searchResponse.ok) {
-      const responseText = await searchResponse.text();
       console.error('Amazon Search API error:', {
         status: searchResponse.status,
         statusText: searchResponse.statusText,
-        body: responseText,
         headers: Object.fromEntries(searchResponse.headers.entries())
       });
 
@@ -96,19 +103,10 @@ export const searchProducts = async (
     }
 
     const searchData = await searchResponse.json();
-    console.log('Amazon API raw response:', {
+    console.log('Amazon API response:', {
       hasData: !!searchData.data,
       productsCount: searchData.data?.products?.length || 0,
-      categories: detectedCategories,
-      firstProduct: searchData.data?.products?.[0] ? {
-        title: searchData.data.products[0].title,
-        hasPrice: !!searchData.data.products[0].product_price,
-        priceValue: searchData.data.products[0].product_price,
-        hasImage: !!searchData.data.products[0].product_photo,
-        imageUrl: searchData.data.products[0].product_photo,
-        hasAsin: !!searchData.data.products[0].asin,
-        asin: searchData.data.products[0].asin
-      } : 'No products found'
+      priceRange: { min: minPrice, max: maxPrice }
     });
 
     if (!searchData.data?.products?.length) {
@@ -116,39 +114,45 @@ export const searchProducts = async (
       return null;
     }
 
-    // Filter products by price and relevance
-    let validProducts = searchData.data.products.filter(product => {
-      // Check if the product title contains any blacklisted terms
-      const blacklistedTerms = ['cancel subscription', 'guide', 'manual', 'how to'];
-      const hasBlacklistedTerm = blacklistedTerms.some(term => 
-        product.title.toLowerCase().includes(term)
-      );
-      
-      if (hasBlacklistedTerm) {
-        console.log('Product filtered out - contains blacklisted term:', product.title);
-        return false;
-      }
-
-      // Validate price if constraints exist
-      if (priceConstraints) {
+    // Filter and sort products by price match
+    const validProducts = searchData.data.products
+      .filter(product => {
         const price = extractPrice(product.product_price);
-        if (!price || !validatePriceInRange(price, priceConstraints.min, priceConstraints.max)) {
-          console.log('Product filtered out - price out of range:', {
-            title: product.title,
-            price,
-            constraints: priceConstraints
-          });
+        if (!price) {
+          console.log('Product filtered - no valid price:', product.title);
           return false;
         }
-      }
 
-      return true;
-    });
+        // Skip products outside the price range (with tolerance)
+        if (minPrice !== undefined && maxPrice !== undefined) {
+          const isInRange = price >= minPrice && price <= maxPrice;
+          if (!isInRange) {
+            console.log('Product filtered - price out of range:', {
+              title: product.title,
+              price,
+              range: { min: minPrice, max: maxPrice }
+            });
+            return false;
+          }
+        }
+
+        return true;
+      })
+      .sort((a, b) => {
+        // Sort by price proximity to target range midpoint
+        if (minPrice !== undefined && maxPrice !== undefined) {
+          const midpoint = (minPrice + maxPrice) / 2;
+          const priceA = extractPrice(a.product_price) || 0;
+          const priceB = extractPrice(b.product_price) || 0;
+          return Math.abs(priceA - midpoint) - Math.abs(priceB - midpoint);
+        }
+        return 0;
+      });
 
     console.log('Filtered products:', {
       original: searchData.data.products.length,
       filtered: validProducts.length,
-      priceRange: priceConstraints
+      priceRange: { min: minPrice, max: maxPrice }
     });
 
     if (validProducts.length === 0) {
