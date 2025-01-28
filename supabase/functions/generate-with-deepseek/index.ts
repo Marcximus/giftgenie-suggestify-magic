@@ -48,12 +48,24 @@ serve(async (req) => {
     });
 
     if (!response.ok) {
-      const error = await response.text();
-      console.error('DeepSeek API error:', error);
-      throw new Error(`DeepSeek API error: ${error}`);
+      const errorText = await response.text();
+      console.error('DeepSeek API error response:', errorText);
+      throw new Error(`DeepSeek API error: ${errorText}`);
     }
 
-    const data = await response.json();
+    let data;
+    try {
+      data = await response.json();
+    } catch (error) {
+      console.error('Failed to parse DeepSeek response:', error);
+      throw new Error('Invalid JSON response from DeepSeek API');
+    }
+
+    if (!data || !data.choices || !data.choices[0]?.message?.content) {
+      console.error('Unexpected DeepSeek response structure:', data);
+      throw new Error('Invalid response structure from DeepSeek API');
+    }
+
     console.log('Raw DeepSeek response:', JSON.stringify(data, null, 2));
     
     // Log both the reasoning content and final content
@@ -91,12 +103,16 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Error in generate-with-deepseek:', error);
+    
+    // Ensure we return a properly formatted error response
+    const errorResponse = {
+      error: error.message || 'An unexpected error occurred',
+      timestamp: new Date().toISOString(),
+      type: 'deepseek-generation-error'
+    };
+
     return new Response(
-      JSON.stringify({
-        error: error.message,
-        timestamp: new Date().toISOString(),
-        type: 'deepseek-generation-error'
-      }),
+      JSON.stringify(errorResponse),
       { 
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
