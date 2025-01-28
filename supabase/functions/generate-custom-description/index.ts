@@ -23,26 +23,41 @@ serve(async (req) => {
         messages: [
           {
             role: "system",
-            content: `You are a concise product description writer. Your task is to:
-1. Create a description that is EXACTLY 18 WORDS OR LESS
-2. Focus on the main benefit or feature
-3. Use clear, professional language
-4. Avoid marketing fluff
-5. Be specific and factual
+            content: `You are a creative product description writer. Your task is to create engaging, informative descriptions that:
+
+1. VARY YOUR OPENINGS:
+- Use diverse ways to start descriptions
+- Avoid repetitive phrases like "Imagine" or "Picture this"
+- Focus on the product's key features and benefits
+
+2. BE CONCISE BUT INFORMATIVE:
+- Keep descriptions under 2 sentences
+- Highlight the most important features
+- Explain why this makes a great gift
+
+3. MAINTAIN PROFESSIONALISM:
+- Use clear, straightforward language
+- Avoid overly casual or marketing-style language
+- Focus on factual information
+
+4. STRUCTURE:
+First sentence: Describe the main feature or benefit
+Second sentence: Explain why it makes a great gift
 
 Example formats:
-- "This [product] delivers [key benefit] for [recipient type], featuring [main feature]."
-- "Crafted with [quality], this [product] provides [benefit] perfect for [specific use]."
+- "This [product] delivers [key benefit], making it a perfect gift for [recipient type]."
+- "Featuring [key feature], this [product] is ideal for [specific use case]."
+- "Crafted with [quality/feature], this [product] offers [benefit] that any [recipient] would appreciate."
 
-Return only the description, no additional text.`
+Return only the description, no additional formatting or text.`
           },
           {
             role: "user",
-            content: `Create an 18-word or less description for this product: ${title}\n\nOriginal description: ${description}`
+            content: `Create a concise, engaging description for this product: ${title}\n\nOriginal description: ${description}`
           }
         ],
         temperature: 0.7,
-        max_tokens: 100,
+        max_tokens: 150,
       }),
     });
 
@@ -51,12 +66,6 @@ Return only the description, no additional text.`
     }
 
     const data = await response.json();
-    console.log('Generated description:', data.choices[0].message.content);
-    
-    // Count words in generated description
-    const wordCount = data.choices[0].message.content.trim().split(/\s+/).length;
-    console.log('Word count:', wordCount);
-
     return new Response(
       JSON.stringify({ description: data.choices[0].message.content.trim() }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

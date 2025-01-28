@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { GiftSuggestion } from '@/types/suggestions';
 import { SuggestionsGridItems } from './suggestions/SuggestionsGridItems';
 import { SuggestionsActions } from './suggestions/SuggestionsActions';
@@ -18,8 +17,6 @@ export const SuggestionsGrid = ({
   onStartOver,
   isLoading 
 }: SuggestionsGridProps) => {
-  const [allSuggestionsProcessed, setAllSuggestionsProcessed] = useState(false);
-
   const schemaData = {
     "@context": "https://schema.org",
     "@type": "ItemList",
@@ -51,6 +48,11 @@ export const SuggestionsGrid = ({
     }))
   };
 
+  // Calculate total animation duration based on number of suggestions
+  const baseDelay = 1000; // Initial delay before suggestions start
+  const perItemDelay = 200; // Delay per item
+  const totalAnimationDuration = baseDelay + (suggestions.length * perItemDelay) + 500; // Added 500ms buffer
+
   return (
     <>
       <script type="application/ld+json">
@@ -65,12 +67,25 @@ export const SuggestionsGrid = ({
           suggestions={suggestions}
           onMoreLikeThis={onMoreLikeThis}
           isLoading={isLoading}
-          onAllProcessed={setAllSuggestionsProcessed}
         />
       </div>
       
-      {allSuggestionsProcessed && suggestions.length > 0 && (
-        <div className="flex flex-col items-center mt-8 sm:mt-12 animate-in fade-in duration-300">
+      {suggestions.length > 0 && !isLoading && (
+        <div 
+          className="flex flex-col items-center mt-8 sm:mt-12"
+          style={{ 
+            animation: `fadeIn 1000ms ease-out ${totalAnimationDuration}ms forwards`,
+            opacity: 0
+          }}
+        >
+          <style>
+            {`
+              @keyframes fadeIn {
+                from { opacity: 0; transform: translateY(10px); }
+                to { opacity: 1; transform: translateY(0); }
+              }
+            `}
+          </style>
           <p className="text-sm text-muted-foreground mb-6 text-center px-4">
             Products shown may include affiliate links from Amazon and other vendors
           </p>
