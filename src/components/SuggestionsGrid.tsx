@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { GiftSuggestion } from '@/types/suggestions';
 import { SuggestionsGridItems } from './suggestions/SuggestionsGridItems';
 import { SuggestionsActions } from './suggestions/SuggestionsActions';
@@ -17,6 +18,8 @@ export const SuggestionsGrid = ({
   onStartOver,
   isLoading 
 }: SuggestionsGridProps) => {
+  const [allSuggestionsProcessed, setAllSuggestionsProcessed] = useState(false);
+
   const schemaData = {
     "@context": "https://schema.org",
     "@type": "ItemList",
@@ -48,11 +51,6 @@ export const SuggestionsGrid = ({
     }))
   };
 
-  // Check if all suggestions are fully processed
-  const allSuggestionsProcessed = suggestions.length > 0 && 
-    !isLoading && 
-    suggestions.every(s => s.amazon_url && s.amazon_image_url);
-
   return (
     <>
       <script type="application/ld+json">
@@ -67,10 +65,11 @@ export const SuggestionsGrid = ({
           suggestions={suggestions}
           onMoreLikeThis={onMoreLikeThis}
           isLoading={isLoading}
+          onAllProcessed={setAllSuggestionsProcessed}
         />
       </div>
       
-      {allSuggestionsProcessed && (
+      {allSuggestionsProcessed && suggestions.length > 0 && (
         <div className="flex flex-col items-center mt-8 sm:mt-12 animate-in fade-in duration-300">
           <p className="text-sm text-muted-foreground mb-6 text-center px-4">
             Products shown may include affiliate links from Amazon and other vendors

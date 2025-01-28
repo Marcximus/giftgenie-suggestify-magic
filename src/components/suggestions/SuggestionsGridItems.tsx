@@ -8,16 +8,19 @@ interface SuggestionsGridItemsProps {
   suggestions: GiftSuggestion[];
   onMoreLikeThis: (title: string) => void;
   isLoading: boolean;
+  onAllProcessed: (processed: boolean) => void;
 }
 
 export const SuggestionsGridItems = ({
   suggestions,
   onMoreLikeThis,
-  isLoading
+  isLoading,
+  onAllProcessed
 }: SuggestionsGridItemsProps) => {
   const [processedSuggestions, setProcessedSuggestions] = useState<(GiftSuggestion & { optimizedTitle: string })[]>([]);
   const [processingIndexes, setProcessingIndexes] = useState<Set<number>>(new Set());
   const abortController = useRef<AbortController | null>(null);
+  const [allItemsProcessed, setAllItemsProcessed] = useState(false);
 
   const generateTitle = useCallback(async (originalTitle: string, description: string) => {
     try {
@@ -37,6 +40,8 @@ export const SuggestionsGridItems = ({
     if (suggestions.length === 0) {
       setProcessedSuggestions([]);
       setProcessingIndexes(new Set());
+      setAllItemsProcessed(false);
+      onAllProcessed(false);
       return;
     }
 
@@ -46,6 +51,9 @@ export const SuggestionsGridItems = ({
     abortController.current = new AbortController();
 
     const processSuggestions = async () => {
+      setAllItemsProcessed(false);
+      onAllProcessed(false);
+      
       // Reset processed suggestions but keep existing ones
       setProcessedSuggestions(prev => prev.filter(p => 
         suggestions.some(s => s.title === p.title)
@@ -91,6 +99,10 @@ export const SuggestionsGridItems = ({
           }
         }
       }
+
+      // Set all items as processed only when everything is done
+      setAllItemsProcessed(true);
+      onAllProcessed(true);
     };
 
     processSuggestions();
@@ -100,7 +112,7 @@ export const SuggestionsGridItems = ({
         abortController.current.abort();
       }
     };
-  }, [suggestions, generateTitle]);
+  }, [suggestions, generateTitle, onAllProcessed]);
 
   if (isLoading && suggestions.length === 0) {
     return (
@@ -130,7 +142,7 @@ export const SuggestionsGridItems = ({
             key={`suggestion-${index}`}
             className={`
               animate-in fade-in slide-in-from-bottom duration-500
-              ${processed ? '' : 'opacity-0'}
+              ${processed && allItemsProcessed ? '' : 'opacity-0'}
             `}
             style={{ 
               animationDelay: `${index * 200}ms`
