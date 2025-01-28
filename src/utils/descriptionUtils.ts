@@ -1,27 +1,29 @@
 import { supabase } from "@/integrations/supabase/client";
 
-export const generateCustomDescription = async (title: string, originalDescription: string): Promise<string> => {
-  try {
-    const cacheKey = `description-${title.toLowerCase().trim()}`;
-    const cached = localStorage.getItem(cacheKey);
-    if (cached) {
-      return cached;
-    }
+interface DescriptionRequest {
+  title: string;
+  description: string;
+}
 
+export const generateCustomDescriptions = async (requests: DescriptionRequest[]): Promise<string[]> => {
+  try {
     const { data, error } = await supabase.functions.invoke('generate-custom-description', {
-      body: { title, originalDescription }
+      body: { descriptions: requests }
     });
 
     if (error) {
-      console.error('Error generating custom description:', error);
-      return originalDescription;
+      console.error('Error generating custom descriptions:', error);
+      return requests.map(r => r.description);
     }
 
-    const description = data.description || originalDescription;
-    localStorage.setItem(cacheKey, description);
-    return description;
+    return data.descriptions || requests.map(r => r.description);
   } catch (error) {
     console.error('Error calling generate-custom-description:', error);
-    return originalDescription;
+    return requests.map(r => r.description);
   }
+};
+
+export const generateCustomDescription = async (title: string, originalDescription: string): Promise<string> => {
+  const descriptions = await generateCustomDescriptions([{ title, description: originalDescription }]);
+  return descriptions[0];
 };

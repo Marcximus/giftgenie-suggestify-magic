@@ -10,7 +10,11 @@ serve(async (req) => {
   }
 
   try {
-    const { title, description } = await req.json();
+    const { descriptions } = await req.json();
+    
+    if (!Array.isArray(descriptions)) {
+      throw new Error('Expected an array of description requests');
+    }
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -24,7 +28,7 @@ serve(async (req) => {
           {
             role: "system",
             content: `You are a concise product description writer. Your task is to:
-1. Create a description that is EXACTLY 18 WORDS OR LESS
+1. Create descriptions that are EXACTLY 18 WORDS OR LESS
 2. Focus on the main benefit or feature
 3. Use clear, professional language
 4. Avoid marketing fluff
@@ -34,15 +38,17 @@ Example formats:
 - "This [product] delivers [key benefit] for [recipient type], featuring [main feature]."
 - "Crafted with [quality], this [product] provides [benefit] perfect for [specific use]."
 
-Return only the description, no additional text.`
+Return ONLY an array of descriptions in JSON format, no additional text.`
           },
           {
             role: "user",
-            content: `Create an 18-word or less description for this product: ${title}\n\nOriginal description: ${description}`
+            content: `Create 18-word or less descriptions for these products:\n\n${descriptions.map((d: any, i: number) => 
+              `${i + 1}. Product: ${d.title}\nOriginal: ${d.description}\n`
+            ).join('\n')}`
           }
         ],
         temperature: 0.7,
-        max_tokens: 100,
+        max_tokens: 500,
       }),
     });
 
@@ -51,14 +57,20 @@ Return only the description, no additional text.`
     }
 
     const data = await response.json();
-    console.log('Generated description:', data.choices[0].message.content);
+    console.log('Generated descriptions:', data.choices[0].message.content);
     
-    // Count words in generated description
-    const wordCount = data.choices[0].message.content.trim().split(/\s+/).length;
-    console.log('Word count:', wordCount);
+    // Parse the response into an array of descriptions
+    const generatedDescriptions = JSON.parse(data.choices[0].message.content);
+    
+    // Validate word count for each description
+    const validatedDescriptions = generatedDescriptions.map((desc: string) => {
+      const wordCount = desc.trim().split(/\s+/).length;
+      console.log('Word count:', wordCount);
+      return desc.trim();
+    });
 
     return new Response(
-      JSON.stringify({ description: data.choices[0].message.content.trim() }),
+      JSON.stringify({ descriptions: validatedDescriptions }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
