@@ -1,7 +1,7 @@
-import { AmazonProduct } from './types';
-import { corsHeaders } from '../_shared/cors';
-import { RAPIDAPI_HOST } from './config';
-import { formatProduct } from './searchUtils';
+import { AmazonProduct } from './types.ts';
+import { corsHeaders } from '../_shared/cors.ts';
+import { RAPIDAPI_HOST } from './config.ts';
+import { formatProduct } from './searchUtils.ts';
 
 // Optimized constants for better performance
 const CONCURRENT_REQUESTS = 4; // Process 4 requests at a time
