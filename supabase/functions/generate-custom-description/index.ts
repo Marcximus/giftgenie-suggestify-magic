@@ -1,8 +1,12 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
-import { corsHeaders } from '../_shared/cors.ts';
 
 const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -34,11 +38,8 @@ serve(async (req) => {
 4. Avoid marketing fluff
 5. Be specific and factual
 
-Example formats:
-- "This [product] delivers [key benefit] for [recipient type], featuring [main feature]."
-- "Crafted with [quality], this [product] provides [benefit] perfect for [specific use]."
-
-Return ONLY an array of strings in JSON format, no additional text or markdown.`
+IMPORTANT: You must ONLY return a JSON array of strings, nothing else. No markdown, no explanations.
+Example response format: ["Description 1", "Description 2"]`
           },
           {
             role: "user",
@@ -53,6 +54,7 @@ Return ONLY an array of strings in JSON format, no additional text or markdown.`
     });
 
     if (!response.ok) {
+      console.error('OpenAI API error:', response.status);
       throw new Error(`OpenAI API error: ${response.status}`);
     }
 
@@ -61,10 +63,16 @@ Return ONLY an array of strings in JSON format, no additional text or markdown.`
     
     // Clean and parse the response
     let cleanedContent = data.choices[0].message.content;
-    // Remove any markdown code blocks
-    cleanedContent = cleanedContent.replace(/```json\n|\n```/g, '');
-    // Remove any trailing/leading whitespace
-    cleanedContent = cleanedContent.trim();
+    
+    // Remove any markdown formatting
+    cleanedContent = cleanedContent
+      .replace(/```json\n?/g, '')
+      .replace(/```\n?/g, '')
+      .replace(/^\s*\[\s*\n?/, '[')
+      .replace(/\s*\]\s*$/, ']')
+      .trim();
+    
+    console.log('Cleaned content:', cleanedContent);
     
     // Parse the cleaned content
     let generatedDescriptions;
@@ -72,21 +80,26 @@ Return ONLY an array of strings in JSON format, no additional text or markdown.`
       generatedDescriptions = JSON.parse(cleanedContent);
     } catch (error) {
       console.error('Failed to parse OpenAI response:', error);
-      console.log('Cleaned content that failed to parse:', cleanedContent);
+      console.log('Content that failed to parse:', cleanedContent);
       throw new Error('Failed to parse OpenAI response into valid JSON');
     }
     
     // Validate the parsed descriptions
     if (!Array.isArray(generatedDescriptions)) {
+      console.error('Invalid response format:', generatedDescriptions);
       throw new Error('Expected an array of descriptions from OpenAI');
     }
 
     // Ensure all descriptions are strings and properly formatted
-    const validatedDescriptions = generatedDescriptions.map((desc: any) => {
+    const validatedDescriptions = generatedDescriptions.map((desc: any, index: number) => {
       if (typeof desc !== 'string') {
-        throw new Error('Each description must be a string');
+        console.error(`Invalid description at index ${index}:`, desc);
+        throw new Error(`Description at index ${index} must be a string`);
       }
-      return desc.trim();
+      const trimmed = desc.trim();
+      const wordCount = trimmed.split(/\s+/).length;
+      console.log(`Description ${index + 1} word count:`, wordCount);
+      return trimmed;
     });
 
     return new Response(
