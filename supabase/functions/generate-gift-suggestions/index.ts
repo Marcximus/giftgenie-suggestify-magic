@@ -27,30 +27,20 @@ serve(async (req) => {
       throw new Error('Invalid prompt');
     }
 
-    // Extract budget from the prompt
-    const budgetMatch = prompt.match(/budget.*?(\$?\d+(?:\s*-\s*\$?\d+)?)/i) || 
-                       prompt.match(/(\$?\d+(?:\s*-\s*\$?\d+)?)\s*budget/i);
-    
-    const priceRange = budgetMatch ? budgetMatch[1].replace(/\$/g, '') : null;
-    console.log('Extracted price range:', priceRange);
+    // Extract interests from the prompt
+    const interestsMatch = prompt.match(/who likes (.*?) with a budget/i);
+    const interests = interestsMatch ? interestsMatch[1].split(' and ') : [];
+    console.log('Extracted interests:', interests);
 
-    const enhancedPrompt = `You are a gifting expert specializing in finding gifts within EXACT budget constraints. Based on the request "${prompt}", suggest 8 specific gift ideas.
-
-CRITICAL REQUIREMENTS:
-${priceRange ? `- The budget is ${priceRange}. You MUST suggest items that cost EXACTLY within this range.` : ''}
-- If a price range is given (e.g., $20-40), suggestions must fall strictly within that range
-- If a single price point is given (e.g., $50), suggestions should be within 20% of that amount
-- NEVER suggest items that would exceed the budget
-- Consider shipping costs when suggesting items
-- Prioritize items with good value for money
-- Include specific product types, not generic categories
+    const enhancedPrompt = `You are an gifting expert. Based on the request "${prompt}", suggest 8 specific gift ideas.
 
 Consider:
 - Age, gender, and occasion mentioned
+- CRITICAL: Any budget constraints specified (can fluctuate by 20%)
 - The recipient's interests and preferences
 - Avoid suggesting identical items
 
-Return ONLY a JSON array of exactly 8 strings, each being a specific product suggestion that strictly adheres to the budget constraints.`;
+Return ONLY a JSON array of exactly 8 strings`;
 
     console.log('Enhanced prompt:', enhancedPrompt);
 
@@ -130,6 +120,7 @@ Return ONLY a JSON array of exactly 8 strings, each being a specific product sug
     console.error('Error in generate-gift-suggestions function:', error);
     console.error('Stack trace:', error.stack);
     
+    // Log error metrics
     await supabase.from('api_metrics').insert({
       endpoint: 'generate-gift-suggestions',
       duration_ms: Math.round(performance.now() - startTime),
