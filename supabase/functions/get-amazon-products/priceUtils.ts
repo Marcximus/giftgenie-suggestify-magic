@@ -3,59 +3,32 @@ export const parsePriceRange = (priceRange: string): { min: number; max: number 
     // Remove currency symbol and any whitespace
     const cleanRange = priceRange.replace(/[^0-9-]/g, '');
     
-    if (cleanRange.includes('-')) {
-      // Handle range (e.g., "20-40")
-      const [min, max] = cleanRange.split('-').map(Number);
-      if (!isNaN(min) && !isNaN(max) && min > 0 && max >= min) {
-        return { min, max };
-      }
-    } else {
-      // Handle single number with 20% tolerance
-      const value = Number(cleanRange);
-      if (!isNaN(value) && value > 0) {
-        return {
-          min: value * 0.8,
-          max: value * 1.2
-        };
-      }
-    }
+    // Split on hyphen
+    const [min, max] = cleanRange.split('-').map(Number);
     
-    console.error('Invalid price range format:', priceRange);
-    return null;
+    if (isNaN(min) || isNaN(max)) {
+      console.error('Invalid price range format:', priceRange);
+      return null;
+    }
+
+    return { min, max };
   } catch (error) {
     console.error('Error parsing price range:', error);
     return null;
   }
 };
 
-export const validatePriceInRange = (price: number, min: number, max: number): boolean => {
-  // Remove the tolerance as it's now handled in parsePriceRange
-  if (typeof price !== 'number' || isNaN(price) || price <= 0) {
-    return false;
-  }
+export const validatePriceInRange = (price: number, min: number, max: number, tolerance = 0.2): boolean => {
+  // Allow for 20% tolerance as specified
+  const minWithTolerance = min * (1 - tolerance);
+  const maxWithTolerance = max * (1 + tolerance);
   
-  // Strict price validation
-  const isInRange = price >= min && price <= max;
-  
-  if (!isInRange) {
-    console.log(`Price ${price} is outside range ${min}-${max}`);
-  }
-  
-  return isInRange;
+  return price >= minWithTolerance && price <= maxWithTolerance;
 };
 
 export const extractPrice = (priceStr: string | null | undefined): number | undefined => {
   if (!priceStr) return undefined;
-  
-  // Remove currency symbols and clean up the string
   const cleanPrice = priceStr.replace(/[^0-9.]/g, '');
   const price = parseFloat(cleanPrice);
-  
-  // Validate the extracted price
-  if (isNaN(price) || price <= 0) {
-    console.log('Invalid price extracted:', priceStr);
-    return undefined;
-  }
-  
-  return price;
+  return isNaN(price) ? undefined : price;
 };
