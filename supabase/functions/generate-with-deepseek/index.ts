@@ -43,6 +43,7 @@ serve(async (req) => {
           }
         ],
         max_tokens: 5000,
+        temperature: 1.3,
       }),
     });
 
