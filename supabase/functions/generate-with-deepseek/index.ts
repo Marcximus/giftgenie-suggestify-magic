@@ -49,7 +49,7 @@ serve(async (req) => {
               content: `Create a fun, engaging blog post about: ${title}\n\nIMPORTANT: You MUST generate EXACTLY 10 product recommendations, no more, no less.`
             }
           ],
-          max_tokens: 5000,
+          max_tokens: 4000,
           temperature: 1.3,
         }),
       });
