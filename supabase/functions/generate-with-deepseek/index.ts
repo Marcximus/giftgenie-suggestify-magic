@@ -29,9 +29,10 @@ serve(async (req) => {
 
     // Make the API request with a timeout
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+    const timeout = setTimeout(() => controller.abort(), 60000); // 60 second timeout
 
     try {
+      console.log('Making request to DeepSeek API...');
       const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
         method: 'POST',
         signal: controller.signal,
@@ -57,29 +58,29 @@ serve(async (req) => {
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('DeepSeek API error response:', errorText);
-        throw new Error(`DeepSeek API error: ${errorText}`);
+        console.error('DeepSeek API error response:', {
+          status: response.status,
+          statusText: response.statusText,
+          body: errorText
+        });
+        throw new Error(`DeepSeek API error: ${response.status} - ${errorText}`);
       }
 
-      // Attempt to parse the response with detailed error logging
-      let responseText;
-      try {
-        responseText = await response.text();
-        console.log('Raw response text:', responseText);
-      } catch (error) {
-        console.error('Failed to get response text:', error);
-        throw new Error('Failed to read DeepSeek API response');
-      }
+      // Get the raw response text first
+      const responseText = await response.text();
+      console.log('Raw DeepSeek API response:', responseText);
 
+      // Try to parse the response as JSON
       let data;
       try {
         data = JSON.parse(responseText);
       } catch (error) {
-        console.error('Failed to parse DeepSeek response:', error);
+        console.error('Failed to parse DeepSeek response as JSON:', error);
         console.error('Response text that failed to parse:', responseText);
         throw new Error('Invalid JSON response from DeepSeek API');
       }
 
+      // Validate the response structure
       if (!data || !data.choices || !data.choices[0]?.message?.content) {
         console.error('Unexpected DeepSeek response structure:', JSON.stringify(data, null, 2));
         throw new Error('Invalid response structure from DeepSeek API');
@@ -117,7 +118,7 @@ serve(async (req) => {
 
     } catch (error) {
       if (error.name === 'AbortError') {
-        throw new Error('DeepSeek API request timed out after 30 seconds');
+        throw new Error('DeepSeek API request timed out after 60 seconds');
       }
       throw error;
     } finally {
@@ -125,17 +126,18 @@ serve(async (req) => {
     }
 
   } catch (error) {
-    console.error('Error in generate-with-deepseek:', error);
+    console.error('Error in generate-with-deepseek:', {
+      error: error.message,
+      stack: error.stack,
+      timestamp: new Date().toISOString()
+    });
     
-    // Ensure we return a properly formatted error response
-    const errorResponse = {
-      error: error.message || 'An unexpected error occurred',
-      timestamp: new Date().toISOString(),
-      type: 'deepseek-generation-error'
-    };
-
     return new Response(
-      JSON.stringify(errorResponse),
+      JSON.stringify({
+        error: error.message || 'An unexpected error occurred',
+        timestamp: new Date().toISOString(),
+        type: 'deepseek-generation-error'
+      }),
       { 
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
