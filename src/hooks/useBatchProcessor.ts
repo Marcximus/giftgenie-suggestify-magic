@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { AMAZON_CONFIG } from '@/utils/amazon/config';
 import { sleep, isRateLimited, logRequest } from '@/utils/amazon/rateLimiter';
 import { toast } from "@/components/ui/use-toast";
-import { amazonRequestQueue } from '@/utils/amazon/requestQueue';
 
 interface BatchProcessorOptions<T, R> {
   processFn: (item: T) => Promise<R>;
@@ -39,6 +38,7 @@ export const useBatchProcessor = <T, R>() => {
     
     try {
       for (let i = 0; i < items.length; i += batchSize) {
+        // Check rate limiting before processing batch
         if (isRateLimited(endpoint)) {
           console.log('Rate limit reached, waiting before processing next batch');
           toast({
@@ -57,13 +57,7 @@ export const useBatchProcessor = <T, R>() => {
             try {
               if (index > 0) await sleep(staggerDelay);
               logRequest(endpoint);
-              
-              // Queue the request with priority based on index
-              const result = await amazonRequestQueue.add(
-                () => processFn(item),
-                items.length - globalIndex // Higher priority for earlier items
-              );
-              
+              const result = await processFn(item);
               processedItems.add(globalIndex);
               setProcessingQueue(prev => prev.filter((_, idx) => !processedItems.has(idx)));
               return result;
@@ -81,10 +75,7 @@ export const useBatchProcessor = <T, R>() => {
             const globalIndex = i + index;
             try {
               logRequest(endpoint);
-              const result = await amazonRequestQueue.add(
-                () => processFn(item),
-                items.length - globalIndex
-              );
+              const result = await processFn(item);
               results.push(result);
               processedItems.add(globalIndex);
               setProcessingQueue(prev => prev.filter((_, idx) => !processedItems.has(idx)));

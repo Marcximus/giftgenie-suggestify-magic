@@ -1,58 +1,51 @@
+import { AMAZON_CONFIG } from './config';
+
 interface RequestLog {
   timestamp: number;
   endpoint: string;
 }
 
-const requestLog: RequestLog[] = [];
-
-export const AMAZON_CONFIG = {
-  BASE_RETRY_DELAY: 1000,
-  MAX_RETRIES: 3,
-  BATCH_SIZE: 4,
-  STAGGER_DELAY: 200
-};
-
-export const calculateBackoffDelay = (attempt: number, baseDelay = 1000, maxDelay = 10000): number => {
-  return Math.min(
-    baseDelay * Math.pow(2, attempt - 1) + Math.random() * 1000,
-    maxDelay
-  );
-};
+const requestLogs: RequestLog[] = [];
+const WINDOW_MS = 60000; // 1 minute window
 
 export const isRateLimited = (endpoint: string): boolean => {
   const now = Date.now();
-  const windowStart = now - 60000; // 1 minute window
+  const windowStart = now - WINDOW_MS;
   
   // Clean up old requests
-  const recentRequests = requestLog.filter(req => 
-    req.timestamp > windowStart && req.endpoint === endpoint
-  );
+  const recentRequests = requestLogs.filter(req => req.timestamp > windowStart);
+  requestLogs.length = 0;
+  requestLogs.push(...recentRequests);
   
-  // Update request log
-  const activeRequests = requestLog.filter(req => 
-    !(req.timestamp <= windowStart && req.endpoint === endpoint)
-  );
-  requestLog.length = 0;
-  requestLog.push(...activeRequests);
+  // Count requests for this endpoint
+  const endpointRequests = recentRequests.filter(req => req.endpoint === endpoint).length;
   
-  return recentRequests.length >= 30; // 30 requests per minute limit
+  console.log(`Rate limit check for ${endpoint}: ${endpointRequests}/${AMAZON_CONFIG.MAX_CONCURRENT_REQUESTS} requests in last minute`);
+  
+  return endpointRequests >= AMAZON_CONFIG.MAX_CONCURRENT_REQUESTS;
 };
 
 export const logRequest = (endpoint: string): void => {
-  requestLog.push({ 
+  requestLogs.push({ 
     timestamp: Date.now(),
     endpoint 
   });
 };
 
-export const getRemainingRequests = (endpoint: string): number => {
-  const now = Date.now();
-  const windowStart = now - 60000;
-  const recentRequests = requestLog.filter(req => 
-    req.timestamp > windowStart && req.endpoint === endpoint
+export const calculateBackoffDelay = (retryCount: number): number => {
+  const baseDelay = AMAZON_CONFIG.BASE_RETRY_DELAY;
+  const maxDelay = AMAZON_CONFIG.MAX_BACKOFF_DELAY;
+  const backoffFactor = AMAZON_CONFIG.BACKOFF_FACTOR;
+  
+  // Calculate exponential backoff with jitter
+  const delay = Math.min(
+    baseDelay * Math.pow(backoffFactor, retryCount),
+    maxDelay
   );
-  return Math.max(30 - recentRequests.length, 0);
+  
+  // Add random jitter (±20% of delay)
+  const jitter = delay * 0.2 * (Math.random() * 2 - 1);
+  return delay + jitter;
 };
 
-export const sleep = (ms: number): Promise<void> => 
-  new Promise(resolve => setTimeout(resolve, ms));
+export const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));

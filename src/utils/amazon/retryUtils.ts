@@ -3,9 +3,8 @@ import { calculateBackoffDelay, sleep } from './rateLimiter';
 
 export const withRetry = async <T>(
   fn: () => Promise<T>,
-  maxRetries: number = 3,
-  baseDelay: number = 1000,
-  maxDelay: number = 10000
+  maxRetries: number,
+  delay: number = 1000
 ): Promise<T> => {
   let lastError: Error;
   let retryCount = 0;
@@ -23,12 +22,6 @@ export const withRetry = async <T>(
         retryAfter: error.headers?.get('retry-after')
       });
       
-      // If we've used all retries, throw the error
-      if (retryCount === maxRetries) {
-        console.error(`All ${maxRetries} retry attempts failed`);
-        throw lastError;
-      }
-      
       // If we get a rate limit error, use the retry-after header if available
       if (error.status === 429) {
         const retryAfter = parseInt(error.headers?.get('retry-after') || '15', 10);
@@ -44,28 +37,15 @@ export const withRetry = async <T>(
         continue;
       }
       
-      // Calculate exponential backoff delay
-      const backoffDelay = calculateBackoffDelay(retryCount, baseDelay, maxDelay);
-      
-      console.log(`Backing off for ${backoffDelay}ms before retry ${retryCount}`);
-      await sleep(backoffDelay);
+      // Don't wait on the last attempt
+      if (retryCount < maxRetries) {
+        const backoffDelay = calculateBackoffDelay(retryCount);
+        console.log(`Backing off for ${backoffDelay}ms before retry ${retryCount}`);
+        await sleep(backoffDelay);
+      }
     }
   }
   
+  console.error(`All ${maxRetries} retry attempts failed`);
   throw lastError!;
-};
-
-export const retryWithTimeout = async <T>(
-  fn: () => Promise<T>,
-  timeout: number = 5000, // Reduced from 8000 to 5000ms
-  maxRetries: number = 3
-): Promise<T> => {
-  const timeoutPromise = new Promise<never>((_, reject) => {
-    setTimeout(() => reject(new Error('Operation timed out')), timeout);
-  });
-
-  return withRetry(
-    () => Promise.race([fn(), timeoutPromise]),
-    maxRetries
-  );
 };
