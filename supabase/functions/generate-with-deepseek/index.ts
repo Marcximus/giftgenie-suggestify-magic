@@ -27,79 +27,102 @@ serve(async (req) => {
     const prompt = buildBlogPrompt();
     console.log('Using prompt system content:', prompt.content.substring(0, 200) + '...');
 
-    const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${deepseekApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: "deepseek-reasoner",
-        messages: [
-          prompt,
-          {
-            role: "user",
-            content: `Create a fun, engaging blog post about: ${title}\n\nIMPORTANT: You MUST generate EXACTLY 10 product recommendations, no more, no less.`
-          }
-        ],
-        max_tokens: 5000,
-        temperature: 1.3,
-      }),
-    });
+    // Make the API request with a timeout
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 30000); // 30 second timeout
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('DeepSeek API error response:', errorText);
-      throw new Error(`DeepSeek API error: ${errorText}`);
-    }
-
-    let data;
     try {
-      data = await response.json();
+      const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
+        method: 'POST',
+        signal: controller.signal,
+        headers: {
+          'Authorization': `Bearer ${deepseekApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: "deepseek-reasoner",
+          messages: [
+            prompt,
+            {
+              role: "user",
+              content: `Create a fun, engaging blog post about: ${title}\n\nIMPORTANT: You MUST generate EXACTLY 10 product recommendations, no more, no less.`
+            }
+          ],
+          max_tokens: 5000,
+          temperature: 1.3,
+        }),
+      });
+
+      clearTimeout(timeout);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('DeepSeek API error response:', errorText);
+        throw new Error(`DeepSeek API error: ${errorText}`);
+      }
+
+      // Attempt to parse the response with detailed error logging
+      let responseText;
+      try {
+        responseText = await response.text();
+        console.log('Raw response text:', responseText);
+      } catch (error) {
+        console.error('Failed to get response text:', error);
+        throw new Error('Failed to read DeepSeek API response');
+      }
+
+      let data;
+      try {
+        data = JSON.parse(responseText);
+      } catch (error) {
+        console.error('Failed to parse DeepSeek response:', error);
+        console.error('Response text that failed to parse:', responseText);
+        throw new Error('Invalid JSON response from DeepSeek API');
+      }
+
+      if (!data || !data.choices || !data.choices[0]?.message?.content) {
+        console.error('Unexpected DeepSeek response structure:', JSON.stringify(data, null, 2));
+        throw new Error('Invalid response structure from DeepSeek API');
+      }
+
+      console.log('Successfully parsed DeepSeek response');
+      console.log('Generated content length:', data.choices[0].message.content.length);
+      console.log('First 500 characters of content:', data.choices[0].message.content.substring(0, 500));
+
+      const initialContent = data.choices[0].message.content;
+
+      // Initialize Supabase client for processing the content
+      const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+      const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+      const supabase = createClient(supabaseUrl, supabaseKey);
+
+      // Process the content to add Amazon product information
+      const { data: processedContent, error: processingError } = await supabase.functions.invoke('process-blog-content', {
+        body: { content: initialContent }
+      });
+
+      if (processingError) {
+        console.error('Content processing error:', processingError);
+        throw processingError;
+      }
+
+      console.log('Content processed successfully');
+      console.log('Final content length:', processedContent.content.length);
+      console.log('Number of affiliate links:', processedContent.affiliateLinks?.length || 0);
+
+      return new Response(
+        JSON.stringify(processedContent),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+
     } catch (error) {
-      console.error('Failed to parse DeepSeek response:', error);
-      throw new Error('Invalid JSON response from DeepSeek API');
+      if (error.name === 'AbortError') {
+        throw new Error('DeepSeek API request timed out after 30 seconds');
+      }
+      throw error;
+    } finally {
+      clearTimeout(timeout);
     }
-
-    if (!data || !data.choices || !data.choices[0]?.message?.content) {
-      console.error('Unexpected DeepSeek response structure:', data);
-      throw new Error('Invalid response structure from DeepSeek API');
-    }
-
-    console.log('Raw DeepSeek response:', JSON.stringify(data, null, 2));
-    
-    // Log both the reasoning content and final content
-    if (data.choices[0].message.reasoning_content) {
-      console.log('Chain of Thought reasoning:', data.choices[0].message.reasoning_content);
-    }
-    console.log('Generated content length:', data.choices[0].message.content.length);
-    console.log('First 500 characters of content:', data.choices[0].message.content.substring(0, 500));
-
-    const initialContent = data.choices[0].message.content;
-
-    // Initialize Supabase client for processing the content
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
-
-    // Process the content to add Amazon product information
-    const { data: processedContent, error: processingError } = await supabase.functions.invoke('process-blog-content', {
-      body: { content: initialContent }
-    });
-
-    if (processingError) {
-      console.error('Content processing error:', processingError);
-      throw processingError;
-    }
-
-    console.log('Content processed successfully');
-    console.log('Final content length:', processedContent.content.length);
-    console.log('Number of affiliate links:', processedContent.affiliateLinks?.length || 0);
-
-    return new Response(
-      JSON.stringify(processedContent),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
 
   } catch (error) {
     console.error('Error in generate-with-deepseek:', error);
