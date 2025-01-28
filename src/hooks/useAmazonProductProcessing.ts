@@ -3,13 +3,12 @@ import { useBatchProcessor } from './useBatchProcessor';
 import { GiftSuggestion } from '@/types/suggestions';
 import { useQueryClient } from '@tanstack/react-query';
 import { updateSearchFrequency } from '@/utils/searchFrequencyUtils';
-import { generateCustomDescriptions } from '@/utils/descriptionUtils';
+import { generateCustomDescription } from '@/utils/descriptionUtils';
 import { logApiMetrics, markOperation, trackSlowOperation } from '@/utils/metricsUtils';
 import { processInParallel, retryWithBackoff } from '@/utils/parallelProcessing';
 import { toast } from "@/components/ui/use-toast";
 
 const SLOW_OPERATION_THRESHOLD = 2000; // 2 seconds
-const BATCH_SIZE = 4; // Process 4 descriptions at a time
 
 export const useAmazonProductProcessing = () => {
   const { getAmazonProduct } = useAmazonProducts();
@@ -34,30 +33,49 @@ export const useAmazonProductProcessing = () => {
       // Track Amazon API call performance
       const amazonProduct = await trackSlowOperation(
         'amazon-api-call',
-        1000,
+        1000, // 1 second threshold for API calls
         () => retryWithBackoff(() => getAmazonProduct(suggestion.title, suggestion.priceRange))
       );
-
-      // Store the suggestion temporarily without description
-      const processedSuggestion = {
-        ...suggestion,
-        title: amazonProduct?.title || suggestion.title,
-        description: suggestion.description, // Will be updated in batch
-        priceRange: amazonProduct?.price ? `USD ${amazonProduct.price}` : suggestion.priceRange,
-        amazon_asin: amazonProduct?.asin,
-        amazon_url: amazonProduct?.asin ? `https://www.amazon.com/dp/${amazonProduct.asin}` : undefined,
-        amazon_price: amazonProduct?.price,
-        amazon_image_url: amazonProduct?.imageUrl,
-        amazon_rating: amazonProduct?.rating,
-        amazon_total_ratings: amazonProduct?.totalRatings
-      };
-
-      // Update cache with initial data
-      queryClient.setQueryData(cacheKey, processedSuggestion);
       
-      await logApiMetrics('amazon-product-processing', startTime, 'success');
+      // Process description and search frequency in parallel
+      const [customDescription] = await Promise.all([
+        trackSlowOperation(
+          'generate-description',
+          500,
+          () => generateCustomDescription(suggestion.title, suggestion.description)
+        ),
+        trackSlowOperation(
+          'update-search-frequency',
+          200,
+          () => updateSearchFrequency(suggestion.title)
+        )
+      ]);
+      
+      if (amazonProduct && amazonProduct.asin) {
+        const processedSuggestion = {
+          ...suggestion,
+          title: amazonProduct.title || suggestion.title,
+          description: customDescription,
+          priceRange: `${amazonProduct.currency} ${amazonProduct.price}`,
+          amazon_asin: amazonProduct.asin,
+          amazon_url: `https://www.amazon.com/dp/${amazonProduct.asin}`,
+          amazon_price: amazonProduct.price,
+          amazon_image_url: amazonProduct.imageUrl,
+          amazon_rating: amazonProduct.rating,
+          amazon_total_ratings: amazonProduct.totalRatings
+        };
+
+        // Update cache with enriched data
+        queryClient.setQueryData(cacheKey, processedSuggestion);
+        queryClient.invalidateQueries({ queryKey: ['suggestions'] });
+        
+        await logApiMetrics('amazon-product-processing', startTime, 'success');
+        operationMark.end();
+        return processedSuggestion;
+      }
+      
       operationMark.end();
-      return processedSuggestion;
+      return suggestion;
     } catch (error) {
       console.error('Error processing suggestion:', error);
       await logApiMetrics('amazon-product-processing', startTime, 'error', error.message);
@@ -73,48 +91,26 @@ export const useAmazonProductProcessing = () => {
     console.log('Starting parallel processing of suggestions');
     
     try {
-      // First, process all Amazon product data in parallel
-      const processedSuggestions = await trackSlowOperation(
+      const results = await trackSlowOperation(
         'parallel-processing',
         SLOW_OPERATION_THRESHOLD,
         () => processInParallel(
           suggestions,
           processGiftSuggestion,
           {
-            batchSize: BATCH_SIZE,
+            batchSize: 8,
             maxConcurrent: 4,
             delayBetweenBatches: 200
           }
         )
       );
-
-      // Then, batch process descriptions in groups of 4
-      for (let i = 0; i < processedSuggestions.length; i += BATCH_SIZE) {
-        const batch = processedSuggestions.slice(i, i + BATCH_SIZE);
-        console.log(`Processing descriptions batch ${i / BATCH_SIZE + 1}`);
-        
-        const descriptions = await generateCustomDescriptions(
-          batch.map(s => ({
-            title: s.title,
-            description: s.description
-          }))
-        );
-
-        // Update suggestions with new descriptions
-        descriptions.forEach((desc, index) => {
-          const suggestionIndex = i + index;
-          if (suggestionIndex < processedSuggestions.length) {
-            processedSuggestions[suggestionIndex].description = desc;
-          }
-        });
-
-        // Update the suggestions cache with processed results
-        queryClient.setQueryData(['suggestions'], processedSuggestions);
-      }
+      
+      // Update the suggestions cache with processed results
+      queryClient.setQueryData(['suggestions'], results);
       
       await logApiMetrics('batch-processing', startTime, 'success');
       operationMark.end();
-      return processedSuggestions;
+      return results;
     } catch (error) {
       console.error('Error in batch processing:', error);
       await logApiMetrics('batch-processing', startTime, 'error', error.message);

@@ -1,15 +1,10 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
+import { corsHeaders } from '../_shared/cors.ts';
 
 const DEEPSEEK_API_KEY = Deno.env.get('DEEPSEEK_API_KEY');
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
-
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -33,11 +28,11 @@ serve(async (req) => {
         messages: [
           {
             role: "system",
-            content: "You are a product title optimizer. Return only the simplified title, no additional text or formatting."
+            content: "You are a product title optimizer. Return only the simplified title."
           },
           { 
             role: "user", 
-            content: "Simplify this product title, max 2-5 words. Return ONLY the final title without any formatting or extra text: " + title 
+            content: "Simplify this product title, max 2-5 words. Return ONLY the final title: " + title 
           }
         ],
         max_tokens: 30,
@@ -49,8 +44,7 @@ serve(async (req) => {
     if (!response.ok) {
       console.error('DeepSeek API error:', {
         status: response.status,
-        statusText: response.statusText,
-        body: await response.text()
+        statusText: response.statusText
       });
       throw new Error(`DeepSeek API error: ${response.status}`);
     }
@@ -76,7 +70,7 @@ serve(async (req) => {
     );
       
   } catch (error) {
-    console.error('Error:', error);
+    console.error('Error:', error.message);
     return new Response(
       JSON.stringify({ error: error.message }),
       {
