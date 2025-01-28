@@ -16,17 +16,24 @@ export const parsePriceRange = (priceRange: string): { min: number; max: number 
     if (!isNaN(singlePrice) && singlePrice > 0) {
       // Use 20% variance for single prices
       return {
-        min: singlePrice * 0.8,
+        min: Math.max(1, singlePrice * 0.8),
         max: singlePrice * 1.2
       };
     }
 
-    console.error('Invalid price range format:', priceRange);
+    console.log('Invalid price range format:', priceRange);
     return null;
   } catch (error) {
     console.error('Error parsing price range:', error);
     return null;
   }
+};
+
+export const applyPriceTolerance = (range: { min: number; max: number }): { min: number; max: number } => {
+  return {
+    min: Math.max(1, Math.floor(range.min * 0.8)), // Never go below $1
+    max: Math.ceil(range.max * 1.2)
+  };
 };
 
 export const validatePriceInRange = (price: number, min: number, max: number): boolean => {
