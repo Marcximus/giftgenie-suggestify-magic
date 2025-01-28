@@ -142,7 +142,7 @@ export const SuggestionsGridItems = ({
             key={`suggestion-${index}`}
             className={`
               animate-in fade-in slide-in-from-bottom duration-500
-              ${processed && allItemsProcessed ? '' : 'opacity-0'}
+              ${processed ? '' : 'opacity-0'}
             `}
             style={{ 
               animationDelay: `${index * 200}ms`
