@@ -3,6 +3,8 @@ interface QueuedRequest<T> {
   execute: () => Promise<T>;
   priority?: number;
   timestamp: number;
+  result?: T;
+  error?: any;
 }
 
 class RequestQueue {
@@ -39,7 +41,7 @@ class RequestQueue {
         const index = this.queue.findIndex(req => req.id === id);
         if (index === -1) {
           clearInterval(checkResult);
-          resolve(queuedRequest.result);
+          resolve(queuedRequest.result!);
         }
       }, 100);
 
