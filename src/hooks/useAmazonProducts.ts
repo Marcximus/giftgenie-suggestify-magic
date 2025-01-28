@@ -11,13 +11,14 @@ export const useAmazonProducts = () => {
 
   const getAmazonProduct = async (searchTerm: string, priceRange: string): Promise<AmazonProduct | null> => {
     try {
-      if (isRateLimited()) {
-        const remainingRequests = getRemainingRequests();
+      const endpoint = 'amazon-product-search';
+      if (isRateLimited(endpoint)) {
+        const remainingRequests = getRemainingRequests(endpoint);
         console.log(`Rate limited. Remaining requests: ${remainingRequests}`);
         await new Promise(resolve => setTimeout(resolve, AMAZON_CONFIG.BASE_RETRY_DELAY));
       }
 
-      logRequest();
+      logRequest(endpoint);
       
       const product = await withRetry(
         () => searchWithFallback(searchTerm, priceRange),

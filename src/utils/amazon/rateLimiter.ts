@@ -12,6 +12,13 @@ export const AMAZON_CONFIG = {
   STAGGER_DELAY: 200
 };
 
+export const calculateBackoffDelay = (attempt: number, baseDelay = 1000, maxDelay = 10000): number => {
+  return Math.min(
+    baseDelay * Math.pow(2, attempt - 1) + Math.random() * 1000,
+    maxDelay
+  );
+};
+
 export const isRateLimited = (endpoint: string): boolean => {
   const now = Date.now();
   const windowStart = now - 60000; // 1 minute window
@@ -36,6 +43,15 @@ export const logRequest = (endpoint: string): void => {
     timestamp: Date.now(),
     endpoint 
   });
+};
+
+export const getRemainingRequests = (endpoint: string): number => {
+  const now = Date.now();
+  const windowStart = now - 60000;
+  const recentRequests = requestLog.filter(req => 
+    req.timestamp > windowStart && req.endpoint === endpoint
+  );
+  return Math.max(30 - recentRequests.length, 0);
 };
 
 export const sleep = (ms: number): Promise<void> => 
