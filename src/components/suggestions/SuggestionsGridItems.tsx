@@ -48,42 +48,31 @@ export const SuggestionsGridItems = ({
     const processSuggestions = async () => {
       setProcessedSuggestions([]);
       
-      // Process suggestions in smaller batches for better UX
-      const batchSize = 3;
-      for (let batchIndex = 0; batchIndex < suggestions.length; batchIndex += batchSize) {
-        const batch = suggestions.slice(batchIndex, batchIndex + batchSize);
-        
-        // Process each batch in parallel
-        await Promise.all(batch.map(async (suggestion, index) => {
-          const globalIndex = batchIndex + index;
-          try {
-            setProcessingIndexes(prev => new Set([...prev, globalIndex]));
-            
-            const optimizedTitle = await generateTitle(suggestion.title, suggestion.description);
-            
-            setProcessedSuggestions(prev => [
-              ...prev,
-              {
-                ...suggestion,
-                optimizedTitle
-              }
-            ]);
-
-            setProcessingIndexes(prev => {
-              const newIndexes = new Set(prev);
-              newIndexes.delete(globalIndex);
-              return newIndexes;
-            });
-          } catch (error) {
-            if (error.message !== 'Processing aborted') {
-              console.error(`Error processing suggestion ${globalIndex}:`, error);
+      // Process each suggestion immediately as it's ready
+      for (let index = 0; index < suggestions.length; index++) {
+        try {
+          setProcessingIndexes(prev => new Set([...prev, index]));
+          
+          const suggestion = suggestions[index];
+          const optimizedTitle = await generateTitle(suggestion.title, suggestion.description);
+          
+          setProcessedSuggestions(prev => [
+            ...prev,
+            {
+              ...suggestion,
+              optimizedTitle
             }
-          }
-        }));
+          ]);
 
-        // Small delay between batches to prevent overwhelming the system
-        if (batchIndex + batchSize < suggestions.length) {
-          await new Promise(resolve => setTimeout(resolve, 100));
+          setProcessingIndexes(prev => {
+            const newIndexes = new Set(prev);
+            newIndexes.delete(index);
+            return newIndexes;
+          });
+        } catch (error) {
+          if (error.message !== 'Processing aborted') {
+            console.error(`Error processing suggestion ${index}:`, error);
+          }
         }
       }
     };
