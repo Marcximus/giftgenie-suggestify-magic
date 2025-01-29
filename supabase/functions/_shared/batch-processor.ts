@@ -1,11 +1,42 @@
 import { AmazonProduct } from './types.ts';
 import { searchAmazonProducts } from './amazon-search.ts';
 
-const BATCH_SIZE = 4; // Reduced from 8 to 4
-const PROCESS_SIZE = 4; // Keep process size at 4
+const BATCH_SIZE = 4;
+const PROCESS_SIZE = 4;
 const BATCH_DELAY = 200;
 
-export async function processSuggestionsInBatches(suggestions: string[]): Promise<AmazonProduct[]> {
+interface BudgetConstraints {
+  min: number;
+  max: number;
+}
+
+function isWithinBudget(price: number | undefined, budget: BudgetConstraints): boolean {
+  if (typeof price !== 'number' || isNaN(price)) {
+    console.log('Invalid price:', price);
+    return false;
+  }
+  
+  // Allow for 10% tolerance (reduced from 20%)
+  const minWithTolerance = budget.min * 0.9;
+  const maxWithTolerance = budget.max * 1.1;
+  
+  const isValid = price >= minWithTolerance && price <= maxWithTolerance;
+  
+  if (!isValid) {
+    console.log(`Price $${price} outside budget range $${budget.min}-$${budget.max} (with 10% tolerance)`);
+  }
+  
+  return isValid;
+}
+
+export async function processSuggestionsInBatches(
+  suggestions: string[],
+  budget?: BudgetConstraints | null
+): Promise<AmazonProduct[]> {
+  if (budget) {
+    console.log('Processing suggestions with budget constraints:', budget);
+  }
+  
   const batches: string[][] = [];
   
   // Split suggestions into batches
@@ -28,7 +59,19 @@ export async function processSuggestionsInBatches(suggestions: string[]): Promis
         chunk.map(async (suggestion) => {
           try {
             const result = await searchAmazonProducts(suggestion);
-            console.log(`Processed suggestion: ${suggestion}, success: ${!!result}`);
+            
+            // Apply strict budget filtering if constraints exist
+            if (budget && result) {
+              const price = typeof result.price === 'string' 
+                ? parseFloat(result.price.replace(/[^0-9.]/g, ''))
+                : result.price;
+                
+              if (!isWithinBudget(price, budget)) {
+                console.log(`Filtered out "${result.title}" - price $${price} outside budget $${budget.min}-$${budget.max}`);
+                return null;
+              }
+            }
+            
             return result;
           } catch (error) {
             console.error('Error processing suggestion:', error);
@@ -38,7 +81,16 @@ export async function processSuggestionsInBatches(suggestions: string[]): Promis
       );
       
       // Filter out null results and add to processed products
-      processedProducts.push(...chunkResults.filter((result): result is AmazonProduct => result !== null));
+      const validResults = chunkResults.filter((result): result is AmazonProduct => 
+        result !== null && (!budget || isWithinBudget(
+          typeof result.price === 'string' 
+            ? parseFloat(result.price.replace(/[^0-9.]/g, ''))
+            : result.price,
+          budget
+        ))
+      );
+      
+      processedProducts.push(...validResults);
       
       // Add delay between chunks within a batch
       if (i + PROCESS_SIZE < batch.length) {
@@ -50,6 +102,12 @@ export async function processSuggestionsInBatches(suggestions: string[]): Promis
     if (batches.indexOf(batch) < batches.length - 1) {
       await new Promise(resolve => setTimeout(resolve, BATCH_DELAY));
     }
+  }
+
+  if (processedProducts.length === 0) {
+    console.log('No products found within budget constraints');
+  } else {
+    console.log(`Found ${processedProducts.length} products within budget constraints`);
   }
 
   return processedProducts;
