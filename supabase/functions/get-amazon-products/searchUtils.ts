@@ -1,15 +1,3 @@
-import { cleanSearchTerm } from './searchUtils';
-import { parsePriceRange } from './priceUtils';
-
-export const cleanSearchTerm = (searchTerm: string): string => {
-  return searchTerm
-    .replace(/\([^)]*\)/g, '') // Remove anything in parentheses
-    .replace(/&/g, 'and') // Replace & with 'and'
-    .replace(/[^\w\s-]/g, ' ') // Remove special characters except hyphens
-    .replace(/\s+/g, ' ') // Replace multiple spaces with single space
-    .trim();
-};
-
 export const buildSearchUrl = (
   searchTerm: string,
   priceRange?: string
@@ -37,6 +25,15 @@ export const buildSearchUrl = (
   url.searchParams.append('is_prime', 'false');
   url.searchParams.append('deals_and_discounts', 'NONE');
   
-  console.log('Built search URL:', url.toString());
+  console.log('Built Amazon API URL:', url.toString());
   return url;
+};
+
+export const cleanSearchTerm = (searchTerm: string): string => {
+  return searchTerm
+    .replace(/\([^)]*\)/g, '') // Remove anything in parentheses
+    .replace(/&/g, 'and') // Replace & with 'and'
+    .replace(/[^\w\s-]/g, ' ') // Remove special characters except hyphens
+    .replace(/\s+/g, ' ') // Replace multiple spaces with single space
+    .trim();
 };
