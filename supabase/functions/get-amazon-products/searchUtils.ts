@@ -19,10 +19,17 @@ export const buildSearchUrl = (
     console.log('Processing price range:', priceRange);
     const parsedRange = parsePriceRange(priceRange);
     if (parsedRange) {
-      console.log('Adding price constraints:', parsedRange);
-      // Add exact min and max price parameters to the API request
-      url.searchParams.append('min_price', parsedRange.min.toString());
-      url.searchParams.append('max_price', parsedRange.max.toString());
+      // Ensure we have valid numbers and convert to fixed decimal places
+      const minPrice = Number(parsedRange.min).toFixed(2);
+      const maxPrice = Number(parsedRange.max).toFixed(2);
+      
+      console.log('Adding exact price constraints:', { minPrice, maxPrice });
+      url.searchParams.append('min_price', minPrice);
+      url.searchParams.append('max_price', maxPrice);
+      
+      // Verify parameters were added
+      const finalParams = Object.fromEntries(url.searchParams.entries());
+      console.log('Verified URL parameters:', finalParams);
     } else {
       console.warn('Failed to parse price range:', priceRange);
     }
@@ -30,7 +37,6 @@ export const buildSearchUrl = (
   
   const finalUrl = url.toString();
   console.log('Final Amazon API URL:', finalUrl);
-  console.log('URL parameters:', Object.fromEntries(url.searchParams.entries()));
   
   return url;
 };

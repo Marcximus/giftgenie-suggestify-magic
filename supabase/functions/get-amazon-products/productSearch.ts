@@ -59,32 +59,60 @@ export const searchProducts = async (
       return null;
     }
 
-    // Since we're using the API's price filters, we can trust the first result
-    const product = searchData.data.products[0];
-    const price = extractPrice(product.product_price);
+    // Verify each product's price strictly
+    let validProduct = null;
+    const parsedRange = priceRange ? parsePriceRange(priceRange) : null;
 
-    // Double-check the price just to be safe
-    if (priceRange) {
-      const parsedRange = parsePriceRange(priceRange);
-      if (parsedRange && price && !validatePriceInRange(price, parsedRange.min, parsedRange.max)) {
-        console.log('Product filtered out - price verification failed:', {
-          title: product.title,
-          price,
-          range: parsedRange
-        });
-        return null;
+    for (const product of searchData.data.products) {
+      const price = extractPrice(product.product_price);
+      console.log('Checking product price:', {
+        title: product.title,
+        price,
+        range: parsedRange
+      });
+
+      if (!price) {
+        console.log('Skipping product - invalid price:', product.title);
+        continue;
       }
+
+      if (parsedRange) {
+        if (!validatePriceInRange(price, parsedRange.min, parsedRange.max)) {
+          console.log('Skipping product - outside price range:', {
+            title: product.title,
+            price,
+            min: parsedRange.min,
+            max: parsedRange.max
+          });
+          continue;
+        }
+      }
+
+      validProduct = product;
+      console.log('Found valid product within price range:', {
+        title: product.title,
+        price,
+        range: parsedRange
+      });
+      break;
     }
 
+    if (!validProduct) {
+      console.log('No products found within specified price range');
+      return null;
+    }
+
+    const finalPrice = extractPrice(validProduct.product_price);
+    
     return {
-      title: product.title,
-      description: product.product_description || product.title,
-      price: price,
+      title: validProduct.title,
+      description: validProduct.product_description || validProduct.title,
+      price: finalPrice,
       currency: 'USD',
-      imageUrl: product.product_photo || product.thumbnail,
-      rating: product.product_star_rating ? parseFloat(product.product_star_rating) : undefined,
-      totalRatings: product.product_num_ratings ? parseInt(product.product_num_ratings.toString(), 10) : undefined,
-      asin: product.asin
+      imageUrl: validProduct.product_photo || validProduct.thumbnail,
+      rating: validProduct.product_star_rating ? parseFloat(validProduct.product_star_rating) : undefined,
+      totalRatings: validProduct.product_num_ratings ? parseInt(validProduct.product_num_ratings.toString(), 10) : undefined,
+      asin: validProduct.asin
     };
   } catch (error) {
     console.error('Error in Amazon product search:', {

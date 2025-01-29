@@ -21,11 +21,9 @@ export const parsePriceRange = (priceRange: string): { min: number; max: number 
     // Handle single number (e.g., "around 30")
     const singlePrice = parseFloat(cleanRange);
     if (!isNaN(singlePrice) && singlePrice > 0) {
-      // Use exact values for API parameters with small variance
-      const min = Math.floor(singlePrice * 0.98); // 2% lower
-      const max = Math.ceil(singlePrice * 1.02);  // 2% higher
-      console.log('Parsed single price with minimal variance:', { singlePrice, min, max });
-      return { min, max };
+      // Use exact value for single price - no variance
+      console.log('Using exact single price:', singlePrice);
+      return { min: singlePrice, max: singlePrice };
     }
 
     console.error('Failed to parse price range:', { input: priceRange, cleaned: cleanRange });
