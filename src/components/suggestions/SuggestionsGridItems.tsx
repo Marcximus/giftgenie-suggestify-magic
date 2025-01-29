@@ -45,33 +45,47 @@ export const SuggestionsGridItems = ({
     }
     abortController.current = new AbortController();
 
-    // Process each suggestion independently
-    suggestions.forEach(async (suggestion, index) => {
-      try {
-        setProcessingIndexes(prev => new Set([...prev, index]));
-        
-        const optimizedTitle = await generateTitle(suggestion.title, suggestion.description);
-        
-        setProcessedSuggestions(prev => {
-          const newSuggestions = [...prev];
-          newSuggestions[index] = {
-            ...suggestion,
-            optimizedTitle
-          };
-          return newSuggestions;
-        });
+    // Initialize processed suggestions array with nulls
+    setProcessedSuggestions(new Array(suggestions.length).fill(null));
 
-        setProcessingIndexes(prev => {
-          const newIndexes = new Set(prev);
-          newIndexes.delete(index);
-          return newIndexes;
-        });
-      } catch (error) {
-        if (error.message !== 'Processing aborted') {
-          console.error(`Error processing suggestion ${index}:`, error);
+    const processSuggestionsSequentially = async () => {
+      for (let index = 0; index < suggestions.length; index++) {
+        if (abortController.current?.signal.aborted) {
+          break;
+        }
+
+        try {
+          setProcessingIndexes(prev => new Set([...prev, index]));
+          
+          const suggestion = suggestions[index];
+          const optimizedTitle = await generateTitle(suggestion.title, suggestion.description);
+          
+          // Add a small delay between processing each suggestion
+          await new Promise(resolve => setTimeout(resolve, 150));
+
+          setProcessedSuggestions(prev => {
+            const newSuggestions = [...prev];
+            newSuggestions[index] = {
+              ...suggestion,
+              optimizedTitle
+            };
+            return newSuggestions;
+          });
+
+          setProcessingIndexes(prev => {
+            const newIndexes = new Set(prev);
+            newIndexes.delete(index);
+            return newIndexes;
+          });
+        } catch (error) {
+          if (error.message !== 'Processing aborted') {
+            console.error(`Error processing suggestion ${index}:`, error);
+          }
         }
       }
-    });
+    };
+
+    processSuggestionsSequentially();
 
     return () => {
       if (abortController.current) {
