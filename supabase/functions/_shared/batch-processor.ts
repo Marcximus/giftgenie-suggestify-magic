@@ -1,43 +1,54 @@
-import { GiftSuggestion } from './types.ts';
-import { searchProducts } from './amazon-search.ts';
-import { validatePriceInRange } from './priceUtils.ts';
+import { AmazonProduct } from './types.ts';
+import { searchAmazonProducts } from './amazon-search.ts';
 
-export async function processSuggestionsInBatches(
-  suggestions: string[], 
-  budget: { minBudget: number; maxBudget: number }
-): Promise<GiftSuggestion[]> {
-  console.log('Processing suggestions with budget constraints:', budget);
-  const processedProducts: GiftSuggestion[] = [];
+const BATCH_SIZE = 4; // Reduced from 8 to 4
+const PROCESS_SIZE = 4; // Keep process size at 4
+const BATCH_DELAY = 200;
 
-  for (const suggestion of suggestions) {
-    try {
-      const product = await searchProducts(suggestion);
+export async function processSuggestionsInBatches(suggestions: string[]): Promise<AmazonProduct[]> {
+  const batches: string[][] = [];
+  
+  // Split suggestions into batches
+  for (let i = 0; i < suggestions.length; i += BATCH_SIZE) {
+    batches.push(suggestions.slice(i, i + BATCH_SIZE));
+  }
+
+  const processedProducts: AmazonProduct[] = [];
+  
+  for (const batch of batches) {
+    console.log(`Processing batch of ${batch.length} suggestions`);
+    
+    // Process batch in smaller chunks
+    for (let i = 0; i < batch.length; i += PROCESS_SIZE) {
+      const chunk = batch.slice(i, i + PROCESS_SIZE);
+      console.log(`Processing chunk of ${chunk.length} items from batch`);
       
-      if (product && product.price) {
-        const price = typeof product.price === 'string' 
-          ? parseFloat(product.price.replace(/[^0-9.]/g, ''))
-          : product.price;
-
-        if (validatePriceInRange(price, budget.minBudget, budget.maxBudget)) {
-          processedProducts.push({
-            title: product.title,
-            description: product.description,
-            priceRange: `USD ${price}`,
-            reason: `This product fits within your budget range of $${budget.minBudget}-$${budget.maxBudget}`,
-            amazon_asin: product.asin,
-            amazon_url: product.url,
-            amazon_price: price,
-            amazon_image_url: product.imageUrl,
-            amazon_rating: product.rating,
-            amazon_total_ratings: product.totalRatings,
-            status: 'completed'
-          });
-        } else {
-          console.log(`Product "${product.title}" price $${price} outside budget range $${budget.minBudget}-$${budget.maxBudget}`);
-        }
+      // Process chunk in parallel
+      const chunkResults = await Promise.all(
+        chunk.map(async (suggestion) => {
+          try {
+            const result = await searchAmazonProducts(suggestion);
+            console.log(`Processed suggestion: ${suggestion}, success: ${!!result}`);
+            return result;
+          } catch (error) {
+            console.error('Error processing suggestion:', error);
+            return null;
+          }
+        })
+      );
+      
+      // Filter out null results and add to processed products
+      processedProducts.push(...chunkResults.filter((result): result is AmazonProduct => result !== null));
+      
+      // Add delay between chunks within a batch
+      if (i + PROCESS_SIZE < batch.length) {
+        await new Promise(resolve => setTimeout(resolve, BATCH_DELAY / 2));
       }
-    } catch (error) {
-      console.error(`Error processing suggestion "${suggestion}":`, error);
+    }
+    
+    // Add delay between batches
+    if (batches.indexOf(batch) < batches.length - 1) {
+      await new Promise(resolve => setTimeout(resolve, BATCH_DELAY));
     }
   }
 

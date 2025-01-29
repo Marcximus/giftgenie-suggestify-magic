@@ -27,41 +27,20 @@ serve(async (req) => {
       throw new Error('Invalid prompt');
     }
 
-    // Extract budget from the prompt
-    const budgetMatch = prompt.match(/budget(?:\s*of)?\s*(?:USD|\$)?(\d+(?:\s*-\s*\$?\d+)?)/i);
-    const budget = budgetMatch ? budgetMatch[1] : null;
-    console.log('Extracted budget:', budget);
+    // Extract interests from the prompt
+    const interestsMatch = prompt.match(/who likes (.*?) with a budget/i);
+    const interests = interestsMatch ? interestsMatch[1].split(' and ') : [];
+    console.log('Extracted interests:', interests);
 
-    let minBudget = 0;
-    let maxBudget = 1000;
+    const enhancedPrompt = `You are an gifting expert. Based on the request "${prompt}", suggest 8 specific gift ideas.
 
-    if (budget) {
-      const budgetParts = budget.split('-').map(part => parseFloat(part.replace(/[^\d.]/g, '')));
-      if (budgetParts.length === 2) {
-        [minBudget, maxBudget] = budgetParts;
-      } else if (budgetParts.length === 1) {
-        // If single number, use ±20% range
-        const targetBudget = budgetParts[0];
-        minBudget = targetBudget * 0.8;
-        maxBudget = targetBudget * 1.2;
-      }
-    }
+Consider:
+- Age, gender, and occasion mentioned
+- CRITICAL: Any budget constraints specified (can fluctuate by 20%)
+- The recipient's interests and preferences
+- Avoid suggesting identical items
 
-    const enhancedPrompt = `You are a gifting expert. Based on the request "${prompt}", suggest 8 specific gift ideas.
-
-CRITICAL REQUIREMENTS:
-- Budget is STRICTLY ${minBudget}-${maxBudget} USD. DO NOT suggest items outside this range
-- Each suggestion must be from a DIFFERENT product category
-- Avoid suggesting similar items or variations of the same product
-- Consider age, gender, and occasion mentioned
-- Focus on premium, highly-rated items within the budget
-
-Return ONLY a JSON array of exactly 8 strings, each following this format:
-"[Brand Name] [Specific Product Model] ([Premium/Special Edition if applicable])"
-
-Example format: "Sony WH-1000XM4 Wireless Noise-Cancelling Headphones (Premium Edition)"
-
-IMPORTANT: Each suggestion MUST be priced within ${minBudget}-${maxBudget} USD. Double-check prices before suggesting.`;
+Return ONLY a JSON array of exactly 8 strings`;
 
     console.log('Enhanced prompt:', enhancedPrompt);
 
@@ -110,13 +89,13 @@ IMPORTANT: Each suggestion MUST be priced within ${minBudget}-${maxBudget} USD. 
       throw new Error('Did not receive exactly 8 suggestions');
     }
 
-    // Process suggestions with budget constraints
-    console.log('Processing suggestions with budget constraints:', { minBudget, maxBudget });
-    const processedProducts = await processSuggestionsInBatches(suggestions, { minBudget, maxBudget });
+    // Process suggestions
+    console.log('Processing suggestions:', suggestions);
+    const processedProducts = await processSuggestionsInBatches(suggestions);
     console.log('Processed products:', processedProducts);
     
     if (!processedProducts.length) {
-      throw new Error('No products found within budget range');
+      throw new Error('No products found for suggestions');
     }
 
     // Log metrics
