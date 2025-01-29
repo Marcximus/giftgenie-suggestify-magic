@@ -1,7 +1,11 @@
+import { parsePriceRange } from './priceUtils';
+
 export const buildSearchUrl = (
   searchTerm: string,
   priceRange?: string
 ): URL => {
+  console.log('Building search URL with:', { searchTerm, priceRange });
+  
   const url = new URL('https://real-time-amazon-data.p.rapidapi.com/search');
   
   // Add required parameters
@@ -14,9 +18,11 @@ export const buildSearchUrl = (
   if (priceRange) {
     const parsedRange = parsePriceRange(priceRange);
     if (parsedRange) {
-      console.log('Adding price constraints to URL:', parsedRange);
+      console.log('Adding price constraints:', parsedRange);
       url.searchParams.append('min_price', Math.floor(parsedRange.min).toString());
       url.searchParams.append('max_price', Math.ceil(parsedRange.max).toString());
+    } else {
+      console.warn('Failed to parse price range:', priceRange);
     }
   }
   
@@ -25,15 +31,21 @@ export const buildSearchUrl = (
   url.searchParams.append('is_prime', 'false');
   url.searchParams.append('deals_and_discounts', 'NONE');
   
-  console.log('Built Amazon API URL:', url.toString());
+  const finalUrl = url.toString();
+  console.log('Final Amazon API URL:', finalUrl);
+  console.log('URL parameters:', Object.fromEntries(url.searchParams.entries()));
+  
   return url;
 };
 
 export const cleanSearchTerm = (searchTerm: string): string => {
-  return searchTerm
+  const cleaned = searchTerm
     .replace(/\([^)]*\)/g, '') // Remove anything in parentheses
     .replace(/&/g, 'and') // Replace & with 'and'
     .replace(/[^\w\s-]/g, ' ') // Remove special characters except hyphens
     .replace(/\s+/g, ' ') // Replace multiple spaces with single space
     .trim();
+  
+  console.log('Cleaned search term:', { original: searchTerm, cleaned });
+  return cleaned;
 };
