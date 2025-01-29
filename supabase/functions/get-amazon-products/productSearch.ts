@@ -59,48 +59,32 @@ export const searchProducts = async (
       return null;
     }
 
-    // Get the first valid product within price range
-    let validProduct = null;
+    // Since we're using the API's price filters, we can trust the first result
+    const product = searchData.data.products[0];
+    const price = extractPrice(product.product_price);
+
+    // Double-check the price just to be safe
     if (priceRange) {
       const parsedRange = parsePriceRange(priceRange);
-      if (parsedRange) {
-        console.log('Searching for products within price range:', parsedRange);
-        for (const product of searchData.data.products) {
-          const price = extractPrice(product.product_price);
-          if (price && validatePriceInRange(price, parsedRange.min, parsedRange.max)) {
-            console.log('Found product within price range:', {
-              title: product.title,
-              price,
-              range: parsedRange
-            });
-            validProduct = product;
-            break;
-          } else {
-            console.log('Product outside price range:', {
-              title: product.title,
-              price,
-              range: parsedRange
-            });
-          }
-        }
+      if (parsedRange && price && !validatePriceInRange(price, parsedRange.min, parsedRange.max)) {
+        console.log('Product filtered out - price verification failed:', {
+          title: product.title,
+          price,
+          range: parsedRange
+        });
+        return null;
       }
     }
 
-    if (!validProduct) {
-      validProduct = searchData.data.products[0];
-    }
-
-    const price = extractPrice(validProduct.product_price);
-
     return {
-      title: validProduct.title,
-      description: validProduct.product_description || validProduct.title,
+      title: product.title,
+      description: product.product_description || product.title,
       price: price,
       currency: 'USD',
-      imageUrl: validProduct.product_photo || validProduct.thumbnail,
-      rating: validProduct.product_star_rating ? parseFloat(validProduct.product_star_rating) : undefined,
-      totalRatings: validProduct.product_num_ratings ? parseInt(validProduct.product_num_ratings.toString(), 10) : undefined,
-      asin: validProduct.asin
+      imageUrl: product.product_photo || product.thumbnail,
+      rating: product.product_star_rating ? parseFloat(product.product_star_rating) : undefined,
+      totalRatings: product.product_num_ratings ? parseInt(product.product_num_ratings.toString(), 10) : undefined,
+      asin: product.asin
     };
   } catch (error) {
     console.error('Error in Amazon product search:', {

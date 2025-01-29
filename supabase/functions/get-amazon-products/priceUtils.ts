@@ -12,6 +12,7 @@ export const parsePriceRange = (priceRange: string): { min: number; max: number 
       console.log('Split range values:', { min, max });
       
       if (!isNaN(min) && !isNaN(max) && min > 0 && max >= min) {
+        // Use exact values for API parameters
         console.log('Successfully parsed range:', { min, max });
         return { min, max };
       }
@@ -20,10 +21,10 @@ export const parsePriceRange = (priceRange: string): { min: number; max: number 
     // Handle single number (e.g., "around 30")
     const singlePrice = parseFloat(cleanRange);
     if (!isNaN(singlePrice) && singlePrice > 0) {
-      // Use 10% variance for single prices (reduced from 20%)
-      const min = Math.floor(singlePrice * 0.95);
-      const max = Math.ceil(singlePrice * 1.05);
-      console.log('Parsed single price with variance:', { singlePrice, min, max });
+      // Use exact values for API parameters with small variance
+      const min = Math.floor(singlePrice * 0.98); // 2% lower
+      const max = Math.ceil(singlePrice * 1.02);  // 2% higher
+      console.log('Parsed single price with minimal variance:', { singlePrice, min, max });
       return { min, max };
     }
 
