@@ -15,18 +15,32 @@ serve(async (req) => {
 
   try {
     const DEEPSEEK_API_KEY = Deno.env.get('DEEPSEEK_API_KEY');
+    console.log('Checking DeepSeek API key:', { hasKey: !!DEEPSEEK_API_KEY });
+    
     if (!DEEPSEEK_API_KEY) {
       throw new Error('DEEPSEEK_API_KEY is not configured');
     }
 
     // Parse request body
-    let { title } = await req.json();
+    const body = await req.text();
+    console.log('Raw request body:', body);
+
+    let title;
+    try {
+      const data = JSON.parse(body);
+      title = data.title;
+    } catch (e) {
+      console.error('Failed to parse request body:', e);
+      throw new Error('Invalid JSON in request body');
+    }
+
     console.log('Processing title request:', { title });
 
     if (!title) {
       throw new Error('Title is required');
     }
 
+    console.log('Making request to DeepSeek API...');
     const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -59,8 +73,18 @@ serve(async (req) => {
       throw new Error(`DeepSeek API error: ${response.status}`);
     }
 
-    const data = await response.json();
-    console.log('DeepSeek response:', data);
+    const responseText = await response.text();
+    console.log('Raw DeepSeek response:', responseText);
+
+    let data;
+    try {
+      data = JSON.parse(responseText);
+    } catch (e) {
+      console.error('Failed to parse DeepSeek response:', e);
+      throw new Error('Invalid JSON in DeepSeek response');
+    }
+
+    console.log('Parsed DeepSeek response:', data);
 
     if (!data.choices?.[0]?.message?.content) {
       throw new Error('Invalid response format from DeepSeek API');
@@ -86,11 +110,11 @@ serve(async (req) => {
   } catch (error) {
     console.error('Error in generate-product-title:', error);
     
-    // Return a properly formatted error response
     return new Response(
       JSON.stringify({ 
         error: error.message,
-        details: error.stack
+        details: error.stack,
+        timestamp: new Date().toISOString()
       }),
       {
         status: 500,
