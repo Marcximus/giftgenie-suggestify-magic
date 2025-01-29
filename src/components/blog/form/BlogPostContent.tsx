@@ -7,8 +7,7 @@ import { UseFormReturn } from "react-hook-form";
 import { BlogPostFormData } from "../types/BlogPostTypes";
 import { BlogEditor } from "../editor/BlogEditor";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
-import { handleEdgeFunctionError } from "@/utils/edgeFunctionErrors";
+import { useToast } from "@/components/ui/use-toast";
 
 interface BlogPostContentProps {
   form: UseFormReturn<BlogPostFormData>;
@@ -21,7 +20,7 @@ export const BlogPostContent = ({ form, handleAIGenerate }: BlogPostContentProps
   const [isGeneratingDeepSeek, setIsGeneratingDeepSeek] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
   const MAX_RETRIES = 3;
-  const RETRY_DELAY = 2000;
+  const RETRY_DELAY = 2000; // 2 seconds
 
   const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -61,12 +60,14 @@ export const BlogPostContent = ({ form, handleAIGenerate }: BlogPostContentProps
         console.log('Received generated content:', data);
 
         if (data?.content) {
+          // Update the form's content field with processed content
           form.setValue('content', data.content, { 
             shouldDirty: true,
             shouldTouch: true,
             shouldValidate: true 
           });
 
+          // If there are affiliate links, update those too
           if (data.affiliateLinks) {
             form.setValue('affiliate_links', data.affiliateLinks, {
               shouldDirty: true,
@@ -79,23 +80,33 @@ export const BlogPostContent = ({ form, handleAIGenerate }: BlogPostContentProps
             title: "Success",
             description: `Blog post generated with ${data.affiliateLinks?.length || 0} product links using ${provider}`,
           });
-          break;
+          break; // Success - exit the retry loop
         } else {
           throw new Error('No content received from AI');
         }
       } catch (error: any) {
         console.error(`Error generating blog post with ${provider} (attempt ${currentRetry + 1}):`, error);
         
-        const shouldRetry = await handleEdgeFunctionError(error, currentRetry, MAX_RETRIES);
-        
-        if (!shouldRetry) {
-          break;
+        // If we've exhausted retries or it's not a fetch error, throw
+        if (currentRetry === MAX_RETRIES || 
+            (!error.message?.includes('Failed to fetch') && !error.message?.includes('FunctionsFetchError'))) {
+          toast({
+            title: "Error",
+            description: `Failed to generate blog post with ${provider}. Please try again later.`,
+            variant: "destructive"
+          });
+          throw error;
         }
 
+        // For fetch errors, retry after delay
         currentRetry++;
         if (currentRetry <= MAX_RETRIES) {
-          const delayMs = RETRY_DELAY * Math.pow(2, currentRetry - 1);
+          const delayMs = RETRY_DELAY * Math.pow(2, currentRetry - 1); // Exponential backoff
           console.log(`Retrying in ${delayMs}ms...`);
+          toast({
+            title: "Retrying",
+            description: `Connection failed. Retrying attempt ${currentRetry} of ${MAX_RETRIES}...`,
+          });
           await sleep(delayMs);
         }
       }
