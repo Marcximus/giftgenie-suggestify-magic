@@ -51,7 +51,7 @@ export const SuggestionsGrid = ({
   // Calculate total animation duration based on number of suggestions
   const baseDelay = 1000; // Initial delay before suggestions start
   const perItemDelay = 200; // Delay per item
-  const totalAnimationDuration = baseDelay + (suggestions.length * perItemDelay) + 500; // Added buffer
+  const totalAnimationDuration = baseDelay + (suggestions.length * perItemDelay) + 1000; // Added longer buffer
 
   return (
     <>
@@ -74,15 +74,21 @@ export const SuggestionsGrid = ({
         <div 
           className="flex flex-col items-center mt-8 sm:mt-12 opacity-0"
           style={{ 
-            animation: `fadeIn 1000ms ease-out ${totalAnimationDuration}ms forwards`,
+            animation: `fadeInUp 800ms ease-out ${totalAnimationDuration}ms forwards`,
             willChange: 'opacity, transform'
           }}
         >
           <style>
             {`
-              @keyframes fadeIn {
-                from { opacity: 0; transform: translateY(10px); }
-                to { opacity: 1; transform: translateY(0); }
+              @keyframes fadeInUp {
+                from { 
+                  opacity: 0; 
+                  transform: translateY(20px); 
+                }
+                to { 
+                  opacity: 1; 
+                  transform: translateY(0); 
+                }
               }
             `}
           </style>
