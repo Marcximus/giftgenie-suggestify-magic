@@ -45,39 +45,33 @@ export const SuggestionsGridItems = ({
     }
     abortController.current = new AbortController();
 
-    const processSuggestions = async () => {
-      setProcessedSuggestions([]);
-      
-      // Process each suggestion immediately as it's ready
-      for (let index = 0; index < suggestions.length; index++) {
-        try {
-          setProcessingIndexes(prev => new Set([...prev, index]));
-          
-          const suggestion = suggestions[index];
-          const optimizedTitle = await generateTitle(suggestion.title, suggestion.description);
-          
-          setProcessedSuggestions(prev => [
-            ...prev,
-            {
-              ...suggestion,
-              optimizedTitle
-            }
-          ]);
+    // Process each suggestion independently
+    suggestions.forEach(async (suggestion, index) => {
+      try {
+        setProcessingIndexes(prev => new Set([...prev, index]));
+        
+        const optimizedTitle = await generateTitle(suggestion.title, suggestion.description);
+        
+        setProcessedSuggestions(prev => {
+          const newSuggestions = [...prev];
+          newSuggestions[index] = {
+            ...suggestion,
+            optimizedTitle
+          };
+          return newSuggestions;
+        });
 
-          setProcessingIndexes(prev => {
-            const newIndexes = new Set(prev);
-            newIndexes.delete(index);
-            return newIndexes;
-          });
-        } catch (error) {
-          if (error.message !== 'Processing aborted') {
-            console.error(`Error processing suggestion ${index}:`, error);
-          }
+        setProcessingIndexes(prev => {
+          const newIndexes = new Set(prev);
+          newIndexes.delete(index);
+          return newIndexes;
+        });
+      } catch (error) {
+        if (error.message !== 'Processing aborted') {
+          console.error(`Error processing suggestion ${index}:`, error);
         }
       }
-    };
-
-    processSuggestions();
+    });
 
     return () => {
       if (abortController.current) {
@@ -108,6 +102,10 @@ export const SuggestionsGridItems = ({
       {suggestions.map((suggestion, index) => {
         const processed = processedSuggestions[index];
         const isProcessing = processingIndexes.has(index);
+
+        if (!processed && !isProcessing) {
+          return null;
+        }
 
         return (
           <div 
