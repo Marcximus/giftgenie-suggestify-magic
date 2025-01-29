@@ -37,6 +37,13 @@ export const searchProducts = async (
     timestamp: new Date().toISOString()
   });
 
+  // Parse price range if provided
+  let priceConstraints = null;
+  if (priceRange) {
+    priceConstraints = parsePriceRange(priceRange);
+    console.log('Parsed price constraints:', priceConstraints);
+  }
+
   const cleanedTerm = cleanSearchTerm(searchTerm);
   console.log('Cleaned search term:', cleanedTerm);
 
@@ -52,22 +59,21 @@ export const searchProducts = async (
   url.searchParams.append('query', cleanedTerm);
   url.searchParams.append('country', 'US');
   
-  // Use detected category if available, otherwise use a general gifts category
+  // Add price constraints to the search URL if available
+  if (priceConstraints) {
+    url.searchParams.append('min_price', Math.floor(priceConstraints.min).toString());
+    url.searchParams.append('max_price', Math.ceil(priceConstraints.max).toString());
+    console.log('Added price constraints to URL:', {
+      min: Math.floor(priceConstraints.min),
+      max: Math.ceil(priceConstraints.max)
+    });
+  }
+  
+  // Use detected category if available
   if (detectedCategories.length > 0) {
     url.searchParams.append('category_id', detectedCategories[0]);
   } else {
     url.searchParams.append('category_id', 'aps');
-  }
-
-  // Parse price range if provided
-  let priceConstraints = null;
-  if (priceRange) {
-    priceConstraints = parsePriceRange(priceRange);
-    if (priceConstraints) {
-      url.searchParams.append('min_price', priceConstraints.min.toString());
-      url.searchParams.append('max_price', priceConstraints.max.toString());
-      console.log('Added price constraints:', priceConstraints);
-    }
   }
 
   try {
@@ -99,16 +105,7 @@ export const searchProducts = async (
     console.log('Amazon API raw response:', {
       hasData: !!searchData.data,
       productsCount: searchData.data?.products?.length || 0,
-      categories: detectedCategories,
-      firstProduct: searchData.data?.products?.[0] ? {
-        title: searchData.data.products[0].title,
-        hasPrice: !!searchData.data.products[0].product_price,
-        priceValue: searchData.data.products[0].product_price,
-        hasImage: !!searchData.data.products[0].product_photo,
-        imageUrl: searchData.data.products[0].product_photo,
-        hasAsin: !!searchData.data.products[0].asin,
-        asin: searchData.data.products[0].asin
-      } : 'No products found'
+      categories: detectedCategories
     });
 
     if (!searchData.data?.products?.length) {
@@ -118,28 +115,28 @@ export const searchProducts = async (
 
     // Filter products by price and relevance
     let validProducts = searchData.data.products.filter(product => {
-      // Check if the product title contains any blacklisted terms
-      const blacklistedTerms = ['cancel subscription', 'guide', 'manual', 'how to'];
-      const hasBlacklistedTerm = blacklistedTerms.some(term => 
-        product.title.toLowerCase().includes(term)
-      );
-      
-      if (hasBlacklistedTerm) {
-        console.log('Product filtered out - contains blacklisted term:', product.title);
+      // Extract and validate price
+      const price = extractPrice(product.product_price);
+      if (!price) {
+        console.log('Product filtered out - no valid price:', product.title);
         return false;
       }
 
-      // Validate price if constraints exist
-      if (priceConstraints) {
-        const price = extractPrice(product.product_price);
-        if (!price || !validatePriceInRange(price, priceConstraints.min, priceConstraints.max)) {
-          console.log('Product filtered out - price out of range:', {
-            title: product.title,
-            price,
-            constraints: priceConstraints
-          });
-          return false;
-        }
+      // Validate price against constraints if they exist
+      if (priceConstraints && !validatePriceInRange(price, priceConstraints.min, priceConstraints.max)) {
+        console.log('Product filtered out - price out of range:', {
+          title: product.title,
+          price,
+          constraints: priceConstraints
+        });
+        return false;
+      }
+
+      // Check for blacklisted terms
+      const blacklistedTerms = ['cancel subscription', 'guide', 'manual', 'how to'];
+      if (blacklistedTerms.some(term => product.title.toLowerCase().includes(term))) {
+        console.log('Product filtered out - contains blacklisted term:', product.title);
+        return false;
       }
 
       return true;
@@ -154,6 +151,16 @@ export const searchProducts = async (
     if (validProducts.length === 0) {
       console.log('No valid products found after filtering');
       return null;
+    }
+
+    // Sort products by price if constraints exist
+    if (priceConstraints) {
+      validProducts.sort((a, b) => {
+        const priceA = extractPrice(a.product_price) || 0;
+        const priceB = extractPrice(b.product_price) || 0;
+        return Math.abs(priceA - (priceConstraints.min + priceConstraints.max) / 2) -
+               Math.abs(priceB - (priceConstraints.min + priceConstraints.max) / 2);
+      });
     }
 
     const product = validProducts[0];
