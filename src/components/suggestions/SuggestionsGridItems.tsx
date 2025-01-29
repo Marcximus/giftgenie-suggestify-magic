@@ -59,9 +59,6 @@ export const SuggestionsGridItems = ({
           
           const suggestion = suggestions[index];
           const optimizedTitle = await generateTitle(suggestion.title, suggestion.description);
-          
-          // Add a small delay between processing each suggestion
-          await new Promise(resolve => setTimeout(resolve, 150));
 
           setProcessedSuggestions(prev => {
             const newSuggestions = [...prev];
