@@ -59,32 +59,48 @@ export const searchProducts = async (
       return null;
     }
 
-    // Get the first valid product
-    const product = searchData.data.products[0];
-    const price = extractPrice(product.product_price);
-
-    // Validate price against range if provided
-    if (priceRange && price) {
+    // Get the first valid product within price range
+    let validProduct = null;
+    if (priceRange) {
       const parsedRange = parsePriceRange(priceRange);
-      if (parsedRange && !validatePriceInRange(price, parsedRange.min, parsedRange.max)) {
-        console.log('Product filtered out - price out of range:', {
-          title: product.title,
-          price,
-          range: parsedRange
-        });
-        return null;
+      if (parsedRange) {
+        console.log('Searching for products within price range:', parsedRange);
+        for (const product of searchData.data.products) {
+          const price = extractPrice(product.product_price);
+          if (price && validatePriceInRange(price, parsedRange.min, parsedRange.max)) {
+            console.log('Found product within price range:', {
+              title: product.title,
+              price,
+              range: parsedRange
+            });
+            validProduct = product;
+            break;
+          } else {
+            console.log('Product outside price range:', {
+              title: product.title,
+              price,
+              range: parsedRange
+            });
+          }
+        }
       }
     }
 
+    if (!validProduct) {
+      validProduct = searchData.data.products[0];
+    }
+
+    const price = extractPrice(validProduct.product_price);
+
     return {
-      title: product.title,
-      description: product.product_description || product.title,
+      title: validProduct.title,
+      description: validProduct.product_description || validProduct.title,
       price: price,
       currency: 'USD',
-      imageUrl: product.product_photo || product.thumbnail,
-      rating: product.product_star_rating ? parseFloat(product.product_star_rating) : undefined,
-      totalRatings: product.product_num_ratings ? parseInt(product.product_num_ratings.toString(), 10) : undefined,
-      asin: product.asin
+      imageUrl: validProduct.product_photo || validProduct.thumbnail,
+      rating: validProduct.product_star_rating ? parseFloat(validProduct.product_star_rating) : undefined,
+      totalRatings: validProduct.product_num_ratings ? parseInt(validProduct.product_num_ratings.toString(), 10) : undefined,
+      asin: validProduct.asin
     };
   } catch (error) {
     console.error('Error in Amazon product search:', {
