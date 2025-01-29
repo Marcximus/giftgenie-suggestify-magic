@@ -48,14 +48,6 @@ export const SuggestionsGrid = ({
     }))
   };
 
-  // Check if all suggestions are fully processed with required data
-  const allSuggestionsReady = suggestions.length > 0 && suggestions.every(suggestion => 
-    suggestion.title && 
-    suggestion.amazon_url && 
-    suggestion.amazon_image_url && 
-    suggestion.amazon_price
-  );
-
   return (
     <>
       <script type="application/ld+json">
@@ -70,16 +62,26 @@ export const SuggestionsGrid = ({
           suggestions={suggestions}
           onMoreLikeThis={onMoreLikeThis}
           isLoading={isLoading}
+          onAllSuggestionsProcessed={(allProcessed) => {
+            // This callback will be triggered when all suggestions are processed
+            const footer = document.querySelector('.suggestions-footer');
+            if (footer) {
+              if (allProcessed) {
+                footer.classList.remove('opacity-0');
+                footer.classList.add('opacity-100');
+              } else {
+                footer.classList.remove('opacity-100');
+                footer.classList.add('opacity-0');
+              }
+            }
+          }}
         />
       </div>
       
       {suggestions.length > 0 && !isLoading && (
         <div 
-          className="flex flex-col items-center mt-8 sm:mt-12 opacity-0 transition-opacity duration-500"
-          style={{ 
-            opacity: allSuggestionsReady ? 1 : 0
-          }}
-          aria-hidden={!allSuggestionsReady}
+          className="suggestions-footer flex flex-col items-center mt-8 sm:mt-12 opacity-0 transition-opacity duration-500"
+          aria-hidden="true"
         >
           <p className="text-sm text-muted-foreground mb-6 text-center px-4">
             Products shown may include affiliate links from Amazon and other vendors

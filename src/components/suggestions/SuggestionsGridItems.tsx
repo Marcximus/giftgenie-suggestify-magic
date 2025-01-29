@@ -8,12 +8,14 @@ interface SuggestionsGridItemsProps {
   suggestions: GiftSuggestion[];
   onMoreLikeThis: (title: string) => void;
   isLoading: boolean;
+  onAllSuggestionsProcessed: (allProcessed: boolean) => void;
 }
 
 export const SuggestionsGridItems = ({
   suggestions,
   onMoreLikeThis,
-  isLoading
+  isLoading,
+  onAllSuggestionsProcessed
 }: SuggestionsGridItemsProps) => {
   const [processedSuggestions, setProcessedSuggestions] = useState<(GiftSuggestion & { optimizedTitle: string })[]>([]);
   const [processingIndexes, setProcessingIndexes] = useState<Set<number>>(new Set());
@@ -37,6 +39,7 @@ export const SuggestionsGridItems = ({
     if (suggestions.length === 0) {
       setProcessedSuggestions([]);
       setProcessingIndexes(new Set());
+      onAllSuggestionsProcessed(false);
       return;
     }
 
@@ -47,8 +50,11 @@ export const SuggestionsGridItems = ({
 
     // Initialize processed suggestions array with nulls
     setProcessedSuggestions(new Array(suggestions.length).fill(null));
+    onAllSuggestionsProcessed(false);
 
     const processSuggestionsSequentially = async () => {
+      let completedCount = 0;
+
       for (let index = 0; index < suggestions.length; index++) {
         if (abortController.current?.signal.aborted) {
           break;
@@ -74,6 +80,13 @@ export const SuggestionsGridItems = ({
             newIndexes.delete(index);
             return newIndexes;
           });
+
+          completedCount++;
+          // Only set to true when all suggestions are processed
+          if (completedCount === suggestions.length) {
+            onAllSuggestionsProcessed(true);
+          }
+
         } catch (error) {
           if (error.message !== 'Processing aborted') {
             console.error(`Error processing suggestion ${index}:`, error);
@@ -88,8 +101,9 @@ export const SuggestionsGridItems = ({
       if (abortController.current) {
         abortController.current.abort();
       }
+      onAllSuggestionsProcessed(false);
     };
-  }, [suggestions, generateTitle]);
+  }, [suggestions, generateTitle, onAllSuggestionsProcessed]);
 
   if (isLoading) {
     return (
