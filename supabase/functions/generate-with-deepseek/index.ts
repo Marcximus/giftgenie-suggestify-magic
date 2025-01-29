@@ -31,21 +31,6 @@ serve(async (req) => {
     const prompt = buildBlogPrompt();
     console.log('Using prompt system content:', prompt.content.substring(0, 200) + '...');
 
-    // Detect demographic information (similar to GPT function)
-    const titleLower = title.toLowerCase();
-    const isTeenage = titleLower.includes('teen') || titleLower.includes('teenage');
-    const isFemale = titleLower.includes('sister') || titleLower.includes('girl') || titleLower.includes('daughter');
-    
-    // Build demographic-specific prompt
-    const demographicContext = isTeenage && isFemale ? `
-      CRITICAL: These suggestions are specifically for a teenage girl. Consider:
-      - Current teen trends and interests
-      - Age-appropriate items (13-19 years)
-      - Popular brands among teenage girls
-      - Social media and technology preferences
-      - Creative expression and personal style
-    ` : '';
-
     const response = await fetch('https://api.deepseek.com/chat/completions', {
       method: 'POST',
       headers: {
@@ -58,11 +43,11 @@ serve(async (req) => {
           prompt,
           {
             role: "user",
-            content: `Create a fun, engaging blog post about: ${title}\n\n${demographicContext}\n\nIMPORTANT: You MUST generate EXACTLY 10 product recommendations, no more, no less.`
+            content: `Create a fun, engaging blog post about: ${title}\n\nIMPORTANT: You MUST generate EXACTLY 10 product recommendations, no more, no less.`
           }
         ],
         max_tokens: 4000,
-        temperature: 0.6,
+        temperature: 1.3,
         presence_penalty: 0.1,
         frequency_penalty: 0.1,
         stream: false
