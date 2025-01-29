@@ -18,6 +18,11 @@ export const BlogPostContent = ({ form, handleAIGenerate }: BlogPostContentProps
   const { toast } = useToast();
   const [isGenerating, setIsGenerating] = useState(false);
   const [isGeneratingDeepSeek, setIsGeneratingDeepSeek] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
+  const MAX_RETRIES = 3;
+  const RETRY_DELAY = 2000; // 2 seconds
+
+  const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
   const generateFullPost = async (provider: 'openai' | 'deepseek' = 'openai') => {
     const title = form.getValues('title');
@@ -36,55 +41,81 @@ export const BlogPostContent = ({ form, handleAIGenerate }: BlogPostContentProps
       setIsGeneratingDeepSeek(true);
     }
 
-    try {
-      console.log(`Generating blog post with ${provider} for title:`, title);
-      const endpoint = provider === 'openai' ? 'generate-blog-post' : 'generate-with-deepseek';
-      
-      const { data, error } = await supabase.functions.invoke(endpoint, {
-        body: { title }
-      });
+    let currentRetry = 0;
 
-      if (error) throw error;
-
-      console.log('Received generated content:', data);
-
-      if (data?.content) {
-        // Update the form's content field with processed content
-        form.setValue('content', data.content, { 
-          shouldDirty: true,
-          shouldTouch: true,
-          shouldValidate: true 
+    while (currentRetry <= MAX_RETRIES) {
+      try {
+        console.log(`Generating blog post with ${provider} for title:`, title);
+        const endpoint = provider === 'openai' ? 'generate-blog-post' : 'generate-with-deepseek';
+        
+        const { data, error } = await supabase.functions.invoke(endpoint, {
+          body: { title }
         });
 
-        // If there are affiliate links, update those too
-        if (data.affiliateLinks) {
-          form.setValue('affiliate_links', data.affiliateLinks, {
+        if (error) {
+          console.error(`Error from ${provider}:`, error);
+          throw error;
+        }
+
+        console.log('Received generated content:', data);
+
+        if (data?.content) {
+          // Update the form's content field with processed content
+          form.setValue('content', data.content, { 
             shouldDirty: true,
             shouldTouch: true,
-            shouldValidate: true
+            shouldValidate: true 
           });
+
+          // If there are affiliate links, update those too
+          if (data.affiliateLinks) {
+            form.setValue('affiliate_links', data.affiliateLinks, {
+              shouldDirty: true,
+              shouldTouch: true,
+              shouldValidate: true
+            });
+          }
+          
+          toast({
+            title: "Success",
+            description: `Blog post generated with ${data.affiliateLinks?.length || 0} product links using ${provider}`,
+          });
+          break; // Success - exit the retry loop
+        } else {
+          throw new Error('No content received from AI');
         }
+      } catch (error: any) {
+        console.error(`Error generating blog post with ${provider} (attempt ${currentRetry + 1}):`, error);
         
-        toast({
-          title: "Success",
-          description: `Blog post generated with ${data.affiliateLinks?.length || 0} product links using ${provider}`,
-        });
-      } else {
-        throw new Error('No content received from AI');
+        // If we've exhausted retries or it's not a fetch error, throw
+        if (currentRetry === MAX_RETRIES || 
+            (!error.message?.includes('Failed to fetch') && !error.message?.includes('FunctionsFetchError'))) {
+          toast({
+            title: "Error",
+            description: `Failed to generate blog post with ${provider}. Please try again later.`,
+            variant: "destructive"
+          });
+          throw error;
+        }
+
+        // For fetch errors, retry after delay
+        currentRetry++;
+        if (currentRetry <= MAX_RETRIES) {
+          const delayMs = RETRY_DELAY * Math.pow(2, currentRetry - 1); // Exponential backoff
+          console.log(`Retrying in ${delayMs}ms...`);
+          toast({
+            title: "Retrying",
+            description: `Connection failed. Retrying attempt ${currentRetry} of ${MAX_RETRIES}...`,
+          });
+          await sleep(delayMs);
+        }
       }
-    } catch (error) {
-      console.error(`Error generating blog post with ${provider}:`, error);
-      toast({
-        title: "Error",
-        description: `Failed to generate blog post with ${provider}. Please try again.`,
-        variant: "destructive"
-      });
-    } finally {
-      if (provider === 'openai') {
-        setIsGenerating(false);
-      } else {
-        setIsGeneratingDeepSeek(false);
-      }
+    }
+
+    if (provider === 'openai') {
+      setIsGenerating(false);
+    } else {
+      setIsGeneratingDeepSeek(false);
     }
   };
 
