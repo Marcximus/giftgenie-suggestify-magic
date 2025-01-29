@@ -17,7 +17,6 @@ export const SuggestionsGridItems = ({
 }: SuggestionsGridItemsProps) => {
   const [processedSuggestions, setProcessedSuggestions] = useState<(GiftSuggestion & { optimizedTitle: string })[]>([]);
   const [processingIndexes, setProcessingIndexes] = useState<Set<number>>(new Set());
-  const [isTransitioning, setIsTransitioning] = useState(false);
   const abortController = useRef<AbortController | null>(null);
 
   const generateTitle = useCallback(async (originalTitle: string, description: string) => {
@@ -38,7 +37,6 @@ export const SuggestionsGridItems = ({
     if (suggestions.length === 0) {
       setProcessedSuggestions([]);
       setProcessingIndexes(new Set());
-      setIsTransitioning(false);
       return;
     }
 
@@ -49,41 +47,45 @@ export const SuggestionsGridItems = ({
 
     const processSuggestions = async () => {
       setProcessedSuggestions([]);
-      setIsTransitioning(true);
+      
+      // Process suggestions in smaller batches for better UX
+      const batchSize = 3;
+      for (let batchIndex = 0; batchIndex < suggestions.length; batchIndex += batchSize) {
+        const batch = suggestions.slice(batchIndex, batchIndex + batchSize);
+        
+        // Process each batch in parallel
+        await Promise.all(batch.map(async (suggestion, index) => {
+          const globalIndex = batchIndex + index;
+          try {
+            setProcessingIndexes(prev => new Set([...prev, globalIndex]));
+            
+            const optimizedTitle = await generateTitle(suggestion.title, suggestion.description);
+            
+            setProcessedSuggestions(prev => [
+              ...prev,
+              {
+                ...suggestion,
+                optimizedTitle
+              }
+            ]);
 
-      // Add a delay before starting to process suggestions
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      for (let index = 0; index < suggestions.length; index++) {
-        try {
-          setProcessingIndexes(prev => new Set([...prev, index]));
-          
-          const suggestion = suggestions[index];
-          const optimizedTitle = await generateTitle(suggestion.title, suggestion.description);
-          
-          await new Promise(resolve => setTimeout(resolve, 200));
-          
-          setProcessedSuggestions(prev => [
-            ...prev,
-            {
-              ...suggestion,
-              optimizedTitle
+            setProcessingIndexes(prev => {
+              const newIndexes = new Set(prev);
+              newIndexes.delete(globalIndex);
+              return newIndexes;
+            });
+          } catch (error) {
+            if (error.message !== 'Processing aborted') {
+              console.error(`Error processing suggestion ${globalIndex}:`, error);
             }
-          ]);
-
-          setProcessingIndexes(prev => {
-            const newIndexes = new Set(prev);
-            newIndexes.delete(index);
-            return newIndexes;
-          });
-        } catch (error) {
-          if (error.message !== 'Processing aborted') {
-            console.error(`Error processing suggestion ${index}:`, error);
           }
+        }));
+
+        // Small delay between batches to prevent overwhelming the system
+        if (batchIndex + batchSize < suggestions.length) {
+          await new Promise(resolve => setTimeout(resolve, 100));
         }
       }
-
-      setIsTransitioning(false);
     };
 
     processSuggestions();
@@ -122,11 +124,11 @@ export const SuggestionsGridItems = ({
           <div 
             key={`suggestion-${index}`}
             className={`
-              animate-in fade-in slide-in-from-bottom duration-500
+              animate-in fade-in slide-in-from-bottom duration-300
               ${processed ? '' : 'opacity-0'}
             `}
             style={{ 
-              animationDelay: `${index * 200}ms`
+              animationDelay: `${Math.min(index * 100, 500)}ms`
             }}
           >
             {isProcessing ? (
