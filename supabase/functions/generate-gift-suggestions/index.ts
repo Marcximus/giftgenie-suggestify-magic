@@ -7,6 +7,37 @@ import { processSuggestionsInBatches } from '../_shared/batch-processor.ts';
 
 const DEEPSEEK_API_KEY = Deno.env.get('DEEPSEEK_API_KEY');
 
+function extractBudgetFromPrompt(prompt: string): { min: number; max: number } | null {
+  // Match patterns like "budget: $50-100" or "budget of $50 to $100" or "$50-$100 budget"
+  const budgetRegex = /budget:?\s*\$?(\d+)(?:\s*-\s*\$?(\d+)|\s+to\s+\$?(\d+))/i;
+  const match = prompt.match(budgetRegex);
+
+  if (match) {
+    const min = parseInt(match[1]);
+    const max = parseInt(match[2] || match[3]);
+    if (!isNaN(min) && !isNaN(max)) {
+      return { min, max };
+    }
+  }
+
+  // Try matching single budget value (e.g., "budget: $50")
+  const singleBudgetRegex = /budget:?\s*\$?(\d+)/i;
+  const singleMatch = prompt.match(singleBudgetRegex);
+  
+  if (singleMatch) {
+    const value = parseInt(singleMatch[1]);
+    if (!isNaN(value)) {
+      // Use ±20% range for single values
+      return {
+        min: Math.floor(value * 0.8),
+        max: Math.ceil(value * 1.2)
+      };
+    }
+  }
+
+  return null;
+}
+
 serve(async (req) => {
   const startTime = performance.now();
   
@@ -27,16 +58,23 @@ serve(async (req) => {
       throw new Error('Invalid prompt');
     }
 
-    // Extract interests from the prompt
-    const interestsMatch = prompt.match(/who likes (.*?) with a budget/i);
-    const interests = interestsMatch ? interestsMatch[1].split(' and ') : [];
-    console.log('Extracted interests:', interests);
+    // Extract budget constraints
+    const budget = extractBudgetFromPrompt(prompt);
+    console.log('Extracted budget constraints:', budget);
+
+    if (!budget) {
+      console.warn('No budget constraints found in prompt');
+    }
+
+    const budgetInstruction = budget 
+      ? `CRITICAL: Suggestions MUST be priced between $${budget.min} and $${budget.max}. DO NOT suggest items outside this range.`
+      : 'If a budget is specified, suggestions MUST strictly adhere to the given price range.';
 
     const enhancedPrompt = `You are an gifting expert. Based on the request "${prompt}", suggest 8 specific gift ideas.
 
 Consider:
 - Age, gender, and occasion mentioned
-- CRITICAL: Any budget constraints specified (can fluctuate by 20%)
+- ${budgetInstruction}
 - The recipient's interests and preferences
 - Avoid suggesting identical items
 
@@ -59,7 +97,7 @@ Return ONLY a JSON array of exactly 8 strings`;
         messages: [
           {
             role: "system",
-            content: "You are a gift suggestion expert. Staying within a given price range is HIGHLY important to you. You like recommending premium gifts."
+            content: "You are a gift suggestion expert. Staying within a given price range is your HIGHEST priority. Never suggest items outside the specified budget range."
           },
           { role: "user", content: enhancedPrompt }
         ],
@@ -89,9 +127,9 @@ Return ONLY a JSON array of exactly 8 strings`;
       throw new Error('Did not receive exactly 8 suggestions');
     }
 
-    // Process suggestions
-    console.log('Processing suggestions:', suggestions);
-    const processedProducts = await processSuggestionsInBatches(suggestions);
+    // Process suggestions with budget constraints
+    console.log('Processing suggestions with budget constraints:', { suggestions, budget });
+    const processedProducts = await processSuggestionsInBatches(suggestions, budget);
     console.log('Processed products:', processedProducts);
     
     if (!processedProducts.length) {

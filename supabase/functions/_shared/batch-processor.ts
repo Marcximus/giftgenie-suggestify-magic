@@ -1,11 +1,29 @@
 import { AmazonProduct } from './types.ts';
 import { searchAmazonProducts } from './amazon-search.ts';
 
-const BATCH_SIZE = 4; // Reduced from 8 to 4
-const PROCESS_SIZE = 4; // Keep process size at 4
+const BATCH_SIZE = 4;
+const PROCESS_SIZE = 4;
 const BATCH_DELAY = 200;
 
-export async function processSuggestionsInBatches(suggestions: string[]): Promise<AmazonProduct[]> {
+interface BudgetConstraints {
+  min: number;
+  max: number;
+}
+
+function isWithinBudget(price: number, budget: BudgetConstraints): boolean {
+  if (!price || isNaN(price)) return false;
+  
+  // Allow for 20% tolerance
+  const minWithTolerance = budget.min * 0.8;
+  const maxWithTolerance = budget.max * 1.2;
+  
+  return price >= minWithTolerance && price <= maxWithTolerance;
+}
+
+export async function processSuggestionsInBatches(
+  suggestions: string[],
+  budget?: BudgetConstraints | null
+): Promise<AmazonProduct[]> {
   const batches: string[][] = [];
   
   // Split suggestions into batches
@@ -28,6 +46,19 @@ export async function processSuggestionsInBatches(suggestions: string[]): Promis
         chunk.map(async (suggestion) => {
           try {
             const result = await searchAmazonProducts(suggestion);
+            
+            // Apply budget filtering if constraints exist
+            if (budget && result) {
+              const price = typeof result.price === 'string' 
+                ? parseFloat(result.price.replace(/[^0-9.]/g, ''))
+                : result.price;
+                
+              if (!isWithinBudget(price, budget)) {
+                console.log(`Product "${result.title}" price $${price} outside budget range $${budget.min}-$${budget.max}`);
+                return null;
+              }
+            }
+            
             console.log(`Processed suggestion: ${suggestion}, success: ${!!result}`);
             return result;
           } catch (error) {
@@ -38,7 +69,14 @@ export async function processSuggestionsInBatches(suggestions: string[]): Promis
       );
       
       // Filter out null results and add to processed products
-      processedProducts.push(...chunkResults.filter((result): result is AmazonProduct => result !== null));
+      processedProducts.push(...chunkResults.filter((result): result is AmazonProduct => 
+        result !== null && (!budget || isWithinBudget(
+          typeof result.price === 'string' 
+            ? parseFloat(result.price.replace(/[^0-9.]/g, ''))
+            : result.price,
+          budget
+        ))
+      ));
       
       // Add delay between chunks within a batch
       if (i + PROCESS_SIZE < batch.length) {
