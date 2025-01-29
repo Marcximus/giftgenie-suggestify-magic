@@ -7,49 +7,6 @@ import { processSuggestionsInBatches } from '../_shared/batch-processor.ts';
 
 const DEEPSEEK_API_KEY = Deno.env.get('DEEPSEEK_API_KEY');
 
-function extractBudgetFromPrompt(prompt: string): { min: number; max: number } | null {
-  // Match common budget patterns
-  const patterns = [
-    // $50-100 or $50 to $100
-    /\$?(\d+)(?:\s*-\s*\$?(\d+)|\s+to\s+\$?(\d+))/i,
-    // budget: $50-100 or budget of $50-100
-    /budget:?\s*\$?(\d+)(?:\s*-\s*\$?(\d+)|\s+to\s+\$?(\d+))/i,
-    // under $100 or below $100
-    /(?:under|below)\s+\$?(\d+)/i,
-    // $100 or less
-    /\$?(\d+)\s+or\s+less/i,
-    // around $50
-    /around\s+\$?(\d+)/i
-  ];
-
-  for (const pattern of patterns) {
-    const match = prompt.match(pattern);
-    if (match) {
-      if (match[2] || match[3]) {
-        // Range specified
-        const min = parseInt(match[1]);
-        const max = parseInt(match[2] || match[3]);
-        if (!isNaN(min) && !isNaN(max)) {
-          console.log(`Extracted budget range: $${min}-$${max}`);
-          return { min, max };
-        }
-      } else {
-        // Single value - create range with ±10%
-        const value = parseInt(match[1]);
-        if (!isNaN(value)) {
-          const min = Math.floor(value * 0.9);
-          const max = Math.ceil(value * 1.1);
-          console.log(`Created budget range from single value: $${min}-$${max}`);
-          return { min, max };
-        }
-      }
-    }
-  }
-
-  console.log('No budget constraints found in prompt');
-  return null;
-}
-
 serve(async (req) => {
   const startTime = performance.now();
   
@@ -70,23 +27,22 @@ serve(async (req) => {
       throw new Error('Invalid prompt');
     }
 
-    // Extract budget constraints with improved pattern matching
-    const budget = extractBudgetFromPrompt(prompt);
-    console.log('Extracted budget constraints:', budget);
-
-    const budgetInstruction = budget 
-      ? `CRITICAL: Suggestions MUST be priced between $${budget.min} and $${budget.max}. DO NOT suggest items outside this range.`
-      : 'If a budget is specified, suggestions MUST strictly adhere to the given price range.';
+    // Extract interests from the prompt
+    const interestsMatch = prompt.match(/who likes (.*?) with a budget/i);
+    const interests = interestsMatch ? interestsMatch[1].split(' and ') : [];
+    console.log('Extracted interests:', interests);
 
     const enhancedPrompt = `You are an gifting expert. Based on the request "${prompt}", suggest 8 specific gift ideas.
 
 Consider:
 - Age, gender, and occasion mentioned
-- ${budgetInstruction}
+- CRITICAL: Any budget constraints specified (can fluctuate by 20%)
 - The recipient's interests and preferences
 - Avoid suggesting identical items
 
 Return ONLY a JSON array of exactly 8 strings`;
+
+    console.log('Enhanced prompt:', enhancedPrompt);
 
     if (!DEEPSEEK_API_KEY) {
       throw new Error('DEEPSEEK_API_KEY is not configured');
@@ -103,7 +59,7 @@ Return ONLY a JSON array of exactly 8 strings`;
         messages: [
           {
             role: "system",
-            content: "You are a gift suggestion expert. Staying within a given price range is your HIGHEST priority. Never suggest items outside the specified budget range."
+            content: "You are a gift suggestion expert. Staying within a given price range is HIGHLY important to you. You like recommending premium gifts."
           },
           { role: "user", content: enhancedPrompt }
         ],
@@ -133,13 +89,13 @@ Return ONLY a JSON array of exactly 8 strings`;
       throw new Error('Did not receive exactly 8 suggestions');
     }
 
-    // Process suggestions with strict budget constraints
-    console.log('Processing suggestions with budget constraints:', { suggestions, budget });
-    const processedProducts = await processSuggestionsInBatches(suggestions, budget);
+    // Process suggestions
+    console.log('Processing suggestions:', suggestions);
+    const processedProducts = await processSuggestionsInBatches(suggestions);
     console.log('Processed products:', processedProducts);
     
     if (!processedProducts.length) {
-      throw new Error('No products found within budget constraints');
+      throw new Error('No products found for suggestions');
     }
 
     // Log metrics
@@ -162,6 +118,7 @@ Return ONLY a JSON array of exactly 8 strings`;
     );
   } catch (error) {
     console.error('Error in generate-gift-suggestions function:', error);
+    console.error('Stack trace:', error.stack);
     
     // Log error metrics
     await supabase.from('api_metrics').insert({
