@@ -6,7 +6,8 @@ import { buildBlogPrompt } from '../generate-blog-post/promptBuilder.ts';
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': '*',
+  'Access-Control-Allow-Credentials': 'true',
   'Access-Control-Max-Age': '86400',
 };
 
@@ -14,9 +15,16 @@ const MAX_RETRIES = 3;
 const INITIAL_TIMEOUT = 120000; // 2 minutes initial timeout
 
 serve(async (req) => {
+  // Always attach CORS headers to all responses
+  const responseHeaders = {
+    ...corsHeaders,
+    'Content-Type': 'application/json',
+  };
+
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { 
-      headers: corsHeaders,
+      headers: responseHeaders,
       status: 204 
     });
   }
@@ -98,13 +106,6 @@ serve(async (req) => {
         console.log('Generated content length:', initialContent.length);
         console.log('First 500 characters of content:', initialContent.substring(0, 500));
 
-        // Verify product sections
-        const productCount = (initialContent.match(/<h3>/g) || []).length;
-        console.log('Number of product sections:', productCount);
-        if (productCount !== 10) {
-          console.warn(`Warning: Generated ${productCount} products instead of requested 10`);
-        }
-
         // Initialize Supabase client for processing the content
         const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
         const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -126,7 +127,7 @@ serve(async (req) => {
 
         return new Response(
           JSON.stringify(processedContent),
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          { headers: responseHeaders }
         );
 
       } catch (error) {
@@ -159,7 +160,7 @@ serve(async (req) => {
       }),
       { 
         status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        headers: responseHeaders
       }
     );
   }
