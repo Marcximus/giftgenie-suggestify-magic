@@ -5,7 +5,7 @@ import { buildBlogPrompt } from '../generate-blog-post/promptBuilder.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
   'Access-Control-Allow-Headers': '*',
   'Access-Control-Allow-Credentials': 'true',
   'Access-Control-Max-Age': '86400',
@@ -15,6 +15,8 @@ const MAX_RETRIES = 3;
 const INITIAL_TIMEOUT = 120000; // 2 minutes initial timeout
 
 serve(async (req) => {
+  console.log('Received request:', req.method, req.url);
+  
   // Always attach CORS headers to all responses
   const responseHeaders = {
     ...corsHeaders,
@@ -23,6 +25,7 @@ serve(async (req) => {
 
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
+    console.log('Handling OPTIONS request');
     return new Response(null, { 
       headers: responseHeaders,
       status: 204 
@@ -32,13 +35,19 @@ serve(async (req) => {
   try {
     // Validate request
     if (!req.headers.get('authorization')) {
+      console.error('Missing authorization header');
       throw new Error('Missing authorization header');
     }
 
-    const { title } = await req.json().catch(() => ({}));
-    console.log('Processing blog post with DeepSeek Reasoner for title:', title);
+    const { title } = await req.json().catch(() => {
+      console.error('Failed to parse request body');
+      throw new Error('Invalid request body');
+    });
+    
+    console.log('Processing blog post with DeepSeek for title:', title);
 
     if (!title) {
+      console.error('Title is required');
       throw new Error('Title is required');
     }
 
@@ -46,6 +55,7 @@ serve(async (req) => {
     const requiredEnvVars = ['DEEPSEEK_API_KEY', 'SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY'];
     for (const envVar of requiredEnvVars) {
       if (!Deno.env.get(envVar)) {
+        console.error(`Missing required environment variable: ${envVar}`);
         throw new Error(`Missing required environment variable: ${envVar}`);
       }
     }
