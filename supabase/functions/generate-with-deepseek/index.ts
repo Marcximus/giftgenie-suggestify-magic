@@ -52,7 +52,7 @@ serve(async (req) => {
               content: `Create a fun, engaging blog post about: ${title}\n\nIMPORTANT: You MUST generate EXACTLY 10 product recommendations, no more, no less.`
             }
           ],
-          max_tokens: 4000,
+          max_tokens: 7999, // Updated to use maximum token limit
           temperature: 1.3,
           presence_penalty: 0.1,
           frequency_penalty: 0.1,
