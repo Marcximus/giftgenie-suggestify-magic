@@ -5,40 +5,46 @@ import { buildBlogPrompt } from '../generate-blog-post/promptBuilder.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Max-Age': '86400',
 };
 
 const MAX_RETRIES = 3;
-const INITIAL_TIMEOUT = 60000; // 1 minute initial timeout
+const INITIAL_TIMEOUT = 120000; // 2 minutes initial timeout
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { 
+      headers: corsHeaders,
+      status: 204 
+    });
   }
 
   try {
-    const { title } = await req.json();
+    // Validate request
+    if (!req.headers.get('authorization')) {
+      throw new Error('Missing authorization header');
+    }
+
+    const { title } = await req.json().catch(() => ({}));
     console.log('Processing blog post with DeepSeek Reasoner for title:', title);
 
     if (!title) {
       throw new Error('Title is required');
     }
 
-    const deepseekApiKey = Deno.env.get('DEEPSEEK_API_KEY');
-    if (!deepseekApiKey) {
-      throw new Error('DeepSeek API key not configured');
+    // Validate environment variables
+    const requiredEnvVars = ['DEEPSEEK_API_KEY', 'SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY'];
+    for (const envVar of requiredEnvVars) {
+      if (!Deno.env.get(envVar)) {
+        throw new Error(`Missing required environment variable: ${envVar}`);
+      }
     }
 
-    // Get the prompt from promptBuilder
-    const prompt = buildBlogPrompt();
-    console.log('Using prompt system content:', prompt.content.substring(0, 200) + '...');
-
-    let lastError = null;
     let attempt = 0;
-
     while (attempt < MAX_RETRIES) {
-      const timeout = INITIAL_TIMEOUT * Math.pow(2, attempt); // Exponential timeout increase
+      const timeout = INITIAL_TIMEOUT * Math.pow(2, attempt);
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), timeout);
 
@@ -48,13 +54,13 @@ serve(async (req) => {
         const response = await fetch('https://api.deepseek.com/chat/completions', {
           method: 'POST',
           headers: {
-            'Authorization': `Bearer ${deepseekApiKey}`,
+            'Authorization': `Bearer ${Deno.env.get('DEEPSEEK_API_KEY')}`,
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
             model: "deepseek-reasoner",
             messages: [
-              prompt,
+              buildBlogPrompt(),
               {
                 role: "user",
                 content: `Create a fun, engaging blog post about: ${title}\n\nIMPORTANT: You MUST generate EXACTLY 10 product recommendations, no more, no less.`
@@ -124,24 +130,24 @@ serve(async (req) => {
         );
 
       } catch (error) {
-        console.error(`Attempt ${attempt + 1} failed:`, error);
-        lastError = error;
-        
-        // If it's not a timeout or network error, don't retry
-        if (!error.name?.includes('AbortError') && !error.message?.includes('Failed to fetch')) {
-          throw error;
+        if (error.name === 'AbortError') {
+          console.error(`Timeout after ${timeout}ms on attempt ${attempt + 1}`);
+        } else {
+          console.error(`Attempt ${attempt + 1} failed:`, error);
         }
         
         attempt++;
         if (attempt < MAX_RETRIES) {
-          const backoffDelay = Math.pow(2, attempt) * 1000; // Exponential backoff
+          const backoffDelay = Math.pow(2, attempt) * 1000;
           console.log(`Retrying in ${backoffDelay}ms...`);
           await new Promise(resolve => setTimeout(resolve, backoffDelay));
+        } else {
+          throw error;
         }
       }
     }
 
-    throw lastError || new Error('All retry attempts failed');
+    throw new Error('All retry attempts failed');
 
   } catch (error) {
     console.error('Error in generate-with-deepseek:', error);
