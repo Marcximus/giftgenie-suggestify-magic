@@ -1,171 +1,42 @@
-import { corsHeaders } from '../_shared/cors';
-import { RAPIDAPI_HOST } from './config';
-import type { AmazonProduct } from './types';
-import { extractPrice } from './priceUtils';
-import { batchSearchProducts } from './batchProcessor';
+import { cleanSearchTerm } from './searchUtils';
+import { parsePriceRange } from './priceUtils';
 
-// Only block terms that indicate non-product content
-const BLACKLISTED_TERMS = [
-  'cancel subscription',
-  'guide',
-  'manual',
-  'how to',
-  'instruction',
-  'handbook',
-  'tutorial',
-  'subscription',
-  'cancel',
-  'refund',
-  'return policy',
-  'warranty claim',
-  'customer service'
-];
-
-const cleanSearchTerm = (searchTerm: string): string => {
+export const cleanSearchTerm = (searchTerm: string): string => {
   return searchTerm
-    .replace(/\([^)]*\)/g, '')
-    .replace(/&/g, 'and')
-    .replace(/[^\w\s-]/g, ' ')
-    .replace(/\s+/g, ' ')
+    .replace(/\([^)]*\)/g, '') // Remove anything in parentheses
+    .replace(/&/g, 'and') // Replace & with 'and'
+    .replace(/[^\w\s-]/g, ' ') // Remove special characters except hyphens
+    .replace(/\s+/g, ' ') // Replace multiple spaces with single space
     .trim();
 };
 
-export const simplifySearchTerm = (searchTerm: string, preserveContext = true): string => {
-  let simplified = searchTerm
-    .replace(/\([^)]*\)/g, '')
-    .replace(/\b(?:edition|version|series)\b/gi, '')
-    .trim();
-    
-  if (!preserveContext) {
-    simplified = simplified
-      .replace(/-.*$/, '')
-      .replace(/\d+(?:\s*-\s*\d+)?\s*(?:gb|tb|inch|"|cm|mm)/gi, '')
-      .trim();
-  }
+export const buildSearchUrl = (
+  searchTerm: string,
+  priceRange?: string
+): URL => {
+  const url = new URL('https://real-time-amazon-data.p.rapidapi.com/search');
   
-  return simplified;
-};
-
-export const getFallbackSearchTerms = (searchTerm: string): string[] => {
-  const words = searchTerm.split(' ')
-    .filter(word => !['with', 'and', 'in', 'for', 'by', 'the', 'a', 'an'].includes(word.toLowerCase()))
-    .filter(word => word.length > 2);
+  // Add required parameters
+  url.searchParams.append('query', cleanSearchTerm(searchTerm));
+  url.searchParams.append('country', 'US');
+  url.searchParams.append('sort_by', 'RELEVANCE');
+  url.searchParams.append('category_id', 'aps');
   
-  const searchTerms = [];
-  
-  if (words.length > 3) {
-    searchTerms.push(words.slice(0, 3).join(' '));
-    searchTerms.push([words[0], words[1], words[words.length - 1]].join(' '));
-  } else {
-    searchTerms.push(words.join(' '));
-  }
-  
-  return [...new Set(searchTerms)];
-};
-
-const validateSearchTerm = (term: string): boolean => {
-  const lowercaseTerm = term.toLowerCase();
-  
-  if (BLACKLISTED_TERMS.some(blacklisted => 
-    lowercaseTerm.includes(blacklisted.toLowerCase())
-  )) {
-    console.log('Search term contains blacklisted phrase:', term);
-    return false;
-  }
-
-  if (term.length < 3 || term.split(' ').length < 2) {
-    console.log('Search term too short or simple:', term);
-    return false;
-  }
-
-  return true;
-};
-
-const validateProduct = (product: any, priceRange?: { min: number; max: number }): boolean => {
-  const hasBlacklistedTerm = BLACKLISTED_TERMS.some(term => 
-    (product.title?.toLowerCase().includes(term) || 
-     product.product_description?.toLowerCase().includes(term))
-  );
-  
-  if (hasBlacklistedTerm) {
-    console.log('Product filtered - contains blacklisted term:', product.title);
-    return false;
-  }
-
-  if (product.product_star_rating) {
-    const rating = parseFloat(product.product_star_rating);
-    if (rating < 3.5) {
-      console.log('Product filtered - low rating:', rating);
-      return false;
+  // Add price constraints if provided
+  if (priceRange) {
+    const parsedRange = parsePriceRange(priceRange);
+    if (parsedRange) {
+      console.log('Adding price constraints to URL:', parsedRange);
+      url.searchParams.append('min_price', Math.floor(parsedRange.min).toString());
+      url.searchParams.append('max_price', Math.ceil(parsedRange.max).toString());
     }
   }
-
-  if (product.product_num_ratings) {
-    const reviews = parseInt(product.product_num_ratings);
-    if (reviews < 10) {
-      console.log('Product filtered - insufficient reviews:', reviews);
-      return false;
-    }
-  }
-
-  if (priceRange && product.product_price) {
-    const price = extractPrice(product.product_price);
-    if (!price || price < priceRange.min || price > priceRange.max) {
-      console.log('Product filtered - price out of range:', price);
-      return false;
-    }
-  }
-
-  return true;
-};
-
-export const formatProduct = (product: any): AmazonProduct => {
-  return {
-    title: product.title,
-    description: product.product_description || product.title,
-    price: extractPrice(product.product_price),
-    currency: 'USD',
-    imageUrl: product.product_photo || product.thumbnail,
-    rating: product.product_star_rating ? parseFloat(product.product_star_rating) : undefined,
-    totalRatings: product.product_num_ratings ? parseInt(product.product_num_ratings.toString(), 10) : undefined,
-    asin: product.asin
-  };
-};
-
-export const searchProducts = async (
-  searchTerms: string[],
-  apiKey: string
-): Promise<AmazonProduct[]> => {
-  if (!searchTerms.length) {
-    console.error('No search terms provided');
-    return [];
-  }
-
-  const validSearchTerms = searchTerms
-    .map(cleanSearchTerm)
-    .filter(validateSearchTerm);
-
-  if (!validSearchTerms.length) {
-    console.log('No valid search terms after filtering');
-    return [];
-  }
-
-  console.log('Starting product search with validated terms:', validSearchTerms);
   
-  const { products, errors } = await batchSearchProducts(validSearchTerms, apiKey);
+  // Add additional parameters for better results
+  url.searchParams.append('product_condition', 'NEW');
+  url.searchParams.append('is_prime', 'false');
+  url.searchParams.append('deals_and_discounts', 'NONE');
   
-  if (products.length < searchTerms.length) {
-    const failedTerms = validSearchTerms.filter((_, index) => 
-      !products.some(p => p.title.toLowerCase().includes(validSearchTerms[index].toLowerCase()))
-    );
-    
-    if (failedTerms.length > 0) {
-      console.log('Retrying failed terms with simplified search:', failedTerms);
-      const simplifiedTerms = failedTerms.map(term => simplifySearchTerm(term, true));
-      const { products: fallbackProducts } = await batchSearchProducts(simplifiedTerms, apiKey);
-      return [...products, ...fallbackProducts];
-    }
-  }
-
-  return products;
+  console.log('Built search URL:', url.toString());
+  return url;
 };
