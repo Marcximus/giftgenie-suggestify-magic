@@ -17,7 +17,7 @@ export const parsePriceRange = (priceRange: string): { min: number; max: number 
       }
     }
     
-    // Handle single number with 20% variance (e.g., "around 30")
+    // Handle single number (e.g., "around 30")
     const singlePrice = parseFloat(cleanRange);
     if (!isNaN(singlePrice) && singlePrice > 0) {
       // Use 20% variance for single prices
@@ -43,6 +43,7 @@ export const validatePriceInRange = (price: number, min: number, max: number): b
     return false;
   }
 
+  // Strict validation - must be within exact range
   const isInRange = price >= min && price <= max;
   console.log('Price validation result:', { price, min, max, isInRange });
   return isInRange;
