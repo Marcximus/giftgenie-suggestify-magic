@@ -16,6 +16,7 @@ export const buildSearchUrl = (
   
   // Add price constraints if provided
   if (priceRange) {
+    console.log('Processing price range:', priceRange);
     const parsedRange = parsePriceRange(priceRange);
     if (parsedRange) {
       console.log('Adding price constraints:', parsedRange);

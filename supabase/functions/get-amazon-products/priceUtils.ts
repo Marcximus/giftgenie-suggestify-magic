@@ -20,6 +20,7 @@ export const parsePriceRange = (priceRange: string): { min: number; max: number 
     // Handle single number with 20% variance (e.g., "around 30")
     const singlePrice = parseFloat(cleanRange);
     if (!isNaN(singlePrice) && singlePrice > 0) {
+      // Use 20% variance for single prices
       const min = Math.floor(singlePrice * 0.8);
       const max = Math.ceil(singlePrice * 1.2);
       console.log('Parsed single price with variance:', { singlePrice, min, max });
