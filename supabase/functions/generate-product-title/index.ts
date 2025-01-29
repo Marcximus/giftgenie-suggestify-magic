@@ -1,17 +1,27 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
-import { corsHeaders } from '../_shared/cors.ts';
 
-const DEEPSEEK_API_KEY = Deno.env.get('DEEPSEEK_API_KEY');
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+};
 
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { title } = await req.json();
-    console.log('Generating title:', { originalTitle: title });
+    const DEEPSEEK_API_KEY = Deno.env.get('DEEPSEEK_API_KEY');
+    if (!DEEPSEEK_API_KEY) {
+      throw new Error('DEEPSEEK_API_KEY is not configured');
+    }
+
+    // Parse request body
+    let { title } = await req.json();
+    console.log('Processing title request:', { title });
 
     if (!title) {
       throw new Error('Title is required');
@@ -50,9 +60,14 @@ serve(async (req) => {
     }
 
     const data = await response.json();
+    console.log('DeepSeek response:', data);
+
+    if (!data.choices?.[0]?.message?.content) {
+      throw new Error('Invalid response format from DeepSeek API');
+    }
+
     const simplifiedTitle = data.choices[0].message.content.trim();
-    
-    console.log('Title optimization:', {
+    console.log('Title optimization complete:', {
       original: title,
       simplified: simplifiedTitle,
       reduction: ((title.length - simplifiedTitle.length) / title.length * 100).toFixed(1) + '%'
@@ -62,20 +77,27 @@ serve(async (req) => {
       JSON.stringify({ title: simplifiedTitle }),
       { 
         headers: { 
-          ...corsHeaders, 
-          'Content-Type': 'application/json',
-          'Cache-Control': 'public, max-age=86400'
+          ...corsHeaders,
+          'Content-Type': 'application/json'
         } 
       }
     );
       
   } catch (error) {
-    console.error('Error:', error.message);
+    console.error('Error in generate-product-title:', error);
+    
+    // Return a properly formatted error response
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        error: error.message,
+        details: error.stack
+      }),
       {
         status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        headers: { 
+          ...corsHeaders,
+          'Content-Type': 'application/json'
+        }
       }
     );
   }
