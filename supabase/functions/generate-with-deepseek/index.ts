@@ -31,7 +31,22 @@ serve(async (req) => {
     const prompt = buildBlogPrompt();
     console.log('Using prompt system content:', prompt.content.substring(0, 200) + '...');
 
-    const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
+    // Detect demographic information (similar to GPT function)
+    const titleLower = title.toLowerCase();
+    const isTeenage = titleLower.includes('teen') || titleLower.includes('teenage');
+    const isFemale = titleLower.includes('sister') || titleLower.includes('girl') || titleLower.includes('daughter');
+    
+    // Build demographic-specific prompt
+    const demographicContext = isTeenage && isFemale ? `
+      CRITICAL: These suggestions are specifically for a teenage girl. Consider:
+      - Current teen trends and interests
+      - Age-appropriate items (13-19 years)
+      - Popular brands among teenage girls
+      - Social media and technology preferences
+      - Creative expression and personal style
+    ` : '';
+
+    const response = await fetch('https://api.deepseek.com/chat/completions', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${deepseekApiKey}`,
@@ -43,10 +58,14 @@ serve(async (req) => {
           prompt,
           {
             role: "user",
-            content: `Create a fun, engaging blog post about: ${title}\n\nIMPORTANT: You MUST generate EXACTLY 10 product recommendations, no more, no less.`
+            content: `Create a fun, engaging blog post about: ${title}\n\n${demographicContext}\n\nIMPORTANT: You MUST generate EXACTLY 10 product recommendations, no more, no less.`
           }
         ],
-        max_tokens: 4000, // Maximum length for final response
+        max_tokens: 4000,
+        temperature: 0.6,
+        presence_penalty: 0.1,
+        frequency_penalty: 0.1,
+        stream: false
       }),
     });
 
@@ -63,10 +82,22 @@ serve(async (req) => {
     if (data.choices[0].message.reasoning_content) {
       console.log('Chain of Thought reasoning:', data.choices[0].message.reasoning_content);
     }
-    console.log('Generated content length:', data.choices[0].message.content.length);
-    console.log('First 500 characters of content:', data.choices[0].message.content.substring(0, 500));
+
+    // Validate response structure
+    if (!data.choices?.[0]?.message?.content) {
+      throw new Error('Invalid response structure from DeepSeek API');
+    }
 
     const initialContent = data.choices[0].message.content;
+    console.log('Generated content length:', initialContent.length);
+    console.log('First 500 characters of content:', initialContent.substring(0, 500));
+
+    // Verify product sections
+    const productCount = (initialContent.match(/<h3>/g) || []).length;
+    console.log('Number of product sections:', productCount);
+    if (productCount !== 10) {
+      console.warn(`Warning: Generated ${productCount} products instead of requested 10`);
+    }
 
     // Initialize Supabase client for processing the content
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
