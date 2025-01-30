@@ -37,7 +37,8 @@ IMPORTANT:
 - Round numbers to nearest whole dollar
 - Default to a reasonable range if unclear (e.g., $20-$50 for general gifts)`;
 
-    console.log('Making DeepSeek API request for price analysis');
+    console.log('Making DeepSeek API request with prompt:', analysisPrompt);
+    
     const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -77,7 +78,7 @@ IMPORTANT:
 
     let priceRange;
     try {
-      priceRange = JSON.parse(data.choices[0].message.content);
+      priceRange = JSON.parse(data.choices[0].message.content.trim());
       console.log('Parsed price range:', priceRange);
     } catch (error) {
       console.error('Error parsing price range:', error);
