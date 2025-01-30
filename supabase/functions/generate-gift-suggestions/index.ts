@@ -69,21 +69,23 @@ CRITICAL PRICE REQUIREMENTS:
 3. Example format: "Leather Wallet with RFID Protection ($45.99)"
 4. Prices MUST be realistic and market-accurate
 5. NO EXCEPTIONS - any suggestion without a price in this format will be rejected
+6. DO NOT suggest any items outside the price range of $${priceRange.min_price.toFixed(2)} to $${priceRange.max_price.toFixed(2)}
 
 FORMAT RULES:
 1. Return ONLY a JSON array of strings
 2. Each string must follow this pattern: "Product Name and Description ($XX.XX)"
 3. The price MUST be the last part of each string, in parentheses
 4. Include the dollar sign and exactly two decimal places
+5. EVERY price must be between $${priceRange.min_price.toFixed(2)} and $${priceRange.max_price.toFixed(2)}
 
 IMPORTANT GUIDELINES:
 - Consider age, gender, and occasion mentioned
 - Each suggestion should be from a DIFFERENT category
 - Include specific product details and features
-- Every price must be between $${priceRange.min_price.toFixed(2)} and $${priceRange.max_price.toFixed(2)}
-- NO EXCEPTIONS to the price range or format requirements
+- Verify each price is within the allowed range before including it
+- Double-check that all prices are between $${priceRange.min_price.toFixed(2)} and $${priceRange.max_price.toFixed(2)}
 
-Return EXACTLY 8 suggestions, each with a specific price in parentheses at the end.`;
+Return EXACTLY 8 suggestions, each with a specific price in parentheses at the end that falls within the specified range.`;
 
     console.log('Making DeepSeek API request with enhanced prompt...');
     const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
