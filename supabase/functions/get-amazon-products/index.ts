@@ -7,15 +7,17 @@ const RAPIDAPI_HOST = 'real-time-amazon-data.p.rapidapi.com';
 async function searchAmazonProduct(
   searchTerm: string,
   apiKey: string,
-  priceRange?: string
+  priceRange?: string,
+  searchParams?: Record<string, string>
 ): Promise<AmazonProduct | null> {
-  console.log('Starting Amazon search with term:', searchTerm, { priceRange });
+  console.log('Starting Amazon search with:', { searchTerm, priceRange, searchParams });
   
-  const searchParams = new URLSearchParams({
+  const params = new URLSearchParams({
     query: searchTerm.trim(),
     country: 'US',
     category_id: 'aps',
-    sort_by: 'RELEVANCE'
+    sort_by: 'RELEVANCE',
+    ...(searchParams || {})
   });
 
   // Add price range parameters if provided
@@ -23,17 +25,16 @@ async function searchAmazonProduct(
     const parsedRange = parsePriceRange(priceRange);
     if (parsedRange) {
       console.log('Adding price constraints:', parsedRange);
-      // Add a 10% buffer to the range to account for price fluctuations
-      searchParams.append('min_price', Math.floor(parsedRange.min * 0.9).toString());
-      searchParams.append('max_price', Math.ceil(parsedRange.max * 1.1).toString());
+      params.append('min_price', parsedRange.min.toString());
+      params.append('max_price', parsedRange.max.toString());
     }
   }
 
   try {
-    console.log('Making request to Amazon API with params:', searchParams.toString());
+    console.log('Making request to Amazon API with params:', params.toString());
     
     const searchResponse = await fetch(
-      `https://${RAPIDAPI_HOST}/search?${searchParams.toString()}`,
+      `https://${RAPIDAPI_HOST}/search?${params.toString()}`,
       {
         headers: {
           'X-RapidAPI-Key': apiKey,
@@ -70,7 +71,14 @@ async function searchAmazonProduct(
         const parsedRange = parsePriceRange(priceRange);
         if (parsedRange) {
           // Strict price validation - must be within exact range
-          return validatePriceInRange(price, parsedRange.min, parsedRange.max);
+          const isInRange = validatePriceInRange(price, parsedRange.min, parsedRange.max);
+          console.log('Price validation:', {
+            title: product.title,
+            price,
+            range: parsedRange,
+            isInRange
+          });
+          return isInRange;
         }
       }
       return true;
@@ -107,9 +115,9 @@ serve(async (req) => {
   }
 
   try {
-    const { searchTerm, priceRange } = await req.json();
+    const { searchTerm, priceRange, searchParams } = await req.json();
     
-    console.log('Request payload:', { searchTerm, priceRange });
+    console.log('Request payload:', { searchTerm, priceRange, searchParams });
 
     if (!searchTerm) {
       return new Response(
@@ -132,7 +140,7 @@ serve(async (req) => {
       );
     }
 
-    const product = await searchAmazonProduct(searchTerm, apiKey, priceRange);
+    const product = await searchAmazonProduct(searchTerm, apiKey, priceRange, searchParams);
     
     return new Response(
       JSON.stringify({ product }),
