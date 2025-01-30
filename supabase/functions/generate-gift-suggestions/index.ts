@@ -33,7 +33,6 @@ serve(async (req) => {
 
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // First, analyze the price range
     console.log('Analyzing price range...');
     const { data: priceRangeData, error: priceRangeError } = await supabase.functions.invoke('analyze-price-range', {
       body: { prompt }
@@ -64,25 +63,27 @@ serve(async (req) => {
 
     const enhancedPrompt = `You are a gifting expert. Based on the request "${prompt}", suggest 8 specific gift ideas.
 
-CRITICAL REQUIREMENTS:
-1. Price Range: STRICTLY stay between $${priceRange.min_price.toFixed(2)} and $${priceRange.max_price.toFixed(2)}
-2. Format: Return ONLY a JSON array of strings
-3. Each suggestion MUST include the EXACT price in parentheses at the end
-4. Example format: "Leather Wallet with RFID Protection - Genuine Full Grain Leather ($45.99)"
+CRITICAL PRICE REQUIREMENTS:
+1. Price Range: STRICTLY between $${priceRange.min_price.toFixed(2)} and $${priceRange.max_price.toFixed(2)}
+2. EVERY suggestion MUST end with the EXACT price in parentheses
+3. Example format: "Leather Wallet with RFID Protection ($45.99)"
+4. Prices MUST be realistic and market-accurate
+5. NO EXCEPTIONS - any suggestion without a price in this format will be rejected
 
-IMPORTANT PRICE RULES:
-- Every suggestion MUST end with a specific price in parentheses
-- All prices MUST be between $${priceRange.min_price.toFixed(2)} and $${priceRange.max_price.toFixed(2)}
-- Use realistic, market-accurate prices
-- Include the dollar sign and decimals in prices
+FORMAT RULES:
+1. Return ONLY a JSON array of strings
+2. Each string must follow this pattern: "Product Name and Description ($XX.XX)"
+3. The price MUST be the last part of each string, in parentheses
+4. Include the dollar sign and exactly two decimal places
 
-Consider:
-- Age, gender, and occasion mentioned
-- The recipient's interests and preferences
+IMPORTANT GUIDELINES:
+- Consider age, gender, and occasion mentioned
 - Each suggestion should be from a DIFFERENT category
 - Include specific product details and features
+- Every price must be between $${priceRange.min_price.toFixed(2)} and $${priceRange.max_price.toFixed(2)}
+- NO EXCEPTIONS to the price range or format requirements
 
-Return EXACTLY 8 suggestions, each ending with a specific price in parentheses.`;
+Return EXACTLY 8 suggestions, each with a specific price in parentheses at the end.`;
 
     console.log('Making DeepSeek API request with enhanced prompt...');
     const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
@@ -96,7 +97,7 @@ Return EXACTLY 8 suggestions, each ending with a specific price in parentheses.`
         messages: [
           {
             role: "system",
-            content: "You are a gift suggestion expert. Price accuracy is CRITICAL. Always include EXACT prices in parentheses at the end of each suggestion."
+            content: "You are a gift suggestion expert. Price accuracy and format are CRITICAL. Every suggestion MUST end with an EXACT price in parentheses."
           },
           { role: "user", content: enhancedPrompt }
         ],
@@ -140,10 +141,10 @@ Return EXACTLY 8 suggestions, each ending with a specific price in parentheses.`
     // Validate prices in suggestions with more detailed logging
     suggestions = suggestions.filter(suggestion => {
       console.log('Validating suggestion:', suggestion);
-      const priceMatch = suggestion.match(/\(\$(\d+\.?\d*)\)$/);
+      const priceMatch = suggestion.match(/\(\$(\d+\.\d{2})\)$/);
       
       if (!priceMatch) {
-        console.log('❌ No price found in suggestion:', suggestion);
+        console.log('❌ No valid price format found in suggestion:', suggestion);
         return false;
       }
       
