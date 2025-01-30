@@ -37,7 +37,9 @@ IMPORTANT:
 - Round numbers to nearest whole dollar
 - Default to a reasonable range if unclear (e.g., $20-$50 for general gifts)`;
 
-    console.log('Making DeepSeek API request with prompt:', analysisPrompt);
+    console.log('Making DeepSeek API request...');
+    console.log('API Key present:', !!deepseekApiKey);
+    console.log('Analysis prompt:', analysisPrompt);
     
     const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
       method: 'POST',
@@ -59,6 +61,8 @@ IMPORTANT:
       }),
     });
 
+    console.log('DeepSeek API response status:', response.status);
+
     if (!response.ok) {
       const errorText = await response.text();
       console.error('DeepSeek API error:', {
@@ -66,22 +70,26 @@ IMPORTANT:
         statusText: response.statusText,
         error: errorText
       });
-      throw new Error(`DeepSeek API error: ${response.status}`);
+      throw new Error(`DeepSeek API error: ${response.status} - ${errorText}`);
     }
 
     const data = await response.json();
-    console.log('DeepSeek response received:', data);
+    console.log('DeepSeek raw response:', data);
 
     if (!data.choices?.[0]?.message?.content) {
+      console.error('Invalid response format:', data);
       throw new Error('Invalid response format from DeepSeek API');
     }
 
     let priceRange;
     try {
-      priceRange = JSON.parse(data.choices[0].message.content.trim());
-      console.log('Parsed price range:', priceRange);
+      const content = data.choices[0].message.content.trim();
+      console.log('Attempting to parse content:', content);
+      priceRange = JSON.parse(content);
+      console.log('Successfully parsed price range:', priceRange);
     } catch (error) {
       console.error('Error parsing price range:', error);
+      console.error('Raw content:', data.choices[0].message.content);
       throw new Error('Failed to parse price range from API response');
     }
 
@@ -95,6 +103,8 @@ IMPORTANT:
       console.error('Invalid price range values:', priceRange);
       throw new Error('Invalid price range values received');
     }
+
+    console.log('Returning validated price range:', priceRange);
 
     return new Response(
       JSON.stringify({
@@ -111,6 +121,7 @@ IMPORTANT:
 
   } catch (error) {
     console.error('Error in analyze-price-range function:', error);
+    console.error('Stack trace:', error.stack);
     
     return new Response(
       JSON.stringify({
