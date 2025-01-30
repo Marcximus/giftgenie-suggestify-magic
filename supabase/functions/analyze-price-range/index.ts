@@ -28,7 +28,14 @@ serve(async (req) => {
     const analysisPrompt = `Given this gift request: "${prompt}", extract the minimum and maximum price range in USD.
 If no specific price is mentioned, use context clues to determine an appropriate range.
 Return ONLY a JSON object with 'min_price' and 'max_price' as numbers (no currency symbols or commas).
-Example: {"min_price": 20, "max_price": 50}`;
+Example: {"min_price": 20, "max_price": 50}
+
+IMPORTANT:
+- Both values must be positive numbers
+- min_price must be less than max_price
+- If no price is mentioned, infer a reasonable range based on the type of gift
+- Round numbers to nearest whole dollar
+- Default to a reasonable range if unclear (e.g., $20-$50 for general gifts)`;
 
     console.log('Making DeepSeek API request for price analysis');
     const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
@@ -42,7 +49,7 @@ Example: {"min_price": 20, "max_price": 50}`;
         messages: [
           {
             role: "system",
-            content: "You are a price range analyzer. You extract price ranges from gift requests and return them in a specific JSON format."
+            content: "You are a price range analyzer. Extract or infer appropriate price ranges for gift requests and return them in a specific JSON format."
           },
           { role: "user", content: analysisPrompt }
         ],

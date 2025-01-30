@@ -10,6 +10,7 @@ const corsHeaders = {
 
 serve(async (req) => {
   const startTime = performance.now();
+  console.log('Starting gift suggestion generation...');
   
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -23,7 +24,6 @@ serve(async (req) => {
       throw new Error('Invalid prompt');
     }
 
-    // Create a Supabase client specifically for the Edge Function
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
     
@@ -43,6 +43,8 @@ serve(async (req) => {
       console.error('Error analyzing price range:', priceRangeError);
       throw new Error(`Price range analysis failed: ${priceRangeError.message || 'Unknown error'}`);
     }
+
+    console.log('Price range analysis response:', priceRangeData);
 
     if (!priceRangeData || typeof priceRangeData.min_price !== 'number' || typeof priceRangeData.max_price !== 'number') {
       console.error('Invalid price range response:', priceRangeData);
@@ -65,12 +67,12 @@ serve(async (req) => {
 CRITICAL REQUIREMENTS:
 1. Price Range: STRICTLY stay between $${priceRange.min_price.toFixed(2)} and $${priceRange.max_price.toFixed(2)}
 2. Format: Return ONLY a JSON array of strings
-3. Each suggestion MUST include the EXACT price in parentheses
-4. Example format: "Leather Wallet with RFID Protection ($45.99) - Genuine Full Grain Leather"
+3. Each suggestion MUST include the EXACT price in parentheses at the end
+4. Example format: "Leather Wallet with RFID Protection - Genuine Full Grain Leather ($45.99)"
 
 IMPORTANT PRICE RULES:
-- Every suggestion MUST include a specific price in parentheses
-- Prices MUST be between $${priceRange.min_price.toFixed(2)} and $${priceRange.max_price.toFixed(2)}
+- Every suggestion MUST end with a specific price in parentheses
+- All prices MUST be between $${priceRange.min_price.toFixed(2)} and $${priceRange.max_price.toFixed(2)}
 - Use realistic, market-accurate prices
 - Include the dollar sign and decimals in prices
 
@@ -80,7 +82,7 @@ Consider:
 - Each suggestion should be from a DIFFERENT category
 - Include specific product details and features
 
-Return EXACTLY 8 suggestions, each with a specific price in the title.`;
+Return EXACTLY 8 suggestions, each ending with a specific price in parentheses.`;
 
     console.log('Making DeepSeek API request with enhanced prompt...');
     const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
@@ -94,7 +96,7 @@ Return EXACTLY 8 suggestions, each with a specific price in the title.`;
         messages: [
           {
             role: "system",
-            content: "You are a gift suggestion expert. Price accuracy is CRITICAL. Always include EXACT prices in suggestions."
+            content: "You are a gift suggestion expert. Price accuracy is CRITICAL. Always include EXACT prices in parentheses at the end of each suggestion."
           },
           { role: "user", content: enhancedPrompt }
         ],
