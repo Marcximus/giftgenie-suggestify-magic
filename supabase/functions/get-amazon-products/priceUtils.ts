@@ -12,7 +12,6 @@ export const parsePriceRange = (priceRange: string): { min: number; max: number 
       console.log('Split range values:', { min, max });
       
       if (!isNaN(min) && !isNaN(max) && min > 0 && max >= min) {
-        // Use exact values - no variance
         console.log('Successfully parsed range:', { min, max });
         return { min, max };
       }
@@ -21,9 +20,11 @@ export const parsePriceRange = (priceRange: string): { min: number; max: number 
     // Handle single number (e.g., "around 30")
     const singlePrice = parseFloat(cleanRange);
     if (!isNaN(singlePrice) && singlePrice > 0) {
-      // Use exact value for single price - no variance
-      console.log('Using exact single price:', singlePrice);
-      return { min: singlePrice, max: singlePrice };
+      // Use 20% variance for single prices
+      const min = Math.floor(singlePrice * 0.8);
+      const max = Math.ceil(singlePrice * 1.2);
+      console.log('Using price variance:', { original: singlePrice, min, max });
+      return { min, max };
     }
 
     console.error('Failed to parse price range:', { input: priceRange, cleaned: cleanRange });
@@ -42,7 +43,7 @@ export const validatePriceInRange = (price: number, min: number, max: number): b
     return false;
   }
 
-  // Strict validation - must be within exact range
+  // Use exact range validation
   const isInRange = price >= min && price <= max;
   console.log('Price validation result:', { price, min, max, isInRange });
   return isInRange;

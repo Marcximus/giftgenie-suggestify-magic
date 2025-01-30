@@ -1,5 +1,3 @@
-import { parsePriceRange } from './priceUtils';
-
 export const buildSearchUrl = (
   searchTerm: string,
   priceRange?: string
@@ -13,19 +11,21 @@ export const buildSearchUrl = (
   url.searchParams.append('country', 'US');
   url.searchParams.append('sort_by', 'RELEVANCE');
   url.searchParams.append('category_id', 'aps');
+  url.searchParams.append('page', '1');
+  url.searchParams.append('results_per_page', '20');
   
   // Add price constraints if provided
   if (priceRange) {
     console.log('Processing price range:', priceRange);
     const parsedRange = parsePriceRange(priceRange);
     if (parsedRange) {
-      // Use exact values without any variance
-      const minPrice = parsedRange.min.toFixed(2);
-      const maxPrice = parsedRange.max.toFixed(2);
+      // Convert to cents for the API
+      const minPriceCents = Math.floor(parsedRange.min * 100);
+      const maxPriceCents = Math.ceil(parsedRange.max * 100);
       
-      console.log('Adding price constraints:', { minPrice, maxPrice });
-      url.searchParams.append('min_price', minPrice);
-      url.searchParams.append('max_price', maxPrice);
+      console.log('Adding price constraints:', { minPriceCents, maxPriceCents });
+      url.searchParams.append('min_price', minPriceCents.toString());
+      url.searchParams.append('max_price', maxPriceCents.toString());
       
       // Verify parameters were added
       const finalParams = Object.fromEntries(url.searchParams.entries());
