@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { corsHeaders } from '../_shared/cors.ts';
 import { validateAndCleanSuggestions } from '../_shared/suggestion-validator.ts';
 import { processSuggestionsInBatches } from '../_shared/batch-processor.ts';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
 
 serve(async (req) => {
   const startTime = performance.now();
@@ -18,23 +19,33 @@ serve(async (req) => {
       throw new Error('Invalid prompt');
     }
 
+    // Create a Supabase client specifically for the Edge Function
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    
+    if (!supabaseUrl || !supabaseKey) {
+      throw new Error('Missing Supabase configuration');
+    }
+
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
     // First, analyze the price range
     console.log('Analyzing price range...');
-    const priceRangeResponse = await (Deno as any).env.supabaseFunctionClient.invoke('analyze-price-range', {
+    const { data: priceRangeData, error: priceRangeError } = await supabase.functions.invoke('analyze-price-range', {
       body: { prompt }
     });
 
-    if (priceRangeResponse.error) {
-      console.error('Error analyzing price range:', priceRangeResponse.error);
-      throw new Error(`Price range analysis failed: ${priceRangeResponse.error.message || 'Unknown error'}`);
+    if (priceRangeError) {
+      console.error('Error analyzing price range:', priceRangeError);
+      throw new Error(`Price range analysis failed: ${priceRangeError.message || 'Unknown error'}`);
     }
 
-    if (!priceRangeResponse.data || typeof priceRangeResponse.data.min_price !== 'number' || typeof priceRangeResponse.data.max_price !== 'number') {
-      console.error('Invalid price range response:', priceRangeResponse);
+    if (!priceRangeData || typeof priceRangeData.min_price !== 'number' || typeof priceRangeData.max_price !== 'number') {
+      console.error('Invalid price range response:', priceRangeData);
       throw new Error('Invalid price range format received');
     }
 
-    const priceRange = priceRangeResponse.data;
+    const priceRange = priceRangeData;
     console.log('Analyzed price range:', priceRange);
 
     const deepseekApiKey = Deno.env.get('DEEPSEEK_API_KEY');
