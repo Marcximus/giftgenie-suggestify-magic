@@ -1,8 +1,12 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { corsHeaders } from '../_shared/cors.ts';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
 import { validateAndCleanSuggestions } from '../_shared/suggestion-validator.ts';
 import { processSuggestionsInBatches } from '../_shared/batch-processor.ts';
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
 
 serve(async (req) => {
   const startTime = performance.now();
@@ -45,7 +49,10 @@ serve(async (req) => {
       throw new Error('Invalid price range format received');
     }
 
-    const priceRange = priceRangeData;
+    const priceRange = {
+      min_price: priceRangeData.min_price,
+      max_price: priceRangeData.max_price
+    };
     console.log('Analyzed price range:', priceRange);
 
     const deepseekApiKey = Deno.env.get('DEEPSEEK_API_KEY');
@@ -58,16 +65,22 @@ serve(async (req) => {
 CRITICAL REQUIREMENTS:
 1. Price Range: STRICTLY stay between $${priceRange.min_price.toFixed(2)} and $${priceRange.max_price.toFixed(2)}
 2. Format: Return ONLY a JSON array of strings
-3. Each suggestion must include the approximate price in the title
-4. Example format: "Leather Wallet with RFID Protection ($45) - Genuine Full Grain Leather"
+3. Each suggestion MUST include the EXACT price in parentheses
+4. Example format: "Leather Wallet with RFID Protection ($45.99) - Genuine Full Grain Leather"
+
+IMPORTANT PRICE RULES:
+- Every suggestion MUST include a specific price in parentheses
+- Prices MUST be between $${priceRange.min_price.toFixed(2)} and $${priceRange.max_price.toFixed(2)}
+- Use realistic, market-accurate prices
+- Include the dollar sign and decimals in prices
 
 Consider:
 - Age, gender, and occasion mentioned
 - The recipient's interests and preferences
-- Avoid suggesting identical items
+- Each suggestion should be from a DIFFERENT category
 - Include specific product details and features
 
-Return EXACTLY 8 suggestions, each with price in title.`;
+Return EXACTLY 8 suggestions, each with a specific price in the title.`;
 
     console.log('Making DeepSeek API request with enhanced prompt...');
     const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
@@ -81,7 +94,7 @@ Return EXACTLY 8 suggestions, each with price in title.`;
         messages: [
           {
             role: "system",
-            content: "You are a gift suggestion expert. Price accuracy is CRITICAL to you. Always include prices in suggestions."
+            content: "You are a gift suggestion expert. Price accuracy is CRITICAL. Always include EXACT prices in suggestions."
           },
           { role: "user", content: enhancedPrompt }
         ],
