@@ -4,15 +4,6 @@ import { buildSearchUrl } from './searchUtils.ts';
 import { parsePriceRange, validatePriceInRange, extractPrice } from './priceUtils.ts';
 import type { AmazonProduct } from './types.ts';
 
-// List of forbidden terms that should not appear in product titles or descriptions
-const FORBIDDEN_TERMS = [
-  'toilet paper',
-  'toilet roll',
-  'bathroom tissue',
-  'tp',
-  'tissue paper'
-].map(term => term.toLowerCase());
-
 export const searchProducts = async (
   searchTerm: string,
   apiKey: string,
@@ -73,19 +64,6 @@ export const searchProducts = async (
     const parsedRange = priceRange ? parsePriceRange(priceRange) : null;
 
     for (const product of searchData.data.products) {
-      // Check for forbidden terms
-      const titleLower = product.title.toLowerCase();
-      const descriptionLower = (product.product_description || '').toLowerCase();
-      
-      const hasForbiddenTerm = FORBIDDEN_TERMS.some(term => 
-        titleLower.includes(term) || descriptionLower.includes(term)
-      );
-      
-      if (hasForbiddenTerm) {
-        console.log('Skipping product - contains forbidden term:', product.title);
-        continue;
-      }
-
       const price = extractPrice(product.product_price);
       console.log('Checking product price:', {
         title: product.title,
