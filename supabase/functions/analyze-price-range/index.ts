@@ -22,6 +22,7 @@ serve(async (req) => {
 
     const deepseekApiKey = Deno.env.get('DEEPSEEK_API_KEY');
     if (!deepseekApiKey) {
+      console.error('DEEPSEEK_API_KEY not configured');
       throw new Error('DEEPSEEK_API_KEY is not configured');
     }
 
@@ -38,8 +39,6 @@ IMPORTANT:
 - Default to a reasonable range if unclear (e.g., $20-$50 for general gifts)`;
 
     console.log('Making DeepSeek API request...');
-    console.log('API Key present:', !!deepseekApiKey);
-    console.log('Analysis prompt:', analysisPrompt);
     
     const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
       method: 'POST',
@@ -107,10 +106,7 @@ IMPORTANT:
     console.log('Returning validated price range:', priceRange);
 
     return new Response(
-      JSON.stringify({
-        min_price: priceRange.min_price,
-        max_price: priceRange.max_price
-      }),
+      JSON.stringify(priceRange),
       { 
         headers: { 
           ...corsHeaders,
