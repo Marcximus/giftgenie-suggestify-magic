@@ -128,17 +128,40 @@ Return EXACTLY 8 suggestions, each ending with a specific price in parentheses.`
       throw new Error('Invalid response format from DeepSeek API');
     }
 
-    const suggestions = validateAndCleanSuggestions(data.choices[0].message.content);
-    console.log('Validated suggestions:', suggestions);
+    // Extract and validate suggestions
+    let suggestions = validateAndCleanSuggestions(data.choices[0].message.content);
+    console.log('Initial suggestions:', suggestions);
     
     if (!suggestions || suggestions.length !== 8) {
       console.error('Invalid number of suggestions:', suggestions?.length);
       throw new Error('Did not receive exactly 8 suggestions');
     }
 
+    // Validate prices in suggestions
+    suggestions = suggestions.filter(suggestion => {
+      const priceMatch = suggestion.match(/\(\$(\d+\.?\d*)\)$/);
+      if (!priceMatch) {
+        console.log('Filtering out suggestion without price:', suggestion);
+        return false;
+      }
+      
+      const price = parseFloat(priceMatch[1]);
+      if (isNaN(price) || price < priceRange.min_price || price > priceRange.max_price) {
+        console.log(`Filtering out suggestion with invalid price (${price}):`, suggestion);
+        return false;
+      }
+      
+      return true;
+    });
+
+    if (suggestions.length < 8) {
+      console.log('Not enough valid suggestions after price filtering:', suggestions.length);
+      throw new Error('Not enough valid suggestions within price range');
+    }
+
     // Process suggestions with the analyzed price range
     console.log('Processing suggestions with price range:', priceRange);
-    const processedProducts = await processSuggestionsInBatches(suggestions, priceRange);
+    const processedProducts = await processSuggestionsInBatches(suggestions);
     console.log('Processed products:', processedProducts);
     
     if (!processedProducts.length) {
