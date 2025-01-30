@@ -19,13 +19,13 @@ export const buildSearchUrl = (
     console.log('Processing price range:', priceRange);
     const parsedRange = parsePriceRange(priceRange);
     if (parsedRange) {
-      // Convert to cents for the API
-      const minPriceCents = Math.floor(parsedRange.min * 100);
-      const maxPriceCents = Math.ceil(parsedRange.max * 100);
+      // Use exact decimal values in dollars (not cents)
+      const minPrice = parsedRange.min.toFixed(2);
+      const maxPrice = parsedRange.max.toFixed(2);
       
-      console.log('Adding price constraints:', { minPriceCents, maxPriceCents });
-      url.searchParams.append('min_price', minPriceCents.toString());
-      url.searchParams.append('max_price', maxPriceCents.toString());
+      console.log('Adding price constraints:', { minPrice, maxPrice });
+      url.searchParams.append('min_price', minPrice);
+      url.searchParams.append('max_price', maxPrice);
       
       // Verify parameters were added
       const finalParams = Object.fromEntries(url.searchParams.entries());
