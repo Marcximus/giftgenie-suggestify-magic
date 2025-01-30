@@ -12,6 +12,17 @@ async function searchAmazonProduct(
 ): Promise<AmazonProduct | null> {
   console.log('Starting Amazon search with:', { searchTerm, priceRange, searchParams });
   
+  // Parse price range first to ensure we have valid constraints
+  const parsedRange = priceRange ? parsePriceRange(priceRange) : null;
+  console.log('Parsed price range:', parsedRange);
+
+  if (parsedRange) {
+    // Convert to strings with 2 decimal places for the API
+    const minPrice = parsedRange.min.toFixed(2);
+    const maxPrice = parsedRange.max.toFixed(2);
+    console.log('Using price constraints:', { minPrice, maxPrice });
+  }
+  
   const params = new URLSearchParams({
     query: searchTerm.trim(),
     country: 'US',
@@ -21,13 +32,9 @@ async function searchAmazonProduct(
   });
 
   // Add price range parameters if provided
-  if (priceRange) {
-    const parsedRange = parsePriceRange(priceRange);
-    if (parsedRange) {
-      console.log('Adding price constraints:', parsedRange);
-      params.append('min_price', parsedRange.min.toString());
-      params.append('max_price', parsedRange.max.toString());
-    }
+  if (parsedRange) {
+    params.append('min_price', parsedRange.min.toFixed(2));
+    params.append('max_price', parsedRange.max.toFixed(2));
   }
 
   try {
@@ -63,44 +70,61 @@ async function searchAmazonProduct(
     }
 
     // Find the first product that matches our price criteria
-    const validProduct = searchData.data.products.find((product: any) => {
+    for (const product of searchData.data.products) {
       const price = extractPrice(product.product_price);
-      if (!price) return false;
+      console.log('Checking product:', {
+        title: product.title,
+        rawPrice: product.product_price,
+        extractedPrice: price,
+        priceRange: parsedRange
+      });
 
-      if (priceRange) {
-        const parsedRange = parsePriceRange(priceRange);
-        if (parsedRange) {
-          // Strict price validation - must be within exact range
-          const isInRange = validatePriceInRange(price, parsedRange.min, parsedRange.max);
-          console.log('Price validation:', {
+      if (!price) {
+        console.log('Skipping product - invalid price:', product.title);
+        continue;
+      }
+
+      // Strict price validation
+      if (parsedRange) {
+        const isInRange = validatePriceInRange(price, parsedRange.min, parsedRange.max);
+        console.log('Price validation:', {
+          price,
+          min: parsedRange.min,
+          max: parsedRange.max,
+          isInRange
+        });
+
+        if (!isInRange) {
+          console.log('Skipping product - outside price range:', {
             title: product.title,
             price,
-            range: parsedRange,
-            isInRange
+            min: parsedRange.min,
+            max: parsedRange.max
           });
-          return isInRange;
+          continue;
         }
       }
-      return true;
-    });
 
-    if (!validProduct) {
-      console.log('No products found within price range');
-      return null;
+      console.log('Found valid product within price range:', {
+        title: product.title,
+        price,
+        asin: product.asin
+      });
+
+      return {
+        title: product.title,
+        description: product.product_description || product.title,
+        price: price,
+        currency: 'USD',
+        imageUrl: product.product_photo || product.thumbnail,
+        rating: product.product_star_rating ? parseFloat(product.product_star_rating) : undefined,
+        totalRatings: product.product_num_ratings ? parseInt(product.product_num_ratings.toString(), 10) : undefined,
+        asin: product.asin,
+      };
     }
 
-    const price = extractPrice(validProduct.product_price);
-    
-    return {
-      title: validProduct.title,
-      description: validProduct.product_description || validProduct.title,
-      price: price,
-      currency: 'USD',
-      imageUrl: validProduct.product_photo || validProduct.thumbnail,
-      rating: validProduct.product_star_rating ? parseFloat(validProduct.product_star_rating) : undefined,
-      totalRatings: validProduct.product_num_ratings ? parseInt(validProduct.product_num_ratings.toString(), 10) : undefined,
-      asin: validProduct.asin,
-    };
+    console.log('No products found within specified price range');
+    return null;
   } catch (error) {
     console.error('Error searching Amazon:', error);
     return null;
