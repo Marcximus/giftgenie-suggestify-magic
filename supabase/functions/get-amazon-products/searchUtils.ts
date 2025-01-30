@@ -19,17 +19,17 @@ export const buildSearchUrl = (
     console.log('Processing price range:', priceRange);
     const parsedRange = parsePriceRange(priceRange);
     if (parsedRange) {
-      // Ensure we have valid numbers and convert to fixed decimal places
-      const minPrice = Number(parsedRange.min).toFixed(2);
-      const maxPrice = Number(parsedRange.max).toFixed(2);
+      // Use exact values without any variance
+      const minPrice = parsedRange.min.toFixed(2);
+      const maxPrice = parsedRange.max.toFixed(2);
       
-      console.log('Adding exact price constraints:', { minPrice, maxPrice });
+      console.log('Adding price constraints:', { minPrice, maxPrice });
       url.searchParams.append('min_price', minPrice);
       url.searchParams.append('max_price', maxPrice);
       
       // Verify parameters were added
       const finalParams = Object.fromEntries(url.searchParams.entries());
-      console.log('Verified URL parameters:', finalParams);
+      console.log('Final URL parameters:', finalParams);
     } else {
       console.warn('Failed to parse price range:', priceRange);
     }

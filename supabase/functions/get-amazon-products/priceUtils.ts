@@ -12,7 +12,7 @@ export const parsePriceRange = (priceRange: string): { min: number; max: number 
       console.log('Split range values:', { min, max });
       
       if (!isNaN(min) && !isNaN(max) && min > 0 && max >= min) {
-        // Use exact values for API parameters
+        // Use exact values - no variance
         console.log('Successfully parsed range:', { min, max });
         return { min, max };
       }
