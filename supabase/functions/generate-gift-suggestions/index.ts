@@ -1,6 +1,4 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import "https://deno.land/x/xhr@0.1.0/mod.ts";
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 import { corsHeaders } from '../_shared/cors.ts';
 import { validateAndCleanSuggestions } from '../_shared/suggestion-validator.ts';
 import { processSuggestionsInBatches } from '../_shared/batch-processor.ts';
@@ -12,11 +10,6 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  const supabase = createClient(
-    Deno.env.get('SUPABASE_URL') ?? '',
-    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-  );
-
   try {
     const { prompt } = await req.json();
     console.log('Processing request with prompt:', prompt);
@@ -27,7 +20,7 @@ serve(async (req) => {
 
     // First, analyze the price range
     console.log('Analyzing price range...');
-    const { data: priceRange, error: priceError } = await supabase.functions.invoke('analyze-price-range', {
+    const { data: priceRange, error: priceError } = await (Deno as any).env.supabaseFunctionClient.invoke('analyze-price-range', {
       body: { prompt }
     });
 
@@ -48,7 +41,7 @@ serve(async (req) => {
       throw new Error('DEEPSEEK_API_KEY is not configured');
     }
 
-    const enhancedPrompt = `You are an gifting expert. Based on the request "${prompt}", suggest 8 specific gift ideas.
+    const enhancedPrompt = `You are a gifting expert. Based on the request "${prompt}", suggest 8 specific gift ideas.
 
 Consider:
 - Age, gender, and occasion mentioned
@@ -112,20 +105,12 @@ Return ONLY a JSON array of exactly 8 strings`;
 
     // Process suggestions with the analyzed price range
     console.log('Processing suggestions with price range:', priceRange);
-    const processedProducts = await processSuggestionsInBatches(suggestions);
+    const processedProducts = await processSuggestionsInBatches(suggestions, priceRange);
     console.log('Processed products:', processedProducts);
     
     if (!processedProducts.length) {
       throw new Error('No products found for suggestions');
     }
-
-    // Log metrics
-    await supabase.from('api_metrics').insert({
-      endpoint: 'generate-gift-suggestions',
-      duration_ms: Math.round(performance.now() - startTime),
-      status: 'success',
-      cache_hit: false
-    });
 
     return new Response(
       JSON.stringify({ 
@@ -145,18 +130,10 @@ Return ONLY a JSON array of exactly 8 strings`;
         } 
       }
     );
+
   } catch (error) {
     console.error('Error in generate-gift-suggestions function:', error);
     console.error('Stack trace:', error.stack);
-    
-    // Log error metrics
-    await supabase.from('api_metrics').insert({
-      endpoint: 'generate-gift-suggestions',
-      duration_ms: Math.round(performance.now() - startTime),
-      status: 'error',
-      error_message: error.message,
-      cache_hit: false
-    });
     
     return new Response(
       JSON.stringify({ 
@@ -164,13 +141,13 @@ Return ONLY a JSON array of exactly 8 strings`;
         details: error.message,
         timestamp: new Date().toISOString()
       }),
-      {
+      { 
         status: 500,
         headers: { 
           ...corsHeaders, 
           'Content-Type': 'application/json',
           'Cache-Control': 'no-store, no-cache, must-revalidate'
-        },
+        }
       }
     );
   }
