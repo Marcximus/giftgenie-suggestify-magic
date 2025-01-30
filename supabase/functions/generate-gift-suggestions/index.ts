@@ -55,15 +55,21 @@ serve(async (req) => {
 
     const enhancedPrompt = `You are a gifting expert. Based on the request "${prompt}", suggest 8 specific gift ideas.
 
+CRITICAL REQUIREMENTS:
+1. Price Range: STRICTLY stay between $${priceRange.min_price.toFixed(2)} and $${priceRange.max_price.toFixed(2)}
+2. Format: Return ONLY a JSON array of strings
+3. Each suggestion must include the approximate price in the title
+4. Example format: "Leather Wallet with RFID Protection ($45) - Genuine Full Grain Leather"
+
 Consider:
 - Age, gender, and occasion mentioned
-- CRITICAL: Stay within the price range of $${priceRange.min_price.toFixed(2)} to $${priceRange.max_price.toFixed(2)}
 - The recipient's interests and preferences
 - Avoid suggesting identical items
+- Include specific product details and features
 
-Return ONLY a JSON array of exactly 8 strings`;
+Return EXACTLY 8 suggestions, each with price in title.`;
 
-    console.log('Making DeepSeek API request...');
+    console.log('Making DeepSeek API request with enhanced prompt...');
     const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -75,7 +81,7 @@ Return ONLY a JSON array of exactly 8 strings`;
         messages: [
           {
             role: "system",
-            content: "You are a gift suggestion expert. Staying within a given price range is HIGHLY important to you. You like recommending premium gifts."
+            content: "You are a gift suggestion expert. Price accuracy is CRITICAL to you. Always include prices in suggestions."
           },
           { role: "user", content: enhancedPrompt }
         ],
