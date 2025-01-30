@@ -137,26 +137,41 @@ Return EXACTLY 8 suggestions, each ending with a specific price in parentheses.`
       throw new Error('Did not receive exactly 8 suggestions');
     }
 
-    // Validate prices in suggestions
+    // Validate prices in suggestions with more detailed logging
     suggestions = suggestions.filter(suggestion => {
+      console.log('Validating suggestion:', suggestion);
       const priceMatch = suggestion.match(/\(\$(\d+\.?\d*)\)$/);
+      
       if (!priceMatch) {
-        console.log('Filtering out suggestion without price:', suggestion);
+        console.log('❌ No price found in suggestion:', suggestion);
         return false;
       }
       
       const price = parseFloat(priceMatch[1]);
-      if (isNaN(price) || price < priceRange.min_price || price > priceRange.max_price) {
-        console.log(`Filtering out suggestion with invalid price (${price}):`, suggestion);
+      console.log('Extracted price:', price, 'Range:', priceRange.min_price, '-', priceRange.max_price);
+      
+      if (isNaN(price)) {
+        console.log('❌ Invalid price format:', priceMatch[1]);
         return false;
       }
       
+      if (price < priceRange.min_price) {
+        console.log('❌ Price below minimum:', price, '<', priceRange.min_price);
+        return false;
+      }
+      
+      if (price > priceRange.max_price) {
+        console.log('❌ Price above maximum:', price, '>', priceRange.max_price);
+        return false;
+      }
+      
+      console.log('✅ Valid suggestion with price:', price);
       return true;
     });
 
     if (suggestions.length < 8) {
       console.log('Not enough valid suggestions after price filtering:', suggestions.length);
-      throw new Error('Not enough valid suggestions within price range');
+      throw new Error(`Not enough valid suggestions within price range $${priceRange.min_price.toFixed(2)}-$${priceRange.max_price.toFixed(2)}`);
     }
 
     // Process suggestions with the analyzed price range
