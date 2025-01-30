@@ -3,7 +3,6 @@ import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { ProductImage } from "./ProductImage";
 import { ProductCardContent } from "./product/ProductCardContent";
 import { ProductCardActions } from "./product/ProductCardActions";
-import { validateProductTitle } from '../utils/amazon/validation/titleValidation';
 
 interface Product {
   title: string;
@@ -30,12 +29,6 @@ const ProductCardComponent = ({
   imageUrl,
   onMoreLikeThis 
 }: ProductCardProps) => {
-  // Validate title before rendering
-  if (!validateProductTitle(title)) {
-    console.log('Skipping blacklisted product:', title);
-    return null;
-  }
-
   // Memoize schema data
   const schemaData = {
     "@context": "https://schema.org",
