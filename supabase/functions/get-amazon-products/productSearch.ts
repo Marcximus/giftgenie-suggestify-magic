@@ -4,6 +4,32 @@ import { buildSearchUrl } from './searchUtils.ts';
 import { parsePriceRange, validatePriceInRange, extractPrice } from './priceUtils.ts';
 import type { AmazonProduct } from './types.ts';
 
+const BLACKLISTED_TERMS = [
+  'cancel subscription',
+  'cancel',
+  'refund',
+  'return policy',
+  'warranty claim',
+  'customer service',
+  'guide',
+  'manual',
+  'instruction',
+  'tutorial',
+  'how to',
+  'replacement',
+  'repair',
+  'service plan',
+  'protection plan',
+  'extended warranty',
+  'toilet paper'
+];
+
+const validateProductTitle = (title: string): boolean => {
+  if (!title) return false;
+  const lowerTitle = title.toLowerCase();
+  return !BLACKLISTED_TERMS.some(term => lowerTitle.includes(term.toLowerCase()));
+};
+
 export const searchProducts = async (
   searchTerm: string,
   apiKey: string,
@@ -59,16 +85,23 @@ export const searchProducts = async (
       return null;
     }
 
-    // Verify each product's price strictly
+    // Verify each product's price and title
     let validProduct = null;
     const parsedRange = priceRange ? parsePriceRange(priceRange) : null;
 
     for (const product of searchData.data.products) {
+      // First check if the title is valid
+      if (!validateProductTitle(product.title)) {
+        console.log('Skipping product - blacklisted title:', product.title);
+        continue;
+      }
+
       const price = extractPrice(product.product_price);
-      console.log('Checking product price:', {
+      console.log('Checking product:', {
         title: product.title,
         price,
-        range: parsedRange
+        range: parsedRange,
+        isValidTitle: validateProductTitle(product.title)
       });
 
       if (!price) {
@@ -89,7 +122,7 @@ export const searchProducts = async (
       }
 
       validProduct = product;
-      console.log('Found valid product within price range:', {
+      console.log('Found valid product:', {
         title: product.title,
         price,
         range: parsedRange
@@ -98,7 +131,7 @@ export const searchProducts = async (
     }
 
     if (!validProduct) {
-      console.log('No products found within specified price range');
+      console.log('No valid products found after filtering');
       return null;
     }
 
