@@ -8,7 +8,6 @@ const BLACKLISTED_TERMS = [
   'customer service',
   'guide',
   'manual',
-  'handbook',
   'instruction',
   'tutorial',
   'how to',
@@ -16,7 +15,8 @@ const BLACKLISTED_TERMS = [
   'repair',
   'service plan',
   'protection plan',
-  'extended warranty'
+  'extended warranty',
+  'toilet paper'
 ];
 
 export const validateProductTitle = (title: string): boolean => {
