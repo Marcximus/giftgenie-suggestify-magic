@@ -59,10 +59,11 @@ export const searchProducts = async (
       return null;
     }
 
-    // Verify each product's price strictly
-    let validProduct = null;
+    // Get price range constraints
     const parsedRange = priceRange ? parsePriceRange(priceRange) : null;
+    console.log('Price range constraints:', parsedRange);
 
+    // Find first valid product within price range
     for (const product of searchData.data.products) {
       const price = extractPrice(product.product_price);
       console.log('Checking product price:', {
@@ -88,32 +89,25 @@ export const searchProducts = async (
         }
       }
 
-      validProduct = product;
       console.log('Found valid product within price range:', {
         title: product.title,
-        price,
-        range: parsedRange
+        price
       });
-      break;
+
+      return {
+        title: product.title,
+        description: product.product_description || product.title,
+        price: price,
+        currency: 'USD',
+        imageUrl: product.product_photo || product.thumbnail,
+        rating: product.product_star_rating ? parseFloat(product.product_star_rating) : undefined,
+        totalRatings: product.product_num_ratings ? parseInt(product.product_num_ratings.toString(), 10) : undefined,
+        asin: product.asin
+      };
     }
 
-    if (!validProduct) {
-      console.log('No products found within specified price range');
-      return null;
-    }
-
-    const finalPrice = extractPrice(validProduct.product_price);
-    
-    return {
-      title: validProduct.title,
-      description: validProduct.product_description || validProduct.title,
-      price: finalPrice,
-      currency: 'USD',
-      imageUrl: validProduct.product_photo || validProduct.thumbnail,
-      rating: validProduct.product_star_rating ? parseFloat(validProduct.product_star_rating) : undefined,
-      totalRatings: validProduct.product_num_ratings ? parseInt(validProduct.product_num_ratings.toString(), 10) : undefined,
-      asin: validProduct.asin
-    };
+    console.log('No products found within specified price range');
+    return null;
   } catch (error) {
     console.error('Error in Amazon product search:', {
       error: error.message,

@@ -82,7 +82,9 @@ export const searchWithFallback = async (
       query: cleanSearchTerm(searchTerm),
       country: 'US',
       category_id: 'aps',
-      sort_by: 'RELEVANCE'
+      sort_by: 'RELEVANCE',
+      page: '1',
+      results_per_page: '20' // Request more results to ensure we have enough after filtering
     });
 
     // Add price range parameters if provided
@@ -90,8 +92,11 @@ export const searchWithFallback = async (
       const parsedRange = parsePriceRange(priceRange);
       if (parsedRange) {
         console.log('Adding price constraints:', parsedRange);
-        searchParams.append('min_price', parsedRange.min.toString());
-        searchParams.append('max_price', parsedRange.max.toString());
+        // Convert to cents to match Amazon API format
+        const minPriceCents = Math.floor(parsedRange.min * 100);
+        const maxPriceCents = Math.ceil(parsedRange.max * 100);
+        searchParams.append('min_price', minPriceCents.toString());
+        searchParams.append('max_price', maxPriceCents.toString());
       }
     }
 
