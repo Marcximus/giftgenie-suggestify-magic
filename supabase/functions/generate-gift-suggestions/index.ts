@@ -26,21 +26,27 @@ serve(async (req) => {
     }
 
     // First, analyze the price range
+    console.log('Analyzing price range...');
     const { data: priceRange, error: priceError } = await supabase.functions.invoke('analyze-price-range', {
       body: { prompt }
     });
 
     if (priceError) {
       console.error('Error analyzing price range:', priceError);
-      throw priceError;
+      throw new Error(`Price range analysis failed: ${priceError.message}`);
+    }
+
+    if (!priceRange || typeof priceRange.min_price !== 'number' || typeof priceRange.max_price !== 'number') {
+      console.error('Invalid price range response:', priceRange);
+      throw new Error('Invalid price range format received');
     }
 
     console.log('Analyzed price range:', priceRange);
 
-    // Extract interests from the prompt
-    const interestsMatch = prompt.match(/who likes (.*?) with a budget/i);
-    const interests = interestsMatch ? interestsMatch[1].split(' and ') : [];
-    console.log('Extracted interests:', interests);
+    const deepseekApiKey = Deno.env.get('DEEPSEEK_API_KEY');
+    if (!deepseekApiKey) {
+      throw new Error('DEEPSEEK_API_KEY is not configured');
+    }
 
     const enhancedPrompt = `You are an gifting expert. Based on the request "${prompt}", suggest 8 specific gift ideas.
 
@@ -52,13 +58,7 @@ Consider:
 
 Return ONLY a JSON array of exactly 8 strings`;
 
-    console.log('Enhanced prompt:', enhancedPrompt);
-
-    const deepseekApiKey = Deno.env.get('DEEPSEEK_API_KEY');
-    if (!deepseekApiKey) {
-      throw new Error('DEEPSEEK_API_KEY is not configured');
-    }
-
+    console.log('Making DeepSeek API request...');
     const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -82,14 +82,23 @@ Return ONLY a JSON array of exactly 8 strings`;
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('DeepSeek API error:', errorText);
+      console.error('DeepSeek API error:', {
+        status: response.status,
+        statusText: response.statusText,
+        error: errorText
+      });
       throw new Error(`DeepSeek API error: ${response.status} ${errorText}`);
     }
 
     const data = await response.json();
-    console.log('Raw DeepSeek response:', data);
+    console.log('DeepSeek response received:', {
+      status: response.status,
+      hasChoices: !!data.choices,
+      firstChoice: !!data.choices?.[0]
+    });
 
     if (!data.choices?.[0]?.message?.content) {
+      console.error('Invalid DeepSeek response format:', data);
       throw new Error('Invalid response format from DeepSeek API');
     }
 
@@ -97,12 +106,13 @@ Return ONLY a JSON array of exactly 8 strings`;
     console.log('Validated suggestions:', suggestions);
     
     if (!suggestions || suggestions.length !== 8) {
+      console.error('Invalid number of suggestions:', suggestions?.length);
       throw new Error('Did not receive exactly 8 suggestions');
     }
 
     // Process suggestions with the analyzed price range
     console.log('Processing suggestions with price range:', priceRange);
-    const processedProducts = await processSuggestionsInBatches(suggestions, priceRange);
+    const processedProducts = await processSuggestionsInBatches(suggestions);
     console.log('Processed products:', processedProducts);
     
     if (!processedProducts.length) {
@@ -118,7 +128,15 @@ Return ONLY a JSON array of exactly 8 strings`;
     });
 
     return new Response(
-      JSON.stringify({ suggestions: processedProducts }),
+      JSON.stringify({ 
+        suggestions: processedProducts,
+        debug: {
+          priceRange,
+          suggestionsCount: suggestions.length,
+          processedCount: processedProducts.length,
+          duration: Math.round(performance.now() - startTime)
+        }
+      }),
       { 
         headers: { 
           ...corsHeaders, 
