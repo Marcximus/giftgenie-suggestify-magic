@@ -103,6 +103,10 @@ IMPORTANT:
       throw new Error('Invalid price range values received');
     }
 
+    // Round to whole numbers
+    priceRange.min_price = Math.round(priceRange.min_price);
+    priceRange.max_price = Math.round(priceRange.max_price);
+
     console.log('Returning validated price range:', priceRange);
 
     return new Response(
