@@ -16,13 +16,7 @@ async function searchAmazonProduct(
   const parsedRange = priceRange ? parsePriceRange(priceRange) : null;
   console.log('Parsed price range:', parsedRange);
 
-  if (parsedRange) {
-    // Convert to strings with 2 decimal places for the API
-    const minPrice = parsedRange.min.toFixed(2);
-    const maxPrice = parsedRange.max.toFixed(2);
-    console.log('Using price constraints:', { minPrice, maxPrice });
-  }
-  
+  // Format price parameters for the API (in dollars with 2 decimal places)
   const params = new URLSearchParams({
     query: searchTerm.trim(),
     country: 'US',
@@ -31,10 +25,17 @@ async function searchAmazonProduct(
     ...(searchParams || {})
   });
 
-  // Add price range parameters if provided
   if (parsedRange) {
-    params.append('min_price', parsedRange.min.toFixed(2));
-    params.append('max_price', parsedRange.max.toFixed(2));
+    // Convert to exact decimal values
+    const minPrice = parsedRange.min.toFixed(2);
+    const maxPrice = parsedRange.max.toFixed(2);
+    
+    console.log('Adding price constraints:', { minPrice, maxPrice });
+    params.append('min_price', minPrice);
+    params.append('max_price', maxPrice);
+    
+    // Log final parameters for debugging
+    console.log('Final URL parameters:', Object.fromEntries(params.entries()));
   }
 
   try {
