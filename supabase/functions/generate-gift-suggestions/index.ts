@@ -5,8 +5,6 @@ import { corsHeaders } from '../_shared/cors.ts';
 import { validateAndCleanSuggestions } from '../_shared/suggestion-validator.ts';
 import { processSuggestionsInBatches } from '../_shared/batch-processor.ts';
 
-const DEEPSEEK_API_KEY = Deno.env.get('DEEPSEEK_API_KEY');
-
 serve(async (req) => {
   const startTime = performance.now();
   
@@ -27,6 +25,18 @@ serve(async (req) => {
       throw new Error('Invalid prompt');
     }
 
+    // First, analyze the price range
+    const { data: priceRange, error: priceError } = await supabase.functions.invoke('analyze-price-range', {
+      body: { prompt }
+    });
+
+    if (priceError) {
+      console.error('Error analyzing price range:', priceError);
+      throw priceError;
+    }
+
+    console.log('Analyzed price range:', priceRange);
+
     // Extract interests from the prompt
     const interestsMatch = prompt.match(/who likes (.*?) with a budget/i);
     const interests = interestsMatch ? interestsMatch[1].split(' and ') : [];
@@ -36,7 +46,7 @@ serve(async (req) => {
 
 Consider:
 - Age, gender, and occasion mentioned
-- CRITICAL: Any budget constraints specified (can fluctuate by 20%)
+- CRITICAL: Stay within the price range of $${priceRange.min_price.toFixed(2)} to $${priceRange.max_price.toFixed(2)}
 - The recipient's interests and preferences
 - Avoid suggesting identical items
 
@@ -44,14 +54,15 @@ Return ONLY a JSON array of exactly 8 strings`;
 
     console.log('Enhanced prompt:', enhancedPrompt);
 
-    if (!DEEPSEEK_API_KEY) {
+    const deepseekApiKey = Deno.env.get('DEEPSEEK_API_KEY');
+    if (!deepseekApiKey) {
       throw new Error('DEEPSEEK_API_KEY is not configured');
     }
 
     const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${DEEPSEEK_API_KEY}`,
+        'Authorization': `Bearer ${deepseekApiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
@@ -89,9 +100,9 @@ Return ONLY a JSON array of exactly 8 strings`;
       throw new Error('Did not receive exactly 8 suggestions');
     }
 
-    // Process suggestions
-    console.log('Processing suggestions:', suggestions);
-    const processedProducts = await processSuggestionsInBatches(suggestions);
+    // Process suggestions with the analyzed price range
+    console.log('Processing suggestions with price range:', priceRange);
+    const processedProducts = await processSuggestionsInBatches(suggestions, priceRange);
     console.log('Processed products:', processedProducts);
     
     if (!processedProducts.length) {
