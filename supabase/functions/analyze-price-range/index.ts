@@ -17,6 +17,7 @@ serve(async (req) => {
     console.log('Analyzing prompt for price range:', prompt);
 
     if (!prompt || typeof prompt !== 'string') {
+      console.error('Invalid prompt:', prompt);
       throw new Error('Invalid prompt provided');
     }
 
@@ -38,7 +39,7 @@ IMPORTANT:
 - Round numbers to nearest whole dollar
 - Default to a reasonable range if unclear (e.g., $20-$50 for general gifts)`;
 
-    console.log('Making DeepSeek API request...');
+    console.log('Making DeepSeek API request with prompt:', analysisPrompt);
     
     const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
       method: 'POST',
@@ -59,8 +60,6 @@ IMPORTANT:
         temperature: 0.1
       }),
     });
-
-    console.log('DeepSeek API response status:', response.status);
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -115,7 +114,8 @@ IMPORTANT:
         headers: { 
           ...corsHeaders,
           'Content-Type': 'application/json'
-        } 
+        },
+        status: 200
       }
     );
 
@@ -130,7 +130,7 @@ IMPORTANT:
         timestamp: new Date().toISOString()
       }),
       { 
-        status: 500,
+        status: 400, // Changed from 500 to 400 for validation errors
         headers: { 
           ...corsHeaders,
           'Content-Type': 'application/json'
