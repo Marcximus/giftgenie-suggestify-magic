@@ -88,122 +88,139 @@ IMPORTANT GUIDELINES:
 Return EXACTLY 8 suggestions, each with a specific price in parentheses at the end that falls within the specified range.`;
 
     console.log('Making DeepSeek API request with enhanced prompt...');
-    const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${deepseekApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: "deepseek-chat",
-        messages: [
-          {
-            role: "system",
-            content: "You are a gift suggestion expert. Price accuracy and format are CRITICAL. Every suggestion MUST end with an EXACT price in parentheses."
-          },
-          { role: "user", content: enhancedPrompt }
-        ],
-        max_tokens: 1000,
-        temperature: 1.3,
-        stream: false
-      }),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('DeepSeek API error:', {
-        status: response.status,
-        statusText: response.statusText,
-        error: errorText
-      });
-      throw new Error(`DeepSeek API error: ${response.status} ${errorText}`);
-    }
-
-    const data = await response.json();
-    console.log('DeepSeek response received:', {
-      status: response.status,
-      hasChoices: !!data.choices,
-      firstChoice: !!data.choices?.[0]
-    });
-
-    if (!data.choices?.[0]?.message?.content) {
-      console.error('Invalid DeepSeek response format:', data);
-      throw new Error('Invalid response format from DeepSeek API');
-    }
-
-    // Extract and validate suggestions
-    let suggestions = validateAndCleanSuggestions(data.choices[0].message.content);
-    console.log('Initial suggestions:', suggestions);
     
-    if (!suggestions || suggestions.length !== 8) {
-      console.error('Invalid number of suggestions:', suggestions?.length);
-      throw new Error('Did not receive exactly 8 suggestions');
-    }
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 30000); // 30 second timeout
 
-    // Validate prices in suggestions with more detailed logging
-    suggestions = suggestions.filter(suggestion => {
-      console.log('Validating suggestion:', suggestion);
-      const priceMatch = suggestion.match(/\(\$(\d+\.\d{2})\)$/);
-      
-      if (!priceMatch) {
-        console.log('❌ No valid price format found in suggestion:', suggestion);
-        return false;
-      }
-      
-      const price = parseFloat(priceMatch[1]);
-      console.log('Extracted price:', price, 'Range:', priceRange.min_price, '-', priceRange.max_price);
-      
-      if (isNaN(price)) {
-        console.log('❌ Invalid price format:', priceMatch[1]);
-        return false;
-      }
-      
-      if (price < priceRange.min_price) {
-        console.log('❌ Price below minimum:', price, '<', priceRange.min_price);
-        return false;
-      }
-      
-      if (price > priceRange.max_price) {
-        console.log('❌ Price above maximum:', price, '>', priceRange.max_price);
-        return false;
-      }
-      
-      console.log('✅ Valid suggestion with price:', price);
-      return true;
-    });
-
-    if (suggestions.length < 8) {
-      console.log('Not enough valid suggestions after price filtering:', suggestions.length);
-      throw new Error(`Not enough valid suggestions within price range $${priceRange.min_price.toFixed(2)}-$${priceRange.max_price.toFixed(2)}`);
-    }
-
-    // Process suggestions with the analyzed price range
-    console.log('Processing suggestions with price range:', priceRange);
-    const processedProducts = await processSuggestionsInBatches(suggestions);
-    console.log('Processed products:', processedProducts);
-    
-    if (!processedProducts.length) {
-      throw new Error('No products found for suggestions');
-    }
-
-    return new Response(
-      JSON.stringify({ 
-        suggestions: processedProducts,
-        debug: {
-          priceRange,
-          suggestionsCount: suggestions.length,
-          processedCount: processedProducts.length,
-          duration: Math.round(performance.now() - startTime)
-        }
-      }),
-      { 
-        headers: { 
-          ...corsHeaders, 
+    try {
+      const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${deepseekApiKey}`,
           'Content-Type': 'application/json',
-          'Cache-Control': 'no-store, no-cache, must-revalidate'
-        } 
+        },
+        body: JSON.stringify({
+          model: "deepseek-chat",
+          messages: [
+            {
+              role: "system",
+              content: "You are a gift suggestion expert. Price accuracy and format are CRITICAL. Every suggestion MUST end with an EXACT price in parentheses."
+            },
+            { role: "user", content: enhancedPrompt }
+          ],
+          max_tokens: 1000,
+          temperature: 1.3,
+          stream: false
+        }),
+        signal: controller.signal
+      });
+
+      clearTimeout(timeout);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('DeepSeek API error:', {
+          status: response.status,
+          statusText: response.statusText,
+          error: errorText
+        });
+        throw new Error(`DeepSeek API error: ${response.status} ${errorText}`);
       }
-    );
+
+      const data = await response.json();
+      console.log('DeepSeek response received:', {
+        status: response.status,
+        hasChoices: !!data.choices,
+        firstChoice: !!data.choices?.[0]
+      });
+
+      if (!data.choices?.[0]?.message?.content) {
+        console.error('Invalid DeepSeek response format:', data);
+        throw new Error('Invalid response format from DeepSeek API');
+      }
+
+      // Extract and validate suggestions
+      let suggestions = validateAndCleanSuggestions(data.choices[0].message.content);
+      console.log('Initial suggestions:', suggestions);
+      
+      if (!suggestions || suggestions.length !== 8) {
+        console.error('Invalid number of suggestions:', suggestions?.length);
+        throw new Error('Did not receive exactly 8 suggestions');
+      }
+
+      // Validate prices in suggestions with more detailed logging
+      suggestions = suggestions.filter(suggestion => {
+        console.log('Validating suggestion:', suggestion);
+        const priceMatch = suggestion.match(/\(\$(\d+\.\d{2})\)$/);
+        
+        if (!priceMatch) {
+          console.log('❌ No valid price format found in suggestion:', suggestion);
+          return false;
+        }
+        
+        const price = parseFloat(priceMatch[1]);
+        console.log('Extracted price:', price, 'Range:', priceRange.min_price, '-', priceRange.max_price);
+        
+        if (isNaN(price)) {
+          console.log('❌ Invalid price format:', priceMatch[1]);
+          return false;
+        }
+        
+        if (price < priceRange.min_price) {
+          console.log('❌ Price below minimum:', price, '<', priceRange.min_price);
+          return false;
+        }
+        
+        if (price > priceRange.max_price) {
+          console.log('❌ Price above maximum:', price, '>', priceRange.max_price);
+          return false;
+        }
+        
+        console.log('✅ Valid suggestion with price:', price);
+        return true;
+      });
+
+      if (suggestions.length < 8) {
+        console.log('Not enough valid suggestions after price filtering:', suggestions.length);
+        throw new Error(`Not enough valid suggestions within price range $${priceRange.min_price.toFixed(2)}-$${priceRange.max_price.toFixed(2)}`);
+      }
+
+      // Process suggestions with the analyzed price range
+      console.log('Processing suggestions with price range:', priceRange);
+      const processedProducts = await processSuggestionsInBatches(suggestions);
+      console.log('Processed products:', processedProducts);
+      
+      if (!processedProducts.length) {
+        throw new Error('No products found for suggestions');
+      }
+
+      return new Response(
+        JSON.stringify({ 
+          suggestions: processedProducts,
+          debug: {
+            priceRange,
+            suggestionsCount: suggestions.length,
+            processedCount: processedProducts.length,
+            duration: Math.round(performance.now() - startTime)
+          }
+        }),
+        { 
+          headers: { 
+            ...corsHeaders, 
+            'Content-Type': 'application/json',
+            'Cache-Control': 'no-store, no-cache, must-revalidate'
+          } 
+        }
+      );
+
+    } catch (error) {
+      if (error.name === 'AbortError') {
+        throw new Error('DeepSeek API request timed out after 30 seconds');
+      }
+      throw error;
+    } finally {
+      clearTimeout(timeout);
+    }
 
   } catch (error) {
     console.error('Error in generate-gift-suggestions function:', error);
