@@ -20,20 +20,21 @@ serve(async (req) => {
 
     // First, analyze the price range
     console.log('Analyzing price range...');
-    const { data: priceRange, error: priceError } = await (Deno as any).env.supabaseFunctionClient.invoke('analyze-price-range', {
+    const priceRangeResponse = await (Deno as any).env.supabaseFunctionClient.invoke('analyze-price-range', {
       body: { prompt }
     });
 
-    if (priceError) {
-      console.error('Error analyzing price range:', priceError);
-      throw new Error(`Price range analysis failed: ${priceError.message}`);
+    if (priceRangeResponse.error) {
+      console.error('Error analyzing price range:', priceRangeResponse.error);
+      throw new Error(`Price range analysis failed: ${priceRangeResponse.error.message || 'Unknown error'}`);
     }
 
-    if (!priceRange || typeof priceRange.min_price !== 'number' || typeof priceRange.max_price !== 'number') {
-      console.error('Invalid price range response:', priceRange);
+    if (!priceRangeResponse.data || typeof priceRangeResponse.data.min_price !== 'number' || typeof priceRangeResponse.data.max_price !== 'number') {
+      console.error('Invalid price range response:', priceRangeResponse);
       throw new Error('Invalid price range format received');
     }
 
+    const priceRange = priceRangeResponse.data;
     console.log('Analyzed price range:', priceRange);
 
     const deepseekApiKey = Deno.env.get('DEEPSEEK_API_KEY');

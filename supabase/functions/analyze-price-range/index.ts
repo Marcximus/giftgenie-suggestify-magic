@@ -1,25 +1,32 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import "https://deno.land/x/xhr@0.1.0/mod.ts";
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { corsHeaders } from '../_shared/cors.ts';
 
 serve(async (req) => {
+  console.log('Price range analysis started');
+  
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
     const { prompt } = await req.json();
-    console.log('Analyzing price range for prompt:', prompt);
+    console.log('Analyzing prompt for price range:', prompt);
+
+    if (!prompt || typeof prompt !== 'string') {
+      throw new Error('Invalid prompt provided');
+    }
 
     const deepseekApiKey = Deno.env.get('DEEPSEEK_API_KEY');
     if (!deepseekApiKey) {
       throw new Error('DEEPSEEK_API_KEY is not configured');
     }
 
+    const analysisPrompt = `Given this gift request: "${prompt}", extract the minimum and maximum price range in USD.
+If no specific price is mentioned, use context clues to determine an appropriate range.
+Return ONLY a JSON object with 'min_price' and 'max_price' as numbers (no currency symbols or commas).
+Example: {"min_price": 20, "max_price": 50}`;
+
+    console.log('Making DeepSeek API request for price analysis');
     const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -31,86 +38,80 @@ serve(async (req) => {
         messages: [
           {
             role: "system",
-            content: `You are a price range analyzer. Your task is to analyze user input and extract or infer an appropriate price range in USD.
-
-Rules for price extraction:
-1. If a specific budget or price range is mentioned (e.g., "$50-100", "under $50", "$100 budget"), use those exact values
-2. If a price range is implied by the type of gift or recipient, infer a reasonable range
-3. Always return prices as exact decimal numbers with 2 decimal places (e.g., 49.99)
-4. The minimum price should never be less than 5.00
-5. The maximum price should be reasonable for the type of gift
-6. If no price is mentioned, use context clues from the gift type and recipient
-
-Return ONLY a JSON object in this exact format:
-{
-  "min_price": number,
-  "max_price": number
-}`
+            content: "You are a price range analyzer. You extract price ranges from gift requests and return them in a specific JSON format."
           },
-          {
-            role: "user",
-            content: prompt
-          }
+          { role: "user", content: analysisPrompt }
         ],
-        temperature: 0.1,
-        max_tokens: 100
+        max_tokens: 100,
+        temperature: 0.1
       }),
     });
 
     if (!response.ok) {
-      console.error('DeepSeek API error:', await response.text());
+      const errorText = await response.text();
+      console.error('DeepSeek API error:', {
+        status: response.status,
+        statusText: response.statusText,
+        error: errorText
+      });
       throw new Error(`DeepSeek API error: ${response.status}`);
     }
 
     const data = await response.json();
-    console.log('Raw DeepSeek response:', data);
+    console.log('DeepSeek response received:', data);
 
     if (!data.choices?.[0]?.message?.content) {
       throw new Error('Invalid response format from DeepSeek API');
     }
 
-    const content = data.choices[0].message.content.trim();
-    console.log('Extracted content:', content);
-
+    let priceRange;
     try {
-      const priceRange = JSON.parse(content);
-      
-      // Validate the price range format
-      if (typeof priceRange.min_price !== 'number' || typeof priceRange.max_price !== 'number') {
-        throw new Error('Invalid price range format');
-      }
-
-      // Ensure minimum price is at least $5
-      priceRange.min_price = Math.max(5.00, Number(priceRange.min_price.toFixed(2)));
-      priceRange.max_price = Number(priceRange.max_price.toFixed(2));
-
-      // Ensure max price is greater than min price
-      if (priceRange.max_price <= priceRange.min_price) {
-        priceRange.max_price = priceRange.min_price * 1.5; // Add 50% to min price as fallback
-      }
-
-      console.log('Final price range:', priceRange);
-
-      return new Response(
-        JSON.stringify(priceRange),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-
+      priceRange = JSON.parse(data.choices[0].message.content);
+      console.log('Parsed price range:', priceRange);
     } catch (error) {
       console.error('Error parsing price range:', error);
-      throw new Error('Failed to parse price range from DeepSeek response');
+      throw new Error('Failed to parse price range from API response');
     }
+
+    // Validate the price range
+    if (
+      typeof priceRange.min_price !== 'number' ||
+      typeof priceRange.max_price !== 'number' ||
+      priceRange.min_price < 0 ||
+      priceRange.max_price <= priceRange.min_price
+    ) {
+      console.error('Invalid price range values:', priceRange);
+      throw new Error('Invalid price range values received');
+    }
+
+    return new Response(
+      JSON.stringify({
+        min_price: priceRange.min_price,
+        max_price: priceRange.max_price
+      }),
+      { 
+        headers: { 
+          ...corsHeaders,
+          'Content-Type': 'application/json'
+        } 
+      }
+    );
 
   } catch (error) {
     console.error('Error in analyze-price-range function:', error);
+    
     return new Response(
-      JSON.stringify({ 
-        error: error.message,
+      JSON.stringify({
+        error: 'Failed to analyze price range',
+        details: error.message,
         timestamp: new Date().toISOString()
       }),
       { 
         status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        headers: { 
+          ...corsHeaders,
+          'Content-Type': 'application/json'
+        }
       }
     );
   }
