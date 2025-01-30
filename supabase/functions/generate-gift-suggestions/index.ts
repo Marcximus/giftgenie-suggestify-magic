@@ -52,8 +52,8 @@ serve(async (req) => {
     }
 
     const priceRange = {
-      min_price: priceRangeData.min_price,
-      max_price: priceRangeData.max_price
+      min_price: parseFloat(priceRangeData.min_price),
+      max_price: parseFloat(priceRangeData.max_price)
     };
     console.log('Analyzed price range:', priceRange);
 
