@@ -90,7 +90,9 @@ RULES:
 
       let priceRange;
       try {
-        priceRange = JSON.parse(data.choices[0].message.content);
+        const content = data.choices[0].message.content.trim();
+        console.log('Parsing content:', content);
+        priceRange = JSON.parse(content);
       } catch (error) {
         console.error('Failed to parse price range JSON:', error);
         throw new Error('Invalid JSON in DeepSeek response');
@@ -98,18 +100,22 @@ RULES:
 
       // Validate price range
       if (typeof priceRange.min_price !== 'number' || typeof priceRange.max_price !== 'number') {
+        console.error('Invalid price range format:', priceRange);
         throw new Error('Price range must contain numeric values');
       }
 
       if (priceRange.min_price < 0) {
+        console.log('Adjusting negative min_price to 0');
         priceRange.min_price = 0;
       }
 
       if (priceRange.max_price <= priceRange.min_price) {
+        console.log('Adjusting max_price to be greater than min_price');
         priceRange.max_price = priceRange.min_price + 50;
       }
 
       if (priceRange.max_price > 1000 && !prompt.toLowerCase().includes('expensive') && !prompt.toLowerCase().includes('luxury')) {
+        console.log('Capping max_price at 1000');
         priceRange.max_price = 1000;
       }
 
