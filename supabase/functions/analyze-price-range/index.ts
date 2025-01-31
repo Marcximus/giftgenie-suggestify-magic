@@ -78,14 +78,40 @@ RULES:
           statusText: response.statusText,
           error: errorText
         });
-        throw new Error(`DeepSeek API error: ${response.status} ${errorText}`);
+        return new Response(
+          JSON.stringify({
+            error: 'DeepSeek API error',
+            details: `Status ${response.status}: ${errorText}`,
+            timestamp: new Date().toISOString()
+          }),
+          { 
+            status: 500,
+            headers: { 
+              ...corsHeaders,
+              'Content-Type': 'application/json'
+            }
+          }
+        );
       }
 
       const data = await response.json();
       console.log('DeepSeek response:', data);
 
       if (!data.choices?.[0]?.message?.content) {
-        throw new Error('Invalid response format from DeepSeek API');
+        return new Response(
+          JSON.stringify({
+            error: 'Invalid response format',
+            details: 'Missing content in DeepSeek response',
+            timestamp: new Date().toISOString()
+          }),
+          { 
+            status: 500,
+            headers: { 
+              ...corsHeaders,
+              'Content-Type': 'application/json'
+            }
+          }
+        );
       }
 
       let priceRange;
@@ -95,13 +121,39 @@ RULES:
         priceRange = JSON.parse(content);
       } catch (error) {
         console.error('Failed to parse price range JSON:', error);
-        throw new Error('Invalid JSON in DeepSeek response');
+        return new Response(
+          JSON.stringify({
+            error: 'Invalid JSON format',
+            details: 'Failed to parse DeepSeek response as JSON',
+            timestamp: new Date().toISOString()
+          }),
+          { 
+            status: 500,
+            headers: { 
+              ...corsHeaders,
+              'Content-Type': 'application/json'
+            }
+          }
+        );
       }
 
       // Validate price range
       if (typeof priceRange.min_price !== 'number' || typeof priceRange.max_price !== 'number') {
         console.error('Invalid price range format:', priceRange);
-        throw new Error('Price range must contain numeric values');
+        return new Response(
+          JSON.stringify({
+            error: 'Invalid price range format',
+            details: 'Price range must contain numeric values',
+            timestamp: new Date().toISOString()
+          }),
+          { 
+            status: 500,
+            headers: { 
+              ...corsHeaders,
+              'Content-Type': 'application/json'
+            }
+          }
+        );
       }
 
       if (priceRange.min_price < 0) {
@@ -133,7 +185,20 @@ RULES:
 
     } catch (error) {
       if (error.name === 'AbortError') {
-        throw new Error('DeepSeek API request timed out after 15 seconds');
+        return new Response(
+          JSON.stringify({
+            error: 'Request timeout',
+            details: 'DeepSeek API request timed out after 15 seconds',
+            timestamp: new Date().toISOString()
+          }),
+          { 
+            status: 504,
+            headers: { 
+              ...corsHeaders,
+              'Content-Type': 'application/json'
+            }
+          }
+        );
       }
       throw error;
     }
@@ -143,7 +208,7 @@ RULES:
     
     return new Response(
       JSON.stringify({
-        error: 'Failed to analyze price range',
+        error: 'Price range analysis failed',
         details: error.message,
         timestamp: new Date().toISOString()
       }),
