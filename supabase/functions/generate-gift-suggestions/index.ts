@@ -1,8 +1,11 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import "https://deno.land/x/xhr@0.1.0/mod.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 import { corsHeaders } from '../_shared/cors.ts';
 import { validateAndCleanSuggestions } from '../_shared/suggestion-validator.ts';
 import { processSuggestionsInBatches } from '../_shared/batch-processor.ts';
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
+
+const DEEPSEEK_API_KEY = Deno.env.get('DEEPSEEK_API_KEY');
 
 serve(async (req) => {
   const startTime = performance.now();
@@ -10,6 +13,11 @@ serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
+
+  const supabase = createClient(
+    Deno.env.get('SUPABASE_URL') ?? '',
+    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+  );
 
   try {
     const { prompt } = await req.json();
@@ -19,55 +27,31 @@ serve(async (req) => {
       throw new Error('Invalid prompt');
     }
 
-    // Create a Supabase client specifically for the Edge Function
-    const supabaseUrl = Deno.env.get('SUPABASE_URL');
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-    
-    if (!supabaseUrl || !supabaseKey) {
-      throw new Error('Missing Supabase configuration');
-    }
+    // Extract interests from the prompt
+    const interestsMatch = prompt.match(/who likes (.*?) with a budget/i);
+    const interests = interestsMatch ? interestsMatch[1].split(' and ') : [];
+    console.log('Extracted interests:', interests);
 
-    const supabase = createClient(supabaseUrl, supabaseKey);
-
-    // First, analyze the price range
-    console.log('Analyzing price range...');
-    const { data: priceRangeData, error: priceRangeError } = await supabase.functions.invoke('analyze-price-range', {
-      body: { prompt }
-    });
-
-    if (priceRangeError) {
-      console.error('Error analyzing price range:', priceRangeError);
-      throw new Error(`Price range analysis failed: ${priceRangeError.message || 'Unknown error'}`);
-    }
-
-    if (!priceRangeData || typeof priceRangeData.min_price !== 'number' || typeof priceRangeData.max_price !== 'number') {
-      console.error('Invalid price range response:', priceRangeData);
-      throw new Error('Invalid price range format received');
-    }
-
-    const priceRange = priceRangeData;
-    console.log('Analyzed price range:', priceRange);
-
-    const deepseekApiKey = Deno.env.get('DEEPSEEK_API_KEY');
-    if (!deepseekApiKey) {
-      throw new Error('DEEPSEEK_API_KEY is not configured');
-    }
-
-    const enhancedPrompt = `You are a gifting expert. Based on the request "${prompt}", suggest 8 specific gift ideas.
+    const enhancedPrompt = `You are an gifting expert. Based on the request "${prompt}", suggest 8 specific gift ideas.
 
 Consider:
 - Age, gender, and occasion mentioned
-- CRITICAL: Stay within the price range of $${priceRange.min_price.toFixed(2)} to $${priceRange.max_price.toFixed(2)}
+- CRITICAL: Any budget constraints specified (can fluctuate by 20%)
 - The recipient's interests and preferences
 - Avoid suggesting identical items
 
 Return ONLY a JSON array of exactly 8 strings`;
 
-    console.log('Making DeepSeek API request...');
+    console.log('Enhanced prompt:', enhancedPrompt);
+
+    if (!DEEPSEEK_API_KEY) {
+      throw new Error('DEEPSEEK_API_KEY is not configured');
+    }
+
     const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${deepseekApiKey}`,
+        'Authorization': `Bearer ${DEEPSEEK_API_KEY}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
@@ -87,23 +71,14 @@ Return ONLY a JSON array of exactly 8 strings`;
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('DeepSeek API error:', {
-        status: response.status,
-        statusText: response.statusText,
-        error: errorText
-      });
+      console.error('DeepSeek API error:', errorText);
       throw new Error(`DeepSeek API error: ${response.status} ${errorText}`);
     }
 
     const data = await response.json();
-    console.log('DeepSeek response received:', {
-      status: response.status,
-      hasChoices: !!data.choices,
-      firstChoice: !!data.choices?.[0]
-    });
+    console.log('Raw DeepSeek response:', data);
 
     if (!data.choices?.[0]?.message?.content) {
-      console.error('Invalid DeepSeek response format:', data);
       throw new Error('Invalid response format from DeepSeek API');
     }
 
@@ -111,29 +86,28 @@ Return ONLY a JSON array of exactly 8 strings`;
     console.log('Validated suggestions:', suggestions);
     
     if (!suggestions || suggestions.length !== 8) {
-      console.error('Invalid number of suggestions:', suggestions?.length);
       throw new Error('Did not receive exactly 8 suggestions');
     }
 
-    // Process suggestions with the analyzed price range
-    console.log('Processing suggestions with price range:', priceRange);
-    const processedProducts = await processSuggestionsInBatches(suggestions, priceRange);
+    // Process suggestions
+    console.log('Processing suggestions:', suggestions);
+    const processedProducts = await processSuggestionsInBatches(suggestions);
     console.log('Processed products:', processedProducts);
     
     if (!processedProducts.length) {
       throw new Error('No products found for suggestions');
     }
 
+    // Log metrics
+    await supabase.from('api_metrics').insert({
+      endpoint: 'generate-gift-suggestions',
+      duration_ms: Math.round(performance.now() - startTime),
+      status: 'success',
+      cache_hit: false
+    });
+
     return new Response(
-      JSON.stringify({ 
-        suggestions: processedProducts,
-        debug: {
-          priceRange,
-          suggestionsCount: suggestions.length,
-          processedCount: processedProducts.length,
-          duration: Math.round(performance.now() - startTime)
-        }
-      }),
+      JSON.stringify({ suggestions: processedProducts }),
       { 
         headers: { 
           ...corsHeaders, 
@@ -142,10 +116,18 @@ Return ONLY a JSON array of exactly 8 strings`;
         } 
       }
     );
-
   } catch (error) {
     console.error('Error in generate-gift-suggestions function:', error);
     console.error('Stack trace:', error.stack);
+    
+    // Log error metrics
+    await supabase.from('api_metrics').insert({
+      endpoint: 'generate-gift-suggestions',
+      duration_ms: Math.round(performance.now() - startTime),
+      status: 'error',
+      error_message: error.message,
+      cache_hit: false
+    });
     
     return new Response(
       JSON.stringify({ 
@@ -153,13 +135,13 @@ Return ONLY a JSON array of exactly 8 strings`;
         details: error.message,
         timestamp: new Date().toISOString()
       }),
-      { 
+      {
         status: 500,
         headers: { 
           ...corsHeaders, 
           'Content-Type': 'application/json',
           'Cache-Control': 'no-store, no-cache, must-revalidate'
-        }
+        },
       }
     );
   }

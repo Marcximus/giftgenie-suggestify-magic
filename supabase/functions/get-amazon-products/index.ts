@@ -1,48 +1,51 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { corsHeaders } from '../_shared/cors.ts';
-import { extractPrice, parsePriceRange, validatePriceInRange } from './priceUtils.ts';
 
 const RAPIDAPI_HOST = 'real-time-amazon-data.p.rapidapi.com';
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Max-Age': '86400',
+};
+
+interface AmazonProduct {
+  title: string;
+  description?: string;
+  price?: number;
+  currency?: string;
+  imageUrl?: string;
+  rating?: number;
+  totalRatings?: number;
+  asin: string;
+}
+
+const extractPrice = (priceStr: string | null | undefined): number | undefined => {
+  if (!priceStr) return undefined;
+  const cleanPrice = priceStr.replace(/[^0-9.]/g, '');
+  const price = parseFloat(cleanPrice);
+  return isNaN(price) ? undefined : price;
+};
 
 async function searchAmazonProduct(
   searchTerm: string,
   apiKey: string,
-  priceRange?: string,
-  searchParams?: Record<string, string>
+  priceRange?: string
 ): Promise<AmazonProduct | null> {
-  console.log('Starting Amazon search with:', { searchTerm, priceRange, searchParams });
+  console.log('Starting Amazon search with term:', searchTerm, { priceRange });
   
-  // Parse price range first to ensure we have valid constraints
-  const parsedRange = priceRange ? parsePriceRange(priceRange) : null;
-  console.log('Parsed price range:', parsedRange);
-
-  // Format price parameters for the API (in dollars with 2 decimal places)
-  const params = new URLSearchParams({
+  const searchParams = new URLSearchParams({
     query: searchTerm.trim(),
     country: 'US',
     category_id: 'aps',
-    sort_by: 'RELEVANCE',
-    ...(searchParams || {})
+    sort_by: 'RELEVANCE'
   });
 
-  if (parsedRange) {
-    // Convert to exact decimal values
-    const minPrice = parsedRange.min.toFixed(2);
-    const maxPrice = parsedRange.max.toFixed(2);
-    
-    console.log('Adding price constraints:', { minPrice, maxPrice });
-    params.append('min_price', minPrice);
-    params.append('max_price', maxPrice);
-    
-    // Log final parameters for debugging
-    console.log('Final URL parameters:', Object.fromEntries(params.entries()));
-  }
-
   try {
-    console.log('Making request to Amazon API with params:', params.toString());
+    console.log('Making request to Amazon API with params:', searchParams.toString());
     
     const searchResponse = await fetch(
-      `https://${RAPIDAPI_HOST}/search?${params.toString()}`,
+      `https://${RAPIDAPI_HOST}/search?${searchParams.toString()}`,
       {
         headers: {
           'X-RapidAPI-Key': apiKey,
@@ -70,64 +73,77 @@ async function searchAmazonProduct(
       return null;
     }
 
-    // Find the first product that matches our price criteria
-    for (const product of searchData.data.products) {
-      const price = extractPrice(product.product_price);
-      console.log('Checking product:', {
-        title: product.title,
-        rawPrice: product.product_price,
-        extractedPrice: price,
-        priceRange: parsedRange
-      });
-
-      if (!price) {
-        console.log('Skipping product - invalid price:', product.title);
-        continue;
+    let product = searchData.data.products[0];
+    
+    if (!product.asin) {
+      console.log('First product has no ASIN, searching for product with ASIN...');
+      const productWithAsin = searchData.data.products.find((p: any) => p.asin);
+      if (!productWithAsin) {
+        console.log('No product with ASIN found in results');
+        return null;
       }
-
-      // Strict price validation
-      if (parsedRange) {
-        const isInRange = validatePriceInRange(price, parsedRange.min, parsedRange.max);
-        console.log('Price validation:', {
-          price,
-          min: parsedRange.min,
-          max: parsedRange.max,
-          isInRange
-        });
-
-        if (!isInRange) {
-          console.log('Skipping product - outside price range:', {
-            title: product.title,
-            price,
-            min: parsedRange.min,
-            max: parsedRange.max
-          });
-          continue;
-        }
-      }
-
-      console.log('Found valid product within price range:', {
-        title: product.title,
-        price,
-        asin: product.asin
-      });
-
-      return {
-        title: product.title,
-        description: product.product_description || product.title,
-        price: price,
-        currency: 'USD',
-        imageUrl: product.product_photo || product.thumbnail,
-        rating: product.product_star_rating ? parseFloat(product.product_star_rating) : undefined,
-        totalRatings: product.product_num_ratings ? parseInt(product.product_num_ratings.toString(), 10) : undefined,
-        asin: product.asin,
-      };
+      product = productWithAsin;
+      console.log('Found alternative product with ASIN:', product.asin);
     }
 
-    console.log('No products found within specified price range');
-    return null;
+    // Get detailed product information using ASIN
+    const detailsResponse = await fetch(
+      `https://${RAPIDAPI_HOST}/product-details?asin=${product.asin}&country=US`,
+      {
+        headers: {
+          'X-RapidAPI-Key': apiKey,
+          'X-RapidAPI-Host': RAPIDAPI_HOST,
+        }
+      }
+    );
+
+    let detailsData;
+    if (detailsResponse.ok) {
+      detailsData = await detailsResponse.json();
+      console.log('Product details response:', {
+        title: detailsData.data?.product_title,
+        price: detailsData.data?.product_price,
+        originalPrice: detailsData.data?.product_original_price
+      });
+    }
+
+    // Extract price from product details or search result
+    const price = detailsData?.data?.product_price 
+      ? extractPrice(detailsData.data.product_price)
+      : extractPrice(product.product_price);
+
+    console.log('Final price extraction:', {
+      detailsPrice: detailsData?.data?.product_price,
+      searchPrice: product.product_price,
+      extractedPrice: price
+    });
+
+    const result: AmazonProduct = {
+      title: detailsData?.data?.product_title || product.title,
+      description: detailsData?.data?.product_description || product.product_description || product.title,
+      price: price,
+      currency: 'USD',
+      imageUrl: detailsData?.data?.product_photo || product.product_photo || product.thumbnail,
+      rating: detailsData?.data?.product_star_rating ? parseFloat(detailsData.data.product_star_rating) : undefined,
+      totalRatings: detailsData?.data?.product_num_ratings ? parseInt(detailsData.data.product_num_ratings, 10) : undefined,
+      asin: product.asin,
+    };
+
+    console.log('Final processed product:', {
+      title: result.title,
+      asin: result.asin,
+      hasImage: !!result.imageUrl,
+      hasPrice: result.price !== undefined,
+      price: result.price
+    });
+
+    return result;
   } catch (error) {
-    console.error('Error searching Amazon:', error);
+    console.error('Error searching Amazon:', {
+      error: error.message,
+      searchTerm,
+      stack: error.stack
+    });
     return null;
   }
 }
@@ -140,11 +156,13 @@ serve(async (req) => {
   }
 
   try {
-    const { searchTerm, priceRange, searchParams } = await req.json();
+    console.log('Received request:', req.method);
+    const { searchTerm, priceRange } = await req.json();
     
-    console.log('Request payload:', { searchTerm, priceRange, searchParams });
+    console.log('Request payload:', { searchTerm, priceRange });
 
     if (!searchTerm) {
+      console.error('Missing search term in request');
       return new Response(
         JSON.stringify({ error: 'Search term is required' }),
         { 
@@ -156,6 +174,7 @@ serve(async (req) => {
 
     const apiKey = Deno.env.get('RAPIDAPI_KEY');
     if (!apiKey) {
+      console.error('RAPIDAPI_KEY not configured');
       return new Response(
         JSON.stringify({ error: 'API configuration error' }),
         { 
@@ -165,8 +184,22 @@ serve(async (req) => {
       );
     }
 
-    const product = await searchAmazonProduct(searchTerm, apiKey, priceRange, searchParams);
+    console.log('Processing request:', { searchTerm, priceRange });
+
+    const product = await searchAmazonProduct(searchTerm, apiKey, priceRange);
     
+    if (!product) {
+      console.log('No product found for search term:', searchTerm);
+      return new Response(
+        JSON.stringify({ product: null }),
+        { 
+          status: 200,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
+    }
+
+    console.log('Successfully found product, returning response');
     return new Response(
       JSON.stringify({ product }),
       { 
@@ -176,10 +209,16 @@ serve(async (req) => {
     );
 
   } catch (error) {
-    console.error('Error processing request:', error);
+    console.error('Error processing request:', {
+      error: error.message,
+      stack: error.stack
+    });
     
     return new Response(
-      JSON.stringify({ error: error.message || 'Internal server error' }),
+      JSON.stringify({
+        error: error.message || 'Internal server error',
+        details: error.stack
+      }),
       { 
         status: error.status || 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }

@@ -1,46 +1,22 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
+import { corsHeaders } from '../_shared/cors.ts';
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-};
+const DEEPSEEK_API_KEY = Deno.env.get('DEEPSEEK_API_KEY');
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const DEEPSEEK_API_KEY = Deno.env.get('DEEPSEEK_API_KEY');
-    console.log('Checking DeepSeek API key:', { hasKey: !!DEEPSEEK_API_KEY });
-    
-    if (!DEEPSEEK_API_KEY) {
-      throw new Error('DEEPSEEK_API_KEY is not configured');
-    }
-
-    // Parse request body
-    const body = await req.text();
-    console.log('Raw request body:', body);
-
-    let title;
-    try {
-      const data = JSON.parse(body);
-      title = data.title;
-    } catch (e) {
-      console.error('Failed to parse request body:', e);
-      throw new Error('Invalid JSON in request body');
-    }
-
-    console.log('Processing title request:', { title });
+    const { title } = await req.json();
+    console.log('Generating title:', { originalTitle: title });
 
     if (!title) {
       throw new Error('Title is required');
     }
 
-    console.log('Making request to DeepSeek API...');
     const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -73,25 +49,10 @@ serve(async (req) => {
       throw new Error(`DeepSeek API error: ${response.status}`);
     }
 
-    const responseText = await response.text();
-    console.log('Raw DeepSeek response:', responseText);
-
-    let data;
-    try {
-      data = JSON.parse(responseText);
-    } catch (e) {
-      console.error('Failed to parse DeepSeek response:', e);
-      throw new Error('Invalid JSON in DeepSeek response');
-    }
-
-    console.log('Parsed DeepSeek response:', data);
-
-    if (!data.choices?.[0]?.message?.content) {
-      throw new Error('Invalid response format from DeepSeek API');
-    }
-
+    const data = await response.json();
     const simplifiedTitle = data.choices[0].message.content.trim();
-    console.log('Title optimization complete:', {
+    
+    console.log('Title optimization:', {
       original: title,
       simplified: simplifiedTitle,
       reduction: ((title.length - simplifiedTitle.length) / title.length * 100).toFixed(1) + '%'
@@ -101,27 +62,20 @@ serve(async (req) => {
       JSON.stringify({ title: simplifiedTitle }),
       { 
         headers: { 
-          ...corsHeaders,
-          'Content-Type': 'application/json'
+          ...corsHeaders, 
+          'Content-Type': 'application/json',
+          'Cache-Control': 'public, max-age=86400'
         } 
       }
     );
       
   } catch (error) {
-    console.error('Error in generate-product-title:', error);
-    
+    console.error('Error:', error.message);
     return new Response(
-      JSON.stringify({ 
-        error: error.message,
-        details: error.stack,
-        timestamp: new Date().toISOString()
-      }),
+      JSON.stringify({ error: error.message }),
       {
         status: 500,
-        headers: { 
-          ...corsHeaders,
-          'Content-Type': 'application/json'
-        }
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       }
     );
   }
