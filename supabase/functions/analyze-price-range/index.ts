@@ -102,14 +102,34 @@ Example outputs:
           status: response.status,
           statusText: response.statusText
         });
-        throw new Error(`DeepSeek API error: ${response.status}`);
+        return new Response(
+          JSON.stringify({
+            error: 'DeepSeek API error',
+            details: `Status: ${response.status}`,
+            timestamp: new Date().toISOString()
+          }),
+          { 
+            status: response.status,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          }
+        );
       }
 
       const data = await response.json();
       console.log('DeepSeek response:', data);
 
       if (!data.choices?.[0]?.message?.content) {
-        throw new Error('Invalid response format from DeepSeek API');
+        return new Response(
+          JSON.stringify({
+            error: 'Invalid response format',
+            details: 'Missing content in API response',
+            timestamp: new Date().toISOString()
+          }),
+          { 
+            status: 502,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          }
+        );
       }
 
       let priceRange: PriceRange;
@@ -119,7 +139,17 @@ Example outputs:
         priceRange = JSON.parse(content);
       } catch (error) {
         console.error('Error parsing price range:', error);
-        throw new Error('Failed to parse price range from response');
+        return new Response(
+          JSON.stringify({
+            error: 'Parse error',
+            details: 'Failed to parse price range from response',
+            timestamp: new Date().toISOString()
+          }),
+          { 
+            status: 502,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          }
+        );
       }
 
       // Validate the price range
@@ -131,7 +161,17 @@ Example outputs:
         priceRange.max_price > 1000
       ) {
         console.error('Invalid price range values:', priceRange);
-        throw new Error('Invalid price range values received');
+        return new Response(
+          JSON.stringify({
+            error: 'Validation error',
+            details: 'Invalid price range values',
+            timestamp: new Date().toISOString()
+          }),
+          { 
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          }
+        );
       }
 
       // Round to whole numbers
@@ -152,7 +192,8 @@ Example outputs:
       if (error.name === 'AbortError') {
         return new Response(
           JSON.stringify({
-            error: 'Request timeout',
+            error: 'Timeout',
+            details: 'Request timed out after 15 seconds',
             timestamp: new Date().toISOString()
           }),
           { 
@@ -169,7 +210,7 @@ Example outputs:
     
     return new Response(
       JSON.stringify({
-        error: 'Failed to analyze price range',
+        error: 'Server error',
         details: error.message,
         timestamp: new Date().toISOString()
       }),
