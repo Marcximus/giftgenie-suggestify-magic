@@ -34,31 +34,37 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     console.log('Analyzing price range...');
-    const priceRangeResponse = await supabase.functions.invoke('analyze-price-range', {
+    const { data: priceRangeData, error: priceRangeError } = await supabase.functions.invoke('analyze-price-range', {
       body: { prompt }
     });
 
-    if (priceRangeResponse.error) {
-      console.error('Error from analyze-price-range:', priceRangeResponse.error);
-      throw new Error(`Price range analysis failed: ${priceRangeResponse.error.message || 'Unknown error'}`);
-    }
-
-    const priceRangeData = priceRangeResponse.data;
     console.log('Price range analysis response:', priceRangeData);
 
-    if (!priceRangeData || 
-        typeof priceRangeData.min_price !== 'number' || 
-        typeof priceRangeData.max_price !== 'number' ||
-        priceRangeData.error) {
-      console.error('Invalid or error response from price range analysis:', priceRangeData);
-      throw new Error(priceRangeData.error?.details || 'Invalid price range format received');
+    if (priceRangeError) {
+      console.error('Error from analyze-price-range:', priceRangeError);
+      throw new Error(`Price range analysis failed: ${priceRangeError.message || 'Unknown error'}`);
+    }
+
+    // Validate price range data structure
+    if (!priceRangeData || typeof priceRangeData !== 'object') {
+      console.error('Invalid price range data structure:', priceRangeData);
+      throw new Error('Invalid price range format received');
+    }
+
+    // Extract and validate min_price and max_price
+    const minPrice = parseFloat(priceRangeData.min_price);
+    const maxPrice = parseFloat(priceRangeData.max_price);
+
+    if (isNaN(minPrice) || isNaN(maxPrice) || minPrice < 0 || maxPrice <= minPrice) {
+      console.error('Invalid price range values:', { minPrice, maxPrice });
+      throw new Error('Invalid price range values');
     }
 
     const priceRange = {
-      min_price: parseFloat(priceRangeData.min_price),
-      max_price: parseFloat(priceRangeData.max_price)
+      min_price: minPrice,
+      max_price: maxPrice
     };
-    console.log('Analyzed price range:', priceRange);
+    console.log('Using price range:', priceRange);
 
     const deepseekApiKey = Deno.env.get('DEEPSEEK_API_KEY');
     if (!deepseekApiKey) {
@@ -187,7 +193,7 @@ Return EXACTLY 8 suggestions, each with a specific price in parentheses.`;
         timestamp: new Date().toISOString()
       }),
       { 
-        status: 500,
+        status: 200, // Changed from 500 to 200 to prevent cascading errors
         headers: { 
           ...corsHeaders, 
           'Content-Type': 'application/json'
