@@ -27,12 +27,7 @@ serve(async (req) => {
       throw new Error('Invalid prompt');
     }
 
-    // Extract interests from the prompt
-    const interestsMatch = prompt.match(/who likes (.*?) with a budget/i);
-    const interests = interestsMatch ? interestsMatch[1].split(' and ') : [];
-    console.log('Extracted interests:', interests);
-
-    const enhancedPrompt = `You are an gifting expert. Based on the request "${prompt}", suggest 8 specific gift ideas.
+    const enhancedPrompt = `You are an gifting expert. Based on the request: "${prompt}", suggest 8 specific gift ideas.
 
 Consider:
 - Age, gender, and occasion mentioned
