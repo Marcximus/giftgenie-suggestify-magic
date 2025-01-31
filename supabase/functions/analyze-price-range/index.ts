@@ -36,6 +36,7 @@ serve(async (req) => {
 
     const deepseekApiKey = Deno.env.get('DEEPSEEK_API_KEY');
     if (!deepseekApiKey) {
+      console.error('DEEPSEEK_API_KEY not configured');
       return new Response(
         JSON.stringify({
           error: 'Service configuration error',
@@ -67,7 +68,7 @@ Example outputs:
 - "under $50" → {"min_price": 20, "max_price": 50}
 - "$100-$200" → {"min_price": 100, "max_price": 200}`;
 
-    console.log('Making DeepSeek API request with prompt:', analysisPrompt);
+    console.log('Making DeepSeek API request');
     
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 15000);
@@ -84,7 +85,7 @@ Example outputs:
           messages: [
             {
               role: "system",
-              content: "You are a price range analyzer. Extract or infer appropriate price ranges for gift requests and return them in a specific JSON format."
+              content: "You are a price range analyzer. Extract or infer appropriate price ranges for gift requests."
             },
             { role: "user", content: analysisPrompt }
           ],
@@ -101,21 +102,15 @@ Example outputs:
           status: response.status,
           statusText: response.statusText
         });
-        return new Response(
-          JSON.stringify({
-            error: 'Failed to analyze price range',
-            details: `DeepSeek API error: ${response.status}`,
-            timestamp: new Date().toISOString()
-          }),
-          { 
-            status: 502,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-          }
-        );
+        throw new Error(`DeepSeek API error: ${response.status}`);
       }
 
       const data = await response.json();
       console.log('DeepSeek response:', data);
+
+      if (!data.choices?.[0]?.message?.content) {
+        throw new Error('Invalid response format from DeepSeek API');
+      }
 
       let priceRange: PriceRange;
       try {
@@ -124,17 +119,7 @@ Example outputs:
         priceRange = JSON.parse(content);
       } catch (error) {
         console.error('Error parsing price range:', error);
-        return new Response(
-          JSON.stringify({
-            error: 'Failed to parse price range',
-            details: 'Invalid response format',
-            timestamp: new Date().toISOString()
-          }),
-          { 
-            status: 502,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-          }
-        );
+        throw new Error('Failed to parse price range from response');
       }
 
       // Validate the price range
@@ -146,17 +131,7 @@ Example outputs:
         priceRange.max_price > 1000
       ) {
         console.error('Invalid price range values:', priceRange);
-        return new Response(
-          JSON.stringify({
-            error: 'Invalid price range values',
-            details: 'Price range must be valid positive numbers with min < max <= 1000',
-            timestamp: new Date().toISOString()
-          }),
-          { 
-            status: 400,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-          }
-        );
+        throw new Error('Invalid price range values received');
       }
 
       // Round to whole numbers
