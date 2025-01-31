@@ -5,70 +5,44 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-interface PriceRange {
-  min_price: number;
-  max_price: number;
-}
-
 serve(async (req) => {
-  console.log('Price range analysis started');
-  
+  console.log('Starting price range analysis...');
+
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
     const { prompt } = await req.json();
-    console.log('Analyzing prompt for price range:', prompt);
+    console.log('Analyzing prompt:', prompt);
 
     if (!prompt || typeof prompt !== 'string') {
-      return new Response(
-        JSON.stringify({
-          error: 'Invalid prompt provided',
-          timestamp: new Date().toISOString()
-        }),
-        { 
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
-      );
+      throw new Error('Invalid or missing prompt');
     }
 
     const deepseekApiKey = Deno.env.get('DEEPSEEK_API_KEY');
     if (!deepseekApiKey) {
-      console.error('DEEPSEEK_API_KEY not configured');
-      return new Response(
-        JSON.stringify({
-          error: 'Service configuration error',
-          timestamp: new Date().toISOString()
-        }),
-        { 
-          status: 500,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
-      );
+      throw new Error('DEEPSEEK_API_KEY is not configured');
     }
 
-    const analysisPrompt = `
-Given this gift request: "${prompt}", extract the exact minimum and maximum price range in USD.
-If a specific price range is mentioned, use those exact values.
-If no specific price is mentioned, infer a reasonable range based on the type of gift.
+    const enhancedPrompt = `Analyze this gift request: "${prompt}"
 
-CRITICAL REQUIREMENTS:
-1. Return ONLY a JSON object with 'min_price' and 'max_price' as numbers
-2. Both values must be positive whole numbers
-3. min_price must be less than max_price
-4. Round to nearest whole dollar
-5. If unclear, use conservative defaults ($20-$50)
-6. Never exceed $1000 for max_price unless explicitly stated
-7. Format: {"min_price": 20, "max_price": 50}
+Return ONLY a JSON object with these exact keys:
+{
+  "min_price": number (minimum price in USD, must be >= 0),
+  "max_price": number (maximum price in USD, must be > min_price and <= 1000)
+}
 
-Example outputs:
-- "around $30" → {"min_price": 25, "max_price": 35}
-- "under $50" → {"min_price": 20, "max_price": 50}
-- "$100-$200" → {"min_price": 100, "max_price": 200}`;
+RULES:
+- If no price is mentioned, use min_price: 20 and max_price: 100
+- Never exceed max_price of 1000 unless explicitly requested
+- Always return numbers, not strings
+- Prices must be realistic for the type of gift
+- Round to nearest dollar
+- min_price must be >= 0
+- max_price must be > min_price`;
 
-    console.log('Making DeepSeek API request');
+    console.log('Making DeepSeek API request...');
     
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 15000);
@@ -85,12 +59,12 @@ Example outputs:
           messages: [
             {
               role: "system",
-              content: "You are a price range analyzer. Extract or infer appropriate price ranges for gift requests."
+              content: "You are a price range analyzer. Return only valid JSON with min_price and max_price as numbers."
             },
-            { role: "user", content: analysisPrompt }
+            { role: "user", content: enhancedPrompt }
           ],
-          max_tokens: 100,
-          temperature: 0.1
+          max_tokens: 150,
+          temperature: 0.3
         }),
         signal: controller.signal
       });
@@ -98,109 +72,62 @@ Example outputs:
       clearTimeout(timeout);
 
       if (!response.ok) {
+        const errorText = await response.text();
         console.error('DeepSeek API error:', {
           status: response.status,
-          statusText: response.statusText
+          statusText: response.statusText,
+          error: errorText
         });
-        return new Response(
-          JSON.stringify({
-            error: 'DeepSeek API error',
-            details: `Status: ${response.status}`,
-            timestamp: new Date().toISOString()
-          }),
-          { 
-            status: response.status,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-          }
-        );
+        throw new Error(`DeepSeek API error: ${response.status} ${errorText}`);
       }
 
       const data = await response.json();
       console.log('DeepSeek response:', data);
 
       if (!data.choices?.[0]?.message?.content) {
-        return new Response(
-          JSON.stringify({
-            error: 'Invalid response format',
-            details: 'Missing content in API response',
-            timestamp: new Date().toISOString()
-          }),
-          { 
-            status: 502,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-          }
-        );
+        throw new Error('Invalid response format from DeepSeek API');
       }
 
-      let priceRange: PriceRange;
+      let priceRange;
       try {
-        const content = data.choices[0].message.content.trim();
-        console.log('Parsing content:', content);
-        priceRange = JSON.parse(content);
+        priceRange = JSON.parse(data.choices[0].message.content);
       } catch (error) {
-        console.error('Error parsing price range:', error);
-        return new Response(
-          JSON.stringify({
-            error: 'Parse error',
-            details: 'Failed to parse price range from response',
-            timestamp: new Date().toISOString()
-          }),
-          { 
-            status: 502,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-          }
-        );
+        console.error('Failed to parse price range JSON:', error);
+        throw new Error('Invalid JSON in DeepSeek response');
       }
 
-      // Validate the price range
-      if (
-        typeof priceRange.min_price !== 'number' ||
-        typeof priceRange.max_price !== 'number' ||
-        priceRange.min_price < 0 ||
-        priceRange.max_price <= priceRange.min_price ||
-        priceRange.max_price > 1000
-      ) {
-        console.error('Invalid price range values:', priceRange);
-        return new Response(
-          JSON.stringify({
-            error: 'Validation error',
-            details: 'Invalid price range values',
-            timestamp: new Date().toISOString()
-          }),
-          { 
-            status: 400,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-          }
-        );
+      // Validate price range
+      if (typeof priceRange.min_price !== 'number' || typeof priceRange.max_price !== 'number') {
+        throw new Error('Price range must contain numeric values');
       }
 
-      // Round to whole numbers
-      priceRange.min_price = Math.round(priceRange.min_price);
-      priceRange.max_price = Math.round(priceRange.max_price);
+      if (priceRange.min_price < 0) {
+        priceRange.min_price = 0;
+      }
 
-      console.log('Returning validated price range:', priceRange);
+      if (priceRange.max_price <= priceRange.min_price) {
+        priceRange.max_price = priceRange.min_price + 50;
+      }
+
+      if (priceRange.max_price > 1000 && !prompt.toLowerCase().includes('expensive') && !prompt.toLowerCase().includes('luxury')) {
+        priceRange.max_price = 1000;
+      }
+
+      console.log('Final price range:', priceRange);
 
       return new Response(
         JSON.stringify(priceRange),
         { 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 200
+          headers: { 
+            ...corsHeaders,
+            'Content-Type': 'application/json'
+          } 
         }
       );
 
     } catch (error) {
       if (error.name === 'AbortError') {
-        return new Response(
-          JSON.stringify({
-            error: 'Timeout',
-            details: 'Request timed out after 15 seconds',
-            timestamp: new Date().toISOString()
-          }),
-          { 
-            status: 504,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-          }
-        );
+        throw new Error('DeepSeek API request timed out after 15 seconds');
       }
       throw error;
     }
@@ -210,13 +137,16 @@ Example outputs:
     
     return new Response(
       JSON.stringify({
-        error: 'Server error',
+        error: 'Failed to analyze price range',
         details: error.message,
         timestamp: new Date().toISOString()
       }),
       { 
         status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        headers: { 
+          ...corsHeaders,
+          'Content-Type': 'application/json'
+        }
       }
     );
   }
