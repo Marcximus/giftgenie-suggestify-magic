@@ -5,6 +5,11 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+interface PriceRange {
+  min_price: number;
+  max_price: number;
+}
+
 serve(async (req) => {
   console.log('Price range analysis started');
   
@@ -17,7 +22,6 @@ serve(async (req) => {
     console.log('Analyzing prompt for price range:', prompt);
 
     if (!prompt || typeof prompt !== 'string') {
-      console.error('Invalid prompt:', prompt);
       return new Response(
         JSON.stringify({
           error: 'Invalid prompt provided',
@@ -25,17 +29,13 @@ serve(async (req) => {
         }),
         { 
           status: 400,
-          headers: { 
-            ...corsHeaders,
-            'Content-Type': 'application/json'
-          }
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         }
       );
     }
 
     const deepseekApiKey = Deno.env.get('DEEPSEEK_API_KEY');
     if (!deepseekApiKey) {
-      console.error('DEEPSEEK_API_KEY not configured');
       return new Response(
         JSON.stringify({
           error: 'Service configuration error',
@@ -43,30 +43,34 @@ serve(async (req) => {
         }),
         { 
           status: 500,
-          headers: { 
-            ...corsHeaders,
-            'Content-Type': 'application/json'
-          }
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         }
       );
     }
 
-    const analysisPrompt = `Given this gift request: "${prompt}", extract the minimum and maximum price range in USD.
-If no specific price is mentioned, use context clues to determine an appropriate range.
-Return ONLY a JSON object with 'min_price' and 'max_price' as numbers (no currency symbols or commas).
-Example: {"min_price": 20, "max_price": 50}
+    const analysisPrompt = `
+Given this gift request: "${prompt}", extract the exact minimum and maximum price range in USD.
+If a specific price range is mentioned, use those exact values.
+If no specific price is mentioned, infer a reasonable range based on the type of gift.
 
-IMPORTANT:
-- Both values must be positive numbers
-- min_price must be less than max_price
-- If no price is mentioned, infer a reasonable range based on the type of gift
-- Round numbers to nearest whole dollar
-- Default to a reasonable range if unclear (e.g., $20-$50 for general gifts)`;
+CRITICAL REQUIREMENTS:
+1. Return ONLY a JSON object with 'min_price' and 'max_price' as numbers
+2. Both values must be positive whole numbers
+3. min_price must be less than max_price
+4. Round to nearest whole dollar
+5. If unclear, use conservative defaults ($20-$50)
+6. Never exceed $1000 for max_price unless explicitly stated
+7. Format: {"min_price": 20, "max_price": 50}
+
+Example outputs:
+- "around $30" → {"min_price": 25, "max_price": 35}
+- "under $50" → {"min_price": 20, "max_price": 50}
+- "$100-$200" → {"min_price": 100, "max_price": 200}`;
 
     console.log('Making DeepSeek API request with prompt:', analysisPrompt);
     
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 15000); // 15 second timeout
+    const timeout = setTimeout(() => controller.abort(), 15000);
 
     try {
       const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
@@ -93,11 +97,9 @@ IMPORTANT:
       clearTimeout(timeout);
 
       if (!response.ok) {
-        const errorText = await response.text();
         console.error('DeepSeek API error:', {
           status: response.status,
-          statusText: response.statusText,
-          error: errorText
+          statusText: response.statusText
         });
         return new Response(
           JSON.stringify({
@@ -107,10 +109,7 @@ IMPORTANT:
           }),
           { 
             status: 502,
-            headers: { 
-              ...corsHeaders,
-              'Content-Type': 'application/json'
-            }
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
           }
         );
       }
@@ -118,43 +117,22 @@ IMPORTANT:
       const data = await response.json();
       console.log('DeepSeek response:', data);
 
-      if (!data.choices?.[0]?.message?.content) {
-        console.error('Invalid response format:', data);
-        return new Response(
-          JSON.stringify({
-            error: 'Invalid response format from DeepSeek API',
-            timestamp: new Date().toISOString()
-          }),
-          { 
-            status: 502,
-            headers: { 
-              ...corsHeaders,
-              'Content-Type': 'application/json'
-            }
-          }
-        );
-      }
-
-      let priceRange;
+      let priceRange: PriceRange;
       try {
         const content = data.choices[0].message.content.trim();
-        console.log('Attempting to parse content:', content);
+        console.log('Parsing content:', content);
         priceRange = JSON.parse(content);
-        console.log('Successfully parsed price range:', priceRange);
       } catch (error) {
         console.error('Error parsing price range:', error);
-        console.error('Raw content:', data.choices[0].message.content);
         return new Response(
           JSON.stringify({
-            error: 'Failed to parse price range from API response',
+            error: 'Failed to parse price range',
+            details: 'Invalid response format',
             timestamp: new Date().toISOString()
           }),
           { 
             status: 502,
-            headers: { 
-              ...corsHeaders,
-              'Content-Type': 'application/json'
-            }
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
           }
         );
       }
@@ -164,20 +142,19 @@ IMPORTANT:
         typeof priceRange.min_price !== 'number' ||
         typeof priceRange.max_price !== 'number' ||
         priceRange.min_price < 0 ||
-        priceRange.max_price <= priceRange.min_price
+        priceRange.max_price <= priceRange.min_price ||
+        priceRange.max_price > 1000
       ) {
         console.error('Invalid price range values:', priceRange);
         return new Response(
           JSON.stringify({
-            error: 'Invalid price range values received',
+            error: 'Invalid price range values',
+            details: 'Price range must be valid positive numbers with min < max <= 1000',
             timestamp: new Date().toISOString()
           }),
           { 
             status: 400,
-            headers: { 
-              ...corsHeaders,
-              'Content-Type': 'application/json'
-            }
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
           }
         );
       }
@@ -191,10 +168,7 @@ IMPORTANT:
       return new Response(
         JSON.stringify(priceRange),
         { 
-          headers: { 
-            ...corsHeaders,
-            'Content-Type': 'application/json'
-          },
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           status: 200
         }
       );
@@ -208,21 +182,15 @@ IMPORTANT:
           }),
           { 
             status: 504,
-            headers: { 
-              ...corsHeaders,
-              'Content-Type': 'application/json'
-            }
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
           }
         );
       }
       throw error;
-    } finally {
-      clearTimeout(timeout);
     }
 
   } catch (error) {
     console.error('Error in analyze-price-range function:', error);
-    console.error('Stack trace:', error.stack);
     
     return new Response(
       JSON.stringify({
@@ -232,10 +200,7 @@ IMPORTANT:
       }),
       { 
         status: 500,
-        headers: { 
-          ...corsHeaders,
-          'Content-Type': 'application/json'
-        }
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       }
     );
   }
