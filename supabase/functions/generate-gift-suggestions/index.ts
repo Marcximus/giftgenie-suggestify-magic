@@ -90,7 +90,7 @@ Return EXACTLY 8 suggestions, each with a specific price in parentheses at the e
     console.log('Making DeepSeek API request with enhanced prompt...');
     
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+    const timeout = setTimeout(() => controller.abort(), 30000);
 
     try {
       const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
@@ -139,7 +139,6 @@ Return EXACTLY 8 suggestions, each with a specific price in parentheses at the e
         throw new Error('Invalid response format from DeepSeek API');
       }
 
-      // Extract and validate suggestions
       let suggestions = validateAndCleanSuggestions(data.choices[0].message.content);
       console.log('Initial suggestions:', suggestions);
       
@@ -148,7 +147,6 @@ Return EXACTLY 8 suggestions, each with a specific price in parentheses at the e
         throw new Error('Did not receive exactly 8 suggestions');
       }
 
-      // Validate prices in suggestions with more detailed logging
       suggestions = suggestions.filter(suggestion => {
         console.log('Validating suggestion:', suggestion);
         const priceMatch = suggestion.match(/\(\$(\d+\.\d{2})\)$/);
@@ -185,7 +183,6 @@ Return EXACTLY 8 suggestions, each with a specific price in parentheses at the e
         throw new Error(`Not enough valid suggestions within price range $${priceRange.min_price.toFixed(2)}-$${priceRange.max_price.toFixed(2)}`);
       }
 
-      // Process suggestions with the analyzed price range
       console.log('Processing suggestions with price range:', priceRange);
       const processedProducts = await processSuggestionsInBatches(suggestions);
       console.log('Processed products:', processedProducts);
