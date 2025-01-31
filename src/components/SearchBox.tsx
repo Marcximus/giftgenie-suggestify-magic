@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
+import { DynamicGiftSelector } from './DynamicGiftSelector';
 import { useToast } from '@/components/ui/use-toast';
 import { SearchTitle } from './search/SearchTitle';
 import { SearchInput } from './search/SearchInput';
@@ -10,19 +11,36 @@ interface SearchBoxProps {
 
 export const SearchBox = ({ onSearch, isLoading }: SearchBoxProps) => {
   const [query, setQuery] = useState('');
+  const [showSelector, setShowSelector] = useState(true);
   const { toast } = useToast();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (query.trim()) {
       onSearch(query);
+      setShowSelector(false);
     } else {
       toast({
         title: "Empty search",
-        description: "Please enter a search term.",
+        description: "Please enter a search term or use the gift selector below.",
         variant: "destructive",
       });
     }
+  };
+
+  const handleSelectorComplete = (generatedQuery: string) => {
+    setQuery(generatedQuery);
+    onSearch(generatedQuery);
+    setShowSelector(false);
+  };
+
+  const handleSelectorUpdate = (currentQuery: string) => {
+    setQuery(currentQuery);
+  };
+
+  const handleReset = () => {
+    setQuery('');
+    setShowSelector(true);
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -38,11 +56,17 @@ export const SearchBox = ({ onSearch, isLoading }: SearchBoxProps) => {
           query={query}
           onQueryChange={handleInputChange}
           onSubmit={handleSubmit}
-          onReset={() => setQuery('')}
+          onReset={handleReset}
           isLoading={isLoading}
-          showSelector={false}
+          showSelector={showSelector}
         />
       </div>
+      <DynamicGiftSelector 
+        onSelectionComplete={handleSelectorComplete}
+        onUpdate={handleSelectorUpdate}
+        onReset={handleReset}
+        visible={showSelector}
+      />
     </div>
   );
 };
