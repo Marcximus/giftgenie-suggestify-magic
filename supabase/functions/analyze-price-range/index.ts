@@ -13,12 +13,41 @@ serve(async (req) => {
     console.log('Analyzing prompt for price range:', prompt);
 
     if (!prompt || typeof prompt !== 'string') {
-      throw new Error('Invalid prompt provided');
+      return new Response(
+        JSON.stringify({
+          success: false,
+          min_price: 20,
+          max_price: 100,
+          error: 'Invalid prompt provided'
+        }),
+        { 
+          status: 200,
+          headers: { 
+            ...corsHeaders,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
     }
 
     const deepseekApiKey = Deno.env.get('DEEPSEEK_API_KEY');
     if (!deepseekApiKey) {
-      throw new Error('DEEPSEEK_API_KEY is not configured');
+      console.error('DEEPSEEK_API_KEY is not configured');
+      return new Response(
+        JSON.stringify({
+          success: false,
+          min_price: 20,
+          max_price: 100,
+          error: 'API configuration error'
+        }),
+        { 
+          status: 200,
+          headers: { 
+            ...corsHeaders,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
     }
 
     const analysisPrompt = `Given this gift request: "${prompt}", extract the minimum and maximum price range in USD.
@@ -48,20 +77,46 @@ Example: {"min_price": 20, "max_price": 50}`;
     });
 
     if (!response.ok) {
-      const errorText = await response.text();
       console.error('DeepSeek API error:', {
         status: response.status,
-        statusText: response.statusText,
-        error: errorText
+        statusText: response.statusText
       });
-      throw new Error(`DeepSeek API error: ${response.status}`);
+      return new Response(
+        JSON.stringify({
+          success: false,
+          min_price: 20,
+          max_price: 100,
+          error: 'Failed to analyze price range'
+        }),
+        { 
+          status: 200,
+          headers: { 
+            ...corsHeaders,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
     }
 
     const data = await response.json();
     console.log('DeepSeek response received:', data);
 
     if (!data.choices?.[0]?.message?.content) {
-      throw new Error('Invalid response format from DeepSeek API');
+      return new Response(
+        JSON.stringify({
+          success: false,
+          min_price: 20,
+          max_price: 100,
+          error: 'Invalid response format from API'
+        }),
+        { 
+          status: 200,
+          headers: { 
+            ...corsHeaders,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
     }
 
     let priceRange;
@@ -70,7 +125,21 @@ Example: {"min_price": 20, "max_price": 50}`;
       console.log('Parsed price range:', priceRange);
     } catch (error) {
       console.error('Error parsing price range:', error);
-      throw new Error('Failed to parse price range from API response');
+      return new Response(
+        JSON.stringify({
+          success: false,
+          min_price: 20,
+          max_price: 100,
+          error: 'Failed to parse price range'
+        }),
+        { 
+          status: 200,
+          headers: { 
+            ...corsHeaders,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
     }
 
     // Validate the price range
@@ -81,11 +150,26 @@ Example: {"min_price": 20, "max_price": 50}`;
       priceRange.max_price <= priceRange.min_price
     ) {
       console.error('Invalid price range values:', priceRange);
-      throw new Error('Invalid price range values received');
+      return new Response(
+        JSON.stringify({
+          success: false,
+          min_price: 20,
+          max_price: 100,
+          error: 'Invalid price range values'
+        }),
+        { 
+          status: 200,
+          headers: { 
+            ...corsHeaders,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
     }
 
     return new Response(
       JSON.stringify({
+        success: true,
         min_price: priceRange.min_price,
         max_price: priceRange.max_price
       }),
@@ -102,15 +186,17 @@ Example: {"min_price": 20, "max_price": 50}`;
     
     return new Response(
       JSON.stringify({
+        success: false,
+        min_price: 20,
+        max_price: 100,
         error: 'Failed to analyze price range',
-        details: error.message,
-        timestamp: new Date().toISOString()
+        details: error.message
       }),
       { 
-        status: 500,
+        status: 200,
         headers: { 
           ...corsHeaders,
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
         }
       }
     );
