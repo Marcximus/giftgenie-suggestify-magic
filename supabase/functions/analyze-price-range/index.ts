@@ -18,13 +18,37 @@ serve(async (req) => {
 
     if (!prompt || typeof prompt !== 'string') {
       console.error('Invalid prompt:', prompt);
-      throw new Error('Invalid prompt provided');
+      return new Response(
+        JSON.stringify({
+          error: 'Invalid prompt provided',
+          timestamp: new Date().toISOString()
+        }),
+        { 
+          status: 400,
+          headers: { 
+            ...corsHeaders,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
     }
 
     const deepseekApiKey = Deno.env.get('DEEPSEEK_API_KEY');
     if (!deepseekApiKey) {
       console.error('DEEPSEEK_API_KEY not configured');
-      throw new Error('DEEPSEEK_API_KEY is not configured');
+      return new Response(
+        JSON.stringify({
+          error: 'Service configuration error',
+          timestamp: new Date().toISOString()
+        }),
+        { 
+          status: 500,
+          headers: { 
+            ...corsHeaders,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
     }
 
     const analysisPrompt = `Given this gift request: "${prompt}", extract the minimum and maximum price range in USD.
@@ -41,83 +65,160 @@ IMPORTANT:
 
     console.log('Making DeepSeek API request with prompt:', analysisPrompt);
     
-    const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${deepseekApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: "deepseek-chat",
-        messages: [
-          {
-            role: "system",
-            content: "You are a price range analyzer. Extract or infer appropriate price ranges for gift requests and return them in a specific JSON format."
-          },
-          { role: "user", content: analysisPrompt }
-        ],
-        max_tokens: 100,
-        temperature: 0.1
-      }),
-    });
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 15000); // 15 second timeout
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('DeepSeek API error:', {
-        status: response.status,
-        statusText: response.statusText,
-        error: errorText
-      });
-      throw new Error(`DeepSeek API error: ${response.status} - ${errorText}`);
-    }
-
-    const data = await response.json();
-    console.log('DeepSeek raw response:', data);
-
-    if (!data.choices?.[0]?.message?.content) {
-      console.error('Invalid response format:', data);
-      throw new Error('Invalid response format from DeepSeek API');
-    }
-
-    let priceRange;
     try {
-      const content = data.choices[0].message.content.trim();
-      console.log('Attempting to parse content:', content);
-      priceRange = JSON.parse(content);
-      console.log('Successfully parsed price range:', priceRange);
-    } catch (error) {
-      console.error('Error parsing price range:', error);
-      console.error('Raw content:', data.choices[0].message.content);
-      throw new Error('Failed to parse price range from API response');
-    }
-
-    // Validate the price range
-    if (
-      typeof priceRange.min_price !== 'number' ||
-      typeof priceRange.max_price !== 'number' ||
-      priceRange.min_price < 0 ||
-      priceRange.max_price <= priceRange.min_price
-    ) {
-      console.error('Invalid price range values:', priceRange);
-      throw new Error('Invalid price range values received');
-    }
-
-    // Round to whole numbers
-    priceRange.min_price = Math.round(priceRange.min_price);
-    priceRange.max_price = Math.round(priceRange.max_price);
-
-    console.log('Returning validated price range:', priceRange);
-
-    return new Response(
-      JSON.stringify(priceRange),
-      { 
-        headers: { 
-          ...corsHeaders,
-          'Content-Type': 'application/json'
+      const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${deepseekApiKey}`,
+          'Content-Type': 'application/json',
         },
-        status: 200
+        body: JSON.stringify({
+          model: "deepseek-chat",
+          messages: [
+            {
+              role: "system",
+              content: "You are a price range analyzer. Extract or infer appropriate price ranges for gift requests and return them in a specific JSON format."
+            },
+            { role: "user", content: analysisPrompt }
+          ],
+          max_tokens: 100,
+          temperature: 0.1
+        }),
+        signal: controller.signal
+      });
+
+      clearTimeout(timeout);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('DeepSeek API error:', {
+          status: response.status,
+          statusText: response.statusText,
+          error: errorText
+        });
+        return new Response(
+          JSON.stringify({
+            error: 'Failed to analyze price range',
+            details: `DeepSeek API error: ${response.status}`,
+            timestamp: new Date().toISOString()
+          }),
+          { 
+            status: 502,
+            headers: { 
+              ...corsHeaders,
+              'Content-Type': 'application/json'
+            }
+          }
+        );
       }
-    );
+
+      const data = await response.json();
+      console.log('DeepSeek response:', data);
+
+      if (!data.choices?.[0]?.message?.content) {
+        console.error('Invalid response format:', data);
+        return new Response(
+          JSON.stringify({
+            error: 'Invalid response format from DeepSeek API',
+            timestamp: new Date().toISOString()
+          }),
+          { 
+            status: 502,
+            headers: { 
+              ...corsHeaders,
+              'Content-Type': 'application/json'
+            }
+          }
+        );
+      }
+
+      let priceRange;
+      try {
+        const content = data.choices[0].message.content.trim();
+        console.log('Attempting to parse content:', content);
+        priceRange = JSON.parse(content);
+        console.log('Successfully parsed price range:', priceRange);
+      } catch (error) {
+        console.error('Error parsing price range:', error);
+        console.error('Raw content:', data.choices[0].message.content);
+        return new Response(
+          JSON.stringify({
+            error: 'Failed to parse price range from API response',
+            timestamp: new Date().toISOString()
+          }),
+          { 
+            status: 502,
+            headers: { 
+              ...corsHeaders,
+              'Content-Type': 'application/json'
+            }
+          }
+        );
+      }
+
+      // Validate the price range
+      if (
+        typeof priceRange.min_price !== 'number' ||
+        typeof priceRange.max_price !== 'number' ||
+        priceRange.min_price < 0 ||
+        priceRange.max_price <= priceRange.min_price
+      ) {
+        console.error('Invalid price range values:', priceRange);
+        return new Response(
+          JSON.stringify({
+            error: 'Invalid price range values received',
+            timestamp: new Date().toISOString()
+          }),
+          { 
+            status: 400,
+            headers: { 
+              ...corsHeaders,
+              'Content-Type': 'application/json'
+            }
+          }
+        );
+      }
+
+      // Round to whole numbers
+      priceRange.min_price = Math.round(priceRange.min_price);
+      priceRange.max_price = Math.round(priceRange.max_price);
+
+      console.log('Returning validated price range:', priceRange);
+
+      return new Response(
+        JSON.stringify(priceRange),
+        { 
+          headers: { 
+            ...corsHeaders,
+            'Content-Type': 'application/json'
+          },
+          status: 200
+        }
+      );
+
+    } catch (error) {
+      if (error.name === 'AbortError') {
+        return new Response(
+          JSON.stringify({
+            error: 'Request timeout',
+            timestamp: new Date().toISOString()
+          }),
+          { 
+            status: 504,
+            headers: { 
+              ...corsHeaders,
+              'Content-Type': 'application/json'
+            }
+          }
+        );
+      }
+      throw error;
+    } finally {
+      clearTimeout(timeout);
+    }
 
   } catch (error) {
     console.error('Error in analyze-price-range function:', error);
@@ -130,7 +231,7 @@ IMPORTANT:
         timestamp: new Date().toISOString()
       }),
       { 
-        status: 400, // Changed from 500 to 400 for validation errors
+        status: 500,
         headers: { 
           ...corsHeaders,
           'Content-Type': 'application/json'
