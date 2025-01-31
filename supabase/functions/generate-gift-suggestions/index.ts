@@ -61,33 +61,32 @@ serve(async (req) => {
       throw new Error('DEEPSEEK_API_KEY is not configured');
     }
 
-    const enhancedPrompt = `You are a gifting expert. Based on the request "${prompt}", suggest 8 specific gift ideas.
+    const enhancedPrompt = `Based on the request "${prompt}", suggest 8 specific gift ideas that STRICTLY follow these price requirements:
 
-CRITICAL PRICE REQUIREMENTS:
-1. Price Range: STRICTLY between $${priceRange.min_price.toFixed(2)} and $${priceRange.max_price.toFixed(2)}
-2. EVERY suggestion MUST end with the EXACT price in parentheses
-3. Example format: "Leather Wallet with RFID Protection ($45.99)"
-4. Prices MUST be realistic and market-accurate
-5. NO EXCEPTIONS - any suggestion without a price in this format will be rejected
-6. DO NOT suggest any items outside the price range of $${priceRange.min_price.toFixed(2)} to $${priceRange.max_price.toFixed(2)}
+PRICE RULES:
+- Every suggestion MUST cost between $${priceRange.min_price.toFixed(2)} and $${priceRange.max_price.toFixed(2)}
+- Each suggestion MUST end with the exact price in parentheses
+- Example format: "Leather Wallet with RFID Protection ($45.99)"
+- Prices must be realistic and market-accurate
+- Include the dollar sign and exactly two decimal places
+- NO suggestions outside the price range will be accepted
 
-FORMAT RULES:
-1. Return ONLY a JSON array of strings
-2. Each string must follow this pattern: "Product Name and Description ($XX.XX)"
-3. The price MUST be the last part of each string, in parentheses
-4. Include the dollar sign and exactly two decimal places
-5. EVERY price must be between $${priceRange.min_price.toFixed(2)} and $${priceRange.max_price.toFixed(2)}
+FORMAT REQUIREMENTS:
+- Return ONLY a JSON array of strings
+- Each string must follow this exact pattern: "Product Name and Description ($XX.XX)"
+- The price MUST be the last part in parentheses
+- Every price must be between $${priceRange.min_price.toFixed(2)} and $${priceRange.max_price.toFixed(2)}
 
-IMPORTANT GUIDELINES:
+IMPORTANT:
 - Consider age, gender, and occasion mentioned
-- Each suggestion should be from a DIFFERENT category
-- Include specific product details and features
-- Verify each price is within the allowed range before including it
-- Double-check that all prices are between $${priceRange.min_price.toFixed(2)} and $${priceRange.max_price.toFixed(2)}
+- Each suggestion must be from a different category
+- Include specific product details
+- Double-check all prices are within range
+- Verify each price before including it
 
-Return EXACTLY 8 suggestions, each with a specific price in parentheses at the end that falls within the specified range.`;
+Return EXACTLY 8 suggestions, each with a specific price in parentheses.`;
 
-    console.log('Making DeepSeek API request with enhanced prompt...');
+    console.log('Making DeepSeek API request...');
     
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 30000);
@@ -104,13 +103,12 @@ Return EXACTLY 8 suggestions, each with a specific price in parentheses at the e
           messages: [
             {
               role: "system",
-              content: "You are a gift suggestion expert. Price accuracy and format are CRITICAL. Every suggestion MUST end with an EXACT price in parentheses."
+              content: "You are a gift suggestion expert. Price accuracy and format are CRITICAL."
             },
             { role: "user", content: enhancedPrompt }
           ],
           max_tokens: 1000,
-          temperature: 1.3,
-          stream: false
+          temperature: 0.7
         }),
         signal: controller.signal
       });
@@ -128,65 +126,23 @@ Return EXACTLY 8 suggestions, each with a specific price in parentheses at the e
       }
 
       const data = await response.json();
-      console.log('DeepSeek response received:', {
-        status: response.status,
-        hasChoices: !!data.choices,
-        firstChoice: !!data.choices?.[0]
-      });
+      console.log('DeepSeek response received');
 
       if (!data.choices?.[0]?.message?.content) {
         console.error('Invalid DeepSeek response format:', data);
         throw new Error('Invalid response format from DeepSeek API');
       }
 
-      let suggestions = validateAndCleanSuggestions(data.choices[0].message.content);
-      console.log('Initial suggestions:', suggestions);
-      
-      if (!suggestions || suggestions.length !== 8) {
-        console.error('Invalid number of suggestions:', suggestions?.length);
-        throw new Error('Did not receive exactly 8 suggestions');
+      const suggestions = validateAndCleanSuggestions(data.choices[0].message.content);
+      console.log('Validated suggestions:', suggestions);
+
+      if (!suggestions || suggestions.length === 0) {
+        throw new Error('No valid suggestions received');
       }
 
-      suggestions = suggestions.filter(suggestion => {
-        console.log('Validating suggestion:', suggestion);
-        const priceMatch = suggestion.match(/\(\$(\d+\.\d{2})\)$/);
-        
-        if (!priceMatch) {
-          console.log('❌ No valid price format found in suggestion:', suggestion);
-          return false;
-        }
-        
-        const price = parseFloat(priceMatch[1]);
-        console.log('Extracted price:', price, 'Range:', priceRange.min_price, '-', priceRange.max_price);
-        
-        if (isNaN(price)) {
-          console.log('❌ Invalid price format:', priceMatch[1]);
-          return false;
-        }
-        
-        if (price < priceRange.min_price) {
-          console.log('❌ Price below minimum:', price, '<', priceRange.min_price);
-          return false;
-        }
-        
-        if (price > priceRange.max_price) {
-          console.log('❌ Price above maximum:', price, '>', priceRange.max_price);
-          return false;
-        }
-        
-        console.log('✅ Valid suggestion with price:', price);
-        return true;
-      });
-
-      if (suggestions.length < 8) {
-        console.log('Not enough valid suggestions after price filtering:', suggestions.length);
-        throw new Error(`Not enough valid suggestions within price range $${priceRange.min_price.toFixed(2)}-$${priceRange.max_price.toFixed(2)}`);
-      }
-
-      console.log('Processing suggestions with price range:', priceRange);
       const processedProducts = await processSuggestionsInBatches(suggestions);
       console.log('Processed products:', processedProducts);
-      
+
       if (!processedProducts.length) {
         throw new Error('No products found for suggestions');
       }
@@ -215,13 +171,10 @@ Return EXACTLY 8 suggestions, each with a specific price in parentheses at the e
         throw new Error('DeepSeek API request timed out after 30 seconds');
       }
       throw error;
-    } finally {
-      clearTimeout(timeout);
     }
 
   } catch (error) {
     console.error('Error in generate-gift-suggestions function:', error);
-    console.error('Stack trace:', error.stack);
     
     return new Response(
       JSON.stringify({ 
@@ -233,8 +186,7 @@ Return EXACTLY 8 suggestions, each with a specific price in parentheses at the e
         status: 500,
         headers: { 
           ...corsHeaders, 
-          'Content-Type': 'application/json',
-          'Cache-Control': 'no-store, no-cache, must-revalidate'
+          'Content-Type': 'application/json'
         }
       }
     );
