@@ -1,8 +1,8 @@
 import { AmazonProduct } from './types.ts';
 import { searchAmazonProducts } from './amazon-search.ts';
 
-const BATCH_SIZE = 4; // Reduced from 8 to 4
-const PROCESS_SIZE = 4; // Keep process size at 4
+const BATCH_SIZE = 8; // Increased from 4 to 8
+const PROCESS_SIZE = 4; // Keep process size at 4 to maintain rate limiting
 const BATCH_DELAY = 200;
 
 export async function processSuggestionsInBatches(suggestions: string[]): Promise<AmazonProduct[]> {
