@@ -34,20 +34,24 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     console.log('Analyzing price range...');
-    const { data: priceRangeData, error: priceRangeError } = await supabase.functions.invoke('analyze-price-range', {
+    const priceRangeResponse = await supabase.functions.invoke('analyze-price-range', {
       body: { prompt }
     });
 
-    if (priceRangeError) {
-      console.error('Error analyzing price range:', priceRangeError);
-      throw new Error(`Price range analysis failed: ${priceRangeError.message || 'Unknown error'}`);
+    if (priceRangeResponse.error) {
+      console.error('Error from analyze-price-range:', priceRangeResponse.error);
+      throw new Error(`Price range analysis failed: ${priceRangeResponse.error.message || 'Unknown error'}`);
     }
 
+    const priceRangeData = priceRangeResponse.data;
     console.log('Price range analysis response:', priceRangeData);
 
-    if (!priceRangeData || typeof priceRangeData.min_price !== 'number' || typeof priceRangeData.max_price !== 'number') {
-      console.error('Invalid price range response:', priceRangeData);
-      throw new Error('Invalid price range format received');
+    if (!priceRangeData || 
+        typeof priceRangeData.min_price !== 'number' || 
+        typeof priceRangeData.max_price !== 'number' ||
+        priceRangeData.error) {
+      console.error('Invalid or error response from price range analysis:', priceRangeData);
+      throw new Error(priceRangeData.error?.details || 'Invalid price range format received');
     }
 
     const priceRange = {
