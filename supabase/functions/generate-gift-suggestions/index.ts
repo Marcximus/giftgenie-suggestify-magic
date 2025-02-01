@@ -11,8 +11,17 @@ const extractPriceRange = (prompt: string) => {
   if (budgetMatch) {
     const min = parseInt(budgetMatch[1]);
     const max = budgetMatch[2] ? parseInt(budgetMatch[2]) : min;
-    console.log('Extracted price range:', { min, max });
-    return { min, max };
+    
+    // Apply 20% margin to the price range
+    const adjustedMin = Math.floor(min * 0.8); // 20% below
+    const adjustedMax = Math.ceil(max * 1.2); // 20% above
+    
+    console.log('Extracted price range:', { 
+      original: { min, max },
+      adjusted: { min: adjustedMin, max: adjustedMax }
+    });
+    
+    return { min: adjustedMin, max: adjustedMax };
   }
   
   return null;
@@ -40,9 +49,9 @@ serve(async (req) => {
       throw new Error('Invalid prompt');
     }
 
-    // Extract price range from prompt
+    // Extract and adjust price range from prompt
     const priceRange = extractPriceRange(prompt);
-    console.log('Extracted price range:', priceRange);
+    console.log('Price range with 20% margin:', priceRange);
 
     // Build the system message
     const systemMessage = "You are a talented gift suggestion expert. You MUST always return EXACTLY 8 suggestions in a valid JSON array format.";
@@ -123,7 +132,7 @@ No other text allowed.`;
     return new Response(
       JSON.stringify({ 
         suggestions,
-        priceRange // Include the extracted price range in the response
+        priceRange // Include the extracted and adjusted price range in the response
       }),
       { 
         headers: { 
