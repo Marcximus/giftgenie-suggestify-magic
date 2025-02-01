@@ -27,44 +27,12 @@ serve(async (req) => {
       throw new Error('Invalid prompt');
     }
 
-    // Extract key information from the prompt
-    const ageMatch = prompt.match(/(\d+)(?:\s*-\s*\d+)?\s*years?\s*old/i);
-    const budgetMatch = prompt.match(/budget.*?(\d+)(?:\s*-\s*(\d+))?/i) || 
-                       prompt.match(/(\d+)(?:\s*-\s*(\d+))?\s*(?:dollars|usd|\$)/i);
-    
-    const age = ageMatch ? ageMatch[1] : '';
-    const budget = budgetMatch ? 
-      budgetMatch[2] ? 
-        `$${budgetMatch[1]}-$${budgetMatch[2]}` : 
-        `$${budgetMatch[1]}` 
-      : '';
-
-    const enhancedPrompt = `You are a gifting expert specializing in practical, high-quality gifts. Based on the request: "${prompt}", suggest EXACTLY 8 specific gift ideas.
+    const enhancedPrompt = `You are a gifting expert. Based on the request: "${prompt}", suggest EXACTLY 8 great gift ideas.
 
 CRITICAL REQUIREMENTS:
 1. Return EXACTLY 8 suggestions - no more, no less
-2. Each suggestion must be from a DIFFERENT product category
-3. Stay within the budget of ${budget || 'any price range'}
-4. Consider age ${age || 'appropriate'} and interests mentioned
-5. Focus on well-known, reputable brands
-6. Make suggestions VERY SPECIFIC with exact brand names and models
-7. Prioritize items with high customer ratings on Amazon
-8. Include specific model numbers when applicable
-
-FORMAT REQUIREMENTS:
-1. Return ONLY a JSON array containing EXACTLY 8 strings
-2. Format each suggestion as: "[Brand Name] [Specific Product Name/Model]"
-3. Do not include price, ratings, or descriptions
-4. Focus on currently available products
-
-Example format:
-[
-  "Celestron 71332 Travel Scope Telescope",
-  "Nikon Monarch 5 8x42 Binoculars",
-  // ... exactly 6 more suggestions
-]
-
-IMPORTANT: Your response MUST contain EXACTLY 8 suggestions. Each suggestion MUST be a specific product from a reputable brand.`;
+2. Consider age, gender, interests and occasion mentioned
+3. Return ONLY a JSON array containing EXACTLY 8 strings`;
 
     console.log('Enhanced prompt:', enhancedPrompt);
 
@@ -83,7 +51,7 @@ IMPORTANT: Your response MUST contain EXACTLY 8 suggestions. Each suggestion MUS
         messages: [
           {
             role: "system",
-            content: "You are a gift suggestion expert. Staying within a given price range is HIGHLY important to you. You MUST always return EXACTLY 8 suggestions."
+            content: "You are a gift suggestion expert. You MUST always return EXACTLY 8 suggestions."
           },
           { role: "user", content: enhancedPrompt }
         ],
@@ -113,13 +81,6 @@ IMPORTANT: Your response MUST contain EXACTLY 8 suggestions. Each suggestion MUS
       throw new Error(`Invalid number of suggestions: ${suggestions?.length ?? 0}. Expected exactly 8 suggestions.`);
     }
 
-    // Extract price range for Amazon search
-    const priceRange = budgetMatch ? 
-      `${budgetMatch[1]}-${budgetMatch[2] || Math.ceil(Number(budgetMatch[1]) * 1.2)}` : 
-      undefined;
-
-    console.log('Extracted price range for Amazon search:', priceRange);
-
     // Process suggestions with retries
     let retryCount = 0;
     const maxRetries = 2;
@@ -129,8 +90,7 @@ IMPORTANT: Your response MUST contain EXACTLY 8 suggestions. Each suggestion MUS
       console.log(`Processing attempt ${retryCount + 1} of ${maxRetries + 1}`);
       
       const currentBatchProducts = await processSuggestionsInBatches(
-        suggestions.slice(processedProducts.length),
-        priceRange
+        suggestions.slice(processedProducts.length)
       );
       
       console.log(`Found ${currentBatchProducts.length} products in attempt ${retryCount + 1}`);
