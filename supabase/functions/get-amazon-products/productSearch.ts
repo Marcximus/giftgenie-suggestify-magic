@@ -27,7 +27,7 @@ export const searchProducts = async (
   const url = new URL(`https://${RAPIDAPI_HOST}/search`);
   url.searchParams.append('query', cleanedTerm);
   url.searchParams.append('country', 'US');
-  url.searchParams.append('sort_by', 'RELEVANCE');
+  url.searchParams.append('category_id', 'aps');
 
   // Parse price range if provided
   let priceConstraints = null;
@@ -40,8 +40,19 @@ export const searchProducts = async (
     }
   }
 
+  // Log the complete URL being sent
+  console.log('Making request to Amazon API:', {
+    fullUrl: url.toString(),
+    host: url.host,
+    pathname: url.pathname,
+    searchParams: Object.fromEntries(url.searchParams.entries()),
+    headers: {
+      'X-RapidAPI-Key': 'PRESENT (not shown)',
+      'X-RapidAPI-Host': RAPIDAPI_HOST
+    }
+  });
+
   try {
-    console.log('Making request to Amazon API:', url.toString());
     const searchResponse = await fetch(url, {
       headers: {
         'X-RapidAPI-Key': apiKey,
