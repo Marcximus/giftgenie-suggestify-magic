@@ -66,7 +66,7 @@ export const useAmazonProductProcessing = () => {
       const { data: response, error } = await supabase.functions.invoke('get-amazon-products', {
         body: requestPayload,
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json'  // Explicitly set Content-Type header
         }
       });
 
