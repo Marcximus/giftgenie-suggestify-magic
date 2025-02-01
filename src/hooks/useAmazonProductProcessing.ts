@@ -58,6 +58,7 @@ export const useAmazonProductProcessing = () => {
 
       console.log('Invoking get-amazon-products Edge Function with payload:', requestPayload);
 
+      // Make sure the request body is properly formatted
       const { data: response, error } = await supabase.functions.invoke('get-amazon-products', {
         body: requestPayload,
         headers: {
