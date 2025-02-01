@@ -1,8 +1,13 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
-import { corsHeaders } from '../_shared/cors.ts';
 
 const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
+
+const corsHeaders = {
+  'Authorization': `Bearer ${OPENAI_API_KEY}`,
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -23,15 +28,10 @@ serve(async (req) => {
         messages: [
           {
             role: "system",
-            content: `You are a concise product description writer. Your task is to:
+            content: `You are an expert product description writer. Your task is to:
 
 1. Create descriptions that are EXACTLY 13-18 words long
-2. NEVER repeat any words from the product title
-3. Focus on unique benefits and features
-4. Use clear, straightforward language
-5. Avoid marketing language or superlatives
-6. Do not mention price or discounts
-7. Do not use phrases like "perfect for" or "great gift"
+2. NEVER repeat the product title
 
 Return ONLY the description, no additional text or formatting.`
           },
