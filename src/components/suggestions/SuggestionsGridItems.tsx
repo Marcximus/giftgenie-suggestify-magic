@@ -22,6 +22,7 @@ export const SuggestionsGridItems = ({
   const [optimizedTitles, setOptimizedTitles] = useState<Record<string, string>>({});
   const [customDescriptions, setCustomDescriptions] = useState<Record<string, string>>({});
   const [processingQueue, setProcessingQueue] = useState<Set<string>>(new Set());
+  const [visibleCount, setVisibleCount] = useState(0);
   const abortController = useRef<AbortController | null>(null);
   const { toast } = useToast();
 
@@ -64,6 +65,7 @@ export const SuggestionsGridItems = ({
       setOptimizedTitles({});
       setCustomDescriptions({});
       onAllSuggestionsProcessed(false);
+      setVisibleCount(0);
       return;
     }
 
@@ -77,7 +79,7 @@ export const SuggestionsGridItems = ({
 
     const processSuggestions = async () => {
       // Process all suggestions in parallel
-      const processPromises = suggestions.map(async (suggestion) => {
+      const processPromises = suggestions.map(async (suggestion, index) => {
         if (abortController.current?.signal.aborted) {
           return;
         }
@@ -113,6 +115,12 @@ export const SuggestionsGridItems = ({
           }
 
           completedCount++;
+          
+          // Increment visible count with a delay based on index
+          setTimeout(() => {
+            setVisibleCount(prev => Math.min(prev + 1, suggestions.length));
+          }, index * 200); // 200ms delay between each item
+
           if (completedCount === suggestions.length) {
             onAllSuggestionsProcessed(true);
           }
@@ -136,6 +144,7 @@ export const SuggestionsGridItems = ({
         abortController.current.abort();
       }
       onAllSuggestionsProcessed(false);
+      setVisibleCount(0);
     };
   }, [suggestions, generateTitle, onAllSuggestionsProcessed]);
 
@@ -166,10 +175,14 @@ export const SuggestionsGridItems = ({
           <div 
             key={`suggestion-${index}`}
             className={`
-              animate-in fade-in slide-in-from-bottom duration-300
+              transform transition-all duration-500 ease-out
+              ${index < visibleCount 
+                ? 'translate-y-0 opacity-100' 
+                : 'translate-y-4 opacity-0 pointer-events-none'
+              }
             `}
             style={{ 
-              animationDelay: `${Math.min(index * 100, 500)}ms`
+              transitionDelay: `${index * 200}ms`
             }}
           >
             <ProductCard
