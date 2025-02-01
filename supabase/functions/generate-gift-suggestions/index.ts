@@ -27,32 +27,44 @@ serve(async (req) => {
       throw new Error('Invalid prompt');
     }
 
-    const enhancedPrompt = `You are a gifting expert. Based on the request: "${prompt}", you MUST suggest EXACTLY 8 specific gift ideas.
+    // Extract key information from the prompt
+    const ageMatch = prompt.match(/(\d+)(?:\s*-\s*\d+)?\s*years?\s*old/i);
+    const budgetMatch = prompt.match(/budget.*?(\d+)(?:\s*-\s*(\d+))?/i) || 
+                       prompt.match(/(\d+)(?:\s*-\s*(\d+))?\s*(?:dollars|usd|\$)/i);
+    
+    const age = ageMatch ? ageMatch[1] : '';
+    const budget = budgetMatch ? 
+      budgetMatch[2] ? 
+        `$${budgetMatch[1]}-$${budgetMatch[2]}` : 
+        `$${budgetMatch[1]}` 
+      : '';
+
+    const enhancedPrompt = `You are a gifting expert specializing in practical, high-quality gifts. Based on the request: "${prompt}", suggest EXACTLY 8 specific gift ideas.
 
 CRITICAL REQUIREMENTS:
-1. You MUST return EXACTLY 8 suggestions - no more, no less
-2. Each suggestion must be unique and from different product categories
-3. Stay within any budget constraints mentioned (can fluctuate by 20%)
-4. Consider age, gender, and occasion mentioned
-5. Focus on the recipient's interests and preferences
-6. IMPORTANT: Make suggestions VERY SPECIFIC with brand names and models
-7. DO NOT suggest generic items like "book" or "headphones"
+1. Return EXACTLY 8 suggestions - no more, no less
+2. Each suggestion must be from a DIFFERENT product category
+3. Stay within the budget of ${budget || 'any price range'}
+4. Consider age ${age || 'appropriate'} and interests mentioned
+5. Focus on well-known, reputable brands
+6. Make suggestions VERY SPECIFIC with exact brand names and models
+7. Prioritize items with high customer ratings on Amazon
+8. Include specific model numbers when applicable
 
 FORMAT REQUIREMENTS:
 1. Return ONLY a JSON array containing EXACTLY 8 strings
-2. Each string should be a specific product suggestion
-3. Format each suggestion as: "[Brand Name] [Specific Product Name/Model]"
-4. Do not include price in the suggestion text
-5. Do not include additional commentary or explanations
+2. Format each suggestion as: "[Brand Name] [Specific Product Name/Model]"
+3. Do not include price, ratings, or descriptions
+4. Focus on currently available products
 
 Example format:
 [
-  "Sony WH-1000XM4 Wireless Headphones",
-  "Kindle Paperwhite 11th Generation",
+  "Celestron 71332 Travel Scope Telescope",
+  "Nikon Monarch 5 8x42 Binoculars",
   // ... exactly 6 more suggestions
 ]
 
-IMPORTANT: Your response MUST contain EXACTLY 8 suggestions. If you provide fewer or more than 8 suggestions, your response will be rejected.`;
+IMPORTANT: Your response MUST contain EXACTLY 8 suggestions. Each suggestion MUST be a specific product from a reputable brand.`;
 
     console.log('Enhanced prompt:', enhancedPrompt);
 
@@ -76,7 +88,7 @@ IMPORTANT: Your response MUST contain EXACTLY 8 suggestions. If you provide fewe
           { role: "user", content: enhancedPrompt }
         ],
         max_tokens: 1000,
-        temperature: 1.3,
+        temperature: 0.7,
         stream: false
       }),
     });
@@ -101,17 +113,12 @@ IMPORTANT: Your response MUST contain EXACTLY 8 suggestions. If you provide fewe
       throw new Error(`Invalid number of suggestions: ${suggestions?.length ?? 0}. Expected exactly 8 suggestions.`);
     }
 
-    // Extract price range from prompt if it exists
-    const priceRangeMatch = prompt.match(/budget.*?(\d+)(?:\s*-\s*(\d+))?/i) || 
-                           prompt.match(/(\d+)(?:\s*-\s*(\d+))?\s*(?:dollars|usd|\$)/i);
-    
-    const priceRange = priceRangeMatch ? 
-      priceRangeMatch[2] ? 
-        `${priceRangeMatch[1]}-${priceRangeMatch[2]}` : 
-        `${Math.floor(Number(priceRangeMatch[1]) * 0.8)}-${Math.ceil(Number(priceRangeMatch[1]) * 1.2)}` 
-      : undefined;
+    // Extract price range for Amazon search
+    const priceRange = budgetMatch ? 
+      `${budgetMatch[1]}-${budgetMatch[2] || Math.ceil(Number(budgetMatch[1]) * 1.2)}` : 
+      undefined;
 
-    console.log('Extracted price range:', priceRange);
+    console.log('Extracted price range for Amazon search:', priceRange);
 
     // Process suggestions with retries
     let retryCount = 0;
