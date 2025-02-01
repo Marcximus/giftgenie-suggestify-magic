@@ -51,30 +51,15 @@ serve(async (req) => {
     }
 
     // Search for products with the validated price range
-    console.log('Starting Amazon product search with term:', cleanedSearchTerm);
+    console.log('Searching for products with term:', cleanedSearchTerm);
     const product = await searchProducts(cleanedSearchTerm, RAPIDAPI_KEY, priceRange);
     
     console.log('Search result:', {
       found: !!product,
       title: product?.title,
       price: product?.price,
-      asin: product?.asin,
-      searchTerm: cleanedSearchTerm
+      asin: product?.asin
     });
-
-    if (!product) {
-      console.log('No product found for search term:', cleanedSearchTerm);
-      return new Response(
-        JSON.stringify({ 
-          error: 'No product found',
-          searchTerm: cleanedSearchTerm 
-        }),
-        { 
-          status: 404,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
-      );
-    }
 
     return new Response(
       JSON.stringify({ product }),

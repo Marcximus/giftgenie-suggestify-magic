@@ -85,31 +85,57 @@ export const searchProducts = async (
       return null;
     }
 
-    // Get the first valid product
-    const product = searchData.data.products[0];
-    
-    // Extract and validate the price
-    const price = extractPrice(product.product_price);
-    if (priceConstraints && (!price || !validatePriceInRange(price, priceConstraints.min, priceConstraints.max))) {
-      console.log('Product filtered out - price out of range:', {
-        title: product.title,
-        price,
-        constraints: priceConstraints
-      });
+    // Filter products by price and relevance
+    let validProducts = searchData.data.products.filter(product => {
+      // Check if the product title contains any blacklisted terms
+      const blacklistedTerms = ['cancel subscription', 'guide', 'manual', 'how to'];
+      const hasBlacklistedTerm = blacklistedTerms.some(term => 
+        product.title.toLowerCase().includes(term)
+      );
+      
+      if (hasBlacklistedTerm) {
+        console.log('Product filtered out - contains blacklisted term:', product.title);
+        return false;
+      }
+
+      // Validate price if constraints exist
+      if (priceConstraints) {
+        const price = extractPrice(product.product_price);
+        if (!price || !validatePriceInRange(price, priceConstraints.min, priceConstraints.max)) {
+          console.log('Product filtered out - price out of range:', {
+            title: product.title,
+            price,
+            constraints: priceConstraints
+          });
+          return false;
+        }
+      }
+
+      return true;
+    });
+
+    console.log('Filtered products:', {
+      original: searchData.data.products.length,
+      filtered: validProducts.length,
+      priceRange: priceConstraints
+    });
+
+    if (validProducts.length === 0) {
+      console.log('No valid products found after filtering');
       return null;
     }
 
+    const product = validProducts[0];
     return {
       title: product.title,
       description: product.product_description || product.title,
-      price: price,
+      price: extractPrice(product.product_price),
       currency: 'USD',
       imageUrl: product.product_photo || product.thumbnail,
       rating: product.product_star_rating ? parseFloat(product.product_star_rating) : undefined,
       totalRatings: product.product_num_ratings ? parseInt(product.product_num_ratings.toString(), 10) : undefined,
       asin: product.asin
     };
-
   } catch (error) {
     console.error('Error in Amazon product search:', {
       error: error.message,
