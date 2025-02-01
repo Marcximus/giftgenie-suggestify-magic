@@ -21,12 +21,12 @@ export const SuggestionsGridItems = ({
 }: SuggestionsGridItemsProps) => {
   const [optimizedTitles, setOptimizedTitles] = useState<Record<string, string>>({});
   const [customDescriptions, setCustomDescriptions] = useState<Record<string, string>>({});
+  const [processingQueue, setProcessingQueue] = useState<Set<string>>(new Set());
   const abortController = useRef<AbortController | null>(null);
   const { toast } = useToast();
 
   const generateTitle = useCallback(async (originalTitle: string, description: string) => {
-    if (!originalTitle) {
-      console.log('Empty title received, skipping optimization');
+    if (!originalTitle || processingQueue.has(originalTitle)) {
       return null;
     }
 
@@ -50,7 +50,7 @@ export const SuggestionsGridItems = ({
       console.error('Error generating title:', error);
       return null;
     }
-  }, []);
+  }, [processingQueue]);
 
   useEffect(() => {
     if (!Array.isArray(suggestions)) {
@@ -73,37 +73,42 @@ export const SuggestionsGridItems = ({
     abortController.current = new AbortController();
 
     let completedCount = 0;
+    const newProcessingQueue = new Set<string>();
 
     const processSuggestions = async () => {
-      for (const suggestion of suggestions) {
+      // Process all suggestions in parallel
+      const processPromises = suggestions.map(async (suggestion) => {
         if (abortController.current?.signal.aborted) {
-          break;
+          return;
         }
 
+        const originalTitle = suggestion.title || 'Gift Suggestion';
+        
+        // Skip if already processing or processed
+        if (processingQueue.has(originalTitle) || optimizedTitles[originalTitle]) {
+          return;
+        }
+
+        newProcessingQueue.add(originalTitle);
+
         try {
-          // Generate optimized title
-          const optimizedTitle = await generateTitle(
-            suggestion.title || 'Gift Suggestion',
-            suggestion.description || ''
-          );
+          // Start both title and description generation immediately
+          const [optimizedTitle, customDescription] = await Promise.all([
+            generateTitle(originalTitle, suggestion.description || ''),
+            generateCustomDescription(originalTitle, suggestion.description || '')
+          ]);
 
           if (optimizedTitle) {
             setOptimizedTitles(prev => ({
               ...prev,
-              [suggestion.title]: optimizedTitle
+              [originalTitle]: optimizedTitle
             }));
           }
-
-          // Generate custom description
-          const customDescription = await generateCustomDescription(
-            optimizedTitle || suggestion.title,
-            suggestion.description
-          );
 
           if (customDescription) {
             setCustomDescriptions(prev => ({
               ...prev,
-              [suggestion.title]: customDescription
+              [originalTitle]: customDescription
             }));
           }
 
@@ -115,8 +120,13 @@ export const SuggestionsGridItems = ({
         } catch (error) {
           console.error('Error processing suggestion:', error);
           completedCount++;
+        } finally {
+          newProcessingQueue.delete(originalTitle);
         }
-      }
+      });
+
+      await Promise.all(processPromises);
+      setProcessingQueue(newProcessingQueue);
     };
 
     processSuggestions();
