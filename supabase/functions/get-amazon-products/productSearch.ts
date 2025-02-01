@@ -85,10 +85,21 @@ export const searchProducts = async (
       return null;
     }
 
+    console.log('Starting product filtering with:', {
+      totalProducts: searchData.data.products.length,
+      priceConstraints
+    });
+
     // Filter products by price and relevance
     let validProducts = searchData.data.products.filter(product => {
+      console.log('\nEvaluating product:', {
+        title: product?.title,
+        price: product?.product_price,
+        hasAsin: !!product?.asin
+      });
+
       if (!product || !product.title) {
-        console.log('Invalid product data:', product);
+        console.log('Product filtered out - Invalid product data');
         return false;
       }
 
@@ -106,20 +117,34 @@ export const searchProducts = async (
       // Validate price if constraints exist
       if (priceConstraints) {
         const price = extractPrice(product.product_price);
-        if (!price || !validatePriceInRange(price, priceConstraints.min, priceConstraints.max)) {
-          console.log('Product filtered out - price out of range:', {
+        if (!price) {
+          console.log('Product filtered out - no valid price:', {
             title: product.title,
-            price,
-            constraints: priceConstraints
+            rawPrice: product.product_price
           });
+          return false;
+        }
+
+        const isInRange = validatePriceInRange(price, priceConstraints.min, priceConstraints.max);
+        console.log('Price validation:', {
+          title: product.title,
+          price,
+          min: priceConstraints.min,
+          max: priceConstraints.max,
+          isInRange
+        });
+
+        if (!isInRange) {
+          console.log('Product filtered out - price out of range');
           return false;
         }
       }
 
+      console.log('Product passed all filters:', product.title);
       return true;
     });
 
-    console.log('Filtered products:', {
+    console.log('Filtering results:', {
       original: searchData.data.products.length,
       filtered: validProducts.length,
       priceRange: priceConstraints
