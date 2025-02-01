@@ -40,35 +40,33 @@ serve(async (req) => {
           }
         ],
         max_tokens: 30,
-        temperature: 1.3,
+        temperature: 0.3,
         stream: false
       }),
     });
 
     if (!response.ok) {
-      console.error('DeepSeek API error:', {
-        status: response.status,
-        statusText: response.statusText
-      });
+      const errorText = await response.text();
+      console.error('DeepSeek API error:', response.status, errorText);
       throw new Error(`DeepSeek API error: ${response.status}`);
     }
 
     const data = await response.json();
-    const simplifiedTitle = data.choices[0].message.content.trim();
-    
-    console.log('Title optimization:', {
-      original: title,
-      simplified: simplifiedTitle,
-      reduction: ((title.length - simplifiedTitle.length) / title.length * 100).toFixed(1) + '%'
-    });
+    console.log('DeepSeek response:', data);
+
+    if (!data.choices?.[0]?.message?.content) {
+      throw new Error('Invalid response format from DeepSeek API');
+    }
+
+    const optimizedTitle = data.choices[0].message.content.trim();
+    console.log('Generated title:', optimizedTitle);
 
     return new Response(
-      JSON.stringify({ title: simplifiedTitle }),
+      JSON.stringify({ title: optimizedTitle }),
       { 
         headers: { 
-          ...corsHeaders, 
-          'Content-Type': 'application/json',
-          'Cache-Control': 'public, max-age=86400'
+          ...corsHeaders,
+          'Content-Type': 'application/json' 
         } 
       }
     );

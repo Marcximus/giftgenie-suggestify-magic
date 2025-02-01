@@ -25,7 +25,7 @@ export const SuggestionsGridItems = ({
 
   const generateTitle = useCallback(async (originalTitle: string, description: string) => {
     if (!originalTitle || typeof originalTitle !== 'string') {
-      console.error('Invalid title:', originalTitle);
+      console.error('Invalid title:', { originalTitle, type: typeof originalTitle });
       return originalTitle;
     }
 
@@ -57,7 +57,7 @@ export const SuggestionsGridItems = ({
   }, [toast]);
 
   useEffect(() => {
-    if (suggestions.length === 0) {
+    if (!Array.isArray(suggestions) || suggestions.length === 0) {
       setProcessedSuggestions([]);
       setProcessingIndexes(new Set());
       onAllSuggestionsProcessed(false);
@@ -85,6 +85,11 @@ export const SuggestionsGridItems = ({
           setProcessingIndexes(prev => new Set([...prev, index]));
           
           const suggestion = suggestions[index];
+          if (!suggestion || !suggestion.title) {
+            console.error('Invalid suggestion:', suggestion);
+            continue;
+          }
+
           const optimizedTitle = await generateTitle(suggestion.title, suggestion.description);
 
           setProcessedSuggestions(prev => {
@@ -147,7 +152,7 @@ export const SuggestionsGridItems = ({
         const processed = processedSuggestions[index];
         const isProcessing = processingIndexes.has(index);
 
-        if (!processed && !isProcessing) {
+        if (!suggestion || (!processed && !isProcessing)) {
           return null;
         }
 
@@ -166,7 +171,7 @@ export const SuggestionsGridItems = ({
               <SuggestionSkeleton />
             ) : processed && (
               <ProductCard
-                title={processed.optimizedTitle}
+                title={processed.optimizedTitle || processed.title}
                 description={processed.description}
                 price={processed.amazon_price 
                   ? processed.amazon_price.toString()
