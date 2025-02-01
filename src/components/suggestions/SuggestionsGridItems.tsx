@@ -22,12 +22,11 @@ export const SuggestionsGridItems = ({
   const [optimizedTitles, setOptimizedTitles] = useState<Record<string, string>>({});
   const [customDescriptions, setCustomDescriptions] = useState<Record<string, string>>({});
   const [processingQueue, setProcessingQueue] = useState<Set<string>>(new Set());
-  const [visibleCount, setVisibleCount] = useState(0);
+  const [visibleCount, setVisibleCount] = useState(suggestions.length);
   const timeoutsRef = useRef<NodeJS.Timeout[]>([]);
   const { toast } = useToast();
 
-  // Cleanup function to clear all timeouts
-  const clearAllTimeouts = useCallback(() => {
+  const clearTimeouts = useCallback(() => {
     timeoutsRef.current.forEach(timeout => clearTimeout(timeout));
     timeoutsRef.current = [];
   }, []);
@@ -59,9 +58,8 @@ export const SuggestionsGridItems = ({
     }
   }, [processingQueue]);
 
-  // Reset state when suggestions change
   useEffect(() => {
-    clearAllTimeouts();
+    clearTimeouts();
     setVisibleCount(0);
     onAllSuggestionsProcessed(false);
     
@@ -69,7 +67,6 @@ export const SuggestionsGridItems = ({
       return;
     }
 
-    // Start processing suggestions
     const newProcessingQueue = new Set<string>();
     let completedCount = 0;
 
@@ -105,18 +102,9 @@ export const SuggestionsGridItems = ({
 
           completedCount++;
           
-          // Add to visible items with staggered delay
           const timeout = setTimeout(() => {
             setVisibleCount(prev => Math.min(prev + 1, suggestions.length));
-            
-            // If this was the last item, wait a bit then mark all as processed
-            if (completedCount === suggestions.length) {
-              const finalTimeout = setTimeout(() => {
-                onAllSuggestionsProcessed(true);
-              }, 300); // Wait for final animation
-              timeoutsRef.current.push(finalTimeout);
-            }
-          }, index * 50); // 50ms stagger between items
+          }, index * 50);
           
           timeoutsRef.current.push(timeout);
 
@@ -128,15 +116,21 @@ export const SuggestionsGridItems = ({
       });
 
       await Promise.all(processPromises);
+      
+      // Set final visibility after all processing is complete
+      const finalTimeout = setTimeout(() => {
+        setVisibleCount(suggestions.length);
+        onAllSuggestionsProcessed(true);
+      }, suggestions.length * 50 + 300);
+      
+      timeoutsRef.current.push(finalTimeout);
       setProcessingQueue(newProcessingQueue);
     };
 
     processSuggestions();
 
-    return () => {
-      clearAllTimeouts();
-    };
-  }, [suggestions, generateTitle, onAllSuggestionsProcessed, clearAllTimeouts, processingQueue, optimizedTitles]);
+    return clearTimeouts;
+  }, [suggestions, generateTitle, onAllSuggestionsProcessed, clearTimeouts, processingQueue, optimizedTitles]);
 
   if (isLoading) {
     return (
