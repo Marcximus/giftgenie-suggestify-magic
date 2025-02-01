@@ -54,7 +54,7 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: "gpt-4o",  // Updated to use the new model
+        model: "gpt-4-o1-2024-12-17",  // Updated model version
         messages: [
           prompt,
           {
@@ -80,7 +80,7 @@ serve(async (req) => {
 
     const initialContent = openaiData.choices[0].message.content;
     console.log('Generated content length:', initialContent.length);
-    console.log('Generated content preview:', initialContent.substring(0, 500));
+    console.log('First 500 characters of content:', initialContent.substring(0, 500));
     console.log('Content contains <h3> tags:', initialContent.includes('<h3>'));
     console.log('Content contains <hr> tags:', initialContent.includes('<hr'));
     console.log('Number of product sections:', (initialContent.match(/<h3>/g) || []).length);
