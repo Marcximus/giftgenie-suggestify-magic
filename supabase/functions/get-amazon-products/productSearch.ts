@@ -1,6 +1,7 @@
 import { corsHeaders } from '../_shared/cors.ts';
 import { RAPIDAPI_HOST } from './config.ts';
 import { cleanSearchTerm } from './searchUtils.ts';
+import { extractPrice, validatePrice } from './priceUtils.ts';
 import type { AmazonProduct } from './types.ts';
 
 const simplifySearchTerm = (term: string): string => {
@@ -107,9 +108,19 @@ export const searchProducts = async (
     }
 
     const product = searchData.data.products[0];
-    const priceValue = product.product_price ? 
-      parseFloat(product.product_price.replace(/[^0-9.]/g, '')) : 
-      undefined;
+    
+    // Extract and validate price
+    const rawPrice = product.product_price || product.price;
+    const extractedPrice = extractPrice(rawPrice);
+    
+    console.log('Price extraction:', {
+      rawPrice,
+      extractedPrice,
+      isValid: validatePrice(extractedPrice)
+    });
+
+    // Only include price if it's valid
+    const priceValue = validatePrice(extractedPrice) ? extractedPrice : undefined;
 
     return {
       title: product.title,
