@@ -1,11 +1,7 @@
-import { useAmazonProducts } from './useAmazonProducts';
-import { useBatchProcessor } from './useBatchProcessor';
-import { GiftSuggestion } from '@/types/suggestions';
 import { useQueryClient } from '@tanstack/react-query';
-import { updateSearchFrequency } from '@/utils/searchFrequencyUtils';
-import { generateCustomDescription } from '@/utils/descriptionUtils';
+import { GiftSuggestion } from '@/types/suggestions';
 import { logApiMetrics, markOperation, trackSlowOperation } from '@/utils/metricsUtils';
-import { processInParallel, retryWithBackoff } from '@/utils/parallelProcessing';
+import { processInParallel } from '@/utils/parallelProcessing';
 import { toast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -56,24 +52,10 @@ export const useAmazonProductProcessing = () => {
 
       const product = amazonProduct.product;
       
-      // Process description and search frequency in parallel
-      const [customDescription] = await Promise.all([
-        trackSlowOperation(
-          'generate-description',
-          500,
-          () => generateCustomDescription(suggestion.title, suggestion.description)
-        ),
-        trackSlowOperation(
-          'update-search-frequency',
-          200,
-          () => updateSearchFrequency(suggestion.title)
-        )
-      ]);
-      
       const processedSuggestion = {
         ...suggestion,
         title: product.title || suggestion.title,
-        description: customDescription || suggestion.description,
+        description: suggestion.description,
         priceRange: `${product.currency || 'USD'} ${product.price || 0}`,
         amazon_asin: product.asin,
         amazon_url: product.asin ? `https://www.amazon.com/dp/${product.asin}` : undefined,
