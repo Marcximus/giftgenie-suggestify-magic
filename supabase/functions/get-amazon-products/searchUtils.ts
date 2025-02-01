@@ -1,14 +1,9 @@
 export const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'POST, GET, OPTIONS',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Max-Age': '86400',
 };
 
-import { RAPIDAPI_HOST } from './config';
-import type { AmazonProduct } from './types';
-import { extractPrice } from './priceUtils';
-import { batchSearchProducts } from './batchProcessor';
+const RAPIDAPI_HOST = 'real-time-amazon-data.p.rapidapi.com';
 
 // Only block terms that indicate non-product content
 const BLACKLISTED_TERMS = [
