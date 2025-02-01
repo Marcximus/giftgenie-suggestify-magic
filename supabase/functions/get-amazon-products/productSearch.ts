@@ -48,6 +48,7 @@ export const searchProducts = async (
     url.searchParams.append('query', term);
     url.searchParams.append('country', 'US');
     url.searchParams.append('category_id', 'aps');
+    url.searchParams.append('sort_by', 'REVIEWS'); // Add sorting by reviews
     url.searchParams.append('min_price', minPrice.toString());
     url.searchParams.append('max_price', maxPrice.toString());
 
