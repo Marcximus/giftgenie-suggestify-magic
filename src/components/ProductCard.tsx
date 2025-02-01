@@ -77,6 +77,7 @@ const ProductCardComponent = ({
       </CardHeader>
       
       <ProductCardContent 
+        title={title}
         description={description}
         price={price}
         rating={rating}

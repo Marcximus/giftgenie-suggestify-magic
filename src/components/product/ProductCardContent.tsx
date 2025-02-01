@@ -1,10 +1,13 @@
 import { Star } from "lucide-react";
+import { useEffect, useState } from "react";
+import { generateCustomDescription } from "@/utils/descriptionUtils";
 
 interface ProductCardContentProps {
   description: string;
   price: string | number;
   rating?: number;
   totalRatings?: number;
+  title: string;
 }
 
 const formatPrice = (price: string | number | undefined): string => {
@@ -93,20 +96,37 @@ export const ProductCardContent = ({
   description, 
   price, 
   rating, 
-  totalRatings 
+  totalRatings,
+  title 
 }: ProductCardContentProps) => {
-  console.log('ProductCardContent received:', {
-    price,
-    priceType: typeof price,
-    rawValue: price
-  });
+  const [customDescription, setCustomDescription] = useState(description);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchCustomDescription = async () => {
+      try {
+        const enhancedDescription = await generateCustomDescription(title, description);
+        setCustomDescription(enhancedDescription);
+      } catch (error) {
+        console.error('Error generating custom description:', error);
+        // Fallback to original description if generation fails
+        setCustomDescription(description);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchCustomDescription();
+  }, [title, description]);
 
   const formattedPrice = formatPrice(price);
 
   return (
     <div className="p-3 sm:p-4 pt-2 flex-grow flex flex-col">
-      <p className="text-xs sm:text-sm leading-relaxed line-clamp-3 text-muted-foreground mb-auto">
-        {formatDescription(description)}
+      <p className={`text-xs sm:text-sm leading-relaxed line-clamp-3 text-muted-foreground mb-auto ${
+        isLoading ? 'animate-pulse bg-gray-100 rounded' : ''
+      }`}>
+        {customDescription}
       </p>
       <div className="mt-3 flex items-center justify-between">
         <p 
