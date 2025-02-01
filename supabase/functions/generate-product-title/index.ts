@@ -1,8 +1,12 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
-import { corsHeaders } from '../_shared/cors.ts';
 
 const DEEPSEEK_API_KEY = Deno.env.get('DEEPSEEK_API_KEY');
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -10,11 +14,11 @@ serve(async (req) => {
   }
 
   try {
-    const { title } = await req.json();
-    console.log('Generating title:', { originalTitle: title });
+    const { title, description } = await req.json();
+    console.log('Generating title for:', { title, description });
 
-    if (!title) {
-      throw new Error('Title is required');
+    if (!title || typeof title !== 'string' || title.trim().length === 0) {
+      throw new Error('Title is required and must be a non-empty string');
     }
 
     const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
@@ -28,11 +32,11 @@ serve(async (req) => {
         messages: [
           {
             role: "system",
-            content: "You are a product title optimizer. Return only the simplified title."
+            content: "You are a product title optimizer. Return only the simplified title, max 2-5 words."
           },
           { 
             role: "user", 
-            content: "Simplify this product title, max 2-5 words. Return ONLY the final title: " + title 
+            content: `Simplify this product title to be concise and clear (max 5 words): ${title}`
           }
         ],
         max_tokens: 30,
@@ -70,9 +74,12 @@ serve(async (req) => {
     );
       
   } catch (error) {
-    console.error('Error:', error.message);
+    console.error('Error in generate-product-title:', error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        error: error.message,
+        details: 'Failed to generate product title'
+      }),
       {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }

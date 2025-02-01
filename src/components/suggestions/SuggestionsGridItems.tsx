@@ -3,6 +3,7 @@ import { ProductCard } from '../ProductCard';
 import { SuggestionSkeleton } from '../SuggestionSkeleton';
 import { GiftSuggestion } from '@/types/suggestions';
 import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/components/ui/use-toast";
 
 interface SuggestionsGridItemsProps {
   suggestions: GiftSuggestion[];
@@ -20,20 +21,40 @@ export const SuggestionsGridItems = ({
   const [processedSuggestions, setProcessedSuggestions] = useState<(GiftSuggestion & { optimizedTitle: string })[]>([]);
   const [processingIndexes, setProcessingIndexes] = useState<Set<number>>(new Set());
   const abortController = useRef<AbortController | null>(null);
+  const { toast } = useToast();
 
   const generateTitle = useCallback(async (originalTitle: string, description: string) => {
+    if (!originalTitle || typeof originalTitle !== 'string') {
+      console.error('Invalid title:', originalTitle);
+      return originalTitle;
+    }
+
     try {
+      console.log('Generating title for:', { originalTitle, description });
+      
       const { data, error } = await supabase.functions.invoke('generate-product-title', {
-        body: { title: originalTitle, description }
+        body: { 
+          title: originalTitle.trim(),
+          description: description?.trim() 
+        }
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error generating title:', error);
+        toast({
+          title: "Error optimizing title",
+          description: "Using original title instead",
+          variant: "destructive",
+        });
+        return originalTitle;
+      }
+
       return data?.title || originalTitle;
     } catch (error) {
       console.error('Error generating title:', error);
       return originalTitle;
     }
-  }, []);
+  }, [toast]);
 
   useEffect(() => {
     if (suggestions.length === 0) {
@@ -82,15 +103,13 @@ export const SuggestionsGridItems = ({
           });
 
           completedCount++;
-          // Only set to true when all suggestions are processed
           if (completedCount === suggestions.length) {
             onAllSuggestionsProcessed(true);
           }
 
         } catch (error) {
-          if (error.message !== 'Processing aborted') {
-            console.error(`Error processing suggestion ${index}:`, error);
-          }
+          console.error(`Error processing suggestion ${index}:`, error);
+          // Continue with next suggestion even if one fails
         }
       }
     };
