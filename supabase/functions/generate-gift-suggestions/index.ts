@@ -41,21 +41,12 @@ serve(async (req) => {
       throw new Error('DEEPSEEK_API_KEY is not configured');
     }
 
-    // Parse request body with error handling
-    let requestBody;
-    try {
-      requestBody = await req.json();
-    } catch (error) {
-      console.error('Failed to parse request JSON:', error);
-      throw new Error('Invalid JSON in request body');
-    }
-
-    const { prompt } = requestBody;
+    const { prompt } = await req.json();
     console.log('Received prompt:', prompt);
 
     if (!prompt || typeof prompt !== 'string' || prompt.trim().length < 3) {
       console.error('Invalid prompt received:', prompt);
-      throw new Error('Invalid prompt: must be a non-empty string with at least 3 characters');
+      throw new Error('Invalid prompt');
     }
 
     // Extract and adjust price range from prompt
@@ -115,7 +106,6 @@ No other text allowed.`;
     let suggestions;
     try {
       const content = data.choices[0].message.content.trim();
-      console.log('Parsing content:', content);
       suggestions = JSON.parse(content);
       
       if (!Array.isArray(suggestions)) {
@@ -142,7 +132,7 @@ No other text allowed.`;
     return new Response(
       JSON.stringify({ 
         suggestions,
-        priceRange
+        priceRange // Include the extracted and adjusted price range in the response
       }),
       { 
         headers: { 

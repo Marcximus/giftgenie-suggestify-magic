@@ -1,9 +1,10 @@
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { ProductCard } from '../ProductCard';
+import { SuggestionSkeleton } from '../SuggestionSkeleton';
 import { GiftSuggestion } from '@/types/suggestions';
-import { SuggestionProcessor } from './SuggestionProcessor';
-import { AnimatedSuggestionCard } from './AnimatedSuggestionCard';
-import { LoadingSkeleton } from './LoadingSkeleton';
-import { useVisibilityAnimation } from './hooks/useVisibilityAnimation';
-import { useSuggestionProcessing } from './hooks/useSuggestionProcessing';
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/components/ui/use-toast";
+import { generateCustomDescription } from "@/utils/descriptionUtils";
 
 interface SuggestionsGridItemsProps {
   suggestions: GiftSuggestion[];
@@ -18,35 +19,165 @@ export const SuggestionsGridItems = ({
   isLoading,
   onAllSuggestionsProcessed
 }: SuggestionsGridItemsProps) => {
-  const visibleCount = useVisibilityAnimation(suggestions, onAllSuggestionsProcessed);
-  const { optimizedTitles, customDescriptions, handleSuggestionProcessed } = useSuggestionProcessing();
+  const [optimizedTitles, setOptimizedTitles] = useState<Record<string, string>>({});
+  const [customDescriptions, setCustomDescriptions] = useState<Record<string, string>>({});
+  const abortController = useRef<AbortController | null>(null);
+  const { toast } = useToast();
+
+  const generateTitle = useCallback(async (originalTitle: string, description: string) => {
+    if (!originalTitle) {
+      console.log('Empty title received, skipping optimization');
+      return null;
+    }
+
+    try {
+      console.log('Generating title for:', { originalTitle, description });
+      
+      const { data, error } = await supabase.functions.invoke('generate-product-title', {
+        body: { 
+          title: originalTitle.trim(),
+          description: description?.trim() 
+        }
+      });
+
+      if (error) {
+        console.error('Error generating title:', error);
+        return null;
+      }
+
+      return data?.title || null;
+    } catch (error) {
+      console.error('Error generating title:', error);
+      return null;
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!Array.isArray(suggestions)) {
+      console.error('Invalid suggestions array:', suggestions);
+      return;
+    }
+
+    console.log('Processing suggestions:', suggestions);
+
+    if (suggestions.length === 0) {
+      setOptimizedTitles({});
+      setCustomDescriptions({});
+      onAllSuggestionsProcessed(false);
+      return;
+    }
+
+    if (abortController.current) {
+      abortController.current.abort();
+    }
+    abortController.current = new AbortController();
+
+    let completedCount = 0;
+
+    const processSuggestions = async () => {
+      for (const suggestion of suggestions) {
+        if (abortController.current?.signal.aborted) {
+          break;
+        }
+
+        try {
+          // Generate optimized title
+          const optimizedTitle = await generateTitle(
+            suggestion.title || 'Gift Suggestion',
+            suggestion.description || ''
+          );
+
+          if (optimizedTitle) {
+            setOptimizedTitles(prev => ({
+              ...prev,
+              [suggestion.title]: optimizedTitle
+            }));
+          }
+
+          // Generate custom description
+          const customDescription = await generateCustomDescription(
+            optimizedTitle || suggestion.title,
+            suggestion.description
+          );
+
+          if (customDescription) {
+            setCustomDescriptions(prev => ({
+              ...prev,
+              [suggestion.title]: customDescription
+            }));
+          }
+
+          completedCount++;
+          if (completedCount === suggestions.length) {
+            onAllSuggestionsProcessed(true);
+          }
+
+        } catch (error) {
+          console.error('Error processing suggestion:', error);
+          completedCount++;
+        }
+      }
+    };
+
+    processSuggestions();
+
+    return () => {
+      if (abortController.current) {
+        abortController.current.abort();
+      }
+      onAllSuggestionsProcessed(false);
+    };
+  }, [suggestions, generateTitle, onAllSuggestionsProcessed]);
 
   if (isLoading) {
-    return <LoadingSkeleton />;
+    return (
+      <>
+        {Array.from({ length: 8 }).map((_, index) => (
+          <div 
+            key={`skeleton-${index}`} 
+            className="animate-in fade-in duration-300 ease-out"
+            style={{ animationDelay: `${index * 100}ms` }}
+            aria-hidden="true"
+          >
+            <SuggestionSkeleton />
+          </div>
+        ))}
+      </>
+    );
   }
 
   return (
     <>
-      {suggestions.map((suggestion, index) => (
-        <div key={`suggestion-${index}`}>
-          <SuggestionProcessor
-            suggestion={suggestion}
-            index={index}
-            isVisible={index < visibleCount}
-            onProcessed={(optimizedTitle, customDescription) => 
-              handleSuggestionProcessed(suggestion.title, optimizedTitle, customDescription)
-            }
-          />
-          <AnimatedSuggestionCard
-            suggestion={suggestion}
-            index={index}
-            visibleCount={visibleCount}
-            optimizedTitle={optimizedTitles[suggestion.title]}
-            customDescription={customDescriptions[suggestion.title]}
-            onMoreLikeThis={onMoreLikeThis}
-          />
-        </div>
-      ))}
+      {suggestions.map((suggestion, index) => {
+        const optimizedTitle = suggestion.title ? optimizedTitles[suggestion.title] : null;
+        const customDescription = suggestion.title ? customDescriptions[suggestion.title] : suggestion.description;
+
+        return (
+          <div 
+            key={`suggestion-${index}`}
+            className={`
+              animate-in fade-in slide-in-from-bottom duration-300
+            `}
+            style={{ 
+              animationDelay: `${Math.min(index * 100, 500)}ms`
+            }}
+          >
+            <ProductCard
+              title={optimizedTitle || suggestion.title}
+              description={customDescription || suggestion.description}
+              price={suggestion.amazon_price 
+                ? suggestion.amazon_price.toString()
+                : suggestion.priceRange?.replace('USD ', '') || 'Check price on Amazon'}
+              amazonUrl={suggestion.amazon_url || "#"}
+              imageUrl={suggestion.amazon_image_url}
+              rating={suggestion.amazon_rating}
+              totalRatings={suggestion.amazon_total_ratings}
+              asin={suggestion.amazon_asin}
+              onMoreLikeThis={onMoreLikeThis}
+            />
+          </div>
+        );
+      })}
     </>
   );
 };

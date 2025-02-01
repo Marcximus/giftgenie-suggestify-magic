@@ -6,24 +6,18 @@ const DEEPSEEK_API_KEY = Deno.env.get('DEEPSEEK_API_KEY');
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  'Access-Control-Max-Age': '86400',
 };
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response(null, { 
-      headers: corsHeaders,
-      status: 204
-    });
+    return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const requestData = await req.json();
-    console.log('Generating title for:', requestData);
+    const { title, description } = await req.json();
+    console.log('Generating title for:', { title, description });
 
-    if (!requestData.title || typeof requestData.title !== 'string' || requestData.title.trim().length === 0) {
+    if (!title || typeof title !== 'string' || title.trim().length === 0) {
       throw new Error('Title is required and must be a non-empty string');
     }
 
@@ -42,7 +36,7 @@ serve(async (req) => {
           },
           { 
             role: "user", 
-            content: `Simplify this product title to be concise and clear (max 5 words): ${requestData.title}`
+            content: `Simplify this product title to be concise and clear (max 5 words): ${title}`
           }
         ],
         max_tokens: 30,
@@ -79,19 +73,14 @@ serve(async (req) => {
       
   } catch (error) {
     console.error('Error in generate-product-title:', error);
-    
-    // Ensure we return a properly formatted error response
     return new Response(
       JSON.stringify({ 
-        error: error.message || 'Internal server error',
+        error: error.message,
         details: 'Failed to generate product title'
       }),
       {
         status: 500,
-        headers: { 
-          ...corsHeaders, 
-          'Content-Type': 'application/json' 
-        }
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       }
     );
   }
