@@ -20,10 +20,10 @@ serve(async (req) => {
   }
 
   try {
-    const { title, description } = await req.json();
-    console.log('Generating title for:', { title, description });
+    const requestData = await req.json();
+    console.log('Generating title for:', requestData);
 
-    if (!title || typeof title !== 'string' || title.trim().length === 0) {
+    if (!requestData.title || typeof requestData.title !== 'string' || requestData.title.trim().length === 0) {
       throw new Error('Title is required and must be a non-empty string');
     }
 
@@ -42,7 +42,7 @@ serve(async (req) => {
           },
           { 
             role: "user", 
-            content: `Simplify this product title to be concise and clear (max 5 words): ${title}`
+            content: `Simplify this product title to be concise and clear (max 5 words): ${requestData.title}`
           }
         ],
         max_tokens: 30,
@@ -79,14 +79,19 @@ serve(async (req) => {
       
   } catch (error) {
     console.error('Error in generate-product-title:', error);
+    
+    // Ensure we return a properly formatted error response
     return new Response(
       JSON.stringify({ 
-        error: error.message,
+        error: error.message || 'Internal server error',
         details: 'Failed to generate product title'
       }),
       {
         status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        headers: { 
+          ...corsHeaders, 
+          'Content-Type': 'application/json' 
+        }
       }
     );
   }
