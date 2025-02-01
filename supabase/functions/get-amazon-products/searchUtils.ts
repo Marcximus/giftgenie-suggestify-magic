@@ -46,6 +46,29 @@ export const simplifySearchTerm = (searchTerm: string, preserveContext = true): 
   return simplified;
 };
 
+export const buildSearchUrl = (term: string, priceRange?: { min?: number; max?: number }) => {
+  const params = new URLSearchParams({
+    query: term.trim(),
+    country: 'US',
+    category_id: 'aps',
+    sort_by: 'RELEVANCE'
+  });
+
+  // Always add price range parameters if they exist
+  if (priceRange?.min !== undefined) {
+    params.append('min_price', priceRange.min.toString());
+    console.log('Adding min_price parameter:', priceRange.min);
+  }
+  if (priceRange?.max !== undefined) {
+    params.append('max_price', priceRange.max.toString());
+    console.log('Adding max_price parameter:', priceRange.max);
+  }
+
+  const url = `https://${RAPIDAPI_HOST}/search?${params.toString()}`;
+  console.log('Constructed URL:', url);
+  return url;
+};
+
 export const getFallbackSearchTerms = (searchTerm: string): string[] => {
   const words = searchTerm.split(' ')
     .filter(word => !['with', 'and', 'in', 'for', 'by', 'the', 'a', 'an'].includes(word.toLowerCase()))
@@ -81,7 +104,7 @@ const validateSearchTerm = (term: string): boolean => {
   return true;
 };
 
-const validateProduct = (product: any, priceRange?: { min: number; max: number }): boolean => {
+const validateProduct = (product: any, priceRange?: { min?: number; max?: number }): boolean => {
   const hasBlacklistedTerm = BLACKLISTED_TERMS.some(term => 
     (product.title?.toLowerCase().includes(term) || 
      product.product_description?.toLowerCase().includes(term))
@@ -110,7 +133,9 @@ const validateProduct = (product: any, priceRange?: { min: number; max: number }
 
   if (priceRange && product.product_price) {
     const price = extractPrice(product.product_price);
-    if (!price || price < priceRange.min || price > priceRange.max) {
+    if (!price || 
+        (priceRange.min !== undefined && price < priceRange.min) || 
+        (priceRange.max !== undefined && price > priceRange.max)) {
       console.log('Product filtered - price out of range:', price);
       return false;
     }
@@ -134,7 +159,8 @@ export const formatProduct = (product: any): AmazonProduct => {
 
 export const searchProducts = async (
   searchTerms: string[],
-  apiKey: string
+  apiKey: string,
+  priceRange?: { min?: number; max?: number }
 ): Promise<AmazonProduct[]> => {
   if (!searchTerms.length) {
     console.error('No search terms provided');
@@ -151,21 +177,58 @@ export const searchProducts = async (
   }
 
   console.log('Starting product search with validated terms:', validSearchTerms);
+  console.log('Using price range:', priceRange);
   
-  const { products, errors } = await batchSearchProducts(validSearchTerms, apiKey);
-  
-  if (products.length < searchTerms.length) {
-    const failedTerms = validSearchTerms.filter((_, index) => 
-      !products.some(p => p.title.toLowerCase().includes(validSearchTerms[index].toLowerCase()))
-    );
+  const makeSearchRequest = async (term: string) => {
+    const url = buildSearchUrl(term, priceRange);
+    console.log(`Making ${term === validSearchTerms[0] ? 'initial' : 'fallback'} request to:`, url);
     
-    if (failedTerms.length > 0) {
-      console.log('Retrying failed terms with simplified search:', failedTerms);
-      const simplifiedTerms = failedTerms.map(term => simplifySearchTerm(term, true));
-      const { products: fallbackProducts } = await batchSearchProducts(simplifiedTerms, apiKey);
-      return [...products, ...fallbackProducts];
+    const response = await fetch(url, {
+      headers: {
+        'X-RapidAPI-Key': apiKey,
+        'X-RapidAPI-Host': RAPIDAPI_HOST,
+      }
+    });
+
+    if (!response.ok) {
+      console.error(`API error for term "${term}":`, response.status);
+      return null;
+    }
+
+    const data = await response.json();
+    console.log(`Response for term "${term}":`, data);
+    
+    if (!data.data?.products?.length) {
+      console.log(`No products found for term "${term}"`);
+      return null;
+    }
+
+    const validProducts = data.data.products
+      .filter(product => validateProduct(product, priceRange))
+      .map(formatProduct);
+
+    return validProducts[0] || null;
+  };
+  
+  const results: AmazonProduct[] = [];
+  
+  // Try initial search terms
+  for (const term of validSearchTerms) {
+    const product = await makeSearchRequest(term);
+    if (product) {
+      results.push(product);
+    } else {
+      // If initial search fails, try simplified version with same price range
+      const simplifiedTerm = simplifySearchTerm(term, false);
+      if (simplifiedTerm !== term) {
+        console.log(`Trying simplified term "${simplifiedTerm}" with price range:`, priceRange);
+        const fallbackProduct = await makeSearchRequest(simplifiedTerm);
+        if (fallbackProduct) {
+          results.push(fallbackProduct);
+        }
+      }
     }
   }
 
-  return products;
+  return results;
 };
