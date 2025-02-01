@@ -1,6 +1,35 @@
 import { corsHeaders } from './cors.ts';
 import { AmazonProduct } from './types.ts';
 
+const extractPriceRange = (priceRange?: string) => {
+  if (!priceRange) return null;
+  
+  // Clean the input string
+  const cleanInput = priceRange.replace(/[$,]/g, '').trim();
+  
+  // Handle single number with "around" or similar
+  if (cleanInput.match(/^(?:around|about|approximately|~)?\s*\d+$/i)) {
+    const number = parseFloat(cleanInput.replace(/[^\d.]/g, ''));
+    if (!isNaN(number)) {
+      return {
+        min: number * 0.8,
+        max: number * 1.2
+      };
+    }
+  }
+  
+  // Handle range format
+  const parts = cleanInput.split('-').map(part => parseFloat(part.trim()));
+  if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
+    return {
+      min: parts[0] * 0.8, // Apply 20% margin
+      max: parts[1] * 1.2
+    };
+  }
+  
+  return null;
+};
+
 export async function searchAmazonProducts(keyword: string, priceRange?: string): Promise<AmazonProduct | null> {
   console.log('Searching with term:', keyword, 'Price range:', priceRange);
   
@@ -10,15 +39,8 @@ export async function searchAmazonProducts(keyword: string, priceRange?: string)
       throw new Error('RAPIDAPI_KEY not configured');
     }
 
-    // Extract min and max price from price range string (format: "1-1000" or "$1-$1000")
-    let minPrice, maxPrice;
-    if (priceRange) {
-      const prices = priceRange.replace(/[$,]/g, '').split('-');
-      if (prices.length === 2) {
-        minPrice = parseFloat(prices[0]);
-        maxPrice = parseFloat(prices[1]);
-      }
-    }
+    const range = extractPriceRange(priceRange);
+    console.log('Extracted price range:', range);
 
     const url = new URL('https://real-time-amazon-data.p.rapidapi.com/search');
     url.searchParams.append('query', encodeURIComponent(keyword));
@@ -26,11 +48,9 @@ export async function searchAmazonProducts(keyword: string, priceRange?: string)
     url.searchParams.append('sort_by', 'RELEVANCE');
     
     // Add price range parameters if available
-    if (minPrice !== undefined && !isNaN(minPrice)) {
-      url.searchParams.append('min_price', minPrice.toString());
-    }
-    if (maxPrice !== undefined && !isNaN(maxPrice)) {
-      url.searchParams.append('max_price', maxPrice.toString());
+    if (range) {
+      url.searchParams.append('min_price', Math.floor(range.min).toString());
+      url.searchParams.append('max_price', Math.ceil(range.max).toString());
     }
 
     console.log('Making API request to:', url.toString());
