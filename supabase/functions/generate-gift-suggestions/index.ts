@@ -32,7 +32,8 @@ serve(async (req) => {
 CRITICAL REQUIREMENTS:
 1. Return EXACTLY 8 suggestions - no more, no less
 2. Consider age, gender, interests and occasion mentioned
-3. Return ONLY a JSON array containing EXACTLY 8 strings`;
+3. Titles should be short and precise like "Apple Airpods 2", "Luxury Scented Candles" etc
+4. Return ONLY a JSON array containing EXACTLY 8 strings`;
 
     console.log('Enhanced prompt:', enhancedPrompt);
 
