@@ -7,6 +7,7 @@ import { generateCustomDescription } from '@/utils/descriptionUtils';
 import { logApiMetrics, markOperation, trackSlowOperation } from '@/utils/metricsUtils';
 import { processInParallel, retryWithBackoff } from '@/utils/parallelProcessing';
 import { toast } from "@/components/ui/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 const SLOW_OPERATION_THRESHOLD = 2000; // 2 seconds
 
@@ -19,6 +20,11 @@ export const useAmazonProductProcessing = () => {
     const operationMark = markOperation(`process-suggestion-${suggestion.title}`);
     
     try {
+      if (!suggestion.title) {
+        console.error('Invalid suggestion:', suggestion);
+        throw new Error('Invalid suggestion: missing title');
+      }
+
       const normalizedTitle = suggestion.title.toLowerCase().trim();
       const cacheKey = ['amazon-product', normalizedTitle];
       const cachedData = queryClient.getQueryData(cacheKey);
@@ -30,12 +36,25 @@ export const useAmazonProductProcessing = () => {
         return cachedData as GiftSuggestion;
       }
 
-      // Track Amazon API call performance
-      const amazonProduct = await trackSlowOperation(
-        'amazon-api-call',
-        1000, // 1 second threshold for API calls
-        () => retryWithBackoff(() => getAmazonProduct(suggestion.title, suggestion.priceRange))
-      );
+      // Call the get-amazon-products Edge Function
+      const { data: amazonProduct, error } = await supabase.functions.invoke('get-amazon-products', {
+        body: { 
+          searchTerm: suggestion.title,
+          priceRange: suggestion.priceRange 
+        }
+      });
+
+      if (error) {
+        console.error('Error calling get-amazon-products:', error);
+        throw error;
+      }
+
+      if (!amazonProduct?.product) {
+        console.log('No Amazon product found for:', suggestion.title);
+        return suggestion;
+      }
+
+      const product = amazonProduct.product;
       
       // Process description and search frequency in parallel
       const [customDescription] = await Promise.all([
@@ -51,31 +70,25 @@ export const useAmazonProductProcessing = () => {
         )
       ]);
       
-      if (amazonProduct && amazonProduct.asin) {
-        const processedSuggestion = {
-          ...suggestion,
-          title: amazonProduct.title || suggestion.title,
-          description: customDescription,
-          priceRange: `${amazonProduct.currency} ${amazonProduct.price}`,
-          amazon_asin: amazonProduct.asin,
-          amazon_url: `https://www.amazon.com/dp/${amazonProduct.asin}`,
-          amazon_price: amazonProduct.price,
-          amazon_image_url: amazonProduct.imageUrl,
-          amazon_rating: amazonProduct.rating,
-          amazon_total_ratings: amazonProduct.totalRatings
-        };
+      const processedSuggestion = {
+        ...suggestion,
+        title: product.title || suggestion.title,
+        description: customDescription || suggestion.description,
+        priceRange: `${product.currency || 'USD'} ${product.price || 0}`,
+        amazon_asin: product.asin,
+        amazon_url: product.asin ? `https://www.amazon.com/dp/${product.asin}` : undefined,
+        amazon_price: product.price,
+        amazon_image_url: product.imageUrl,
+        amazon_rating: product.rating,
+        amazon_total_ratings: product.totalRatings
+      };
 
-        // Update cache with enriched data
-        queryClient.setQueryData(cacheKey, processedSuggestion);
-        queryClient.invalidateQueries({ queryKey: ['suggestions'] });
-        
-        await logApiMetrics('amazon-product-processing', startTime, 'success');
-        operationMark.end();
-        return processedSuggestion;
-      }
+      // Update cache with enriched data
+      queryClient.setQueryData(cacheKey, processedSuggestion);
       
+      await logApiMetrics('amazon-product-processing', startTime, 'success');
       operationMark.end();
-      return suggestion;
+      return processedSuggestion;
     } catch (error) {
       console.error('Error processing suggestion:', error);
       await logApiMetrics('amazon-product-processing', startTime, 'error', error.message);
@@ -98,9 +111,9 @@ export const useAmazonProductProcessing = () => {
           suggestions,
           processGiftSuggestion,
           {
-            batchSize: 8,
-            maxConcurrent: 4,
-            delayBetweenBatches: 200
+            batchSize: 4,
+            maxConcurrent: 2,
+            delayBetweenBatches: 1000
           }
         )
       );

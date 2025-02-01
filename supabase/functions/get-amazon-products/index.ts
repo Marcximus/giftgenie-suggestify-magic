@@ -1,5 +1,8 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { corsHeaders, searchProducts } from './searchUtils.ts';
+import { corsHeaders } from '../_shared/cors.ts';
+import { searchProducts } from './productSearch.ts';
+
+const RAPIDAPI_KEY = Deno.env.get('RAPIDAPI_KEY');
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -8,9 +11,9 @@ serve(async (req) => {
 
   try {
     console.log('Received request:', req.method);
-    const { searchTerm, priceRange: rawPriceRange } = await req.json();
+    const { searchTerm, priceRange } = await req.json();
     
-    console.log('Request payload:', { searchTerm, priceRange: rawPriceRange });
+    console.log('Request payload:', { searchTerm, priceRange });
 
     if (!searchTerm) {
       console.error('Missing search term in request');
@@ -23,8 +26,7 @@ serve(async (req) => {
       );
     }
 
-    const apiKey = Deno.env.get('RAPIDAPI_KEY');
-    if (!apiKey) {
+    if (!RAPIDAPI_KEY) {
       console.error('RAPIDAPI_KEY not configured');
       return new Response(
         JSON.stringify({ error: 'API configuration error' }),
@@ -35,36 +37,17 @@ serve(async (req) => {
       );
     }
 
-    // Extract and validate price range
-    let priceRange;
-    if (rawPriceRange) {
-      const match = rawPriceRange.match(/(\d+)(?:\s*-\s*(\d+))?/);
-      if (match) {
-        priceRange = {
-          min: parseInt(match[1]),
-          max: match[2] ? parseInt(match[2]) : undefined
-        };
-      }
-    }
-    console.log('Extracted price range:', priceRange);
-
     // Search for products with the validated price range
-    const products = await searchProducts([searchTerm], apiKey, priceRange);
+    const product = await searchProducts(searchTerm, RAPIDAPI_KEY, priceRange);
     
-    if (!products.length) {
-      console.log('No products found for search term:', searchTerm);
-      return new Response(
-        JSON.stringify({ product: null }),
-        { 
-          status: 200,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
-      );
-    }
+    console.log('Search result:', {
+      found: !!product,
+      title: product?.title,
+      price: product?.price
+    });
 
-    console.log('Successfully found product:', products[0]);
     return new Response(
-      JSON.stringify({ product: products[0] }),
+      JSON.stringify({ product }),
       { 
         status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
