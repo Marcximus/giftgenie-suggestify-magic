@@ -8,6 +8,14 @@ const extractPriceRange = (prompt: string) => {
   const budgetMatch = prompt.match(/budget(?:\s*of)?\s*\$?(\d+)(?:\s*-\s*\$?(\d+))?/i) ||
                      prompt.match(/\$(\d+)(?:\s*-\s*\$?(\d+))?/);
   
+  if (!budgetMatch) {
+    // Return default range if no budget is specified
+    return {
+      min: 1,
+      max: 1000
+    };
+  }
+  
   if (budgetMatch) {
     const min = parseInt(budgetMatch[1]);
     const max = budgetMatch[2] ? parseInt(budgetMatch[2]) : min;
@@ -34,7 +42,11 @@ const extractPriceRange = (prompt: string) => {
     }
   }
   
-  return null;
+  // Fallback to default range
+  return {
+    min: 1,
+    max: 1000
+  };
 };
 
 serve(async (req) => {
@@ -61,7 +73,7 @@ serve(async (req) => {
 
     // Extract and adjust price range from prompt
     const priceRange = extractPriceRange(prompt);
-    console.log('Price range with 20% margin:', priceRange);
+    console.log('Price range with margins:', priceRange);
 
     // Build the system message
     const systemMessage = "You are a talented gift suggestion expert. You MUST always return EXACTLY 8 suggestions in a valid JSON array format.";
