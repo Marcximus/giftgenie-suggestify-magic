@@ -1,8 +1,8 @@
 import { AmazonProduct } from './types.ts';
 import { searchAmazonProducts } from './amazon-search.ts';
 
-const BATCH_SIZE = 2;
-const PROCESS_SIZE = 2;
+const BATCH_SIZE = 4; // Process 4 items at once
+const PROCESS_SIZE = 4; // Process up to 4 items concurrently
 const BATCH_DELAY = 200;
 
 export async function processSuggestionsInBatches(
@@ -25,36 +25,26 @@ export async function processSuggestionsInBatches(
     const batch = batches[batchIndex];
     console.log(`Processing batch ${batchIndex + 1} of ${batches.length} with ${batch.length} items`);
     
-    // Process batch in smaller chunks
-    for (let i = 0; i < batch.length; i += PROCESS_SIZE) {
-      const chunk = batch.slice(i, i + PROCESS_SIZE);
-      console.log(`Processing chunk ${Math.floor(i/PROCESS_SIZE) + 1} of batch ${batchIndex + 1} with ${chunk.length} items`);
-      
-      // Process chunk in parallel
-      const chunkResults = await Promise.all(
-        chunk.map(async (suggestion) => {
-          try {
-            console.log(`Processing suggestion: "${suggestion}"`);
-            const result = await searchAmazonProducts(suggestion, priceRange);
-            console.log(`Processed suggestion: "${suggestion}", success: ${!!result}`);
-            return result;
-          } catch (error) {
-            console.error(`Error processing suggestion: "${suggestion}"`, error);
-            return null;
-          }
-        })
-      );
-      
-      // Filter out null results and add to processed products
-      const validResults = chunkResults.filter((result): result is AmazonProduct => result !== null);
-      console.log(`Found ${validResults.length} valid products in chunk`);
-      processedProducts.push(...validResults);
-      
-      // Add delay between chunks within a batch
-      if (i + PROCESS_SIZE < batch.length) {
-        await new Promise(resolve => setTimeout(resolve, BATCH_DELAY / 2));
+    // Process all items in the batch concurrently
+    const batchPromises = batch.map(async (suggestion, index) => {
+      try {
+        console.log(`Processing suggestion ${batchIndex * BATCH_SIZE + index + 1}: "${suggestion}"`);
+        const result = await searchAmazonProducts(suggestion, priceRange);
+        console.log(`Processed suggestion ${batchIndex * BATCH_SIZE + index + 1}: "${suggestion}", success: ${!!result}`);
+        return result;
+      } catch (error) {
+        console.error(`Error processing suggestion: "${suggestion}"`, error);
+        return null;
       }
-    }
+    });
+    
+    // Wait for all promises in the batch to complete
+    const batchResults = await Promise.all(batchPromises);
+    
+    // Filter out null results and add to processed products
+    const validResults = batchResults.filter((result): result is AmazonProduct => result !== null);
+    console.log(`Found ${validResults.length} valid products in batch ${batchIndex + 1}`);
+    processedProducts.push(...validResults);
     
     // Add delay between batches
     if (batchIndex < batches.length - 1) {

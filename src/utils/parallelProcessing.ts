@@ -1,8 +1,8 @@
 import { supabase } from "@/integrations/supabase/client";
 import { logApiMetrics } from './metricsUtils';
 
-const BATCH_SIZE = 2; // Changed from 8 to 2
-const MAX_CONCURRENT = 2; // Changed from 4 to 2
+const BATCH_SIZE = 4; // Process 4 items at once
+const MAX_CONCURRENT = 4; // Allow up to 4 concurrent operations
 const DELAY_BETWEEN_BATCHES = 200;
 
 export async function processInParallel<T, R>(
@@ -22,11 +22,11 @@ export async function processInParallel<T, R>(
     batches.push(items.slice(i, i + options.batchSize));
   }
   
-  console.log(`Processing ${items.length} items in ${batches.length} batches`);
+  console.log(`Processing ${items.length} items in ${batches.length} batches of ${options.batchSize} items each`);
   
-  for (const batch of batches) {
+  for (const [batchIndex, batch] of batches.entries()) {
     const batchStartTime = performance.now();
-    console.log(`Starting batch of ${batch.length} items`);
+    console.log(`Starting batch ${batchIndex + 1} of ${batches.length} with ${batch.length} items`);
     
     // Process items in the current batch concurrently
     const batchPromises = batch.map(async (item, index) => {
@@ -34,19 +34,22 @@ export async function processInParallel<T, R>(
       await new Promise(resolve => setTimeout(resolve, index * 50));
       
       try {
-        return await processFn(item);
+        const result = await processFn(item);
+        console.log(`Successfully processed item ${batchIndex * options.batchSize + index + 1} of ${items.length}`);
+        return result;
       } catch (error) {
-        console.error('Error processing item:', error);
+        console.error(`Error processing item ${batchIndex * options.batchSize + index + 1}:`, error);
         return null;
       }
     });
     
     // Wait for all items in the batch to complete
     const batchResults = await Promise.all(batchPromises);
-    results.push(...batchResults.filter((r): r is NonNullable<Awaited<R>> => r !== null));
+    const validResults = batchResults.filter((r): r is NonNullable<R> => r !== null);
+    results.push(...validResults);
     
     const batchDuration = performance.now() - batchStartTime;
-    console.log(`Batch completed in ${batchDuration.toFixed(2)}ms`);
+    console.log(`Batch ${batchIndex + 1} completed in ${batchDuration.toFixed(2)}ms with ${validResults.length} successful results`);
     
     // Log metrics
     await supabase.from('api_metrics').insert({
@@ -55,12 +58,14 @@ export async function processInParallel<T, R>(
       status: 'success'
     });
     
-    // Add delay between batches to prevent rate limiting
-    if (batches.indexOf(batch) < batches.length - 1) {
+    // Add delay between batches if not the last batch
+    if (batchIndex < batches.length - 1) {
+      console.log(`Waiting ${options.delayBetweenBatches}ms before processing next batch`);
       await new Promise(resolve => setTimeout(resolve, options.delayBetweenBatches));
     }
   }
   
+  console.log(`Parallel processing completed. Processed ${results.length} items successfully`);
   return results;
 }
 

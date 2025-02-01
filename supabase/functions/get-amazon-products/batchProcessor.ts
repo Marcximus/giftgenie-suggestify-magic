@@ -3,7 +3,6 @@ import { corsHeaders } from '../_shared/cors';
 import { RAPIDAPI_HOST } from './config';
 import { formatProduct } from './searchUtils';
 
-// Optimized constants for better performance
 const CONCURRENT_REQUESTS = 4; // Process 4 requests at a time
 const BATCH_TIMEOUT = 8000; // 8 second timeout per batch
 const RATE_LIMIT_DELAY = 250; // 250ms between requests within a batch
@@ -36,7 +35,7 @@ export const batchSearchProducts = async (
   searchTerms: string[],
   apiKey: string
 ): Promise<BatchSearchResult> => {
-  console.log(`Starting optimized batch search for ${searchTerms.length} terms`);
+  console.log(`Starting batch search for ${searchTerms.length} terms`);
   const products: AmazonProduct[] = [];
   const errors: string[] = [];
 
@@ -44,7 +43,7 @@ export const batchSearchProducts = async (
   for (let i = 0; i < searchTerms.length; i += CONCURRENT_REQUESTS) {
     const batchStart = performance.now();
     const currentBatch = searchTerms.slice(i, i + CONCURRENT_REQUESTS);
-    console.log(`Processing batch ${i / CONCURRENT_REQUESTS + 1} with ${currentBatch.length} terms`);
+    console.log(`Processing batch ${Math.floor(i / CONCURRENT_REQUESTS) + 1} with ${currentBatch.length} terms`);
 
     const batchPromises = currentBatch.map(async (term, index) => {
       // Add staggered delay within batch to prevent rate limiting
@@ -93,7 +92,7 @@ export const batchSearchProducts = async (
     });
 
     const batchDuration = performance.now() - batchStart;
-    console.log(`Batch ${i / CONCURRENT_REQUESTS + 1} completed in ${batchDuration.toFixed(2)}ms`);
+    console.log(`Batch ${Math.floor(i / CONCURRENT_REQUESTS) + 1} completed in ${batchDuration.toFixed(2)}ms`);
 
     // Add delay between batches if not the last batch
     if (i + CONCURRENT_REQUESTS < searchTerms.length) {
@@ -103,8 +102,7 @@ export const batchSearchProducts = async (
 
   console.log('Batch search completed:', {
     successCount: products.length,
-    errorCount: errors.length,
-    totalTime: performance.now()
+    errorCount: errors.length
   });
 
   return { products, errors };
