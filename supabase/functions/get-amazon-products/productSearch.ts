@@ -4,22 +4,6 @@ import { cleanSearchTerm } from './searchUtils.ts';
 import { parsePriceRange, validatePriceInRange, extractPrice } from './priceUtils.ts';
 import type { AmazonProduct } from './types.ts';
 
-// Map common gift categories to Amazon browse node IDs
-const CATEGORY_MAP = {
-  skincare: '11060451',
-  beauty: '3760911',
-  music: '5174',
-  electronics: '172282',
-  books: '283155',
-  fashion: '7141123011',
-  sports: '3375251',
-  toys: '165793011',
-  home: '1055398',
-  kitchen: '284507',
-  office: '1064954',
-  pets: '2619533011'
-};
-
 export const searchProducts = async (
   searchTerm: string,
   apiKey: string,
@@ -40,24 +24,10 @@ export const searchProducts = async (
   const cleanedTerm = cleanSearchTerm(searchTerm);
   console.log('Cleaned search term:', cleanedTerm);
 
-  // Detect relevant categories from the search term
-  const detectedCategories = Object.entries(CATEGORY_MAP)
-    .filter(([category]) => 
-      searchTerm.toLowerCase().includes(category) ||
-      cleanedTerm.toLowerCase().includes(category)
-    )
-    .map(([_, nodeId]) => nodeId);
-
   const url = new URL(`https://${RAPIDAPI_HOST}/search`);
   url.searchParams.append('query', cleanedTerm);
   url.searchParams.append('country', 'US');
-  
-  // Use detected category if available, otherwise use a general gifts category
-  if (detectedCategories.length > 0) {
-    url.searchParams.append('category_id', detectedCategories[0]);
-  } else {
-    url.searchParams.append('category_id', 'aps');
-  }
+  url.searchParams.append('sort_by', 'RELEVANCE');
 
   // Parse price range if provided
   let priceConstraints = null;
@@ -99,7 +69,6 @@ export const searchProducts = async (
     console.log('Amazon API raw response:', {
       hasData: !!searchData.data,
       productsCount: searchData.data?.products?.length || 0,
-      categories: detectedCategories,
       firstProduct: searchData.data?.products?.[0] ? {
         title: searchData.data.products[0].title,
         hasPrice: !!searchData.data.products[0].product_price,
