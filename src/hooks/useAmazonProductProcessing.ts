@@ -37,6 +37,7 @@ export const useAmazonProductProcessing = () => {
       }
 
       // Call the get-amazon-products Edge Function
+      console.log('Calling get-amazon-products for:', suggestion.title);
       const { data: amazonProduct, error } = await supabase.functions.invoke('get-amazon-products', {
         body: { 
           searchTerm: suggestion.title,
