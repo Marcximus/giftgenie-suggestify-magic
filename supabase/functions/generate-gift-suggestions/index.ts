@@ -27,15 +27,30 @@ serve(async (req) => {
       throw new Error('Invalid prompt');
     }
 
-    const enhancedPrompt = `You are an gifting expert. Based on the request: "${prompt}", suggest 8 specific gift ideas.
+    const enhancedPrompt = `You are a gifting expert. Based on the request: "${prompt}", you MUST suggest EXACTLY 8 specific gift ideas.
 
-Consider:
-- Age, gender, and occasion mentioned
-- CRITICAL: Any budget constraints specified (can fluctuate by 20%)
-- The recipient's interests and preferences
-- Avoid suggesting identical items
+CRITICAL REQUIREMENTS:
+1. You MUST return EXACTLY 8 suggestions - no more, no less
+2. Each suggestion must be unique and from different product categories
+3. Stay within any budget constraints mentioned (can fluctuate by 20%)
+4. Consider age, gender, and occasion mentioned
+5. Focus on the recipient's interests and preferences
 
-Return ONLY a JSON array of exactly 8 strings`;
+FORMAT REQUIREMENTS:
+1. Return ONLY a JSON array containing EXACTLY 8 strings
+2. Each string should be a specific product suggestion
+3. Format each suggestion as: "[Brand Name] [Specific Product Name/Model]"
+4. Do not include price in the suggestion text
+5. Do not include additional commentary or explanations
+
+Example format:
+[
+  "Sony WH-1000XM4 Wireless Headphones",
+  "KitchenAid Artisan Stand Mixer",
+  // ... exactly 6 more suggestions
+]
+
+IMPORTANT: Your response MUST contain EXACTLY 8 suggestions. If you provide fewer or more than 8 suggestions, your response will be rejected.`;
 
     console.log('Enhanced prompt:', enhancedPrompt);
 
@@ -54,7 +69,7 @@ Return ONLY a JSON array of exactly 8 strings`;
         messages: [
           {
             role: "system",
-            content: "You are a gift suggestion expert. Staying within a given price range is HIGHLY important to you. You like recommending premium gifts."
+            content: "You are a gift suggestion expert. Staying within a given price range is HIGHLY important to you. You MUST always return EXACTLY 8 suggestions."
           },
           { role: "user", content: enhancedPrompt }
         ],
@@ -81,7 +96,7 @@ Return ONLY a JSON array of exactly 8 strings`;
     console.log('Validated suggestions:', suggestions);
     
     if (!suggestions || suggestions.length !== 8) {
-      throw new Error('Did not receive exactly 8 suggestions');
+      throw new Error(`Invalid number of suggestions: ${suggestions?.length ?? 0}. Expected exactly 8 suggestions.`);
     }
 
     // Process suggestions
