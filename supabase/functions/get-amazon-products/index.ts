@@ -30,15 +30,30 @@ serve(async (req) => {
 
     // Parse and validate request body
     let requestBody;
+    const contentType = req.headers.get('content-type');
+    
     try {
-      requestBody = await req.json();
+      // Ensure we're dealing with JSON content
+      if (!contentType || !contentType.includes('application/json')) {
+        throw new Error('Content-Type must be application/json');
+      }
+      
+      const rawBody = await req.text();
+      console.log('Raw request body:', rawBody);
+      
+      if (!rawBody) {
+        throw new Error('Request body is empty');
+      }
+      
+      requestBody = JSON.parse(rawBody);
       console.log('Parsed request body:', requestBody);
     } catch (error) {
       console.error('Error parsing request body:', error);
       return new Response(
         JSON.stringify({
-          error: 'Invalid JSON in request body',
-          details: error.message
+          error: 'Invalid request body',
+          details: error.message,
+          receivedContentType: contentType
         }),
         { 
           status: 400,
