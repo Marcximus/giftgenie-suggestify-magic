@@ -51,23 +51,16 @@ export const buildSearchUrl = (term: string, priceRange?: { min?: number; max?: 
   const params = new URLSearchParams({
     query: term.trim(),
     country: 'US',
-    sort_by: 'RELEVANCE',
-    page: '1',
-    product_condition: 'ALL',
-    is_prime: 'false',
-    deals_and_discounts: 'NONE'
+    sort_by: 'RELEVANCE'
   });
 
-  // Always include price range if provided
-  if (priceRange) {
-    if (priceRange.min !== undefined) {
-      params.append('min_price', priceRange.min.toString());
-      console.log('Adding min_price parameter:', priceRange.min);
-    }
-    if (priceRange.max !== undefined) {
-      params.append('max_price', priceRange.max.toString());
-      console.log('Adding max_price parameter:', priceRange.max);
-    }
+  if (priceRange?.min !== undefined) {
+    params.append('min_price', priceRange.min.toString());
+    console.log('Adding min_price parameter:', priceRange.min);
+  }
+  if (priceRange?.max !== undefined) {
+    params.append('max_price', priceRange.max.toString());
+    console.log('Adding max_price parameter:', priceRange.max);
   }
 
   const url = `https://${RAPIDAPI_HOST}/search?${params.toString()}`;
