@@ -19,19 +19,24 @@ const extractPriceRange = (prompt: string) => {
 };
 
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
+    console.log('Starting gift suggestion generation...');
+
     if (!DEEPSEEK_API_KEY) {
+      console.error('DEEPSEEK_API_KEY is not configured');
       throw new Error('DEEPSEEK_API_KEY is not configured');
     }
 
     const { prompt } = await req.json();
-    console.log('Processing request with prompt:', prompt);
+    console.log('Received prompt:', prompt);
 
     if (!prompt || typeof prompt !== 'string' || prompt.trim().length < 3) {
+      console.error('Invalid prompt received:', prompt);
       throw new Error('Invalid prompt');
     }
 
@@ -39,23 +44,29 @@ serve(async (req) => {
     const priceRange = extractPriceRange(prompt);
     console.log('Extracted price range:', priceRange);
 
-    // Build the prompt
-    let enhancedPrompt = `You are a gift suggestion expert. Analyze the recipient's interests, age, gender, and occasion to suggest specific, thoughtful gifts. 
+    // Build the system message
+    const systemMessage = "You are a gift suggestion expert. You MUST always return EXACTLY 8 suggestions in a valid JSON array format.";
 
-For each suggestion:
-- Be specific (e.g., "Sony WH-1000XM4 Wireless Headphones" instead of just "headphones")
-- Consider the recipient's interests and lifestyle
-- Include a mix of practical and creative gifts
-- Consider the occasion appropriateness`;
+    // Build the user message with enhanced prompt structure
+    let userMessage = `Analyze this request and suggest specific, thoughtful gifts: "${prompt}"
 
-    // Add budget requirement if price range exists
+Requirements:
+1. Return EXACTLY 8 specific gift suggestions
+2. Each suggestion must be a specific product (e.g., "Sony WH-1000XM4 Wireless Headphones" not just "headphones")
+3. Each suggestion must be searchable on Amazon
+4. Consider the recipient's interests and lifestyle`;
+
+    // Add budget constraint if price range exists
     if (priceRange) {
-      enhancedPrompt += `\n- Stay within budget range: $${priceRange.min}${priceRange.max !== priceRange.min ? `-$${priceRange.max}` : ''}`;
+      userMessage += `\n5. Stay within budget range: $${priceRange.min}${priceRange.max !== priceRange.min ? `-$${priceRange.max}` : ''}`;
     }
 
-    enhancedPrompt += `\n\nBased on this request: "${prompt}"\n\nReturn ONLY a JSON array of 8 specific gift keywords. Format: ["suggestion1", "suggestion2", ..., "suggestion8"]\nEach suggestion should be searchable on Amazon.\n\nIMPORTANT: Your response must be a valid JSON array containing exactly 8 strings. No other text.`;
+    userMessage += `\n\nFormat your response as a JSON array of 8 strings: ["suggestion1", "suggestion2", ..., "suggestion8"]\nNo other text allowed.`;
 
-    console.log('Enhanced prompt:', enhancedPrompt);
+    console.log('Sending request to DeepSeek API with messages:', {
+      systemMessage,
+      userMessage
+    });
 
     const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
       method: 'POST',
@@ -66,11 +77,8 @@ For each suggestion:
       body: JSON.stringify({
         model: "deepseek-chat",
         messages: [
-          {
-            role: "system",
-            content: "You are a gift suggestion expert. You MUST always return EXACTLY 8 suggestions."
-          },
-          { role: "user", content: enhancedPrompt }
+          { role: "system", content: systemMessage },
+          { role: "user", content: userMessage }
         ],
         max_tokens: 1000,
         temperature: 0.7,
@@ -80,7 +88,7 @@ For each suggestion:
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('DeepSeek API error:', errorText);
+      console.error('DeepSeek API error:', response.status, errorText);
       throw new Error(`DeepSeek API error: ${response.status} ${errorText}`);
     }
 
@@ -88,6 +96,7 @@ For each suggestion:
     console.log('Raw DeepSeek response:', data);
 
     if (!data.choices?.[0]?.message?.content) {
+      console.error('Invalid response format from DeepSeek API:', data);
       throw new Error('Invalid response format from DeepSeek API');
     }
 
@@ -96,17 +105,26 @@ For each suggestion:
       const content = data.choices[0].message.content.trim();
       suggestions = JSON.parse(content);
       
-      if (!Array.isArray(suggestions) || suggestions.length !== 8) {
-        throw new Error('Invalid response format: expected array of 8 suggestions');
+      if (!Array.isArray(suggestions)) {
+        console.error('Invalid response format: not an array:', suggestions);
+        throw new Error('Invalid response format: expected array of suggestions');
       }
-      
+
+      if (suggestions.length !== 8) {
+        console.error(`Invalid number of suggestions: ${suggestions.length}`);
+        throw new Error('Invalid response format: expected exactly 8 suggestions');
+      }
+
       if (!suggestions.every(item => typeof item === 'string')) {
+        console.error('Invalid suggestion format:', suggestions);
         throw new Error('Invalid response format: all items must be strings');
       }
     } catch (error) {
       console.error('Failed to parse suggestions:', error);
       throw new Error('Failed to parse gift suggestions from DeepSeek response');
     }
+
+    console.log('Successfully generated suggestions:', suggestions);
 
     return new Response(
       JSON.stringify({ suggestions }),
