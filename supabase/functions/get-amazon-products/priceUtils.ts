@@ -1,45 +1,26 @@
-/**
- * Extracts price range from user input
- * @param input User input string
- * @returns Object with min and max price, or null if no price range found
- */
-export const extractPriceRange = (input: string): { min: number; max: number } | null => {
-  // Clean input and convert to lowercase for consistent processing
-  const cleanInput = input.toLowerCase().trim();
-  
-  // Pattern for explicit budget mentions with numbers
-  const budgetPattern = /(?:budget|price|cost)(?:\s+is)?(?:\s*:)?\s*\$?\s*(\d+)(?:\s*-\s*\$?\s*(\d+))?/i;
-  const budgetMatch = cleanInput.match(budgetPattern);
-
-  // Pattern for plain number ranges (but not age ranges)
-  const rangePattern = /\$?\s*(\d+)\s*-\s*\$?\s*(\d+)(?!\s*(?:year|yr|age|month|day)s?\b)/i;
-  const rangeMatch = cleanInput.match(rangePattern);
-
-  if (budgetMatch) {
-    console.log('Found budget match:', budgetMatch);
-    // If we have a range in the budget
-    if (budgetMatch[2]) {
-      return {
-        min: parseFloat(budgetMatch[1]),
-        max: parseFloat(budgetMatch[2])
-      };
+export const parsePriceRange = (priceRange: string): { min: number; max: number } | null => {
+  try {
+    // Remove currency symbol and any whitespace
+    const cleanRange = priceRange.replace(/[^0-9-]/g, '');
+    
+    // Split on hyphen
+    const [min, max] = cleanRange.split('-').map(Number);
+    
+    if (isNaN(min) || isNaN(max)) {
+      console.error('Invalid price range format:', priceRange);
+      return null;
     }
-    // Single budget number - create a range around it
-    const budget = parseFloat(budgetMatch[1]);
-    return {
-      min: budget * 0.8, // 20% below
-      max: budget * 1.2  // 20% above
-    };
-  }
 
-  if (rangeMatch && !cleanInput.includes('age')) {
-    console.log('Found range match:', rangeMatch);
-    return {
-      min: parseFloat(rangeMatch[1]),
-      max: parseFloat(rangeMatch[2])
-    };
+    return { min, max };
+  } catch (error) {
+    console.error('Error parsing price range:', error);
+    return null;
   }
+};
 
-  console.log('No price range found in input:', cleanInput);
-  return null;
+export const extractPrice = (priceStr: string | null | undefined): number | undefined => {
+  if (!priceStr) return undefined;
+  const cleanPrice = priceStr.replace(/[^0-9.]/g, '');
+  const price = parseFloat(cleanPrice);
+  return isNaN(price) ? undefined : price;
 };

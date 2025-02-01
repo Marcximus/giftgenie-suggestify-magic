@@ -7,7 +7,7 @@ import type { AmazonProduct } from './types.ts';
 export const searchProducts = async (
   searchTerm: string,
   apiKey: string,
-  priceRange?: { min: number; max: number } | null
+  priceRange?: { min?: number; max?: number }
 ): Promise<AmazonProduct | null> => {
   if (!searchTerm || typeof searchTerm !== 'string' || searchTerm.trim().length === 0) {
     console.error('Invalid or missing search term:', searchTerm);
@@ -29,8 +29,12 @@ export const searchProducts = async (
   let maxPrice = 1000;  // Default maximum price
 
   if (priceRange) {
-    minPrice = Math.floor(priceRange.min);
-    maxPrice = Math.ceil(priceRange.max);
+    if (priceRange.min !== undefined && priceRange.min >= 0) {
+      minPrice = Math.floor(priceRange.min * 0.8); // 20% below minimum
+    }
+    if (priceRange.max !== undefined && priceRange.max > 0) {
+      maxPrice = Math.ceil(priceRange.max * 1.2); // 20% above maximum
+    }
     console.log('Using price constraints:', { minPrice, maxPrice });
   }
 
