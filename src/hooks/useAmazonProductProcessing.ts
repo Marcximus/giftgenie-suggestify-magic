@@ -56,9 +56,13 @@ export const useAmazonProductProcessing = () => {
         priceRange: priceMatch ? { min: minPrice, max: maxPrice } : undefined
       };
 
-      console.log('Invoking get-amazon-products Edge Function with payload:', requestPayload);
+      console.log('Invoking get-amazon-products Edge Function with payload:', JSON.stringify(requestPayload));
 
-      // Make sure the request body is properly formatted
+      // Make sure the request body is properly formatted and not empty
+      if (!requestPayload.searchTerm) {
+        throw new Error('Search term is required');
+      }
+
       const { data: response, error } = await supabase.functions.invoke('get-amazon-products', {
         body: requestPayload,
         headers: {
