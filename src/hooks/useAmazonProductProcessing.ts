@@ -5,8 +5,6 @@ import { processInParallel } from '@/utils/parallelProcessing';
 import { toast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
-const SLOW_OPERATION_THRESHOLD = 2000; // 2 seconds
-
 export const useAmazonProductProcessing = () => {
   const queryClient = useQueryClient();
 
@@ -88,7 +86,7 @@ export const useAmazonProductProcessing = () => {
     try {
       const results = await trackSlowOperation(
         'parallel-processing',
-        SLOW_OPERATION_THRESHOLD,
+        2000,
         () => processInParallel(
           suggestions,
           processGiftSuggestion,
