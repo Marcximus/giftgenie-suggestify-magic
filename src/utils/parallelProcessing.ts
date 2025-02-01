@@ -1,8 +1,8 @@
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "@/components/ui/use-toast";
+import { logApiMetrics } from './metricsUtils';
 
-const BATCH_SIZE = 4; // Reduced from 8 to 4
-const MAX_CONCURRENT = 4;
+const BATCH_SIZE = 2; // Changed from 8 to 2
+const MAX_CONCURRENT = 2; // Changed from 4 to 2
 const DELAY_BETWEEN_BATCHES = 200;
 
 export async function processInParallel<T, R>(
@@ -84,12 +84,6 @@ export async function retryWithBackoff<T>(
       }
     }
   }
-  
-  toast({
-    title: "Processing Error",
-    description: "Failed to process some items. Please try again.",
-    variant: "destructive",
-  });
   
   throw lastError;
 }
