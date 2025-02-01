@@ -1,3 +1,4 @@
+import { useState, useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { GiftSuggestion } from '@/types/suggestions';
 import { logApiMetrics, markOperation, trackSlowOperation } from '@/utils/metricsUtils';
@@ -13,23 +14,26 @@ export const useAmazonProductProcessing = () => {
     const operationMark = markOperation(`process-suggestion-${suggestion.title}`);
     
     try {
-      if (!suggestion.title) {
+      // Clean the title by removing parenthetical descriptions
+      const cleanTitle = suggestion.title?.split('(')[0]?.trim();
+      
+      if (!cleanTitle) {
         console.error('Invalid suggestion:', suggestion);
         throw new Error('Invalid suggestion: missing title');
       }
 
       console.log('Processing suggestion:', {
-        title: suggestion.title,
+        title: cleanTitle,
         priceRange: suggestion.priceRange,
         description: suggestion.description
       });
 
-      const normalizedTitle = suggestion.title.toLowerCase().trim();
+      const normalizedTitle = cleanTitle.toLowerCase().trim();
       const cacheKey = ['amazon-product', normalizedTitle];
       const cachedData = queryClient.getQueryData(cacheKey);
       
       if (cachedData) {
-        console.log('Cache hit for:', suggestion.title);
+        console.log('Cache hit for:', cleanTitle);
         await logApiMetrics('amazon-product-processing', startTime, 'success');
         operationMark.end();
         return cachedData as GiftSuggestion;
@@ -42,13 +46,12 @@ export const useAmazonProductProcessing = () => {
 
       // Format request payload
       const requestPayload = {
-        searchTerm: suggestion.title.trim(),
+        searchTerm: cleanTitle,
         priceRange: priceMatch ? { min: minPrice, max: maxPrice } : undefined
       };
 
       console.log('Invoking get-amazon-products Edge Function with payload:', requestPayload);
 
-      // Call the get-amazon-products Edge Function with properly formatted payload
       const { data: response, error } = await supabase.functions.invoke('get-amazon-products', {
         body: requestPayload,
         headers: {
@@ -60,7 +63,7 @@ export const useAmazonProductProcessing = () => {
         console.error('Error calling get-amazon-products:', error);
         toast({
           title: "Error processing product",
-          description: `Failed to process ${suggestion.title}. Please try again.`,
+          description: `Failed to process ${cleanTitle}. Please try again.`,
           variant: "destructive",
         });
         throw error;
@@ -69,7 +72,7 @@ export const useAmazonProductProcessing = () => {
       console.log('Edge Function response:', response);
 
       if (!response?.product) {
-        console.log('No Amazon product found for:', suggestion.title);
+        console.log('No Amazon product found for:', cleanTitle);
         return suggestion;
       }
 
@@ -78,9 +81,7 @@ export const useAmazonProductProcessing = () => {
       
       const processedSuggestion = {
         ...suggestion,
-        title: product.title || suggestion.title,
-        description: suggestion.description,
-        priceRange: `${product.currency || 'USD'} ${product.price || 0}`,
+        title: cleanTitle,
         amazon_asin: product.asin,
         amazon_url: product.asin ? `https://www.amazon.com/dp/${product.asin}` : undefined,
         amazon_price: product.price,
