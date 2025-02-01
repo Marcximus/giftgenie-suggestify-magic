@@ -9,6 +9,8 @@ export async function processSuggestionsInBatches(
   suggestions: string[],
   priceRange?: string
 ): Promise<AmazonProduct[]> {
+  console.log(`Processing ${suggestions.length} suggestions with price range: ${priceRange}`);
+  
   const batches: string[][] = [];
   
   // Split suggestions into batches
@@ -19,7 +21,7 @@ export async function processSuggestionsInBatches(
   const processedProducts: AmazonProduct[] = [];
   
   for (const batch of batches) {
-    console.log(`Processing batch of ${batch.length} suggestions with price range: ${priceRange}`);
+    console.log(`Processing batch of ${batch.length} suggestions`);
     
     // Process batch in smaller chunks
     for (let i = 0; i < batch.length; i += PROCESS_SIZE) {
@@ -41,7 +43,9 @@ export async function processSuggestionsInBatches(
       );
       
       // Filter out null results and add to processed products
-      processedProducts.push(...chunkResults.filter((result): result is AmazonProduct => result !== null));
+      const validResults = chunkResults.filter((result): result is AmazonProduct => result !== null);
+      console.log(`Found ${validResults.length} valid products in chunk`);
+      processedProducts.push(...validResults);
       
       // Add delay between chunks within a batch
       if (i + PROCESS_SIZE < batch.length) {
@@ -55,5 +59,6 @@ export async function processSuggestionsInBatches(
     }
   }
 
+  console.log(`Finished processing. Found ${processedProducts.length} valid products`);
   return processedProducts;
 }

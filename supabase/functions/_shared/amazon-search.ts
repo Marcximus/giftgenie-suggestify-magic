@@ -4,6 +4,8 @@ import { AmazonProduct } from './types.ts';
 const extractPriceRange = (priceRange?: string) => {
   if (!priceRange) return null;
   
+  console.log('Extracting price range from:', priceRange);
+  
   // Clean the input string
   const cleanInput = priceRange.replace(/[$,]/g, '').trim();
   
@@ -11,9 +13,10 @@ const extractPriceRange = (priceRange?: string) => {
   if (cleanInput.match(/^(?:around|about|approximately|~)?\s*\d+$/i)) {
     const number = parseFloat(cleanInput.replace(/[^\d.]/g, ''));
     if (!isNaN(number)) {
+      console.log(`Found 'around' price: ${number}, applying 20% margin`);
       return {
-        min: number * 0.8,
-        max: number * 1.2
+        min: Math.floor(number * 0.8),
+        max: Math.ceil(number * 1.2)
       };
     }
   }
@@ -21,12 +24,27 @@ const extractPriceRange = (priceRange?: string) => {
   // Handle range format
   const parts = cleanInput.split('-').map(part => parseFloat(part.trim()));
   if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
+    console.log(`Found price range: ${parts[0]}-${parts[1]}, applying 20% margin`);
     return {
-      min: parts[0] * 0.8, // Apply 20% margin
-      max: parts[1] * 1.2
+      min: Math.floor(parts[0] * 0.8), // Apply 20% margin
+      max: Math.ceil(parts[1] * 1.2)
     };
   }
   
+  // Extract numbers from text
+  const numbers = cleanInput.match(/\d+/g);
+  if (numbers && numbers.length >= 2) {
+    const [min, max] = numbers.map(n => parseFloat(n));
+    if (!isNaN(min) && !isNaN(max)) {
+      console.log(`Extracted price range from text: ${min}-${max}, applying 20% margin`);
+      return {
+        min: Math.floor(min * 0.8),
+        max: Math.ceil(max * 1.2)
+      };
+    }
+  }
+  
+  console.log('No valid price range found');
   return null;
 };
 
@@ -46,12 +64,14 @@ export async function searchAmazonProducts(keyword: string, priceRange?: string)
       const url = new URL('https://real-time-amazon-data.p.rapidapi.com/search');
       url.searchParams.append('query', encodeURIComponent(searchTerm));
       url.searchParams.append('country', 'US');
+      url.searchParams.append('category_id', 'aps');
       url.searchParams.append('sort_by', 'RELEVANCE');
       
       // Add price range parameters if available
       if (range) {
-        url.searchParams.append('min_price', Math.floor(range.min).toString());
-        url.searchParams.append('max_price', Math.ceil(range.max).toString());
+        url.searchParams.append('min_price', range.min.toString());
+        url.searchParams.append('max_price', range.max.toString());
+        console.log(`Adding price range to request: $${range.min}-$${range.max}`);
       }
 
       console.log('Making API request to:', url.toString());
@@ -68,7 +88,9 @@ export async function searchAmazonProducts(keyword: string, priceRange?: string)
         return null;
       }
 
-      return await response.json();
+      const data = await response.json();
+      console.log('API response:', data);
+      return data;
     };
 
     // First attempt with full keyword
@@ -89,7 +111,27 @@ export async function searchAmazonProducts(keyword: string, priceRange?: string)
       return null;
     }
 
-    const product = searchData.data.products[0];
+    // Filter products by price range if specified
+    let products = searchData.data.products;
+    if (range) {
+      products = products.filter(product => {
+        const price = product.product_price ? 
+          parseFloat(product.product_price.replace(/[^0-9.]/g, '')) : null;
+        
+        if (price === null) return false;
+        
+        const inRange = price >= range.min && price <= range.max;
+        console.log(`Product "${product.product_title}" price: $${price}, in range: ${inRange}`);
+        return inRange;
+      });
+
+      if (products.length === 0) {
+        console.log('No products found within price range');
+        return null;
+      }
+    }
+
+    const product = products[0];
     
     // Extract and validate required fields
     const formattedProduct: AmazonProduct = {
@@ -107,6 +149,8 @@ export async function searchAmazonProducts(keyword: string, priceRange?: string)
       url: product.product_url,
       asin: product.asin
     };
+
+    console.log('Formatted product:', formattedProduct);
 
     // Validate minimum required fields
     if (!formattedProduct.title || (!formattedProduct.image_url && !formattedProduct.asin)) {
