@@ -1,6 +1,11 @@
 import { corsHeaders } from '../_shared/cors.ts';
 import { extractPriceRange } from './priceRangeUtils.ts';
-import { supabase } from "@/integrations/supabase/client";
+import { createClient } from '@supabase/supabase-js';
+
+// Initialize Supabase client
+const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
+const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 const generateSuggestions = async (prompt: string) => {
   const priceRange = extractPriceRange(prompt);
