@@ -1,9 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import "https://deno.land/x/xhr@0.1.0/mod.ts";
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 import { corsHeaders } from '../_shared/cors.ts';
-import { validateAndCleanSuggestions } from '../_shared/suggestion-validator.ts';
-import { processSuggestionsInBatches } from '../_shared/batch-processor.ts';
 
 const DEEPSEEK_API_KEY = Deno.env.get('DEEPSEEK_API_KEY');
 
@@ -23,18 +19,15 @@ const extractPriceRange = (prompt: string) => {
 };
 
 serve(async (req) => {
-  const startTime = performance.now();
-  
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
-  const supabase = createClient(
-    Deno.env.get('SUPABASE_URL') ?? '',
-    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-  );
-
   try {
+    if (!DEEPSEEK_API_KEY) {
+      throw new Error('DEEPSEEK_API_KEY is not configured');
+    }
+
     const { prompt } = await req.json();
     console.log('Processing request with prompt:', prompt);
 
@@ -47,27 +40,22 @@ serve(async (req) => {
     console.log('Extracted price range:', priceRange);
 
     // Build the prompt
-    let enhancedPrompt = `You are a gifting expert. Based on the request: "${prompt}", suggest EXACTLY 8 great gift ideas.
+    let enhancedPrompt = `You are a gift suggestion expert. Analyze the recipient's interests, age, gender, and occasion to suggest specific, thoughtful gifts. 
 
-CRITICAL REQUIREMENTS:
-1. Return EXACTLY 8 suggestions - no more, no less
-2. Consider age, gender, interests and occasion mentioned
-3. Titles should be short and precise like "Apple Airpods 2", "Luxury Scented Candles" etc
-4. Return ONLY a JSON array containing EXACTLY 8 strings`;
+For each suggestion:
+- Be specific (e.g., "Sony WH-1000XM4 Wireless Headphones" instead of just "headphones")
+- Consider the recipient's interests and lifestyle
+- Include a mix of practical and creative gifts
+- Consider the occasion appropriateness`;
 
     // Add budget requirement if price range exists
     if (priceRange) {
-      enhancedPrompt += `\n5. IMPORTANT: All suggestions must be within budget of $${priceRange.min}`;
-      if (priceRange.max !== priceRange.min) {
-        enhancedPrompt += `-$${priceRange.max}`;
-      }
+      enhancedPrompt += `\n- Stay within budget range: $${priceRange.min}${priceRange.max !== priceRange.min ? `-$${priceRange.max}` : ''}`;
     }
+
+    enhancedPrompt += `\n\nBased on this request: "${prompt}"\n\nReturn ONLY a JSON array of 8 specific gift keywords. Format: ["suggestion1", "suggestion2", ..., "suggestion8"]\nEach suggestion should be searchable on Amazon.\n\nIMPORTANT: Your response must be a valid JSON array containing exactly 8 strings. No other text.`;
 
     console.log('Enhanced prompt:', enhancedPrompt);
-
-    if (!DEEPSEEK_API_KEY) {
-      throw new Error('DEEPSEEK_API_KEY is not configured');
-    }
 
     const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
       method: 'POST',
@@ -103,82 +91,47 @@ CRITICAL REQUIREMENTS:
       throw new Error('Invalid response format from DeepSeek API');
     }
 
-    const suggestions = validateAndCleanSuggestions(data.choices[0].message.content);
-    console.log('Validated suggestions:', suggestions);
-    
-    if (!suggestions || suggestions.length !== 8) {
-      throw new Error(`Invalid number of suggestions: ${suggestions?.length ?? 0}. Expected exactly 8 suggestions.`);
-    }
-
-    // Process suggestions with retries and price range
-    let retryCount = 0;
-    const maxRetries = 2;
-    let processedProducts = [];
-
-    while (retryCount <= maxRetries && processedProducts.length < 8) {
-      console.log(`Processing attempt ${retryCount + 1} of ${maxRetries + 1}`);
+    let suggestions;
+    try {
+      const content = data.choices[0].message.content.trim();
+      suggestions = JSON.parse(content);
       
-      const currentBatchProducts = await processSuggestionsInBatches(
-        suggestions.slice(processedProducts.length),
-        priceRange
-      );
+      if (!Array.isArray(suggestions) || suggestions.length !== 8) {
+        throw new Error('Invalid response format: expected array of 8 suggestions');
+      }
       
-      console.log(`Found ${currentBatchProducts.length} products in attempt ${retryCount + 1}`);
-      processedProducts = [...processedProducts, ...currentBatchProducts];
-      
-      if (processedProducts.length >= 8) break;
-      retryCount++;
+      if (!suggestions.every(item => typeof item === 'string')) {
+        throw new Error('Invalid response format: all items must be strings');
+      }
+    } catch (error) {
+      console.error('Failed to parse suggestions:', error);
+      throw new Error('Failed to parse gift suggestions from DeepSeek response');
     }
-
-    if (!processedProducts.length) {
-      console.error('No products found after all retries');
-      throw new Error('No products found for suggestions');
-    }
-
-    // Log metrics
-    await supabase.from('api_metrics').insert({
-      endpoint: 'generate-gift-suggestions',
-      duration_ms: Math.round(performance.now() - startTime),
-      status: 'success',
-      cache_hit: false
-    });
 
     return new Response(
-      JSON.stringify({ suggestions: processedProducts.slice(0, 8) }),
+      JSON.stringify({ suggestions }),
       { 
         headers: { 
-          ...corsHeaders, 
-          'Content-Type': 'application/json',
-          'Cache-Control': 'no-store, no-cache, must-revalidate'
+          ...corsHeaders,
+          'Content-Type': 'application/json' 
         } 
       }
     );
+
   } catch (error) {
     console.error('Error in generate-gift-suggestions function:', error);
-    console.error('Stack trace:', error.stack);
-    
-    // Log error metrics
-    await supabase.from('api_metrics').insert({
-      endpoint: 'generate-gift-suggestions',
-      duration_ms: Math.round(performance.now() - startTime),
-      status: 'error',
-      error_message: error.message,
-      cache_hit: false
-    });
     
     return new Response(
       JSON.stringify({ 
-        error: 'Failed to generate gift suggestions',
-        details: error.message,
+        error: error.message || 'Internal server error',
         timestamp: new Date().toISOString()
       }),
-      {
+      { 
         status: 500,
         headers: { 
-          ...corsHeaders, 
-          'Content-Type': 'application/json',
-          'Cache-Control': 'no-store, no-cache, must-revalidate'
-        },
+          ...corsHeaders,
+          'Content-Type': 'application/json'
+        }
       }
     );
   }
