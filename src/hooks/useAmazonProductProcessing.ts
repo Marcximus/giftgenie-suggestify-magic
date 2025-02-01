@@ -43,8 +43,6 @@ export const useAmazonProductProcessing = () => {
         throw error;
       }
 
-      console.log('Received Amazon product data:', amazonProduct);
-
       if (!amazonProduct?.product) {
         console.log('No Amazon product found for:', suggestion.title);
         return suggestion;
@@ -56,7 +54,7 @@ export const useAmazonProductProcessing = () => {
         ...suggestion,
         title: product.title || suggestion.title,
         description: suggestion.description,
-        priceRange: suggestion.priceRange,
+        priceRange: `${product.currency || 'USD'} ${product.price || 0}`,
         amazon_asin: product.asin,
         amazon_url: product.asin ? `https://www.amazon.com/dp/${product.asin}` : undefined,
         amazon_price: product.price,
