@@ -56,7 +56,6 @@ export const buildSearchUrl = (term: string, priceRange?: { min?: number; max?: 
   const params = new URLSearchParams({
     query: term.trim(),
     country: 'US',
-    category_id: 'aps',
     sort_by: 'RELEVANCE'
   });
 
