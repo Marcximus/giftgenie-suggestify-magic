@@ -1,7 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { searchProducts, buildSearchUrl } from './searchUtils.ts';
-import { extractPriceRange } from './priceUtils.ts';
-import { corsHeaders } from './searchUtils.ts';
+import { corsHeaders, searchProducts } from './searchUtils.ts';
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -38,7 +36,16 @@ serve(async (req) => {
     }
 
     // Extract and validate price range
-    const priceRange = rawPriceRange ? extractPriceRange(rawPriceRange) : undefined;
+    let priceRange;
+    if (rawPriceRange) {
+      const match = rawPriceRange.match(/(\d+)(?:\s*-\s*(\d+))?/);
+      if (match) {
+        priceRange = {
+          min: parseInt(match[1]),
+          max: match[2] ? parseInt(match[2]) : undefined
+        };
+      }
+    }
     console.log('Extracted price range:', priceRange);
 
     // Search for products with the validated price range

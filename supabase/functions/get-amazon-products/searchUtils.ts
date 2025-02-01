@@ -54,7 +54,6 @@ export const buildSearchUrl = (term: string, priceRange?: { min?: number; max?: 
     sort_by: 'RELEVANCE'
   });
 
-  // Always add price range parameters if they exist
   if (priceRange?.min !== undefined) {
     params.append('min_price', priceRange.min.toString());
     console.log('Adding min_price parameter:', priceRange.min);
@@ -144,7 +143,7 @@ const validateProduct = (product: any, priceRange?: { min?: number; max?: number
   return true;
 };
 
-export const formatProduct = (product: any): AmazonProduct => {
+export const formatProduct = (product: any) => {
   return {
     title: product.title,
     description: product.product_description || product.title,
@@ -157,11 +156,17 @@ export const formatProduct = (product: any): AmazonProduct => {
   };
 };
 
+const extractPrice = (priceStr: string): number | undefined => {
+  if (!priceStr) return undefined;
+  const match = priceStr.match(/[\d,.]+/);
+  return match ? parseFloat(match[0].replace(/,/g, '')) : undefined;
+};
+
 export const searchProducts = async (
   searchTerms: string[],
   apiKey: string,
   priceRange?: { min?: number; max?: number }
-): Promise<AmazonProduct[]> => {
+): Promise<any[]> => {
   if (!searchTerms.length) {
     console.error('No search terms provided');
     return [];
@@ -210,15 +215,13 @@ export const searchProducts = async (
     return validProducts[0] || null;
   };
   
-  const results: AmazonProduct[] = [];
+  const results = [];
   
-  // Try initial search terms
   for (const term of validSearchTerms) {
     const product = await makeSearchRequest(term);
     if (product) {
       results.push(product);
     } else {
-      // If initial search fails, try simplified version with same price range
       const simplifiedTerm = simplifySearchTerm(term, false);
       if (simplifiedTerm !== term) {
         console.log(`Trying simplified term "${simplifiedTerm}" with price range:`, priceRange);
