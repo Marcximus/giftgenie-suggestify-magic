@@ -65,10 +65,7 @@ export const useAmazonProductProcessing = () => {
 
       // Explicitly stringify the request body
       const { data: response, error } = await supabase.functions.invoke('get-amazon-products', {
-        body: JSON.stringify(requestPayload),
-        headers: {
-          'Content-Type': 'application/json'
-        }
+        body: requestPayload
       });
 
       if (error) {

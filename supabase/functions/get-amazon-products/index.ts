@@ -23,26 +23,16 @@ serve(async (req) => {
       url: req.url
     });
 
-    // Ensure request has the correct content type
-    const contentType = req.headers.get('content-type');
-    if (!contentType || !contentType.includes('application/json')) {
-      throw new Error(`Invalid content type: ${contentType}`);
-    }
-
     // Parse and validate request body
-    const rawBody = await req.text();
-    console.log('Raw request body:', rawBody);
+    const body = await req.json();
+    console.log('Parsed request body:', body);
 
-    if (!rawBody) {
-      throw new Error('Request body is empty');
+    if (!body || !body.searchTerm) {
+      throw new Error('searchTerm is required in request body');
     }
 
-    const { searchTerm, priceRange } = JSON.parse(rawBody);
+    const { searchTerm, priceRange } = body;
     
-    if (!searchTerm) {
-      throw new Error('searchTerm is required');
-    }
-
     console.log('Processing request:', { searchTerm, priceRange });
 
     const product = await searchProducts(searchTerm, RAPIDAPI_KEY, priceRange);
