@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { searchProducts } from "./productSearch.ts";
+import { extractPriceRange } from "./priceUtils.ts";
 import { corsHeaders } from '../_shared/cors.ts';
 
 const RAPIDAPI_KEY = Deno.env.get('RAPIDAPI_KEY');
@@ -31,9 +32,13 @@ serve(async (req) => {
       throw new Error('searchTerm is required in request body');
     }
 
-    const { searchTerm, priceRange } = body;
+    const { searchTerm } = body;
     
-    console.log('Processing request:', { searchTerm, priceRange });
+    console.log('Processing request:', { searchTerm });
+
+    // Extract price range from search term
+    const priceRange = extractPriceRange(searchTerm);
+    console.log('Extracted price range:', priceRange);
 
     const product = await searchProducts(searchTerm, RAPIDAPI_KEY, priceRange);
     
