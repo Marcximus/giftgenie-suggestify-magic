@@ -3,7 +3,7 @@ import { corsHeaders } from '../_shared/cors.ts';
 
 const DEEPSEEK_API_KEY = Deno.env.get('DEEPSEEK_API_KEY');
 
-// Extract price range from the prompt
+// Extract price range from the prompt with dynamic margins
 const extractPriceRange = (prompt: string) => {
   const budgetMatch = prompt.match(/budget(?:\s*of)?\s*\$?(\d+)(?:\s*-\s*\$?(\d+))?/i) ||
                      prompt.match(/\$(\d+)(?:\s*-\s*\$?(\d+))?/);
@@ -12,16 +12,26 @@ const extractPriceRange = (prompt: string) => {
     const min = parseInt(budgetMatch[1]);
     const max = budgetMatch[2] ? parseInt(budgetMatch[2]) : min;
     
-    // Apply 20% margin to the price range
-    const adjustedMin = Math.floor(min * 0.8); // 20% below
-    const adjustedMax = Math.ceil(max * 1.2); // 20% above
-    
-    console.log('Extracted price range:', { 
-      original: { min, max },
-      adjusted: { min: adjustedMin, max: adjustedMax }
-    });
-    
-    return { min: adjustedMin, max: adjustedMax };
+    // Apply different margins based on budget amount
+    if (max === min) { // Single number budget
+      if (min > 100) {
+        // 20% margin for budgets above 100
+        const margin = min * 0.2;
+        return {
+          min: Math.floor(min - margin),
+          max: Math.ceil(min + margin)
+        };
+      } else {
+        // 15 dollar margin for budgets below/equal to 100
+        return {
+          min: Math.max(1, Math.floor(min - 15)),
+          max: Math.ceil(min + 15)
+        };
+      }
+    } else {
+      // For explicit ranges, keep original behavior
+      return { min, max };
+    }
   }
   
   return null;
