@@ -1,7 +1,7 @@
 import { corsHeaders } from '../_shared/cors.ts';
 import { RAPIDAPI_HOST } from './config.ts';
 import { cleanSearchTerm } from './searchUtils.ts';
-import { parsePriceRange, extractPrice } from './priceUtils.ts';
+import { extractPrice } from './priceUtils.ts';
 import type { AmazonProduct } from './types.ts';
 
 export const searchProducts = async (
@@ -103,49 +103,15 @@ export const searchProducts = async (
       return null;
     }
 
-    console.log('Starting product filtering with:', {
-      totalProducts: searchData.data.products.length
+    // Simply take the first product from the response
+    const product = searchData.data.products[0];
+    console.log('Selected first product:', {
+      title: product.title,
+      hasPrice: !!product.product_price,
+      hasImage: !!product.product_photo,
+      hasAsin: !!product.asin
     });
 
-    // Filter products by basic validation and blacklist
-    let validProducts = searchData.data.products.filter(product => {
-      console.log('\nEvaluating product:', {
-        title: product?.title,
-        price: product?.product_price,
-        hasAsin: !!product?.asin
-      });
-
-      if (!product || !product.title) {
-        console.log('Product filtered out - Invalid product data');
-        return false;
-      }
-
-      // Check if the product title contains any blacklisted terms
-      const blacklistedTerms = ['cancel subscription', 'guide', 'manual', 'how to'];
-      const hasBlacklistedTerm = blacklistedTerms.some(term => 
-        product.title.toLowerCase().includes(term.toLowerCase())
-      );
-      
-      if (hasBlacklistedTerm) {
-        console.log('Product filtered out - contains blacklisted term:', product.title);
-        return false;
-      }
-
-      console.log('Product passed all filters:', product.title);
-      return true;
-    });
-
-    console.log('Filtering results:', {
-      original: searchData.data.products.length,
-      filtered: validProducts.length
-    });
-
-    if (validProducts.length === 0) {
-      console.log('No valid products found after filtering');
-      return null;
-    }
-
-    const product = validProducts[0];
     return {
       title: product.title,
       description: product.product_description || product.title,
@@ -156,6 +122,7 @@ export const searchProducts = async (
       totalRatings: product.product_num_ratings ? parseInt(product.product_num_ratings.toString(), 10) : undefined,
       asin: product.asin
     };
+
   } catch (error) {
     console.error('Error in Amazon product search:', {
       error: error.message,
