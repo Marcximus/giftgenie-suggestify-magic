@@ -34,12 +34,11 @@ serve(async (req) => {
       }
       
       requestBody = JSON.parse(bodyText);
+      console.log('Parsed request body:', requestBody);
     } catch (parseError) {
       console.error('Error parsing request body:', parseError);
       throw new Error(`Invalid request body: ${parseError.message}`);
     }
-
-    console.log('Parsed request body:', requestBody);
 
     const { searchTerm, priceRange } = requestBody;
 
