@@ -7,7 +7,12 @@ const RAPIDAPI_KEY = Deno.env.get('RAPIDAPI_KEY');
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { 
+      headers: {
+        ...corsHeaders,
+        'Content-Type': 'application/json'
+      }
+    });
   }
 
   try {
@@ -24,17 +29,44 @@ serve(async (req) => {
     }
 
     // Parse and validate request body
-    const requestBody = await req.json().catch(() => null);
-    console.log('Parsed request body:', requestBody);
-
-    if (!requestBody) {
-      throw new Error('Invalid request body: Request body is empty or not valid JSON');
+    let requestBody;
+    try {
+      requestBody = await req.json();
+      console.log('Parsed request body:', requestBody);
+    } catch (error) {
+      console.error('Error parsing request body:', error);
+      return new Response(
+        JSON.stringify({
+          error: 'Invalid JSON in request body',
+          details: error.message
+        }),
+        { 
+          status: 400,
+          headers: {
+            ...corsHeaders,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
     }
 
-    const { searchTerm, priceRange } = requestBody;
-
-    if (!searchTerm) {
-      throw new Error('searchTerm is required');
+    // Validate required fields
+    const { searchTerm, priceRange } = requestBody || {};
+    
+    if (!searchTerm || typeof searchTerm !== 'string' || !searchTerm.trim()) {
+      return new Response(
+        JSON.stringify({
+          error: 'Invalid request: searchTerm is required and must be a non-empty string',
+          receivedValue: searchTerm
+        }),
+        { 
+          status: 400,
+          headers: {
+            ...corsHeaders,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
     }
 
     console.log('Processing search request:', {
