@@ -35,32 +35,40 @@ export const useAmazonProductProcessing = () => {
         return cachedData as GiftSuggestion;
       }
 
-      // Call the get-amazon-products Edge Function
-      console.log('Calling get-amazon-products for:', suggestion.title, {
-        searchTerm: suggestion.title,
-        priceRange: suggestion.priceRange
-      });
+      // Format request payload
+      const requestPayload = {
+        searchTerm: suggestion.title.trim(),
+        priceRange: suggestion.priceRange ? suggestion.priceRange.trim() : undefined
+      };
 
-      const { data: amazonProduct, error } = await supabase.functions.invoke('get-amazon-products', {
-        body: { 
-          searchTerm: suggestion.title,
-          priceRange: suggestion.priceRange 
+      console.log('Invoking get-amazon-products Edge Function with payload:', requestPayload);
+
+      // Call the get-amazon-products Edge Function with properly formatted payload
+      const { data: response, error } = await supabase.functions.invoke('get-amazon-products', {
+        body: requestPayload,
+        headers: {
+          'Content-Type': 'application/json'
         }
       });
 
       if (error) {
         console.error('Error calling get-amazon-products:', error);
+        toast({
+          title: "Error processing product",
+          description: `Failed to process ${suggestion.title}. Please try again.`,
+          variant: "destructive",
+        });
         throw error;
       }
 
-      console.log('Amazon API response:', amazonProduct);
+      console.log('Edge Function response:', response);
 
-      if (!amazonProduct?.product) {
+      if (!response?.product) {
         console.log('No Amazon product found for:', suggestion.title);
         return suggestion;
       }
 
-      const product = amazonProduct.product;
+      const product = response.product;
       console.log('Processing Amazon product:', product);
       
       const processedSuggestion = {
