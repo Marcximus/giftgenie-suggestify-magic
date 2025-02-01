@@ -7,7 +7,7 @@ import type { AmazonProduct } from './types.ts';
 export const searchProducts = async (
   searchTerm: string,
   apiKey: string,
-  priceRange?: string
+  priceRange?: { min?: number; max?: number }
 ): Promise<AmazonProduct | null> => {
   if (!searchTerm || typeof searchTerm !== 'string' || searchTerm.trim().length === 0) {
     console.error('Invalid or missing search term:', searchTerm);
@@ -24,26 +24,25 @@ export const searchProducts = async (
   const cleanedTerm = cleanSearchTerm(searchTerm);
   console.log('Cleaned search term:', cleanedTerm);
 
+  // Extract price constraints from input
+  let minPrice = 1;  // Default minimum price
+  let maxPrice = 1000;  // Default maximum price
+
+  if (priceRange) {
+    if (priceRange.min !== undefined && priceRange.min >= 0) {
+      minPrice = Math.floor(priceRange.min * 0.8); // 20% below minimum
+    }
+    if (priceRange.max !== undefined && priceRange.max > 0) {
+      maxPrice = Math.ceil(priceRange.max * 1.2); // 20% above maximum
+    }
+    console.log('Using price constraints:', { minPrice, maxPrice });
+  }
+
+  // Construct URL with required parameters
   const url = new URL(`https://${RAPIDAPI_HOST}/search`);
   url.searchParams.append('query', cleanedTerm);
   url.searchParams.append('country', 'US');
   url.searchParams.append('category_id', 'aps');
-
-  // Always include price parameters
-  let minPrice = 1;  // Default minimum price
-  let maxPrice = 1000;  // Default maximum price
-
-  // Parse price range if provided
-  if (priceRange) {
-    const constraints = parsePriceRange(priceRange);
-    if (constraints) {
-      minPrice = constraints.min;
-      maxPrice = constraints.max;
-      console.log('Using provided price constraints:', { minPrice, maxPrice });
-    }
-  }
-
-  // Always append price parameters
   url.searchParams.append('min_price', minPrice.toString());
   url.searchParams.append('max_price', maxPrice.toString());
 
