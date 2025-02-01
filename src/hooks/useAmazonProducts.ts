@@ -25,36 +25,18 @@ export const useAmazonProducts = () => {
 
   const getAmazonProduct = async (searchTerm: string, priceRange: string): Promise<AmazonProduct | null> => {
     try {
-      setIsLoading(true);
-      console.log('Starting Amazon product search:', { searchTerm, priceRange });
-
       if (isRateLimited()) {
-        console.log('Rate limited, waiting before retry...');
         await new Promise(resolve => setTimeout(resolve, RATE_LIMIT.RETRY_AFTER * 1000));
       }
 
       requestLog.push({ timestamp: Date.now() });
       
       const product = await withRetry(
-        async () => {
-          console.log('Attempting product search with term:', searchTerm);
-          const result = await searchWithFallback(searchTerm, priceRange);
-          console.log('Search result:', result);
-          return result;
-        },
-        3,
+        () => searchWithFallback(searchTerm, priceRange),
+        2,
         1000
       );
       
-      if (!product) {
-        console.log('No product found for search term:', searchTerm);
-        toast({
-          title: "No product found",
-          description: "We couldn't find a matching product. Please try a different search.",
-          variant: "destructive",
-        });
-      }
-
       return product || null;
 
     } catch (error: any) {
@@ -68,17 +50,9 @@ export const useAmazonProducts = () => {
           variant: "destructive",
         });
         await new Promise(resolve => setTimeout(resolve, retryAfter * 1000));
-      } else {
-        toast({
-          title: "Error fetching product",
-          description: "There was an error fetching the product. Please try again.",
-          variant: "destructive",
-        });
       }
       
       return null;
-    } finally {
-      setIsLoading(false);
     }
   };
 

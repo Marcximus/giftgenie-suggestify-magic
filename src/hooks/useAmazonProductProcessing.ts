@@ -9,50 +9,44 @@ import { supabase } from "@/integrations/supabase/client";
 export const useAmazonProductProcessing = () => {
   const queryClient = useQueryClient();
 
-  const processGiftSuggestion = async (suggestion: string | GiftSuggestion): Promise<GiftSuggestion> => {
+  const processGiftSuggestion = async (suggestion: GiftSuggestion): Promise<GiftSuggestion> => {
     const startTime = performance.now();
-    const operationMark = markOperation(`process-suggestion-${typeof suggestion === 'string' ? suggestion : suggestion.title}`);
+    const operationMark = markOperation(`process-suggestion-${suggestion.title}`);
     
     try {
-      // If suggestion is a string, convert it to a GiftSuggestion object
-      const initialSuggestion: GiftSuggestion = typeof suggestion === 'string' ? {
-        title: suggestion,
-        description: suggestion,
-        priceRange: 'Check price on Amazon',
-        reason: `This ${suggestion} matches your requirements.`,
-        search_query: suggestion
-      } : suggestion;
-
-      if (!initialSuggestion.title) {
-        console.error('Invalid suggestion:', initialSuggestion);
+      // Clean the title by removing parenthetical descriptions
+      const cleanTitle = suggestion.title?.split('(')[0]?.trim();
+      
+      if (!cleanTitle) {
+        console.error('Invalid suggestion:', suggestion);
         throw new Error('Invalid suggestion: missing title');
       }
 
       console.log('Processing suggestion:', {
-        title: initialSuggestion.title,
-        priceRange: initialSuggestion.priceRange,
-        description: initialSuggestion.description
+        title: cleanTitle,
+        priceRange: suggestion.priceRange,
+        description: suggestion.description
       });
 
-      const normalizedTitle = initialSuggestion.title.toLowerCase().trim();
+      const normalizedTitle = cleanTitle.toLowerCase().trim();
       const cacheKey = ['amazon-product', normalizedTitle];
       const cachedData = queryClient.getQueryData(cacheKey);
       
       if (cachedData) {
-        console.log('Cache hit for:', initialSuggestion.title);
+        console.log('Cache hit for:', cleanTitle);
         await logApiMetrics('amazon-product-processing', startTime, 'success');
         operationMark.end();
         return cachedData as GiftSuggestion;
       }
 
       // Extract price range if available
-      const priceMatch = initialSuggestion.priceRange?.match(/\$?(\d+(?:\.\d{2})?)\s*-\s*\$?(\d+(?:\.\d{2})?)/);
+      const priceMatch = suggestion.priceRange?.match(/\$?(\d+(?:\.\d{2})?)\s*-\s*\$?(\d+(?:\.\d{2})?)/);
       const minPrice = priceMatch ? parseFloat(priceMatch[1]) : undefined;
       const maxPrice = priceMatch ? parseFloat(priceMatch[2]) : undefined;
 
       // Format request payload
       const requestPayload = {
-        searchTerm: initialSuggestion.title,
+        searchTerm: cleanTitle,
         priceRange: priceMatch ? { min: minPrice, max: maxPrice } : undefined
       };
 
@@ -69,7 +63,7 @@ export const useAmazonProductProcessing = () => {
         console.error('Error calling get-amazon-products:', error);
         toast({
           title: "Error processing product",
-          description: `Failed to process ${initialSuggestion.title}. Please try again.`,
+          description: `Failed to process ${cleanTitle}. Please try again.`,
           variant: "destructive",
         });
         throw error;
@@ -78,15 +72,16 @@ export const useAmazonProductProcessing = () => {
       console.log('Edge Function response:', response);
 
       if (!response?.product) {
-        console.log('No Amazon product found for:', initialSuggestion.title);
-        return initialSuggestion;
+        console.log('No Amazon product found for:', cleanTitle);
+        return suggestion;
       }
 
       const product = response.product;
       console.log('Processing Amazon product:', product);
       
       const processedSuggestion = {
-        ...initialSuggestion,
+        ...suggestion,
+        title: cleanTitle,
         amazon_asin: product.asin,
         amazon_url: product.asin ? `https://www.amazon.com/dp/${product.asin}` : undefined,
         amazon_price: product.price,
@@ -107,11 +102,11 @@ export const useAmazonProductProcessing = () => {
       console.error('Error processing suggestion:', error);
       await logApiMetrics('amazon-product-processing', startTime, 'error', error.message);
       operationMark.end();
-      throw error;
+      return suggestion;
     }
   };
 
-  const processSuggestions = async (suggestions: (string | GiftSuggestion)[]) => {
+  const processSuggestions = async (suggestions: GiftSuggestion[]) => {
     const startTime = performance.now();
     const operationMark = markOperation('process-suggestions-batch');
     
