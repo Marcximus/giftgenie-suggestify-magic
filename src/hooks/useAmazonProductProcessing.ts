@@ -14,7 +14,6 @@ export const useAmazonProductProcessing = () => {
     const operationMark = markOperation(`process-suggestion-${typeof suggestion === 'string' ? suggestion : suggestion.title}`);
     
     try {
-      // If suggestion is a string, convert it to a GiftSuggestion object
       const initialSuggestion: GiftSuggestion = typeof suggestion === 'string' ? {
         title: suggestion,
         description: suggestion,
@@ -30,7 +29,7 @@ export const useAmazonProductProcessing = () => {
 
       console.log('Processing suggestion:', {
         title: initialSuggestion.title,
-        priceRange: initialSuggestion.priceRange,
+        priceRange: priceRange,
         description: initialSuggestion.description
       });
 
@@ -45,20 +44,14 @@ export const useAmazonProductProcessing = () => {
         return cachedData as GiftSuggestion;
       }
 
-      // Format request payload
+      // Format request payload with price range
       const requestPayload = {
         searchTerm: initialSuggestion.title,
-        priceRange: priceRange // Pass the price range from generate-gift-suggestions
+        priceRange // Pass the price range to the Edge Function
       };
 
       console.log('Invoking get-amazon-products Edge Function with payload:', JSON.stringify(requestPayload));
 
-      // Make sure the request body is properly formatted and not empty
-      if (!requestPayload.searchTerm) {
-        throw new Error('Search term is required');
-      }
-
-      // Explicitly stringify the request body
       const { data: response, error } = await supabase.functions.invoke('get-amazon-products', {
         body: requestPayload
       });
@@ -72,8 +65,6 @@ export const useAmazonProductProcessing = () => {
         });
         throw error;
       }
-
-      console.log('Edge Function response:', response);
 
       if (!response?.product) {
         console.log('No Amazon product found for:', initialSuggestion.title);
