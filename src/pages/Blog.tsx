@@ -97,7 +97,7 @@ const Blog = () => {
               </Card>
             ))}
           </div>
-          <footer className="mt-8 text-center pb-8">
+          <footer className="mt-4 text-center pb-8">
             <p className="text-xs text-muted-foreground">
               Some links may contain affiliate links from Amazon and other vendors
             </p>
@@ -143,7 +143,7 @@ const Blog = () => {
             </Link>
           ))}
         </div>
-        <footer className="mt-8 text-center pb-8">
+        <footer className="mt-4 text-center pb-8">
           <p className="text-xs text-muted-foreground">
             Some links may contain affiliate links from Amazon and other vendors
           </p>
