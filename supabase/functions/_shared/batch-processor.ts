@@ -1,11 +1,14 @@
 import { AmazonProduct } from './types.ts';
 import { searchAmazonProducts } from './amazon-search.ts';
 
-const BATCH_SIZE = 8; // Increased from 4 to 8
-const PROCESS_SIZE = 4; // Keep process size at 4 to maintain rate limiting
+const BATCH_SIZE = 8;
+const PROCESS_SIZE = 4;
 const BATCH_DELAY = 200;
 
-export async function processSuggestionsInBatches(suggestions: string[]): Promise<AmazonProduct[]> {
+export async function processSuggestionsInBatches(
+  suggestions: string[],
+  priceRange?: string
+): Promise<AmazonProduct[]> {
   const batches: string[][] = [];
   
   // Split suggestions into batches
@@ -16,7 +19,7 @@ export async function processSuggestionsInBatches(suggestions: string[]): Promis
   const processedProducts: AmazonProduct[] = [];
   
   for (const batch of batches) {
-    console.log(`Processing batch of ${batch.length} suggestions`);
+    console.log(`Processing batch of ${batch.length} suggestions with price range: ${priceRange}`);
     
     // Process batch in smaller chunks
     for (let i = 0; i < batch.length; i += PROCESS_SIZE) {
@@ -27,7 +30,7 @@ export async function processSuggestionsInBatches(suggestions: string[]): Promis
       const chunkResults = await Promise.all(
         chunk.map(async (suggestion) => {
           try {
-            const result = await searchAmazonProducts(suggestion);
+            const result = await searchAmazonProducts(suggestion, priceRange);
             console.log(`Processed suggestion: ${suggestion}, success: ${!!result}`);
             return result;
           } catch (error) {

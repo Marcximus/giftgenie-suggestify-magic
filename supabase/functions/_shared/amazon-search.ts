@@ -1,8 +1,8 @@
 import { corsHeaders } from './cors.ts';
 import { AmazonProduct } from './types.ts';
 
-export async function searchAmazonProducts(keyword: string): Promise<AmazonProduct | null> {
-  console.log('Searching with term:', keyword);
+export async function searchAmazonProducts(keyword: string, priceRange?: string): Promise<AmazonProduct | null> {
+  console.log('Searching with term:', keyword, 'Price range:', priceRange);
   
   try {
     const apiKey = Deno.env.get('RAPIDAPI_KEY');
@@ -10,7 +10,31 @@ export async function searchAmazonProducts(keyword: string): Promise<AmazonProdu
       throw new Error('RAPIDAPI_KEY not configured');
     }
 
-    const url = `https://real-time-amazon-data.p.rapidapi.com/search?query=${encodeURIComponent(keyword)}&country=US`;
+    // Extract min and max price from price range string (format: "1-1000" or "$1-$1000")
+    let minPrice, maxPrice;
+    if (priceRange) {
+      const prices = priceRange.replace(/[$,]/g, '').split('-');
+      if (prices.length === 2) {
+        minPrice = parseFloat(prices[0]);
+        maxPrice = parseFloat(prices[1]);
+      }
+    }
+
+    const url = new URL('https://real-time-amazon-data.p.rapidapi.com/search');
+    url.searchParams.append('query', encodeURIComponent(keyword));
+    url.searchParams.append('country', 'US');
+    url.searchParams.append('sort_by', 'RELEVANCE');
+    
+    // Add price range parameters if available
+    if (minPrice !== undefined && !isNaN(minPrice)) {
+      url.searchParams.append('min_price', minPrice.toString());
+    }
+    if (maxPrice !== undefined && !isNaN(maxPrice)) {
+      url.searchParams.append('max_price', maxPrice.toString());
+    }
+
+    console.log('Making API request to:', url.toString());
+
     const response = await fetch(url, {
       headers: {
         'X-RapidAPI-Key': apiKey,
@@ -30,7 +54,7 @@ export async function searchAmazonProducts(keyword: string): Promise<AmazonProdu
       // Try a simplified search by taking the first few words
       const simplifiedKeyword = keyword.split(' ').slice(0, 3).join(' ');
       if (simplifiedKeyword !== keyword) {
-        return searchAmazonProducts(simplifiedKeyword);
+        return searchAmazonProducts(simplifiedKeyword, priceRange);
       }
       return null;
     }
