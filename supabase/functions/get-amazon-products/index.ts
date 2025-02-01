@@ -24,20 +24,11 @@ serve(async (req) => {
     }
 
     // Parse and validate request body
-    let requestBody;
-    try {
-      const bodyText = await req.text();
-      console.log('Raw request body:', bodyText);
-      
-      if (!bodyText) {
-        throw new Error('Request body is empty');
-      }
-      
-      requestBody = JSON.parse(bodyText);
-      console.log('Parsed request body:', requestBody);
-    } catch (parseError) {
-      console.error('Error parsing request body:', parseError);
-      throw new Error(`Invalid request body: ${parseError.message}`);
+    const requestBody = await req.json().catch(() => null);
+    console.log('Parsed request body:', requestBody);
+
+    if (!requestBody) {
+      throw new Error('Invalid request body: Request body is empty or not valid JSON');
     }
 
     const { searchTerm, priceRange } = requestBody;
