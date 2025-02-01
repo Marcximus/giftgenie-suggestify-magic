@@ -46,14 +46,22 @@ serve(async (req) => {
     const priceRange = extractPriceRange(prompt);
     console.log('Extracted price range:', priceRange);
 
-    const enhancedPrompt = `You are a gifting expert. Based on the request: "${prompt}", suggest EXACTLY 8 great gift ideas.
+    // Build the prompt without template literals in the budget part
+    let enhancedPrompt = `You are a gifting expert. Based on the request: "${prompt}", suggest EXACTLY 8 great gift ideas.
 
 CRITICAL REQUIREMENTS:
 1. Return EXACTLY 8 suggestions - no more, no less
 2. Consider age, gender, interests and occasion mentioned
 3. Titles should be short and precise like "Apple Airpods 2", "Luxury Scented Candles" etc
-4. Return ONLY a JSON array containing EXACTLY 8 strings
-${priceRange ? `5. IMPORTANT: All suggestions must fit within the budget of $${priceRange.min}${priceRange.max !== priceRange.min ? ` to $${priceRange.max}` : ''}` : ''}`;
+4. Return ONLY a JSON array containing EXACTLY 8 strings`;
+
+    // Add budget requirement if price range exists
+    if (priceRange) {
+      enhancedPrompt += `\n5. IMPORTANT: All suggestions must fit within the budget of $${priceRange.min}`;
+      if (priceRange.max !== priceRange.min) {
+        enhancedPrompt += ` to $${priceRange.max}`;
+      }
+    }
 
     console.log('Enhanced prompt:', enhancedPrompt);
 
