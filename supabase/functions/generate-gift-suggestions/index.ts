@@ -46,7 +46,7 @@ serve(async (req) => {
     const priceRange = extractPriceRange(prompt);
     console.log('Extracted price range:', priceRange);
 
-    // Build the prompt without template literals in the budget part
+    // Build the prompt
     let enhancedPrompt = `You are a gifting expert. Based on the request: "${prompt}", suggest EXACTLY 8 great gift ideas.
 
 CRITICAL REQUIREMENTS:
@@ -57,9 +57,9 @@ CRITICAL REQUIREMENTS:
 
     // Add budget requirement if price range exists
     if (priceRange) {
-      enhancedPrompt += `\n5. IMPORTANT: All suggestions must fit within the budget of $${priceRange.min}`;
+      enhancedPrompt += `\n5. IMPORTANT: All suggestions must be within budget of $${priceRange.min}`;
       if (priceRange.max !== priceRange.min) {
-        enhancedPrompt += ` to $${priceRange.max}`;
+        enhancedPrompt += `-$${priceRange.max}`;
       }
     }
 
