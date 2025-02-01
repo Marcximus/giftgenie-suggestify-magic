@@ -16,11 +16,18 @@ export const useSuggestions = () => {
     mutationFn: async (query: string) => {
       const startTime = performance.now();
       try {
-        console.log('Fetching suggestions for query:', query);
+        console.log('Starting suggestion generation for query:', query);
         const newSuggestions = await generateSuggestions(query);
         
-        if (newSuggestions) {
-          console.log('Processing suggestions in parallel');
+        if (!newSuggestions || !Array.isArray(newSuggestions)) {
+          console.error('Invalid suggestions received:', newSuggestions);
+          throw new Error('Failed to generate valid suggestions');
+        }
+
+        console.log('Generated suggestions:', newSuggestions);
+        
+        if (newSuggestions.length > 0) {
+          console.log('Processing suggestions with Amazon data');
           const results = await processSuggestions(newSuggestions);
           
           // Log metrics for successful processing
@@ -30,8 +37,11 @@ export const useSuggestions = () => {
             status: 'success'
           });
           
+          console.log('Processed suggestions with Amazon data:', results);
           return results;
         }
+
+        console.warn('No suggestions generated');
         return [];
       } catch (error) {
         console.error('Error in suggestion mutation:', error);
@@ -48,28 +58,32 @@ export const useSuggestions = () => {
       }
     },
     onSuccess: (data) => {
-      // Update the suggestions cache with the enriched data
+      console.log('Successfully updated suggestions cache:', data);
       queryClient.setQueryData(['suggestions'], data);
     }
   });
 
   const debouncedSearch = debounce(async (query: string) => {
+    console.log('Debounced search triggered with query:', query);
     setLastQuery(query);
     await fetchSuggestions(query);
   }, 300, { leading: true, trailing: true });
 
   const handleSearch = async (query: string) => {
+    console.log('Search initiated with query:', query);
     setLastQuery(query);
     await debouncedSearch(query);
   };
 
   const handleGenerateMore = async () => {
     if (lastQuery) {
+      console.log('Generating more suggestions for query:', lastQuery);
       await fetchSuggestions(lastQuery);
     }
   };
 
   const handleMoreLikeThis = async (title: string) => {
+    console.log('Generating more suggestions like:', title);
     const query = lastQuery.toLowerCase();
     
     // Extract key product characteristics from the title
