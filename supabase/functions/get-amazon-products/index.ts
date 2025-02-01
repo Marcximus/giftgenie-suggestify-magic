@@ -34,25 +34,43 @@ async function searchAmazonProduct(
 ): Promise<AmazonProduct | null> {
   console.log('Starting Amazon search with term:', searchTerm, { priceRange });
   
-  const searchParams = new URLSearchParams({
-    query: searchTerm.trim(),
-    country: 'US',
-    category_id: 'aps',
-    sort_by: 'RELEVANCE'
-  });
+  // Extract min and max price from priceRange
+  let minPrice, maxPrice;
+  if (priceRange) {
+    const match = priceRange.match(/(\d+)-(\d+)/);
+    if (match) {
+      minPrice = parseInt(match[1]);
+      maxPrice = parseInt(match[2]);
+      console.log(`Extracted price range: $${minPrice}-$${maxPrice}`);
+    }
+  }
+
+  const buildSearchUrl = (term: string) => {
+    const params = new URLSearchParams({
+      query: term.trim(),
+      country: 'US',
+      category_id: 'aps',
+      sort_by: 'RELEVANCE'
+    });
+
+    // Add price range parameters if available
+    if (minPrice !== undefined) params.append('min_price', minPrice.toString());
+    if (maxPrice !== undefined) params.append('max_price', maxPrice.toString());
+
+    return `https://${RAPIDAPI_HOST}/search?${params.toString()}`;
+  };
 
   try {
-    console.log('Making request to Amazon API with params:', searchParams.toString());
+    // First attempt with exact search term
+    let searchUrl = buildSearchUrl(searchTerm);
+    console.log('Making request to Amazon API with URL:', searchUrl);
     
-    const searchResponse = await fetch(
-      `https://${RAPIDAPI_HOST}/search?${searchParams.toString()}`,
-      {
-        headers: {
-          'X-RapidAPI-Key': apiKey,
-          'X-RapidAPI-Host': RAPIDAPI_HOST,
-        }
+    let searchResponse = await fetch(searchUrl, {
+      headers: {
+        'X-RapidAPI-Key': apiKey,
+        'X-RapidAPI-Host': RAPIDAPI_HOST,
       }
-    );
+    });
 
     if (!searchResponse.ok) {
       console.error('Amazon Search API error:', {
@@ -62,14 +80,36 @@ async function searchAmazonProduct(
       return null;
     }
 
-    const searchData = await searchResponse.json();
-    console.log('Raw Amazon API response:', {
-      hasData: !!searchData.data,
-      productsCount: searchData.data?.products?.length || 0
-    });
+    let searchData = await searchResponse.json();
+    
+    // If no products found, try with simplified search term
+    if (!searchData.data?.products?.length) {
+      const simplifiedTerm = searchTerm.split(' ').slice(0, 3).join(' ');
+      console.log('No products found, trying simplified search:', simplifiedTerm);
+      
+      searchUrl = buildSearchUrl(simplifiedTerm);
+      console.log('Making fallback request with URL:', searchUrl);
+      
+      searchResponse = await fetch(searchUrl, {
+        headers: {
+          'X-RapidAPI-Key': apiKey,
+          'X-RapidAPI-Host': RAPIDAPI_HOST,
+        }
+      });
+
+      if (!searchResponse.ok) {
+        console.error('Fallback search API error:', {
+          status: searchResponse.status,
+          statusText: searchResponse.statusText
+        });
+        return null;
+      }
+
+      searchData = await searchResponse.json();
+    }
 
     if (!searchData.data?.products?.length) {
-      console.log('No products found in search results');
+      console.log('No products found in any search results');
       return null;
     }
 
@@ -86,7 +126,7 @@ async function searchAmazonProduct(
       console.log('Found alternative product with ASIN:', product.asin);
     }
 
-    // Get detailed product information using ASIN
+    // Get detailed product information
     const detailsResponse = await fetch(
       `https://${RAPIDAPI_HOST}/product-details?asin=${product.asin}&country=US`,
       {
@@ -107,16 +147,17 @@ async function searchAmazonProduct(
       });
     }
 
-    // Extract price from product details or search result
     const price = detailsData?.data?.product_price 
       ? extractPrice(detailsData.data.product_price)
       : extractPrice(product.product_price);
 
-    console.log('Final price extraction:', {
-      detailsPrice: detailsData?.data?.product_price,
-      searchPrice: product.product_price,
-      extractedPrice: price
-    });
+    // Verify price is within range if price range was specified
+    if (price !== undefined && minPrice !== undefined && maxPrice !== undefined) {
+      if (price < minPrice || price > maxPrice) {
+        console.log(`Product price $${price} outside range $${minPrice}-$${maxPrice}`);
+        return null;
+      }
+    }
 
     const result: AmazonProduct = {
       title: detailsData?.data?.product_title || product.title,
@@ -132,9 +173,10 @@ async function searchAmazonProduct(
     console.log('Final processed product:', {
       title: result.title,
       asin: result.asin,
-      hasImage: !!result.imageUrl,
-      hasPrice: result.price !== undefined,
-      price: result.price
+      price: result.price,
+      withinRange: price !== undefined && 
+        (minPrice === undefined || maxPrice === undefined || 
+         (price >= minPrice && price <= maxPrice))
     });
 
     return result;
