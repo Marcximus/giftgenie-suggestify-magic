@@ -5,7 +5,7 @@ import { searchProducts } from './productSearch.ts';
 const RAPIDAPI_KEY = Deno.env.get('RAPIDAPI_KEY');
 
 serve(async (req) => {
-  // Always handle CORS preflight requests first
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, {
       status: 204,
@@ -17,11 +17,14 @@ serve(async (req) => {
   }
 
   try {
-    console.log('Received request:', {
+    // Log incoming request details
+    console.log('Incoming request:', {
       method: req.method,
-      headers: Object.fromEntries(req.headers.entries()),
+      url: req.url,
+      headers: Object.fromEntries(req.headers.entries())
     });
 
+    // Validate API key
     if (!RAPIDAPI_KEY) {
       console.error('RAPIDAPI_KEY not configured');
       return new Response(
@@ -31,12 +34,37 @@ serve(async (req) => {
         }),
         { 
           status: 503,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          headers: { 
+            ...corsHeaders, 
+            'Content-Type': 'application/json',
+            'Cache-Control': 'no-store'
+          }
         }
       );
     }
 
-    const { searchTerm, priceRange } = await req.json();
+    // Parse and validate request body
+    let body;
+    try {
+      body = await req.json();
+    } catch (e) {
+      console.error('Failed to parse request body:', e);
+      return new Response(
+        JSON.stringify({ 
+          error: 'Invalid request',
+          details: 'Failed to parse request body'
+        }),
+        { 
+          status: 400,
+          headers: { 
+            ...corsHeaders, 
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+    }
+
+    const { searchTerm, priceRange } = body;
     console.log('Request payload:', { searchTerm, priceRange });
 
     if (!searchTerm) {
@@ -53,7 +81,7 @@ serve(async (req) => {
       );
     }
 
-    // Clean and validate the search term
+    // Clean and validate search term
     const cleanedSearchTerm = searchTerm.trim();
     if (cleanedSearchTerm.length < 2) {
       console.error('Search term too short:', cleanedSearchTerm);
