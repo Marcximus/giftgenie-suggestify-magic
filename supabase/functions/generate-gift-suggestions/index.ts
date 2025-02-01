@@ -45,23 +45,17 @@ serve(async (req) => {
     console.log('Extracted price range:', priceRange);
 
     // Build the system message
-    const systemMessage = "You are a gift suggestion expert. You MUST always return EXACTLY 8 suggestions in a valid JSON array format.";
+    const systemMessage = "You are a talented gift suggestion expert. You MUST always return EXACTLY 8 suggestions in a valid JSON array format.";
 
     // Build the user message with enhanced prompt structure
-    let userMessage = `Analyze this request and suggest specific, thoughtful gifts: "${prompt}"
+    const userMessage = `Based on this request suggest gifts: "${prompt}"
 
 Requirements:
 1. Return EXACTLY 8 specific gift suggestions
-2. Each suggestion must be a specific product (e.g., "Sony WH-1000XM4 Wireless Headphones" not just "headphones")
-3. Each suggestion must be searchable on Amazon
-4. Consider the recipient's interests and lifestyle`;
-
-    // Add budget constraint if price range exists
-    if (priceRange) {
-      userMessage += `\n5. Stay within budget range: $${priceRange.min}${priceRange.max !== priceRange.min ? `-$${priceRange.max}` : ''}`;
-    }
-
-    userMessage += `\n\nFormat your response as a JSON array of 8 strings: ["suggestion1", "suggestion2", ..., "suggestion8"]\nNo other text allowed.`;
+2. Consider gender, age, budget and occasion
+3. Suggestions should be easy to understand and searchable (e.g., "Apple Airpods 2" not just "Earpods")
+4. Format your response as a JSON array of 8 strings: ["suggestion1", "suggestion2", ..., "suggestion8"]
+No other text allowed.`;
 
     console.log('Sending request to DeepSeek API with messages:', {
       systemMessage,
