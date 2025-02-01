@@ -23,7 +23,8 @@ export const SuggestionsGridItems = ({
   const [customDescriptions, setCustomDescriptions] = useState<Record<string, string>>({});
   const [processingQueue, setProcessingQueue] = useState<Set<string>>(new Set());
   const [visibleCount, setVisibleCount] = useState(0);
-  const abortController = useRef<AbortController | null>(null);
+  const processingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const animationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const { toast } = useToast();
 
   const generateTitle = useCallback(async (originalTitle: string, description: string) => {
@@ -54,6 +55,20 @@ export const SuggestionsGridItems = ({
   }, [processingQueue]);
 
   useEffect(() => {
+    // Cleanup function to clear timeouts
+    return () => {
+      if (processingTimeoutRef.current) {
+        clearTimeout(processingTimeoutRef.current);
+      }
+      if (animationTimeoutRef.current) {
+        clearTimeout(animationTimeoutRef.current);
+      }
+      onAllSuggestionsProcessed(false);
+      setVisibleCount(0);
+    };
+  }, [onAllSuggestionsProcessed]);
+
+  useEffect(() => {
     if (!Array.isArray(suggestions)) {
       console.error('Invalid suggestions array:', suggestions);
       return;
@@ -69,27 +84,18 @@ export const SuggestionsGridItems = ({
       return;
     }
 
-    if (abortController.current) {
-      abortController.current.abort();
-    }
-    abortController.current = new AbortController();
-
-    let completedCount = 0;
     const newProcessingQueue = new Set<string>();
+    let completedCount = 0;
 
-    // Show first result immediately
-    setVisibleCount(1);
+    // Show first result immediately after a brief initial delay
+    animationTimeoutRef.current = setTimeout(() => {
+      setVisibleCount(1);
+    }, 50);
 
     const processSuggestions = async () => {
-      // Process all suggestions in parallel
       const processPromises = suggestions.map(async (suggestion, index) => {
-        if (abortController.current?.signal.aborted) {
-          return;
-        }
-
         const originalTitle = suggestion.title || 'Gift Suggestion';
         
-        // Skip if already processing or processed
         if (processingQueue.has(originalTitle) || optimizedTitles[originalTitle]) {
           return;
         }
@@ -97,7 +103,6 @@ export const SuggestionsGridItems = ({
         newProcessingQueue.add(originalTitle);
 
         try {
-          // Start both title and description generation immediately
           const [optimizedTitle, customDescription] = await Promise.all([
             generateTitle(originalTitle, suggestion.description || ''),
             generateCustomDescription(originalTitle, suggestion.description || '')
@@ -119,15 +124,19 @@ export const SuggestionsGridItems = ({
 
           completedCount++;
           
-          // Increment visible count with a shorter delay
-          if (index > 0) { // Skip delay for first item
-            setTimeout(() => {
+          // Add delay for subsequent items
+          if (index > 0) {
+            processingTimeoutRef.current = setTimeout(() => {
               setVisibleCount(prev => Math.min(prev + 1, suggestions.length));
-            }, index * 50); // 50ms delay between items after the first one
+            }, index * 50); // 50ms delay between items
           }
 
+          // Only mark as processed when all items are visible
           if (completedCount === suggestions.length) {
-            onAllSuggestionsProcessed(true);
+            // Wait for all animations to complete before marking as processed
+            setTimeout(() => {
+              onAllSuggestionsProcessed(true);
+            }, suggestions.length * 50 + 300); // Total animation time
           }
 
         } catch (error) {
@@ -144,14 +153,7 @@ export const SuggestionsGridItems = ({
 
     processSuggestions();
 
-    return () => {
-      if (abortController.current) {
-        abortController.current.abort();
-      }
-      onAllSuggestionsProcessed(false);
-      setVisibleCount(0);
-    };
-  }, [suggestions, generateTitle, onAllSuggestionsProcessed]);
+  }, [suggestions, generateTitle, onAllSuggestionsProcessed, processingQueue, optimizedTitles]);
 
   if (isLoading) {
     return (
@@ -187,7 +189,7 @@ export const SuggestionsGridItems = ({
               }
             `}
             style={{ 
-              transitionDelay: index === 0 ? '0ms' : `${index * 50}ms`
+              transitionDelay: index === 0 ? '50ms' : `${index * 50}ms`
             }}
           >
             <ProductCard
