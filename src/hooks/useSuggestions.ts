@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useOpenAISuggestions } from './useOpenAISuggestions';
+import { useDeepSeekSuggestions } from './useDeepSeekSuggestions';
 import { useAmazonProductProcessing } from './useAmazonProductProcessing';
 import { GiftSuggestion } from '@/types/suggestions';
 import { debounce } from '@/utils/debounce';
@@ -8,7 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 export const useSuggestions = () => {
   const [lastQuery, setLastQuery] = useState('');
-  const { generateSuggestions } = useOpenAISuggestions();
+  const { generateSuggestions } = useDeepSeekSuggestions();
   const { processSuggestions } = useAmazonProductProcessing();
   const queryClient = useQueryClient();
 
