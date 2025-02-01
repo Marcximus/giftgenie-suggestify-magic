@@ -18,6 +18,12 @@ export const useAmazonProductProcessing = () => {
         throw new Error('Invalid suggestion: missing title');
       }
 
+      console.log('Processing suggestion:', {
+        title: suggestion.title,
+        priceRange: suggestion.priceRange,
+        description: suggestion.description
+      });
+
       const normalizedTitle = suggestion.title.toLowerCase().trim();
       const cacheKey = ['amazon-product', normalizedTitle];
       const cachedData = queryClient.getQueryData(cacheKey);
@@ -30,7 +36,11 @@ export const useAmazonProductProcessing = () => {
       }
 
       // Call the get-amazon-products Edge Function
-      console.log('Calling get-amazon-products for:', suggestion.title);
+      console.log('Calling get-amazon-products for:', suggestion.title, {
+        searchTerm: suggestion.title,
+        priceRange: suggestion.priceRange
+      });
+
       const { data: amazonProduct, error } = await supabase.functions.invoke('get-amazon-products', {
         body: { 
           searchTerm: suggestion.title,
@@ -43,12 +53,15 @@ export const useAmazonProductProcessing = () => {
         throw error;
       }
 
+      console.log('Amazon API response:', amazonProduct);
+
       if (!amazonProduct?.product) {
         console.log('No Amazon product found for:', suggestion.title);
         return suggestion;
       }
 
       const product = amazonProduct.product;
+      console.log('Processing Amazon product:', product);
       
       const processedSuggestion = {
         ...suggestion,
@@ -62,6 +75,8 @@ export const useAmazonProductProcessing = () => {
         amazon_rating: product.rating,
         amazon_total_ratings: product.totalRatings
       };
+
+      console.log('Processed suggestion:', processedSuggestion);
 
       // Update cache with enriched data
       queryClient.setQueryData(cacheKey, processedSuggestion);
