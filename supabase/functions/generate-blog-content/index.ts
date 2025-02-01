@@ -1,10 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { corsHeaders } from '../_shared/cors.ts';
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -13,70 +9,65 @@ serve(async (req) => {
 
   try {
     const { type, content, title } = await req.json();
-    console.log(`Generating ${type} with content:`, content);
+    console.log('Generating content for type:', type);
 
-    let systemPrompt = '';
-    let userPrompt = '';
+    const openAiKey = Deno.env.get('OPENAI_API_KEY');
+    if (!openAiKey) {
+      throw new Error('OpenAI API key not configured');
+    }
 
+    let prompt = '';
     switch (type) {
       case 'excerpt':
-        systemPrompt = 'You are a skilled content writer who creates engaging blog post excerpts. Create a brief, compelling excerpt (max 150 characters) that captures the essence of the blog post and encourages readers to click through.';
-        userPrompt = `Title: ${title}\nContent: ${content}\n\nCreate a brief, engaging excerpt for this blog post.`;
+        prompt = `Write a compelling, SEO-friendly excerpt (150-200 words) for a blog post titled "${title}" with this content: ${content.substring(0, 500)}...`;
         break;
       case 'seo-title':
-        systemPrompt = 'You are an SEO expert who creates optimized meta titles. Create a compelling meta title (50-60 characters) that is both search engine friendly and engaging for readers.';
-        userPrompt = `Blog Title: ${title}\nContent: ${content}\n\nCreate an SEO-optimized meta title.`;
+        prompt = `Generate an SEO-optimized meta title (50-60 characters) for a blog post titled "${title}". Make it engaging and include relevant keywords.`;
         break;
       case 'seo-description':
-        systemPrompt = `You are an SEO expert who creates optimized meta descriptions. Create a compelling meta description (150-160 characters) that accurately summarizes the content and includes relevant keywords. 
-        
-        IMPORTANT RULES:
-        1. DO NOT include any years or dates (like 2023, 2024, etc.)
-        2. Focus on evergreen content
-        3. Use present tense
-        4. Include a clear call to action`;
-        userPrompt = `Title: ${title}\nContent: ${content}\n\nCreate an SEO-optimized meta description following the rules above.`;
+        prompt = `Write an SEO-optimized meta description (150-160 characters) for a blog post titled "${title}". Include key benefits and a call to action.`;
         break;
       case 'seo-keywords':
-        systemPrompt = 'You are an SEO expert who identifies relevant keywords. Extract or suggest 5-8 relevant keywords or key phrases from the content, separated by commas.';
-        userPrompt = `Title: ${title}\nContent: ${content}\n\nExtract relevant keywords and key phrases.`;
+        prompt = `Generate 5-8 relevant SEO keywords for a blog post titled "${title}". Format as a comma-separated list.`;
         break;
       case 'improve-content':
-        systemPrompt = 'You are a professional content editor who improves blog post content while maintaining the original message and style. Enhance the content by improving clarity, engagement, and readability.';
-        userPrompt = `Title: ${title}\nContent: ${content}\n\nImprove this content while maintaining its core message.`;
+        prompt = `Improve this blog post content while maintaining its structure and HTML formatting. Focus on making it more engaging, clearer, and SEO-friendly: ${content}`;
         break;
+      default:
+        throw new Error('Invalid content type');
     }
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${Deno.env.get('OPENAI_API_KEY')}`,
+        'Authorization': `Bearer ${openAiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: "gpt-4o-mini",
+        model: "gpt-4o",  // Updated to use gpt-4o
         messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt }
+          {
+            role: "system",
+            content: "You are an expert blog writer and SEO specialist. Generate content that is engaging, optimized for search engines, and maintains proper formatting."
+          },
+          {
+            role: "user",
+            content: prompt
+          }
         ],
         temperature: 0.7,
-        max_tokens: type === 'improve-content' ? 1000 : 200,
+        max_tokens: type === 'improve-content' ? 3500 : 500,
       }),
     });
 
     if (!response.ok) {
-      throw new Error('Failed to generate content');
+      const error = await response.text();
+      console.error('OpenAI API error:', error);
+      throw new Error(`OpenAI API error: ${error}`);
     }
 
     const data = await response.json();
-    let generatedContent = data.choices[0].message.content;
-
-    // Additional cleanup for meta descriptions to remove any years that might have slipped through
-    if (type === 'seo-description') {
-      generatedContent = generatedContent.replace(/\b(19|20)\d{2}\b/g, '');
-      // Remove any double spaces that might have been created
-      generatedContent = generatedContent.replace(/\s+/g, ' ').trim();
-    }
+    const generatedContent = data.choices[0].message.content.trim();
 
     return new Response(
       JSON.stringify({ content: generatedContent }),
@@ -84,10 +75,13 @@ serve(async (req) => {
     );
 
   } catch (error) {
-    console.error('Error in generate-blog-content function:', error);
+    console.error('Error in generate-blog-content:', error);
     return new Response(
       JSON.stringify({ error: error.message }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { 
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      }
     );
   }
 });

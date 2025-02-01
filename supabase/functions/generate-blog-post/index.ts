@@ -54,7 +54,7 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: "gpt-4-o1-2024-12-17",  // Updated model version
+        model: "gpt-4o",  // Updated to use gpt-4o
         messages: [
           prompt,
           {
