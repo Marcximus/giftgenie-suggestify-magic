@@ -50,6 +50,7 @@ export const searchProducts = async (
     url.searchParams.append('category_id', 'aps');
     url.searchParams.append('min_price', minPrice.toString());
     url.searchParams.append('max_price', maxPrice.toString());
+    url.searchParams.append('sort_by', 'RELEVANCE');
 
     console.log('Making request to Amazon API:', {
       searchTerm: term,
