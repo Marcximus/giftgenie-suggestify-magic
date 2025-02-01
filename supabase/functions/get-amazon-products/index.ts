@@ -28,7 +28,7 @@ serve(async (req) => {
     if (!RAPIDAPI_KEY) {
       console.error('RAPIDAPI_KEY not configured');
       return new Response(
-        JSON.stringify({ 
+        JSON.stringify({
           error: 'API configuration error',
           details: 'RapidAPI key not configured'
         }),
@@ -36,8 +36,7 @@ serve(async (req) => {
           status: 503,
           headers: { 
             ...corsHeaders, 
-            'Content-Type': 'application/json',
-            'Cache-Control': 'no-store'
+            'Content-Type': 'application/json'
           }
         }
       );
@@ -76,30 +75,17 @@ serve(async (req) => {
         }),
         { 
           status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
-      );
-    }
-
-    // Clean and validate search term
-    const cleanedSearchTerm = searchTerm.trim();
-    if (cleanedSearchTerm.length < 2) {
-      console.error('Search term too short:', cleanedSearchTerm);
-      return new Response(
-        JSON.stringify({ 
-          error: 'Invalid search term',
-          details: 'Search term must be at least 2 characters long'
-        }),
-        { 
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          headers: { 
+            ...corsHeaders, 
+            'Content-Type': 'application/json'
+          }
         }
       );
     }
 
     // Search for products with the validated price range
-    console.log('Searching for products with term:', cleanedSearchTerm);
-    const product = await searchProducts(cleanedSearchTerm, RAPIDAPI_KEY, priceRange);
+    console.log('Searching for products with term:', searchTerm);
+    const product = await searchProducts(searchTerm, RAPIDAPI_KEY, priceRange);
     
     console.log('Search result:', {
       found: !!product,
