@@ -51,17 +51,10 @@ export const buildSearchUrl = (term: string, priceRange?: { min?: number; max?: 
   const params = new URLSearchParams({
     query: term.trim(),
     country: 'US',
-    sort_by: 'RELEVANCE'
+    sort_by: 'RELEVANCE',
+    min_price: priceRange?.min?.toString() || '1',  // Default min price
+    max_price: priceRange?.max?.toString() || '1000'  // Default max price
   });
-
-  if (priceRange?.min !== undefined) {
-    params.append('min_price', priceRange.min.toString());
-    console.log('Adding min_price parameter:', priceRange.min);
-  }
-  if (priceRange?.max !== undefined) {
-    params.append('max_price', priceRange.max.toString());
-    console.log('Adding max_price parameter:', priceRange.max);
-  }
 
   const url = `https://${RAPIDAPI_HOST}/search?${params.toString()}`;
   console.log('Constructed URL:', url);
@@ -130,14 +123,13 @@ const validateProduct = (product: any, priceRange?: { min?: number; max?: number
     }
   }
 
-  if (priceRange && product.product_price) {
-    const price = extractPrice(product.product_price);
-    if (!price || 
-        (priceRange.min !== undefined && price < priceRange.min) || 
-        (priceRange.max !== undefined && price > priceRange.max)) {
-      console.log('Product filtered - price out of range:', price);
-      return false;
-    }
+  const price = extractPrice(product.product_price);
+  const min = priceRange?.min || 1;  // Default min price
+  const max = priceRange?.max || 1000;  // Default max price
+  
+  if (!price || price < min || price > max) {
+    console.log('Product filtered - price out of range:', price);
+    return false;
   }
 
   return true;
@@ -182,7 +174,7 @@ export const searchProducts = async (
   }
 
   console.log('Starting product search with validated terms:', validSearchTerms);
-  console.log('Using price range:', priceRange);
+  console.log('Using price range:', priceRange || { min: 1, max: 1000 });
   
   const makeSearchRequest = async (term: string) => {
     const url = buildSearchUrl(term, priceRange);
@@ -224,7 +216,7 @@ export const searchProducts = async (
     } else {
       const simplifiedTerm = simplifySearchTerm(term, false);
       if (simplifiedTerm !== term) {
-        console.log(`Trying simplified term "${simplifiedTerm}" with price range:`, priceRange);
+        console.log(`Trying simplified term "${simplifiedTerm}" with price range:`, priceRange || { min: 1, max: 1000 });
         const fallbackProduct = await makeSearchRequest(simplifiedTerm);
         if (fallbackProduct) {
           results.push(fallbackProduct);
