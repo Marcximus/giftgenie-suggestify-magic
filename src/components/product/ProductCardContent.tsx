@@ -1,6 +1,4 @@
 import { Star } from "lucide-react";
-import { useEffect, useState } from "react";
-import { generateCustomDescription } from "@/utils/descriptionUtils";
 
 interface ProductCardContentProps {
   description: string;
@@ -52,46 +50,6 @@ const formatPrice = (price: string | number | undefined): string => {
   return 'Check price on Amazon';
 };
 
-const formatDescription = (description: string | undefined): string => {
-  if (!description) return 'No description available';
-
-  // Remove any HTML tags
-  const cleanDescription = description.replace(/<[^>]*>/g, '');
-  
-  // Remove multiple spaces and normalize whitespace
-  const normalizedDescription = cleanDescription
-    .replace(/\s+/g, ' ')
-    .trim();
-
-  // If it's a very short description, return it as is
-  if (normalizedDescription.length < 100) {
-    return normalizedDescription;
-  }
-
-  // Split into sentences
-  const sentences = normalizedDescription.split(/[.!?]+/).filter(s => s.trim().length > 0);
-  
-  // Take the first 2-3 meaningful sentences
-  const meaningfulSentences = sentences
-    .filter(sentence => {
-      const lower = sentence.toLowerCase().trim();
-      return !lower.includes('click here') &&
-             !lower.includes('buy now') &&
-             !lower.includes('limited time') &&
-             !lower.includes('check price') &&
-             sentence.length > 20;
-    })
-    .slice(0, 3);
-
-  // Join sentences and ensure it ends with a period
-  let finalDescription = meaningfulSentences.join('. ').trim();
-  if (!finalDescription.endsWith('.')) {
-    finalDescription += '.';
-  }
-
-  return finalDescription || 'No description available';
-};
-
 export const ProductCardContent = ({ 
   description, 
   price, 
@@ -99,34 +57,12 @@ export const ProductCardContent = ({
   totalRatings,
   title 
 }: ProductCardContentProps) => {
-  const [customDescription, setCustomDescription] = useState(description);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchCustomDescription = async () => {
-      try {
-        const enhancedDescription = await generateCustomDescription(title, description);
-        setCustomDescription(enhancedDescription);
-      } catch (error) {
-        console.error('Error generating custom description:', error);
-        // Fallback to original description if generation fails
-        setCustomDescription(description);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchCustomDescription();
-  }, [title, description]);
-
   const formattedPrice = formatPrice(price);
 
   return (
     <div className="p-3 sm:p-4 pt-2 flex-grow flex flex-col">
-      <p className={`text-xs sm:text-sm leading-relaxed line-clamp-3 text-muted-foreground mb-auto ${
-        isLoading ? 'animate-pulse bg-gray-100 rounded' : ''
-      }`}>
-        {customDescription}
+      <p className="text-xs sm:text-sm leading-relaxed line-clamp-3 text-muted-foreground mb-auto">
+        {description}
       </p>
       <div className="mt-3 flex items-center justify-between">
         <p 
