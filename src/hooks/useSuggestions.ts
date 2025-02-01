@@ -19,7 +19,7 @@ export const useSuggestions = () => {
         console.log('Starting suggestion generation for query:', query);
         const response = await generateSuggestions(query);
         
-        if (!response || !response.suggestions || !Array.isArray(response.suggestions)) {
+        if (!response || !response.suggestions) {
           console.error('Invalid suggestions received:', response);
           throw new Error('Failed to generate valid suggestions');
         }

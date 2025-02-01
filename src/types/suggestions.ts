@@ -11,3 +11,11 @@ export interface GiftSuggestion {
   amazon_total_ratings?: number;
   search_query?: string;
 }
+
+export interface GiftSuggestionsResponse {
+  suggestions: GiftSuggestion[];
+  priceRange?: {
+    min: number;
+    max: number;
+  };
+}
