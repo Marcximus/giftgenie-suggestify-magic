@@ -23,9 +23,14 @@ export const SuggestionsGridItems = ({
   const [customDescriptions, setCustomDescriptions] = useState<Record<string, string>>({});
   const [processingQueue, setProcessingQueue] = useState<Set<string>>(new Set());
   const [visibleCount, setVisibleCount] = useState(0);
-  const processingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const animationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const timeoutsRef = useRef<NodeJS.Timeout[]>([]);
   const { toast } = useToast();
+
+  // Cleanup function to clear all timeouts
+  const clearAllTimeouts = useCallback(() => {
+    timeoutsRef.current.forEach(timeout => clearTimeout(timeout));
+    timeoutsRef.current = [];
+  }, []);
 
   const generateTitle = useCallback(async (originalTitle: string, description: string) => {
     if (!originalTitle || processingQueue.has(originalTitle)) {
@@ -54,43 +59,19 @@ export const SuggestionsGridItems = ({
     }
   }, [processingQueue]);
 
+  // Reset state when suggestions change
   useEffect(() => {
-    // Cleanup function to clear timeouts
-    return () => {
-      if (processingTimeoutRef.current) {
-        clearTimeout(processingTimeoutRef.current);
-      }
-      if (animationTimeoutRef.current) {
-        clearTimeout(animationTimeoutRef.current);
-      }
-      onAllSuggestionsProcessed(false);
-      setVisibleCount(0);
-    };
-  }, [onAllSuggestionsProcessed]);
-
-  useEffect(() => {
-    if (!Array.isArray(suggestions)) {
-      console.error('Invalid suggestions array:', suggestions);
+    clearAllTimeouts();
+    setVisibleCount(0);
+    onAllSuggestionsProcessed(false);
+    
+    if (!Array.isArray(suggestions) || suggestions.length === 0) {
       return;
     }
 
-    console.log('Processing suggestions:', suggestions);
-
-    if (suggestions.length === 0) {
-      setOptimizedTitles({});
-      setCustomDescriptions({});
-      onAllSuggestionsProcessed(false);
-      setVisibleCount(0);
-      return;
-    }
-
+    // Start processing suggestions
     const newProcessingQueue = new Set<string>();
     let completedCount = 0;
-
-    // Show first result immediately after a brief initial delay
-    animationTimeoutRef.current = setTimeout(() => {
-      setVisibleCount(1);
-    }, 50);
 
     const processSuggestions = async () => {
       const processPromises = suggestions.map(async (suggestion, index) => {
@@ -124,25 +105,24 @@ export const SuggestionsGridItems = ({
 
           completedCount++;
           
-          // Add delay for subsequent items
-          if (index > 0) {
-            processingTimeoutRef.current = setTimeout(() => {
-              setVisibleCount(prev => Math.min(prev + 1, suggestions.length));
-            }, index * 50); // 50ms delay between items
-          }
-
-          // Only mark as processed when all items are visible
-          if (completedCount === suggestions.length) {
-            // Wait for all animations to complete before marking as processed
-            setTimeout(() => {
-              onAllSuggestionsProcessed(true);
-            }, suggestions.length * 50 + 300); // Total animation time
-          }
+          // Add to visible items with staggered delay
+          const timeout = setTimeout(() => {
+            setVisibleCount(prev => Math.min(prev + 1, suggestions.length));
+            
+            // If this was the last item, wait a bit then mark all as processed
+            if (completedCount === suggestions.length) {
+              const finalTimeout = setTimeout(() => {
+                onAllSuggestionsProcessed(true);
+              }, 300); // Wait for final animation
+              timeoutsRef.current.push(finalTimeout);
+            }
+          }, index * 50); // 50ms stagger between items
+          
+          timeoutsRef.current.push(timeout);
 
         } catch (error) {
           console.error('Error processing suggestion:', error);
           completedCount++;
-        } finally {
           newProcessingQueue.delete(originalTitle);
         }
       });
@@ -153,17 +133,19 @@ export const SuggestionsGridItems = ({
 
     processSuggestions();
 
-  }, [suggestions, generateTitle, onAllSuggestionsProcessed, processingQueue, optimizedTitles]);
+    return () => {
+      clearAllTimeouts();
+    };
+  }, [suggestions, generateTitle, onAllSuggestionsProcessed, clearAllTimeouts, processingQueue, optimizedTitles]);
 
   if (isLoading) {
     return (
       <>
         {Array.from({ length: 8 }).map((_, index) => (
           <div 
-            key={`skeleton-${index}`} 
+            key={`skeleton-${index}`}
             className="animate-in fade-in duration-300 ease-out"
             style={{ animationDelay: `${index * 50}ms` }}
-            aria-hidden="true"
           >
             <SuggestionSkeleton />
           </div>
@@ -189,7 +171,7 @@ export const SuggestionsGridItems = ({
               }
             `}
             style={{ 
-              transitionDelay: index === 0 ? '50ms' : `${index * 50}ms`
+              transitionDelay: `${index * 50}ms`
             }}
           >
             <ProductCard
