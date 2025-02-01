@@ -29,16 +29,23 @@ export const searchProducts = async (
   url.searchParams.append('country', 'US');
   url.searchParams.append('category_id', 'aps');
 
+  // Always include price parameters
+  let minPrice = 1;  // Default minimum price
+  let maxPrice = 1000;  // Default maximum price
+
   // Parse price range if provided
-  let priceConstraints = null;
   if (priceRange) {
-    priceConstraints = parsePriceRange(priceRange);
-    if (priceConstraints) {
-      url.searchParams.append('min_price', priceConstraints.min.toString());
-      url.searchParams.append('max_price', priceConstraints.max.toString());
-      console.log('Added price constraints:', priceConstraints);
+    const constraints = parsePriceRange(priceRange);
+    if (constraints) {
+      minPrice = constraints.min;
+      maxPrice = constraints.max;
+      console.log('Using provided price constraints:', { minPrice, maxPrice });
     }
   }
+
+  // Always append price parameters
+  url.searchParams.append('min_price', minPrice.toString());
+  url.searchParams.append('max_price', maxPrice.toString());
 
   // Log the complete URL being sent
   console.log('Making request to Amazon API:', {
@@ -97,8 +104,7 @@ export const searchProducts = async (
     }
 
     console.log('Starting product filtering with:', {
-      totalProducts: searchData.data.products.length,
-      priceConstraints
+      totalProducts: searchData.data.products.length
     });
 
     // Filter products by basic validation and blacklist
@@ -131,8 +137,7 @@ export const searchProducts = async (
 
     console.log('Filtering results:', {
       original: searchData.data.products.length,
-      filtered: validProducts.length,
-      priceRange: priceConstraints
+      filtered: validProducts.length
     });
 
     if (validProducts.length === 0) {
