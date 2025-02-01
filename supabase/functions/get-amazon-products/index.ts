@@ -17,7 +17,6 @@ serve(async (req) => {
   }
 
   try {
-    // Log incoming request details
     console.log('Incoming request:', {
       method: req.method,
       url: req.url,
@@ -32,11 +31,12 @@ serve(async (req) => {
           error: 'API configuration error',
           details: 'RapidAPI key not configured'
         }),
-        { 
+        {
           status: 503,
-          headers: { 
-            ...corsHeaders, 
-            'Content-Type': 'application/json'
+          headers: {
+            ...corsHeaders,
+            'Content-Type': 'application/json',
+            'Cache-Control': 'no-store, no-cache, must-revalidate'
           }
         }
       );
@@ -49,35 +49,36 @@ serve(async (req) => {
     } catch (e) {
       console.error('Failed to parse request body:', e);
       return new Response(
-        JSON.stringify({ 
+        JSON.stringify({
           error: 'Invalid request',
           details: 'Failed to parse request body'
         }),
-        { 
+        {
           status: 400,
-          headers: { 
-            ...corsHeaders, 
-            'Content-Type': 'application/json'
+          headers: {
+            ...corsHeaders,
+            'Content-Type': 'application/json',
+            'Cache-Control': 'no-store, no-cache, must-revalidate'
           }
         }
       );
     }
 
     const { searchTerm, priceRange } = body;
-    console.log('Request payload:', { searchTerm, priceRange });
 
     if (!searchTerm) {
       console.error('Missing search term in request');
       return new Response(
-        JSON.stringify({ 
+        JSON.stringify({
           error: 'Search term is required',
           details: 'The searchTerm parameter must be provided'
         }),
-        { 
+        {
           status: 400,
-          headers: { 
-            ...corsHeaders, 
-            'Content-Type': 'application/json'
+          headers: {
+            ...corsHeaders,
+            'Content-Type': 'application/json',
+            'Cache-Control': 'no-store, no-cache, must-revalidate'
           }
         }
       );
@@ -96,12 +97,12 @@ serve(async (req) => {
 
     return new Response(
       JSON.stringify({ product }),
-      { 
+      {
         status: 200,
-        headers: { 
-          ...corsHeaders, 
+        headers: {
+          ...corsHeaders,
           'Content-Type': 'application/json',
-          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Cache-Control': 'no-store, no-cache, must-revalidate'
         }
       }
     );
@@ -117,12 +118,15 @@ serve(async (req) => {
       JSON.stringify({
         error: 'Internal server error',
         message: error.message,
-        type: error.constructor.name,
-        details: error.stack
+        type: error.constructor.name
       }),
-      { 
+      {
         status: error.status || 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        headers: {
+          ...corsHeaders,
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-store, no-cache, must-revalidate'
+        }
       }
     );
   }
