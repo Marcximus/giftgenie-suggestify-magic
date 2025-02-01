@@ -87,10 +87,15 @@ export const searchProducts = async (
 
     // Filter products by price and relevance
     let validProducts = searchData.data.products.filter(product => {
+      if (!product || !product.title) {
+        console.log('Invalid product data:', product);
+        return false;
+      }
+
       // Check if the product title contains any blacklisted terms
       const blacklistedTerms = ['cancel subscription', 'guide', 'manual', 'how to'];
       const hasBlacklistedTerm = blacklistedTerms.some(term => 
-        product.title.toLowerCase().includes(term)
+        product.title.toLowerCase().includes(term.toLowerCase())
       );
       
       if (hasBlacklistedTerm) {
