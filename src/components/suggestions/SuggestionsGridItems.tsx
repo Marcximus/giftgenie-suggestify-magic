@@ -77,6 +77,9 @@ export const SuggestionsGridItems = ({
     let completedCount = 0;
     const newProcessingQueue = new Set<string>();
 
+    // Show first result immediately
+    setVisibleCount(1);
+
     const processSuggestions = async () => {
       // Process all suggestions in parallel
       const processPromises = suggestions.map(async (suggestion, index) => {
@@ -116,10 +119,12 @@ export const SuggestionsGridItems = ({
 
           completedCount++;
           
-          // Increment visible count with a delay based on index
-          setTimeout(() => {
-            setVisibleCount(prev => Math.min(prev + 1, suggestions.length));
-          }, index * 200); // 200ms delay between each item
+          // Increment visible count with a shorter delay
+          if (index > 0) { // Skip delay for first item
+            setTimeout(() => {
+              setVisibleCount(prev => Math.min(prev + 1, suggestions.length));
+            }, index * 50); // 50ms delay between items after the first one
+          }
 
           if (completedCount === suggestions.length) {
             onAllSuggestionsProcessed(true);
@@ -155,7 +160,7 @@ export const SuggestionsGridItems = ({
           <div 
             key={`skeleton-${index}`} 
             className="animate-in fade-in duration-300 ease-out"
-            style={{ animationDelay: `${index * 100}ms` }}
+            style={{ animationDelay: `${index * 50}ms` }}
             aria-hidden="true"
           >
             <SuggestionSkeleton />
@@ -175,14 +180,14 @@ export const SuggestionsGridItems = ({
           <div 
             key={`suggestion-${index}`}
             className={`
-              transform transition-all duration-500 ease-out
+              transform transition-all duration-300 ease-out
               ${index < visibleCount 
                 ? 'translate-y-0 opacity-100' 
                 : 'translate-y-4 opacity-0 pointer-events-none'
               }
             `}
             style={{ 
-              transitionDelay: `${index * 200}ms`
+              transitionDelay: index === 0 ? '0ms' : `${index * 50}ms`
             }}
           >
             <ProductCard
