@@ -1,7 +1,6 @@
 import { corsHeaders } from '../_shared/cors.ts';
 import { RAPIDAPI_HOST } from './config.ts';
 import { cleanSearchTerm } from './searchUtils.ts';
-import { extractPrice } from './priceUtils.ts';
 import type { AmazonProduct } from './types.ts';
 
 export const searchProducts = async (
@@ -24,19 +23,10 @@ export const searchProducts = async (
   const cleanedTerm = cleanSearchTerm(searchTerm);
   console.log('Cleaned search term:', cleanedTerm);
 
-  // Extract price constraints from input
-  let minPrice = 1;  // Default minimum price
-  let maxPrice = 1000;  // Default maximum price
-
-  if (priceRange) {
-    if (priceRange.min !== undefined && priceRange.min >= 0) {
-      minPrice = Math.floor(priceRange.min * 0.8); // 20% below minimum
-    }
-    if (priceRange.max !== undefined && priceRange.max > 0) {
-      maxPrice = Math.ceil(priceRange.max * 1.2); // 20% above maximum
-    }
-    console.log('Using price constraints:', { minPrice, maxPrice });
-  }
+  // Use provided price range or defaults
+  const minPrice = priceRange?.min ?? 1;
+  const maxPrice = priceRange?.max ?? 1000;
+  console.log('Using price constraints:', { minPrice, maxPrice });
 
   // Construct URL with required parameters
   const url = new URL(`https://${RAPIDAPI_HOST}/search`);
@@ -102,7 +92,7 @@ export const searchProducts = async (
       return null;
     }
 
-    // Simply take the first product from the response
+    // Take the first product from the response
     const product = searchData.data.products[0];
     console.log('Selected first product:', {
       title: product.title,
@@ -111,10 +101,14 @@ export const searchProducts = async (
       hasAsin: !!product.asin
     });
 
+    const priceValue = product.product_price ? 
+      parseFloat(product.product_price.replace(/[^0-9.]/g, '')) : 
+      undefined;
+
     return {
       title: product.title,
       description: product.product_description || product.title,
-      price: extractPrice(product.product_price),
+      price: priceValue,
       currency: 'USD',
       imageUrl: product.product_photo || product.thumbnail,
       rating: product.product_star_rating ? parseFloat(product.product_star_rating) : undefined,

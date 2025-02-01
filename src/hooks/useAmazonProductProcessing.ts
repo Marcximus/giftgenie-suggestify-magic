@@ -9,7 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 export const useAmazonProductProcessing = () => {
   const queryClient = useQueryClient();
 
-  const processGiftSuggestion = async (suggestion: string | GiftSuggestion): Promise<GiftSuggestion> => {
+  const processGiftSuggestion = async (suggestion: string | GiftSuggestion, priceRange?: { min: number; max: number }): Promise<GiftSuggestion> => {
     const startTime = performance.now();
     const operationMark = markOperation(`process-suggestion-${typeof suggestion === 'string' ? suggestion : suggestion.title}`);
     
@@ -45,15 +45,10 @@ export const useAmazonProductProcessing = () => {
         return cachedData as GiftSuggestion;
       }
 
-      // Extract price range if available
-      const priceMatch = initialSuggestion.priceRange?.match(/\$?(\d+(?:\.\d{2})?)\s*-\s*\$?(\d+(?:\.\d{2})?)/);
-      const minPrice = priceMatch ? parseFloat(priceMatch[1]) : undefined;
-      const maxPrice = priceMatch ? parseFloat(priceMatch[2]) : undefined;
-
       // Format request payload
       const requestPayload = {
         searchTerm: initialSuggestion.title,
-        priceRange: priceMatch ? { min: minPrice, max: maxPrice } : undefined
+        priceRange: priceRange // Pass the price range from generate-gift-suggestions
       };
 
       console.log('Invoking get-amazon-products Edge Function with payload:', JSON.stringify(requestPayload));
@@ -114,7 +109,7 @@ export const useAmazonProductProcessing = () => {
     }
   };
 
-  const processSuggestions = async (suggestions: (string | GiftSuggestion)[]) => {
+  const processSuggestions = async (suggestions: (string | GiftSuggestion)[], priceRange?: { min: number; max: number }) => {
     const startTime = performance.now();
     const operationMark = markOperation('process-suggestions-batch');
     
@@ -126,7 +121,7 @@ export const useAmazonProductProcessing = () => {
         2000,
         () => processInParallel(
           suggestions,
-          processGiftSuggestion,
+          (suggestion) => processGiftSuggestion(suggestion, priceRange),
           {
             batchSize: 4,
             maxConcurrent: 2,

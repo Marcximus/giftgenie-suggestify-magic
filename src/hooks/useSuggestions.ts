@@ -17,18 +17,19 @@ export const useSuggestions = () => {
       const startTime = performance.now();
       try {
         console.log('Starting suggestion generation for query:', query);
-        const newSuggestions = await generateSuggestions(query);
+        const response = await generateSuggestions(query);
         
-        if (!newSuggestions || !Array.isArray(newSuggestions)) {
-          console.error('Invalid suggestions received:', newSuggestions);
+        if (!response || !response.suggestions || !Array.isArray(response.suggestions)) {
+          console.error('Invalid suggestions received:', response);
           throw new Error('Failed to generate valid suggestions');
         }
 
-        console.log('Generated suggestions:', newSuggestions);
+        const { suggestions: newSuggestions, priceRange } = response;
+        console.log('Generated suggestions:', newSuggestions, 'Price range:', priceRange);
         
         if (newSuggestions.length > 0) {
           console.log('Processing suggestions with Amazon data');
-          const results = await processSuggestions(newSuggestions);
+          const results = await processSuggestions(newSuggestions, priceRange);
           
           // Log metrics for successful processing
           await supabase.from('api_metrics').insert({

@@ -121,7 +121,10 @@ No other text allowed.`;
     console.log('Successfully generated suggestions:', suggestions);
 
     return new Response(
-      JSON.stringify({ suggestions }),
+      JSON.stringify({ 
+        suggestions,
+        priceRange // Include the extracted price range in the response
+      }),
       { 
         headers: { 
           ...corsHeaders,
