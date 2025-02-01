@@ -18,14 +18,14 @@ export const SuggestionsGridItems = ({
   isLoading,
   onAllSuggestionsProcessed
 }: SuggestionsGridItemsProps) => {
-  const [processedSuggestions, setProcessedSuggestions] = useState<(GiftSuggestion & { optimizedTitle: string })[]>([]);
+  const [processedSuggestions, setProcessedSuggestions] = useState<(GiftSuggestion & { optimizedTitle?: string })[]>([]);
   const [processingIndexes, setProcessingIndexes] = useState<Set<number>>(new Set());
   const abortController = useRef<AbortController | null>(null);
   const { toast } = useToast();
 
   const generateTitle = useCallback(async (originalTitle: string, description: string) => {
-    if (!originalTitle || typeof originalTitle !== 'string') {
-      console.error('Invalid title:', { originalTitle, type: typeof originalTitle });
+    if (!originalTitle) {
+      console.log('Empty title received, using original');
       return originalTitle;
     }
 
@@ -41,11 +41,6 @@ export const SuggestionsGridItems = ({
 
       if (error) {
         console.error('Error generating title:', error);
-        toast({
-          title: "Error optimizing title",
-          description: "Using original title instead",
-          variant: "destructive",
-        });
         return originalTitle;
       }
 
@@ -54,10 +49,17 @@ export const SuggestionsGridItems = ({
       console.error('Error generating title:', error);
       return originalTitle;
     }
-  }, [toast]);
+  }, []);
 
   useEffect(() => {
-    if (!Array.isArray(suggestions) || suggestions.length === 0) {
+    if (!Array.isArray(suggestions)) {
+      console.error('Invalid suggestions array:', suggestions);
+      return;
+    }
+
+    console.log('Processing suggestions:', suggestions);
+
+    if (suggestions.length === 0) {
       setProcessedSuggestions([]);
       setProcessingIndexes(new Set());
       onAllSuggestionsProcessed(false);
@@ -69,7 +71,7 @@ export const SuggestionsGridItems = ({
     }
     abortController.current = new AbortController();
 
-    // Initialize processed suggestions array with nulls
+    // Initialize processed suggestions array
     setProcessedSuggestions(new Array(suggestions.length).fill(null));
     onAllSuggestionsProcessed(false);
 
@@ -85,12 +87,12 @@ export const SuggestionsGridItems = ({
           setProcessingIndexes(prev => new Set([...prev, index]));
           
           const suggestion = suggestions[index];
-          if (!suggestion || !suggestion.title) {
-            console.error('Invalid suggestion:', suggestion);
-            continue;
-          }
+          console.log('Processing suggestion:', suggestion);
 
-          const optimizedTitle = await generateTitle(suggestion.title, suggestion.description);
+          const optimizedTitle = await generateTitle(
+            suggestion.title || 'Gift Suggestion', 
+            suggestion.description || ''
+          );
 
           setProcessedSuggestions(prev => {
             const newSuggestions = [...prev];
@@ -152,10 +154,6 @@ export const SuggestionsGridItems = ({
         const processed = processedSuggestions[index];
         const isProcessing = processingIndexes.has(index);
 
-        if (!suggestion || (!processed && !isProcessing)) {
-          return null;
-        }
-
         return (
           <div 
             key={`suggestion-${index}`}
@@ -169,18 +167,18 @@ export const SuggestionsGridItems = ({
           >
             {isProcessing ? (
               <SuggestionSkeleton />
-            ) : processed && (
+            ) : (
               <ProductCard
-                title={processed.optimizedTitle || processed.title}
-                description={processed.description}
-                price={processed.amazon_price 
-                  ? processed.amazon_price.toString()
-                  : processed.priceRange?.replace('USD ', '') || 'Check price on Amazon'}
-                amazonUrl={processed.amazon_url || "#"}
-                imageUrl={processed.amazon_image_url}
-                rating={processed.amazon_rating}
-                totalRatings={processed.amazon_total_ratings}
-                asin={processed.amazon_asin}
+                title={processed?.optimizedTitle || suggestion.title}
+                description={suggestion.description}
+                price={suggestion.amazon_price 
+                  ? suggestion.amazon_price.toString()
+                  : suggestion.priceRange?.replace('USD ', '') || 'Check price on Amazon'}
+                amazonUrl={suggestion.amazon_url || "#"}
+                imageUrl={suggestion.amazon_image_url}
+                rating={suggestion.amazon_rating}
+                totalRatings={suggestion.amazon_total_ratings}
+                asin={suggestion.amazon_asin}
                 onMoreLikeThis={onMoreLikeThis}
               />
             )}
