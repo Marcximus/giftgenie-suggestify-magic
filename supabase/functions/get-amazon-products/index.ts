@@ -53,11 +53,19 @@ async function searchAmazonProduct(
       sort_by: 'RELEVANCE'
     });
 
-    // Add price range parameters if available
-    if (minPrice !== undefined) params.append('min_price', minPrice.toString());
-    if (maxPrice !== undefined) params.append('max_price', maxPrice.toString());
+    // Explicitly add price range parameters
+    if (minPrice !== undefined) {
+      params.append('min_price', minPrice.toString());
+      console.log('Adding min_price parameter:', minPrice);
+    }
+    if (maxPrice !== undefined) {
+      params.append('max_price', maxPrice.toString());
+      console.log('Adding max_price parameter:', maxPrice);
+    }
 
-    return `https://${RAPIDAPI_HOST}/search?${params.toString()}`;
+    const url = `https://${RAPIDAPI_HOST}/search?${params.toString()}`;
+    console.log('Constructed URL:', url);
+    return url;
   };
 
   try {
@@ -81,6 +89,7 @@ async function searchAmazonProduct(
     }
 
     let searchData = await searchResponse.json();
+    console.log('Raw API response:', searchData);
     
     // If no products found, try with simplified search term
     if (!searchData.data?.products?.length) {
@@ -106,6 +115,7 @@ async function searchAmazonProduct(
       }
 
       searchData = await searchResponse.json();
+      console.log('Fallback API response:', searchData);
     }
 
     if (!searchData.data?.products?.length) {
@@ -154,7 +164,7 @@ async function searchAmazonProduct(
     // Verify price is within range if price range was specified
     if (price !== undefined && minPrice !== undefined && maxPrice !== undefined) {
       if (price < minPrice || price > maxPrice) {
-        console.log(`Product price $${price} outside range $${minPrice}-$${maxPrice}`);
+        console.log(`Product price $${price} outside range $${minPrice}-$${maxPrice}, rejecting product`);
         return null;
       }
     }
