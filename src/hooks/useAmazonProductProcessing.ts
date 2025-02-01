@@ -12,7 +12,6 @@ import { supabase } from "@/integrations/supabase/client";
 const SLOW_OPERATION_THRESHOLD = 2000; // 2 seconds
 
 export const useAmazonProductProcessing = () => {
-  const { getAmazonProduct } = useAmazonProducts();
   const queryClient = useQueryClient();
 
   const processGiftSuggestion = async (suggestion: GiftSuggestion): Promise<GiftSuggestion> => {
@@ -102,7 +101,7 @@ export const useAmazonProductProcessing = () => {
     const startTime = performance.now();
     const operationMark = markOperation('process-suggestions-batch');
     
-    console.log('Starting parallel processing of suggestions');
+    console.log('Starting parallel processing of suggestions:', suggestions);
     
     try {
       const results = await trackSlowOperation(
