@@ -1,58 +1,68 @@
-import { AmazonProduct } from './types.ts';
-import { searchAmazonProducts } from './amazon-search.ts';
-
-const BATCH_SIZE = 4; // Process 4 items at once
-const PROCESS_SIZE = 4; // Process up to 4 items concurrently
-const BATCH_DELAY = 200;
+import { searchAmazonProduct } from './amazon-api.ts';
+import { generateCustomDescription } from './openai.ts';
+import { GiftSuggestion } from './types.ts';
 
 export async function processSuggestionsInBatches(
   suggestions: string[],
-  priceRange?: string
-): Promise<AmazonProduct[]> {
-  console.log(`Processing ${suggestions.length} suggestions with price range: ${priceRange}`);
+  priceRange?: { min: number; max: number }
+): Promise<GiftSuggestion[]> {
+  const batchSize = 4;
+  const processedSuggestions: GiftSuggestion[] = [];
   
-  const batches: string[][] = [];
-  
-  // Split suggestions into batches of BATCH_SIZE
-  for (let i = 0; i < suggestions.length; i += BATCH_SIZE) {
-    batches.push(suggestions.slice(i, i + BATCH_SIZE));
-  }
+  console.log(`Processing ${suggestions.length} suggestions in batches of ${batchSize}`);
+  console.log('Using price range:', priceRange || { min: 1, max: 1000 });
 
-  console.log(`Split into ${batches.length} batches of ${BATCH_SIZE} items each`);
-  const processedProducts: AmazonProduct[] = [];
-  
-  for (let batchIndex = 0; batchIndex < batches.length; batchIndex++) {
-    const batch = batches[batchIndex];
-    console.log(`Processing batch ${batchIndex + 1} of ${batches.length} with ${batch.length} items`);
-    
-    // Process all items in the batch concurrently
-    const batchPromises = batch.map(async (suggestion, index) => {
+  for (let i = 0; i < suggestions.length; i += batchSize) {
+    const batch = suggestions.slice(i, i + batchSize);
+    console.log(`Processing batch ${Math.floor(i / batchSize) + 1} with ${batch.length} items`);
+
+    const batchPromises = batch.map(async (suggestion) => {
       try {
-        console.log(`Processing suggestion ${batchIndex * BATCH_SIZE + index + 1}: "${suggestion}"`);
-        const result = await searchAmazonProducts(suggestion, priceRange);
-        console.log(`Processed suggestion ${batchIndex * BATCH_SIZE + index + 1}: "${suggestion}", success: ${!!result}`);
-        return result;
+        console.log(`Processing suggestion: ${suggestion}`);
+        const product = await searchAmazonProduct(suggestion, priceRange);
+        
+        if (product && product.asin) {
+          const customDescription = await generateCustomDescription(
+            product.title || suggestion,
+            product.description || suggestion
+          );
+
+          const reason = `This ${product.title} is a perfect match because it's a high-quality product that fits within your budget and aligns with the recipient's interests. It has ${product.rating ? `an average rating of ${product.rating} stars from ${product.totalRatings} reviews` : 'great reviews'} on Amazon.`;
+
+          return {
+            title: product.title || suggestion,
+            description: customDescription.replace(/['"]/g, ''),
+            priceRange: `${product.currency || 'USD'} ${product.price}`,
+            reason: reason.replace(/['"]/g, ''),
+            amazon_asin: product.asin,
+            amazon_url: `https://www.amazon.com/dp/${product.asin}`,
+            amazon_price: product.price,
+            amazon_image_url: product.imageUrl,
+            amazon_rating: product.rating,
+            amazon_total_ratings: product.totalRatings,
+            search_query: suggestion,
+            status: 'completed'
+          };
+        }
+        
+        console.log(`No valid Amazon product found for: ${suggestion}`);
+        return null;
       } catch (error) {
-        console.error(`Error processing suggestion: "${suggestion}"`, error);
+        console.error(`Error processing suggestion: ${suggestion}`, error);
         return null;
       }
     });
-    
-    // Wait for all promises in the batch to complete
+
     const batchResults = await Promise.all(batchPromises);
-    
-    // Filter out null results and add to processed products
-    const validResults = batchResults.filter((result): result is AmazonProduct => result !== null);
-    console.log(`Found ${validResults.length} valid products in batch ${batchIndex + 1}`);
-    processedProducts.push(...validResults);
-    
-    // Add delay between batches
-    if (batchIndex < batches.length - 1) {
-      console.log(`Waiting ${BATCH_DELAY}ms before processing next batch`);
-      await new Promise(resolve => setTimeout(resolve, BATCH_DELAY));
+    const validResults = batchResults.filter((result): result is GiftSuggestion => result !== null);
+    processedSuggestions.push(...validResults);
+
+    if (i + batchSize < suggestions.length) {
+      console.log('Waiting before processing next batch...');
+      await new Promise(resolve => setTimeout(resolve, 1000));
     }
   }
 
-  console.log(`Finished processing all batches. Found ${processedProducts.length} valid products`);
-  return processedProducts;
+  console.log(`Successfully processed ${processedSuggestions.length} suggestions`);
+  return processedSuggestions;
 }

@@ -7,6 +7,21 @@ import { processSuggestionsInBatches } from '../_shared/batch-processor.ts';
 
 const DEEPSEEK_API_KEY = Deno.env.get('DEEPSEEK_API_KEY');
 
+// Extract price range from the prompt
+const extractPriceRange = (prompt: string) => {
+  const budgetMatch = prompt.match(/budget(?:\s*of)?\s*\$?(\d+)(?:\s*-\s*\$?(\d+))?/i) ||
+                     prompt.match(/\$(\d+)(?:\s*-\s*\$?(\d+))?/);
+  
+  if (budgetMatch) {
+    const min = parseInt(budgetMatch[1]);
+    const max = budgetMatch[2] ? parseInt(budgetMatch[2]) : min;
+    console.log('Extracted price range:', { min, max });
+    return { min, max };
+  }
+  
+  return null;
+};
+
 serve(async (req) => {
   const startTime = performance.now();
   
@@ -27,13 +42,18 @@ serve(async (req) => {
       throw new Error('Invalid prompt');
     }
 
+    // Extract price range from prompt
+    const priceRange = extractPriceRange(prompt);
+    console.log('Extracted price range:', priceRange);
+
     const enhancedPrompt = `You are a gifting expert. Based on the request: "${prompt}", suggest EXACTLY 8 great gift ideas.
 
 CRITICAL REQUIREMENTS:
 1. Return EXACTLY 8 suggestions - no more, no less
 2. Consider age, gender, interests and occasion mentioned
 3. Titles should be short and precise like "Apple Airpods 2", "Luxury Scented Candles" etc
-4. Return ONLY a JSON array containing EXACTLY 8 strings`;
+4. Return ONLY a JSON array containing EXACTLY 8 strings
+${priceRange ? `5. IMPORTANT: All suggestions must fit within the budget of $${priceRange.min}${priceRange.max !== priceRange.min ? ` to $${priceRange.max}` : ''}` : ''}`;
 
     console.log('Enhanced prompt:', enhancedPrompt);
 
@@ -82,7 +102,7 @@ CRITICAL REQUIREMENTS:
       throw new Error(`Invalid number of suggestions: ${suggestions?.length ?? 0}. Expected exactly 8 suggestions.`);
     }
 
-    // Process suggestions with retries
+    // Process suggestions with retries and price range
     let retryCount = 0;
     const maxRetries = 2;
     let processedProducts = [];
@@ -91,7 +111,8 @@ CRITICAL REQUIREMENTS:
       console.log(`Processing attempt ${retryCount + 1} of ${maxRetries + 1}`);
       
       const currentBatchProducts = await processSuggestionsInBatches(
-        suggestions.slice(processedProducts.length)
+        suggestions.slice(processedProducts.length),
+        priceRange
       );
       
       console.log(`Found ${currentBatchProducts.length} products in attempt ${retryCount + 1}`);
