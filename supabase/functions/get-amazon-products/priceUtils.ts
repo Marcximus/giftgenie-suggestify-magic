@@ -18,14 +18,6 @@ export const parsePriceRange = (priceRange: string): { min: number; max: number 
   }
 };
 
-export const validatePriceInRange = (price: number, min: number, max: number, tolerance = 0.2): boolean => {
-  // Allow for 20% tolerance as specified
-  const minWithTolerance = min * (1 - tolerance);
-  const maxWithTolerance = max * (1 + tolerance);
-  
-  return price >= minWithTolerance && price <= maxWithTolerance;
-};
-
 export const extractPrice = (priceStr: string | null | undefined): number | undefined => {
   if (!priceStr) return undefined;
   const cleanPrice = priceStr.replace(/[^0-9.]/g, '');

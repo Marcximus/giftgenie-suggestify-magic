@@ -1,7 +1,7 @@
 import { corsHeaders } from '../_shared/cors.ts';
 import { RAPIDAPI_HOST } from './config.ts';
 import { cleanSearchTerm } from './searchUtils.ts';
-import { parsePriceRange, validatePriceInRange, extractPrice } from './priceUtils.ts';
+import { parsePriceRange, extractPrice } from './priceUtils.ts';
 import type { AmazonProduct } from './types.ts';
 
 export const searchProducts = async (
@@ -90,7 +90,7 @@ export const searchProducts = async (
       priceConstraints
     });
 
-    // Filter products by price and relevance
+    // Filter products by basic validation and blacklist
     let validProducts = searchData.data.products.filter(product => {
       console.log('\nEvaluating product:', {
         title: product?.title,
@@ -112,32 +112,6 @@ export const searchProducts = async (
       if (hasBlacklistedTerm) {
         console.log('Product filtered out - contains blacklisted term:', product.title);
         return false;
-      }
-
-      // Validate price if constraints exist
-      if (priceConstraints) {
-        const price = extractPrice(product.product_price);
-        if (!price) {
-          console.log('Product filtered out - no valid price:', {
-            title: product.title,
-            rawPrice: product.product_price
-          });
-          return false;
-        }
-
-        const isInRange = validatePriceInRange(price, priceConstraints.min, priceConstraints.max);
-        console.log('Price validation:', {
-          title: product.title,
-          price,
-          min: priceConstraints.min,
-          max: priceConstraints.max,
-          isInRange
-        });
-
-        if (!isInRange) {
-          console.log('Product filtered out - price out of range');
-          return false;
-        }
       }
 
       console.log('Product passed all filters:', product.title);
