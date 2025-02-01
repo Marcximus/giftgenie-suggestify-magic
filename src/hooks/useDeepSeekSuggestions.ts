@@ -2,12 +2,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { GiftSuggestion } from '@/types/suggestions';
 
-export const useOpenAISuggestions = () => {
+// Changed from 'export const' to 'const' and added default export
+const useDeepSeekSuggestions = () => {
   const { toast } = useToast();
 
   const generateSuggestions = async (query: string): Promise<GiftSuggestion[] | null> => {
     try {
-      console.log('Generating suggestions for query:', query);
+      console.log('Generating suggestions with DeepSeek for query:', query);
       const { data, error } = await supabase.functions.invoke('generate-gift-suggestions', {
         body: { prompt: query }
       });
@@ -18,6 +19,7 @@ export const useOpenAISuggestions = () => {
       }
 
       if (!data?.suggestions || !Array.isArray(data.suggestions)) {
+        console.error('Invalid response format from DeepSeek:', data);
         throw new Error('Invalid response format');
       }
 
@@ -35,3 +37,6 @@ export const useOpenAISuggestions = () => {
 
   return { generateSuggestions };
 };
+
+// Add default export
+export default useDeepSeekSuggestions;

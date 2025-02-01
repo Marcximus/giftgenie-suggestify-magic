@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useDeepSeekSuggestions } from './useDeepSeekSuggestions';
+import useDeepSeekSuggestions from './useDeepSeekSuggestions';
 import { useAmazonProductProcessing } from './useAmazonProductProcessing';
 import { GiftSuggestion } from '@/types/suggestions';
 import { debounce } from '@/utils/debounce';
