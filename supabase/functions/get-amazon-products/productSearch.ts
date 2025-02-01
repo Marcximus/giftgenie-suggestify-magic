@@ -1,5 +1,7 @@
 import { corsHeaders } from '../_shared/cors.ts';
 import { RAPIDAPI_HOST } from './config.ts';
+import { cleanSearchTerm } from './searchUtils.ts';
+import { extractPrice } from './priceUtils.ts';
 import type { AmazonProduct } from './types.ts';
 
 export const searchProducts = async (
@@ -19,7 +21,7 @@ export const searchProducts = async (
     timestamp: new Date().toISOString()
   });
 
-  const cleanedTerm = searchTerm.trim();
+  const cleanedTerm = cleanSearchTerm(searchTerm);
   console.log('Cleaned search term:', cleanedTerm);
 
   // Extract price constraints from input
@@ -108,7 +110,7 @@ export const searchProducts = async (
     return {
       title: product.title,
       description: product.product_description || product.title,
-      price: product.product_price ? parseFloat(product.product_price.toString()) : undefined,
+      price: extractPrice(product.product_price),
       currency: 'USD',
       imageUrl: product.product_photo || product.thumbnail,
       rating: product.product_star_rating ? parseFloat(product.product_star_rating) : undefined,
