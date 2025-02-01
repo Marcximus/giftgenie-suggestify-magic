@@ -35,6 +35,8 @@ CRITICAL REQUIREMENTS:
 3. Stay within any budget constraints mentioned (can fluctuate by 20%)
 4. Consider age, gender, and occasion mentioned
 5. Focus on the recipient's interests and preferences
+6. IMPORTANT: Make suggestions VERY SPECIFIC with brand names and models
+7. DO NOT suggest generic items like "book" or "headphones"
 
 FORMAT REQUIREMENTS:
 1. Return ONLY a JSON array containing EXACTLY 8 strings
@@ -46,7 +48,7 @@ FORMAT REQUIREMENTS:
 Example format:
 [
   "Sony WH-1000XM4 Wireless Headphones",
-  "KitchenAid Artisan Stand Mixer",
+  "Kindle Paperwhite 11th Generation",
   // ... exactly 6 more suggestions
 ]
 
@@ -99,12 +101,40 @@ IMPORTANT: Your response MUST contain EXACTLY 8 suggestions. If you provide fewe
       throw new Error(`Invalid number of suggestions: ${suggestions?.length ?? 0}. Expected exactly 8 suggestions.`);
     }
 
-    // Process suggestions
-    console.log('Processing suggestions:', suggestions);
-    const processedProducts = await processSuggestionsInBatches(suggestions);
-    console.log('Processed products:', processedProducts);
+    // Extract price range from prompt if it exists
+    const priceRangeMatch = prompt.match(/budget.*?(\d+)(?:\s*-\s*(\d+))?/i) || 
+                           prompt.match(/(\d+)(?:\s*-\s*(\d+))?\s*(?:dollars|usd|\$)/i);
     
+    const priceRange = priceRangeMatch ? 
+      priceRangeMatch[2] ? 
+        `${priceRangeMatch[1]}-${priceRangeMatch[2]}` : 
+        `${Math.floor(Number(priceRangeMatch[1]) * 0.8)}-${Math.ceil(Number(priceRangeMatch[1]) * 1.2)}` 
+      : undefined;
+
+    console.log('Extracted price range:', priceRange);
+
+    // Process suggestions with retries
+    let retryCount = 0;
+    const maxRetries = 2;
+    let processedProducts = [];
+
+    while (retryCount <= maxRetries && processedProducts.length < 8) {
+      console.log(`Processing attempt ${retryCount + 1} of ${maxRetries + 1}`);
+      
+      const currentBatchProducts = await processSuggestionsInBatches(
+        suggestions.slice(processedProducts.length),
+        priceRange
+      );
+      
+      console.log(`Found ${currentBatchProducts.length} products in attempt ${retryCount + 1}`);
+      processedProducts = [...processedProducts, ...currentBatchProducts];
+      
+      if (processedProducts.length >= 8) break;
+      retryCount++;
+    }
+
     if (!processedProducts.length) {
+      console.error('No products found after all retries');
       throw new Error('No products found for suggestions');
     }
 
@@ -117,7 +147,7 @@ IMPORTANT: Your response MUST contain EXACTLY 8 suggestions. If you provide fewe
     });
 
     return new Response(
-      JSON.stringify({ suggestions: processedProducts }),
+      JSON.stringify({ suggestions: processedProducts.slice(0, 8) }),
       { 
         headers: { 
           ...corsHeaders, 
