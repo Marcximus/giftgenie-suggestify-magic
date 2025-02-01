@@ -22,7 +22,7 @@ export const SuggestionsGridItems = ({
   const [optimizedTitles, setOptimizedTitles] = useState<Record<string, string>>({});
   const [customDescriptions, setCustomDescriptions] = useState<Record<string, string>>({});
   const [processingQueue, setProcessingQueue] = useState<Set<string>>(new Set());
-  const [visibleCount, setVisibleCount] = useState(suggestions.length);
+  const [visibleCount, setVisibleCount] = useState(0);
   const timeoutsRef = useRef<NodeJS.Timeout[]>([]);
   const { toast } = useToast();
 
@@ -48,75 +48,76 @@ export const SuggestionsGridItems = ({
 
       if (error) {
         console.error('Error generating title:', error);
-        return null;
+        return originalTitle; // Fallback to original title on error
       }
 
-      return data?.title || null;
+      return data?.title || originalTitle;
     } catch (error) {
       console.error('Error generating title:', error);
-      return null;
+      return originalTitle; // Fallback to original title on error
     }
   }, [processingQueue]);
 
   useEffect(() => {
+    // Reset state when suggestions change
     clearTimeouts();
     setVisibleCount(0);
     onAllSuggestionsProcessed(false);
     
     if (!Array.isArray(suggestions) || suggestions.length === 0) {
+      console.log('No suggestions to process');
       return;
     }
 
+    console.log('Processing suggestions:', suggestions.length);
     const newProcessingQueue = new Set<string>();
-    let completedCount = 0;
 
     const processSuggestions = async () => {
-      const processPromises = suggestions.map(async (suggestion, index) => {
+      // Show first item immediately
+      setVisibleCount(1);
+
+      for (let i = 0; i < suggestions.length; i++) {
+        const suggestion = suggestions[i];
         const originalTitle = suggestion.title || 'Gift Suggestion';
         
-        if (processingQueue.has(originalTitle) || optimizedTitles[originalTitle]) {
-          return;
-        }
+        if (!processingQueue.has(originalTitle) && !optimizedTitles[originalTitle]) {
+          newProcessingQueue.add(originalTitle);
 
-        newProcessingQueue.add(originalTitle);
+          try {
+            // Process title and description in parallel
+            const [optimizedTitle, customDescription] = await Promise.all([
+              generateTitle(originalTitle, suggestion.description || ''),
+              generateCustomDescription(originalTitle, suggestion.description || '')
+            ]);
 
-        try {
-          const [optimizedTitle, customDescription] = await Promise.all([
-            generateTitle(originalTitle, suggestion.description || ''),
-            generateCustomDescription(originalTitle, suggestion.description || '')
-          ]);
-
-          if (optimizedTitle) {
             setOptimizedTitles(prev => ({
               ...prev,
-              [originalTitle]: optimizedTitle
+              [originalTitle]: optimizedTitle || originalTitle
             }));
-          }
 
-          if (customDescription) {
-            setCustomDescriptions(prev => ({
-              ...prev,
-              [originalTitle]: customDescription
-            }));
-          }
+            if (customDescription) {
+              setCustomDescriptions(prev => ({
+                ...prev,
+                [originalTitle]: customDescription
+              }));
+            }
 
-          completedCount++;
-          
-          const timeout = setTimeout(() => {
+            // Increment visible count with delay, except for first item
+            if (i > 0) {
+              const timeout = setTimeout(() => {
+                setVisibleCount(prev => Math.min(prev + 1, suggestions.length));
+              }, i * 50);
+              timeoutsRef.current.push(timeout);
+            }
+
+          } catch (error) {
+            console.error('Error processing suggestion:', error);
+            // Still show the item even if processing fails
             setVisibleCount(prev => Math.min(prev + 1, suggestions.length));
-          }, index * 50);
-          
-          timeoutsRef.current.push(timeout);
-
-        } catch (error) {
-          console.error('Error processing suggestion:', error);
-          completedCount++;
-          newProcessingQueue.delete(originalTitle);
+          }
         }
-      });
+      }
 
-      await Promise.all(processPromises);
-      
       // Set final visibility after all processing is complete
       const finalTimeout = setTimeout(() => {
         setVisibleCount(suggestions.length);
@@ -127,7 +128,12 @@ export const SuggestionsGridItems = ({
       setProcessingQueue(newProcessingQueue);
     };
 
-    processSuggestions();
+    processSuggestions().catch(error => {
+      console.error('Error in processSuggestions:', error);
+      // Ensure all items are visible even if there's an error
+      setVisibleCount(suggestions.length);
+      onAllSuggestionsProcessed(true);
+    });
 
     return clearTimeouts;
   }, [suggestions, generateTitle, onAllSuggestionsProcessed, clearTimeouts, processingQueue, optimizedTitles]);
@@ -151,8 +157,8 @@ export const SuggestionsGridItems = ({
   return (
     <>
       {suggestions.map((suggestion, index) => {
-        const optimizedTitle = suggestion.title ? optimizedTitles[suggestion.title] : null;
-        const customDescription = suggestion.title ? customDescriptions[suggestion.title] : suggestion.description;
+        const optimizedTitle = suggestion.title ? optimizedTitles[suggestion.title] || suggestion.title : suggestion.title;
+        const customDescription = suggestion.title ? customDescriptions[suggestion.title] || suggestion.description : suggestion.description;
 
         return (
           <div 
