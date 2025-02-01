@@ -64,7 +64,7 @@ const Blog = () => {
   if (error) {
     console.error("Rendering error state:", error);
     return (
-      <div className="container mx-auto px-4 py-8">
+      <div className="min-h-screen container mx-auto px-4 py-8">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-red-600 mb-4">Error Loading Blog Posts</h1>
           <p className="text-gray-600">Please try refreshing the page</p>
@@ -78,7 +78,7 @@ const Blog = () => {
     return (
       <>
         <BlogMeta />
-        <div className="container mx-auto px-4 py-6">
+        <div className="min-h-screen container mx-auto px-4 py-6">
           <div className="text-center mb-8">
             <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold bg-gradient-to-r from-purple-500/80 via-blue-500/80 to-purple-500/80 inline-block text-transparent bg-clip-text mb-4">
               Perfect Gift Ideas
@@ -97,7 +97,7 @@ const Blog = () => {
               </Card>
             ))}
           </div>
-          <footer className="mt-8 text-center">
+          <footer className="mt-8 text-center pb-8">
             <p className="text-xs text-muted-foreground">
               Some links may contain affiliate links from Amazon and other vendors
             </p>
@@ -110,7 +110,7 @@ const Blog = () => {
   return (
     <>
       <BlogMeta />
-      <div className="container mx-auto px-4 py-6">
+      <div className="min-h-screen container mx-auto px-4 py-6">
         <div className="text-center mb-8">
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold bg-gradient-to-r from-purple-500/80 via-blue-500/80 to-purple-500/80 inline-block text-transparent bg-clip-text mb-4">
             Perfect Gift Ideas
@@ -143,7 +143,7 @@ const Blog = () => {
             </Link>
           ))}
         </div>
-        <footer className="mt-8 text-center">
+        <footer className="mt-8 text-center pb-8">
           <p className="text-xs text-muted-foreground">
             Some links may contain affiliate links from Amazon and other vendors
           </p>
