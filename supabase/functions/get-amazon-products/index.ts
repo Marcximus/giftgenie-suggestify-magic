@@ -37,8 +37,22 @@ serve(async (req) => {
       );
     }
 
+    // Clean and validate the search term
+    const cleanedSearchTerm = searchTerm.trim();
+    if (cleanedSearchTerm.length < 2) {
+      console.error('Search term too short:', cleanedSearchTerm);
+      return new Response(
+        JSON.stringify({ error: 'Search term must be at least 2 characters' }),
+        { 
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
+    }
+
     // Search for products with the validated price range
-    const product = await searchProducts(searchTerm, RAPIDAPI_KEY, priceRange);
+    console.log('Searching for products with term:', cleanedSearchTerm);
+    const product = await searchProducts(cleanedSearchTerm, RAPIDAPI_KEY, priceRange);
     
     console.log('Search result:', {
       found: !!product,
