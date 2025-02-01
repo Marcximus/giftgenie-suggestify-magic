@@ -19,38 +19,9 @@ export const SuggestionsGridItems = ({
   isLoading,
   onAllSuggestionsProcessed
 }: SuggestionsGridItemsProps) => {
-  const [optimizedTitles, setOptimizedTitles] = useState<Record<string, string>>({});
   const [customDescriptions, setCustomDescriptions] = useState<Record<string, string>>({});
   const abortController = useRef<AbortController | null>(null);
   const { toast } = useToast();
-
-  const generateTitle = useCallback(async (originalTitle: string, description: string) => {
-    if (!originalTitle) {
-      console.log('Empty title received, skipping optimization');
-      return null;
-    }
-
-    try {
-      console.log('Generating title for:', { originalTitle, description });
-      
-      const { data, error } = await supabase.functions.invoke('generate-product-title', {
-        body: { 
-          title: originalTitle.trim(),
-          description: description?.trim() 
-        }
-      });
-
-      if (error) {
-        console.error('Error generating title:', error);
-        return null;
-      }
-
-      return data?.title || null;
-    } catch (error) {
-      console.error('Error generating title:', error);
-      return null;
-    }
-  }, []);
 
   useEffect(() => {
     if (!Array.isArray(suggestions)) {
@@ -61,7 +32,6 @@ export const SuggestionsGridItems = ({
     console.log('Processing suggestions:', suggestions);
 
     if (suggestions.length === 0) {
-      setOptimizedTitles({});
       setCustomDescriptions({});
       onAllSuggestionsProcessed(false);
       return;
@@ -81,22 +51,9 @@ export const SuggestionsGridItems = ({
         }
 
         try {
-          // Generate optimized title
-          const optimizedTitle = await generateTitle(
-            suggestion.title || 'Gift Suggestion',
-            suggestion.description || ''
-          );
-
-          if (optimizedTitle) {
-            setOptimizedTitles(prev => ({
-              ...prev,
-              [suggestion.title]: optimizedTitle
-            }));
-          }
-
           // Generate custom description
           const customDescription = await generateCustomDescription(
-            optimizedTitle || suggestion.title,
+            suggestion.title,
             suggestion.description
           );
 
@@ -127,7 +84,7 @@ export const SuggestionsGridItems = ({
       }
       onAllSuggestionsProcessed(false);
     };
-  }, [suggestions, generateTitle, onAllSuggestionsProcessed]);
+  }, [suggestions, onAllSuggestionsProcessed]);
 
   if (isLoading) {
     return (
@@ -149,7 +106,6 @@ export const SuggestionsGridItems = ({
   return (
     <>
       {suggestions.map((suggestion, index) => {
-        const optimizedTitle = suggestion.title ? optimizedTitles[suggestion.title] : null;
         const customDescription = suggestion.title ? customDescriptions[suggestion.title] : suggestion.description;
 
         return (
@@ -163,7 +119,7 @@ export const SuggestionsGridItems = ({
             }}
           >
             <ProductCard
-              title={optimizedTitle || suggestion.title}
+              title={suggestion.title}
               description={customDescription || suggestion.description}
               price={suggestion.amazon_price 
                 ? suggestion.amazon_price.toString()
