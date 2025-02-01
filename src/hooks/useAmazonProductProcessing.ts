@@ -35,10 +35,15 @@ export const useAmazonProductProcessing = () => {
         return cachedData as GiftSuggestion;
       }
 
+      // Extract price range if available
+      const priceMatch = suggestion.priceRange?.match(/\$?(\d+(?:\.\d{2})?)\s*-\s*\$?(\d+(?:\.\d{2})?)/);
+      const minPrice = priceMatch ? parseFloat(priceMatch[1]) : undefined;
+      const maxPrice = priceMatch ? parseFloat(priceMatch[2]) : undefined;
+
       // Format request payload
       const requestPayload = {
         searchTerm: suggestion.title.trim(),
-        priceRange: suggestion.priceRange ? suggestion.priceRange.trim() : undefined
+        priceRange: priceMatch ? { min: minPrice, max: maxPrice } : undefined
       };
 
       console.log('Invoking get-amazon-products Edge Function with payload:', requestPayload);
