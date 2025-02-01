@@ -17,13 +17,7 @@ serve(async (req) => {
   }
 
   try {
-    console.log('Incoming request:', {
-      method: req.method,
-      url: req.url,
-      headers: Object.fromEntries(req.headers.entries())
-    });
-
-    // Validate API key
+    // Validate API key first
     if (!RAPIDAPI_KEY) {
       console.error('RAPIDAPI_KEY not configured');
       return new Response(
@@ -35,8 +29,7 @@ serve(async (req) => {
           status: 503,
           headers: {
             ...corsHeaders,
-            'Content-Type': 'application/json',
-            'Cache-Control': 'no-store, no-cache, must-revalidate'
+            'Content-Type': 'application/json'
           }
         }
       );
@@ -46,6 +39,7 @@ serve(async (req) => {
     let body;
     try {
       body = await req.json();
+      console.log('Received request body:', body);
     } catch (e) {
       console.error('Failed to parse request body:', e);
       return new Response(
@@ -57,8 +51,7 @@ serve(async (req) => {
           status: 400,
           headers: {
             ...corsHeaders,
-            'Content-Type': 'application/json',
-            'Cache-Control': 'no-store, no-cache, must-revalidate'
+            'Content-Type': 'application/json'
           }
         }
       );
@@ -77,15 +70,14 @@ serve(async (req) => {
           status: 400,
           headers: {
             ...corsHeaders,
-            'Content-Type': 'application/json',
-            'Cache-Control': 'no-store, no-cache, must-revalidate'
+            'Content-Type': 'application/json'
           }
         }
       );
     }
 
     // Search for products with the validated price range
-    console.log('Searching for products with term:', searchTerm);
+    console.log('Searching for products with term:', searchTerm, 'and price range:', priceRange);
     const product = await searchProducts(searchTerm, RAPIDAPI_KEY, priceRange);
     
     console.log('Search result:', {
@@ -101,8 +93,7 @@ serve(async (req) => {
         status: 200,
         headers: {
           ...corsHeaders,
-          'Content-Type': 'application/json',
-          'Cache-Control': 'no-store, no-cache, must-revalidate'
+          'Content-Type': 'application/json'
         }
       }
     );
@@ -124,8 +115,7 @@ serve(async (req) => {
         status: error.status || 500,
         headers: {
           ...corsHeaders,
-          'Content-Type': 'application/json',
-          'Cache-Control': 'no-store, no-cache, must-revalidate'
+          'Content-Type': 'application/json'
         }
       }
     );
