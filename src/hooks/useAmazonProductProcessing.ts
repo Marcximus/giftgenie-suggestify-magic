@@ -63,10 +63,11 @@ export const useAmazonProductProcessing = () => {
         throw new Error('Search term is required');
       }
 
+      // Explicitly stringify the request body
       const { data: response, error } = await supabase.functions.invoke('get-amazon-products', {
-        body: requestPayload,
+        body: JSON.stringify(requestPayload),
         headers: {
-          'Content-Type': 'application/json'  // Explicitly set Content-Type header
+          'Content-Type': 'application/json'
         }
       });
 
