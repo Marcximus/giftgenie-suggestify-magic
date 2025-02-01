@@ -23,41 +23,25 @@ serve(async (req) => {
         messages: [
           {
             role: "system",
-            content: `You are a creative product description writer. Your task is to create engaging, informative descriptions that:
+            content: `You are a concise product description writer. Your task is to:
 
-1. VARY YOUR OPENINGS:
-- Use diverse ways to start descriptions
-- Avoid repetitive phrases like "Imagine" or "Picture this"
-- Focus on the product's key features and benefits
+1. Create descriptions that are EXACTLY 13-18 words long
+2. NEVER repeat any words from the product title
+3. Focus on unique benefits and features
+4. Use clear, straightforward language
+5. Avoid marketing language or superlatives
+6. Do not mention price or discounts
+7. Do not use phrases like "perfect for" or "great gift"
 
-2. BE CONCISE BUT INFORMATIVE:
-- Keep descriptions under 2 sentences
-- Highlight the most important features
-- Explain why this makes a great gift
-
-3. MAINTAIN PROFESSIONALISM:
-- Use clear, straightforward language
-- Avoid overly casual or marketing-style language
-- Focus on factual information
-
-4. STRUCTURE:
-First sentence: Describe the main feature or benefit
-Second sentence: Explain why it makes a great gift
-
-Example formats:
-- "This [product] delivers [key benefit], making it a perfect gift for [recipient type]."
-- "Featuring [key feature], this [product] is ideal for [specific use case]."
-- "Crafted with [quality/feature], this [product] offers [benefit] that any [recipient] would appreciate."
-
-Return only the description, no additional formatting or text.`
+Return ONLY the description, no additional text or formatting.`
           },
           {
             role: "user",
-            content: `Create a concise, engaging description for this product: ${title}\n\nOriginal description: ${description}`
+            content: `Create a concise description for this product: ${title}\n\nOriginal description: ${description}`
           }
         ],
         temperature: 0.7,
-        max_tokens: 150,
+        max_tokens: 100,
       }),
     });
 
@@ -66,8 +50,31 @@ Return only the description, no additional formatting or text.`
     }
 
     const data = await response.json();
+    const generatedDescription = data.choices[0].message.content.trim();
+
+    // Validate word count
+    const wordCount = generatedDescription.split(/\s+/).length;
+    if (wordCount < 13 || wordCount > 18) {
+      console.warn('Description length outside target range:', {
+        description: generatedDescription,
+        wordCount
+      });
+    }
+
+    // Check for title word repetition
+    const titleWords = new Set(title.toLowerCase().split(/\s+/));
+    const descriptionWords = generatedDescription.toLowerCase().split(/\s+/);
+    const repeatedWords = descriptionWords.filter(word => titleWords.has(word));
+    
+    if (repeatedWords.length > 0) {
+      console.warn('Description contains words from title:', {
+        repeatedWords,
+        description: generatedDescription
+      });
+    }
+
     return new Response(
-      JSON.stringify({ description: data.choices[0].message.content.trim() }),
+      JSON.stringify({ description: generatedDescription }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
