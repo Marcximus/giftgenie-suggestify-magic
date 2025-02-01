@@ -57,7 +57,8 @@ serve(async (req) => {
     console.log('Search result:', {
       found: !!product,
       title: product?.title,
-      price: product?.price
+      price: product?.price,
+      asin: product?.asin
     });
 
     return new Response(
