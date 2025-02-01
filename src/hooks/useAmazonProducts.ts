@@ -37,6 +37,7 @@ export const useAmazonProducts = () => {
       
       const product = await withRetry(
         async () => {
+          console.log('Attempting product search with term:', searchTerm);
           const result = await searchWithFallback(searchTerm, priceRange);
           console.log('Search result:', result);
           return result;
