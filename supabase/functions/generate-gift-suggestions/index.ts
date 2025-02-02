@@ -27,11 +27,11 @@ const extractPriceRange = (prompt: string) => {
     // Apply margins based on the price points
     if (max === min) { // Single number budget
       if (min > 100) {
-        // 20% margin for budgets above 100
-        const margin = min * 0.2;
+        // 10% margin for budgets above 100 (changed from 20%)
+        const margin = min * 0.1;
         const marginMin = Math.floor(min - margin);
         const marginMax = Math.ceil(min + margin);
-        console.log('Single budget > 100, applying 20% margin:', {
+        console.log('Single budget > 100, applying 10% margin:', {
           originalValue: min,
           margin,
           marginMin,
@@ -56,12 +56,12 @@ const extractPriceRange = (prompt: string) => {
         };
       }
     } else {
-      // For explicit ranges, apply 20% margin to both ends
-      const minMargin = min * 0.2;
-      const maxMargin = max * 0.2;
+      // For explicit ranges, apply 10% margin to both ends (changed from 20%)
+      const minMargin = min * 0.1;
+      const maxMargin = max * 0.1;
       const marginMin = Math.floor(min - minMargin);
       const marginMax = Math.ceil(max + maxMargin);
-      console.log('Explicit range, applying 20% margin to both ends:', {
+      console.log('Explicit range, applying 10% margin to both ends:', {
         originalMin: min,
         originalMax: max,
         minMargin,
