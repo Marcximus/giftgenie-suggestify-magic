@@ -1,6 +1,6 @@
-import { AmazonProduct, SearchConfig } from './types';
-import { generateFallbackTerms } from './fallbackGenerator';
-import { cleanSearchTerm } from './searchUtils';
+import { AmazonProduct, SearchConfig } from './types.ts';
+import { generateFallbackTerms } from './fallbackGenerator.ts';
+import { cleanSearchTerm } from './searchUtils.ts';
 
 const RAPIDAPI_HOST = 'real-time-amazon-data.p.rapidapi.com';
 

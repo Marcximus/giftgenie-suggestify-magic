@@ -1,6 +1,6 @@
-import { FallbackTerm } from './types';
-import { getProductType, getBrandName, getMaterialOrAttribute } from './productClassification';
-import { cleanSearchTerm } from './searchUtils';
+import { FallbackTerm } from './types.ts';
+import { getProductType, getBrandName, getMaterialOrAttribute } from './productClassification.ts';
+import { cleanSearchTerm } from './searchUtils.ts';
 
 export const generateFallbackTerms = (term: string): FallbackTerm[] => {
   const productType = getProductType(term);
