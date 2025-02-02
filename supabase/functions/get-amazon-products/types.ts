@@ -9,12 +9,14 @@ export interface AmazonProduct {
   asin: string;
 }
 
-export interface SearchResult {
-  products: AmazonProduct[];
-  errors: string[];
+export interface FallbackTerm {
+  searchTerm: string;
+  usePriceConstraints: boolean;
 }
 
-export interface PriceRange {
-  min: number;
-  max: number;
+export interface SearchConfig {
+  minPrice?: number;
+  maxPrice?: number;
+  country?: string;
+  categoryId?: string;
 }
