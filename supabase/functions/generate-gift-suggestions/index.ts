@@ -5,79 +5,89 @@ const DEEPSEEK_API_KEY = Deno.env.get('DEEPSEEK_API_KEY');
 
 // Extract price range from the prompt with dynamic margins
 const extractPriceRange = (prompt: string) => {
-  const budgetMatch = prompt.match(/budget(?:\s*of)?\s*\$?(\d+)(?:\s*-\s*\$?(\d+))?/i) ||
-                     prompt.match(/\$(\d+)(?:\s*-\s*\$?(\d+))?/);
+  // Enhanced regex patterns to match more budget formats
+  const budgetPatterns = [
+    // Match "Budget: X" or "Budget: X-Y"
+    /budget:\s*\$?(\d+)(?:\s*-\s*\$?(\d+))?/i,
+    // Match "budget of X" or "budget of X-Y"
+    /budget(?:\s+of)?\s*\$?(\d+)(?:\s*-\s*\$?(\d+))?/i,
+    // Match "price range: X-Y" or "price range X-Y"
+    /price\s*range:?\s*\$?(\d+)\s*-\s*\$?(\d+)/i,
+    // Match "between X and Y"
+    /between\s*\$?(\d+)\s*and\s*\$?(\d+)/i,
+    // Match plain "$X-$Y" format
+    /\$(\d+)(?:\s*-\s*\$?(\d+))?/,
+    // Match "X-Y dollars"
+    /(\d+)(?:\s*-\s*(\d+))?\s*dollars?/i,
+  ];
   
-  console.log('Raw budget match:', budgetMatch);
+  console.log('Attempting to extract budget from prompt:', prompt);
   
-  if (!budgetMatch) {
-    console.log('No budget specified, using default range');
-    return {
-      min: 1,
-      max: 1000
-    };
-  }
-  
-  if (budgetMatch) {
-    const min = parseInt(budgetMatch[1]);
-    const max = budgetMatch[2] ? parseInt(budgetMatch[2]) : min;
+  for (const pattern of budgetPatterns) {
+    const match = prompt.match(pattern);
+    console.log('Trying pattern:', pattern, 'Match result:', match);
     
-    console.log('Extracted values:', { min, max });
-    
-    // Apply margins based on the price points
-    if (max === min) { // Single number budget
-      if (min > 100) {
-        // 10% margin for budgets above 100 (changed from 20%)
-        const margin = min * 0.1;
-        const marginMin = Math.floor(min - margin);
-        const marginMax = Math.ceil(min + margin);
-        console.log('Single budget > 100, applying 10% margin:', {
-          originalValue: min,
-          margin,
-          marginMin,
-          marginMax
-        });
-        return {
-          min: marginMin,
-          max: marginMax
-        };
+    if (match) {
+      const min = parseInt(match[1]);
+      const max = match[2] ? parseInt(match[2]) : min;
+      
+      console.log('Found budget match:', { min, max, pattern: pattern.toString() });
+      
+      // Apply margins based on the price points
+      if (max === min) { // Single number budget
+        if (min > 100) {
+          // 10% margin for budgets above 100
+          const margin = min * 0.1;
+          const marginMin = Math.floor(min - margin);
+          const marginMax = Math.ceil(min + margin);
+          console.log('Single budget > 100, applying 10% margin:', {
+            originalValue: min,
+            margin,
+            marginMin,
+            marginMax
+          });
+          return {
+            min: marginMin,
+            max: marginMax
+          };
+        } else {
+          // 15 dollar margin for budgets below/equal to 100
+          const marginMin = Math.max(1, Math.floor(min - 15));
+          const marginMax = Math.ceil(min + 15);
+          console.log('Single budget <= 100, applying $15 margin:', {
+            originalValue: min,
+            marginMin,
+            marginMax
+          });
+          return {
+            min: marginMin,
+            max: marginMax
+          };
+        }
       } else {
-        // 15 dollar margin for budgets below/equal to 100
-        const marginMin = Math.max(1, Math.floor(min - 15));
-        const marginMax = Math.ceil(min + 15);
-        console.log('Single budget <= 100, applying $15 margin:', {
-          originalValue: min,
+        // For explicit ranges, apply 10% margin to both ends
+        const minMargin = min * 0.1;
+        const maxMargin = max * 0.1;
+        const marginMin = Math.floor(min - minMargin);
+        const marginMax = Math.ceil(max + maxMargin);
+        console.log('Explicit range, applying 10% margin to both ends:', {
+          originalMin: min,
+          originalMax: max,
+          minMargin,
+          maxMargin,
           marginMin,
           marginMax
         });
-        return {
+        return { 
           min: marginMin,
-          max: marginMax
+          max: marginMax 
         };
       }
-    } else {
-      // For explicit ranges, apply 10% margin to both ends (changed from 20%)
-      const minMargin = min * 0.1;
-      const maxMargin = max * 0.1;
-      const marginMin = Math.floor(min - minMargin);
-      const marginMax = Math.ceil(max + maxMargin);
-      console.log('Explicit range, applying 10% margin to both ends:', {
-        originalMin: min,
-        originalMax: max,
-        minMargin,
-        maxMargin,
-        marginMin,
-        marginMax
-      });
-      return { 
-        min: marginMin,
-        max: marginMax 
-      };
     }
   }
   
-  // Fallback to default range
-  console.log('Using fallback default range');
+  // Log when no budget is found
+  console.log('No budget pattern matched in prompt, using default range');
   return {
     min: 1,
     max: 1000
@@ -196,7 +206,7 @@ No additional text or explanation needed - just the JSON array.`;
     return new Response(
       JSON.stringify({ 
         suggestions,
-        priceRange // Include the extracted and adjusted price range in the response
+        priceRange
       }),
       { 
         headers: { 
