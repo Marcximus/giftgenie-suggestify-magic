@@ -8,9 +8,13 @@ const searchWithTerm = async (
   term: string, 
   apiKey: string,
   config: SearchConfig,
-  usePriceConstraints: boolean
+  usePriceConstraints: boolean,
+  attempt: number = 1,
+  strategy: string = 'primary'
 ): Promise<AmazonProduct | null> => {
-  console.log('🔍 Starting search with term:', {
+  console.log('🔍 Search attempt details:', {
+    attempt,
+    strategy,
     searchTerm: term,
     usePriceConstraints,
     priceRange: usePriceConstraints ? { 
@@ -28,13 +32,16 @@ const searchWithTerm = async (
   if (usePriceConstraints && config.minPrice && config.maxPrice) {
     url.searchParams.append('min_price', config.minPrice.toString());
     url.searchParams.append('max_price', config.maxPrice.toString());
-    console.log('💰 Adding price constraints:', {
+    console.log('💰 Price constraints applied:', {
       minPrice: config.minPrice,
-      maxPrice: config.maxPrice
+      maxPrice: config.maxPrice,
+      searchTerm: term
     });
   }
 
   console.log('🌐 Making API request:', {
+    attempt,
+    strategy,
     fullUrl: url.toString(),
     headers: {
       'X-RapidAPI-Host': RAPIDAPI_HOST,
@@ -52,6 +59,9 @@ const searchWithTerm = async (
 
   if (!searchResponse.ok) {
     console.error('❌ Amazon Search API error:', {
+      attempt,
+      strategy,
+      searchTerm: term,
       status: searchResponse.status,
       statusText: searchResponse.statusText
     });
@@ -60,13 +70,21 @@ const searchWithTerm = async (
 
   const searchData = await searchResponse.json();
   console.log('📦 API Response:', {
+    attempt,
+    strategy,
+    searchTerm: term,
     totalProducts: searchData.data?.products?.length || 0,
     hasResults: !!searchData.data?.products?.length,
     firstProductTitle: searchData.data?.products?.[0]?.title || 'No product found'
   });
 
   if (!searchData.data?.products?.length) {
-    console.log('⚠️ No products found for term:', term);
+    console.log('⚠️ No products found:', {
+      attempt,
+      strategy,
+      searchTerm: term,
+      priceConstraints: usePriceConstraints
+    });
     return null;
   }
 
@@ -76,6 +94,9 @@ const searchWithTerm = async (
     undefined;
 
   console.log('✅ Found product:', {
+    attempt,
+    strategy,
+    searchTerm: term,
     title: product.title,
     price: priceValue,
     hasImage: !!product.product_photo,
@@ -102,7 +123,8 @@ export const searchProducts = async (
 ): Promise<AmazonProduct | null> => {
   console.log('🎯 Starting product search:', {
     originalSearchTerm: searchTerm,
-    priceRange
+    priceRange,
+    timestamp: new Date().toISOString()
   });
 
   if (!searchTerm || typeof searchTerm !== 'string' || searchTerm.trim().length === 0) {
@@ -113,7 +135,8 @@ export const searchProducts = async (
   const cleanedTerm = cleanSearchTerm(searchTerm);
   console.log('🧹 Cleaned search term:', {
     original: searchTerm,
-    cleaned: cleanedTerm
+    cleaned: cleanedTerm,
+    difference: searchTerm !== cleanedTerm ? 'Terms differ' : 'No change needed'
   });
 
   const searchConfig: SearchConfig = {
@@ -125,30 +148,51 @@ export const searchProducts = async (
 
   try {
     // First try with exact search term
-    console.log('🎯 Attempting exact search with cleaned term:', cleanedTerm);
-    let product = await searchWithTerm(cleanedTerm, apiKey, searchConfig, true);
+    console.log('🎯 Attempting exact search:', {
+      term: cleanedTerm,
+      withPriceConstraints: true,
+      attempt: 1
+    });
+    
+    let product = await searchWithTerm(cleanedTerm, apiKey, searchConfig, true, 1, 'exact');
     
     if (!product) {
       console.log('⚠️ No products found with original term, generating fallback terms');
       const fallbackTerms = generateFallbackTerms(cleanedTerm);
-      console.log('🔄 Generated fallback terms:', fallbackTerms);
+      console.log('🔄 Generated fallback terms:', {
+        originalTerm: cleanedTerm,
+        fallbackOptions: fallbackTerms.map(t => ({
+          searchTerm: t.searchTerm,
+          usePriceConstraints: t.usePriceConstraints,
+          priority: t.priority
+        }))
+      });
       
       for (const { searchTerm: fallbackTerm, usePriceConstraints, priority } of fallbackTerms) {
+        const attemptNumber = fallbackTerms.findIndex(t => t.searchTerm === fallbackTerm) + 2;
         console.log('🔄 Trying fallback search:', { 
           fallbackTerm, 
           usePriceConstraints,
           priority,
-          attempt: fallbackTerms.findIndex(t => t.searchTerm === fallbackTerm) + 1,
+          attempt: attemptNumber,
           totalFallbacks: fallbackTerms.length
         });
         
-        product = await searchWithTerm(fallbackTerm, apiKey, searchConfig, usePriceConstraints);
+        product = await searchWithTerm(
+          fallbackTerm, 
+          apiKey, 
+          searchConfig, 
+          usePriceConstraints, 
+          attemptNumber,
+          `fallback-priority-${priority}`
+        );
         
         if (product) {
           console.log('✅ Found product with fallback term:', { 
             fallbackTerm, 
             usePriceConstraints,
             priority,
+            attempt: attemptNumber,
             productTitle: product.title,
             productPrice: product.price 
           });
@@ -157,7 +201,8 @@ export const searchProducts = async (
           console.log('❌ No product found with fallback term:', {
             fallbackTerm,
             usePriceConstraints,
-            priority
+            priority,
+            attempt: attemptNumber
           });
         }
       }
@@ -165,6 +210,15 @@ export const searchProducts = async (
 
     if (!product) {
       console.log('❌ No products found after trying all fallback terms');
+    } else {
+      console.log('✅ Search successful:', {
+        originalTerm: searchTerm,
+        finalProduct: {
+          title: product.title,
+          price: product.price,
+          asin: product.asin
+        }
+      });
     }
 
     return product;
