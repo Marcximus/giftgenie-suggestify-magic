@@ -132,6 +132,7 @@ Key requirements:
 - Return suggestions as a JSON array of strings
 - Focus on currently available, popular products
 - Consider the recipient's gender, interests, age, and occasion
+- Do not go out of line to combine a recipient's interests meaning if someone is interested in knitting and cats, don't make bad suggestions that combines knitting and cats if it dosnt make a great gift
 - Highly consider the specified budget`;
 
     // Updated user message with new format
