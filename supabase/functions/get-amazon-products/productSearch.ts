@@ -1,7 +1,8 @@
-import { RAPIDAPI_HOST } from './config';
 import { AmazonProduct, SearchConfig } from './types';
 import { generateFallbackTerms } from './fallbackGenerator';
-import { cleanSearchTerm, corsHeaders } from './searchUtils';
+import { cleanSearchTerm } from './searchUtils';
+
+const RAPIDAPI_HOST = 'real-time-amazon-data.p.rapidapi.com';
 
 const searchWithTerm = async (
   term: string, 

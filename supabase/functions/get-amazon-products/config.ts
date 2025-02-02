@@ -1,1 +1,0 @@
-export const RAPIDAPI_HOST = 'real-time-amazon-data.p.rapidapi.com';
