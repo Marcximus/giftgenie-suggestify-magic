@@ -9,6 +9,8 @@ const extractPriceRange = (prompt: string) => {
   const budgetPatterns = [
     // Match "Budget: X" or "Budget: X-Y"
     /budget:\s*\$?(\d+)(?:\s*-\s*\$?(\d+))?/i,
+    // Match "Budget is X" or "Budget is X-Y"
+    /budget\s+is\s*\$?(\d+)(?:\s*-\s*\$?(\d+))?/i,
     // Match "budget of X" or "budget of X-Y"
     /budget(?:\s+of)?\s*\$?(\d+)(?:\s*-\s*\$?(\d+))?/i,
     // Match "price range: X-Y" or "price range X-Y"
@@ -19,6 +21,8 @@ const extractPriceRange = (prompt: string) => {
     /\$(\d+)(?:\s*-\s*\$?(\d+))?/,
     // Match "X-Y dollars"
     /(\d+)(?:\s*-\s*(\d+))?\s*dollars?/i,
+    // Match "around X" or "about X"
+    /(?:around|about|approximately|~)\s*\$?(\d+)/i,
   ];
   
   console.log('Attempting to extract budget from prompt:', prompt);
