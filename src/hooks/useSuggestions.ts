@@ -23,8 +23,7 @@ export const useSuggestions = () => {
       const { data, error } = await supabase.from('search_analytics').insert({
         search_query: query,
         suggestion_titles: titles,
-        user_agent: navigator.userAgent,
-        ip_address: null // IP is captured server-side via RLS
+        user_agent: navigator.userAgent
       }).select();
 
       if (error) {
