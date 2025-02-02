@@ -131,9 +131,10 @@ Key requirements:
 - Consider the recipient's gender, interests, age, and occasion
 - Stay within the specified budget range`;
 
-    // Updated user message with new format
+    // Updated user message with new format and price range
     const userMessage = `Generate 8 gift suggestions based on this request: "${prompt}"
 - Consider the recipient's gender, interests, age, and occasion
+- Do not make suggestions outside of the pricerange ${priceRange.min}-${priceRange.max}
 - Do not use unnecessary adjectives
 - Format response as JSON array: ["suggestion1", "suggestion2", ..., "suggestion8"]
 - No additional text, explanation or formatting needed - just the JSON array.`;
