@@ -7,6 +7,8 @@ const DEEPSEEK_API_KEY = Deno.env.get('DEEPSEEK_API_KEY');
 const extractPriceRange = (prompt: string) => {
   // Enhanced regex patterns to match more budget formats
   const budgetPatterns = [
+    // Match "Budget: X to Y" format
+    /budget:\s*\$?(\d+)\s+to\s+\$?(\d+)/i,
     // Match "Budget: X" or "Budget: X-Y"
     /budget:\s*\$?(\d+)(?:\s*-\s*\$?(\d+))?/i,
     // Match "Budget is X" or "Budget is X-Y"
