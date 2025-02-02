@@ -12,6 +12,7 @@ export interface AmazonProduct {
 export interface FallbackTerm {
   searchTerm: string;
   usePriceConstraints: boolean;
+  priority: number;
 }
 
 export interface SearchConfig {
