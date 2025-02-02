@@ -4,7 +4,6 @@ import { cleanSearchTerm } from './searchUtils.ts';
 import type { AmazonProduct } from './types.ts';
 
 const getProductType = (term: string): string | null => {
-  // Common product type words - add more as needed
   const productTypes = [
     'bookmark', 'book', 'headphones', 'earbuds', 'watch', 'camera', 'speaker',
     'kindle', 'tablet', 'phone', 'laptop', 'monitor', 'keyboard', 'mouse',
@@ -21,12 +20,29 @@ const getProductType = (term: string): string | null => {
   return null;
 };
 
+const getBrandName = (term: string): string | null => {
+  const commonBrands = [
+    'sony', 'samsung', 'apple', 'microsoft', 'amazon', 'logitech', 'bose',
+    'canon', 'nikon', 'dell', 'hp', 'lenovo', 'asus', 'acer', 'lg', 'jbl',
+    'nintendo', 'playstation', 'xbox', 'fitbit', 'garmin', 'kindle', 'moleskine',
+    'lego', 'nike', 'adidas', 'puma', 'reebok', 'casio', 'seiko', 'timex'
+  ];
+
+  const words = term.toLowerCase().split(' ');
+  for (const word of words) {
+    if (commonBrands.includes(word)) {
+      return word;
+    }
+  }
+  return null;
+};
+
 const getMaterialOrAttribute = (term: string): string | null => {
-  // Common materials and attributes
   const materials = [
     'leather', 'wooden', 'metal', 'plastic', 'glass', 'ceramic',
     'wireless', 'bluetooth', 'digital', 'analog', 'electric',
-    'portable', 'rechargeable', 'smart', 'premium'
+    'portable', 'rechargeable', 'smart', 'premium', 'professional',
+    'gaming', 'waterproof', 'noise-cancelling', 'mechanical'
   ];
 
   const words = term.toLowerCase().split(' ');
@@ -40,26 +56,37 @@ const getMaterialOrAttribute = (term: string): string | null => {
 
 const generateFallbackTerms = (term: string): string[] => {
   const productType = getProductType(term);
-  const material = getMaterialOrAttribute(term);
+  const brand = getBrandName(term);
+  const attribute = getMaterialOrAttribute(term);
   const fallbackTerms = [];
 
   if (!productType) {
-    // If no product type found, return original cleaned term
     return [cleanSearchTerm(term)];
   }
 
-  // First fallback: Product type with material/attribute if available
-  if (material) {
-    fallbackTerms.push(`${material} ${productType}`);
+  // First fallback: Brand + Product Type + Attribute
+  if (brand && attribute) {
+    fallbackTerms.push(`${brand} ${productType} ${attribute}`);
   }
 
-  // Second fallback: Just the product type
+  // Second fallback: Brand + Product Type
+  if (brand) {
+    fallbackTerms.push(`${brand} ${productType}`);
+  }
+
+  // Third fallback: Product Type + Attribute
+  if (attribute) {
+    fallbackTerms.push(`${attribute} ${productType}`);
+  }
+
+  // Fourth fallback: Just the Product Type
   fallbackTerms.push(productType);
 
   console.log('Generated fallback terms:', {
     originalTerm: term,
     productType,
-    material,
+    brand,
+    attribute,
     fallbackTerms
   });
 
@@ -84,15 +111,10 @@ export const searchProducts = async (
   });
 
   const cleanedTerm = cleanSearchTerm(searchTerm);
-  console.log('Cleaned search term:', cleanedTerm);
-
-  // Use provided price range or defaults
   const minPrice = priceRange?.min ?? 1;
   const maxPrice = priceRange?.max ?? 1000;
-  console.log('Using price constraints:', { minPrice, maxPrice });
 
   const searchWithTerm = async (term: string): Promise<AmazonProduct | null> => {
-    // Construct URL with required parameters
     const url = new URL(`https://${RAPIDAPI_HOST}/search`);
     url.searchParams.append('query', term);
     url.searchParams.append('country', 'US');
@@ -104,13 +126,7 @@ export const searchProducts = async (
     console.log('Making request to Amazon API:', {
       searchTerm: term,
       fullUrl: url.toString(),
-      host: url.host,
-      pathname: url.pathname,
-      searchParams: Object.fromEntries(url.searchParams.entries()),
-      headers: {
-        'X-RapidAPI-Key': 'PRESENT (not shown)',
-        'X-RapidAPI-Host': RAPIDAPI_HOST
-      }
+      priceRange: { minPrice, maxPrice }
     });
 
     const searchResponse = await fetch(url, {
@@ -125,32 +141,16 @@ export const searchProducts = async (
       console.error('Amazon Search API error:', {
         status: searchResponse.status,
         statusText: searchResponse.statusText,
-        body: responseText,
-        headers: Object.fromEntries(searchResponse.headers.entries())
+        body: responseText
       });
 
       if (searchResponse.status === 429) {
         throw new Error('Rate limit exceeded for Amazon API');
       }
-      
       throw new Error(`Amazon API error: ${searchResponse.status}`);
     }
 
     const searchData = await searchResponse.json();
-    console.log('Amazon API raw response:', {
-      hasData: !!searchData.data,
-      productsCount: searchData.data?.products?.length || 0,
-      firstProduct: searchData.data?.products?.[0] ? {
-        title: searchData.data.products[0].title,
-        hasPrice: !!searchData.data.products[0].product_price,
-        priceValue: searchData.data.products[0].product_price,
-        hasImage: !!searchData.data.products[0].product_photo,
-        imageUrl: searchData.data.products[0].product_photo,
-        hasAsin: !!searchData.data.products[0].asin,
-        asin: searchData.data.products[0].asin
-      } : 'No products found'
-    });
-
     if (!searchData.data?.products?.length) {
       return null;
     }
@@ -173,10 +173,8 @@ export const searchProducts = async (
   };
 
   try {
-    // First attempt with original search term
     let product = await searchWithTerm(cleanedTerm);
     
-    // If no product found, try fallback terms
     if (!product) {
       console.log('No products found with original term, trying fallback search');
       const fallbackTerms = generateFallbackTerms(cleanedTerm);
