@@ -8,8 +8,10 @@ const extractPriceRange = (prompt: string) => {
   const budgetMatch = prompt.match(/budget(?:\s*of)?\s*\$?(\d+)(?:\s*-\s*\$?(\d+))?/i) ||
                      prompt.match(/\$(\d+)(?:\s*-\s*\$?(\d+))?/);
   
+  console.log('Raw budget match:', budgetMatch);
+  
   if (!budgetMatch) {
-    // Return default range if no budget is specified
+    console.log('No budget specified, using default range');
     return {
       min: 1,
       max: 1000
@@ -20,29 +22,62 @@ const extractPriceRange = (prompt: string) => {
     const min = parseInt(budgetMatch[1]);
     const max = budgetMatch[2] ? parseInt(budgetMatch[2]) : min;
     
-    // Apply different margins based on budget amount
+    console.log('Extracted values:', { min, max });
+    
+    // Apply margins based on the price points
     if (max === min) { // Single number budget
       if (min > 100) {
         // 20% margin for budgets above 100
         const margin = min * 0.2;
+        const marginMin = Math.floor(min - margin);
+        const marginMax = Math.ceil(min + margin);
+        console.log('Single budget > 100, applying 20% margin:', {
+          originalValue: min,
+          margin,
+          marginMin,
+          marginMax
+        });
         return {
-          min: Math.floor(min - margin),
-          max: Math.ceil(min + margin)
+          min: marginMin,
+          max: marginMax
         };
       } else {
         // 15 dollar margin for budgets below/equal to 100
+        const marginMin = Math.max(1, Math.floor(min - 15));
+        const marginMax = Math.ceil(min + 15);
+        console.log('Single budget <= 100, applying $15 margin:', {
+          originalValue: min,
+          marginMin,
+          marginMax
+        });
         return {
-          min: Math.max(1, Math.floor(min - 15)),
-          max: Math.ceil(min + 15)
+          min: marginMin,
+          max: marginMax
         };
       }
     } else {
-      // For explicit ranges, keep original behavior
-      return { min, max };
+      // For explicit ranges, apply 20% margin to both ends
+      const minMargin = min * 0.2;
+      const maxMargin = max * 0.2;
+      const marginMin = Math.floor(min - minMargin);
+      const marginMax = Math.ceil(max + maxMargin);
+      console.log('Explicit range, applying 20% margin to both ends:', {
+        originalMin: min,
+        originalMax: max,
+        minMargin,
+        maxMargin,
+        marginMin,
+        marginMax
+      });
+      return { 
+        min: marginMin,
+        max: marginMax 
+      };
     }
   }
   
   // Fallback to default range
+  console.log('Using fallback default range');
   return {
     min: 1,
     max: 1000
