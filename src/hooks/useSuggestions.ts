@@ -12,6 +12,20 @@ export const useSuggestions = () => {
   const { processSuggestions } = useAmazonProductProcessing();
   const queryClient = useQueryClient();
 
+  const trackSearchAnalytics = async (query: string, suggestions: GiftSuggestion[]) => {
+    try {
+      const titles = suggestions.map(s => s.title);
+      await supabase.from('search_analytics').insert({
+        search_query: query,
+        suggestion_titles: titles,
+        user_agent: navigator.userAgent,
+        ip_address: null // IP is captured server-side via RLS
+      });
+    } catch (error) {
+      console.error('Error tracking search analytics:', error);
+    }
+  };
+
   const { data: suggestions = [], isPending: isLoading, mutate: fetchSuggestions } = useMutation({
     mutationFn: async (query: string) => {
       const startTime = performance.now();
@@ -30,6 +44,9 @@ export const useSuggestions = () => {
         if (newSuggestions.length > 0) {
           console.log('Processing suggestions with Amazon data');
           const results = await processSuggestions(newSuggestions, priceRange);
+          
+          // Track search analytics after successful processing
+          await trackSearchAnalytics(query, results);
           
           // Log metrics for successful processing
           await supabase.from('api_metrics').insert({

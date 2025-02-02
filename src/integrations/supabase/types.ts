@@ -358,6 +358,33 @@ export type Database = {
         }
         Relationships: []
       }
+      search_analytics: {
+        Row: {
+          created_at: string | null
+          id: string
+          ip_address: string | null
+          search_query: string
+          suggestion_titles: Json
+          user_agent: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          ip_address?: string | null
+          search_query: string
+          suggestion_titles?: Json
+          user_agent?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          ip_address?: string | null
+          search_query?: string
+          suggestion_titles?: Json
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
