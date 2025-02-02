@@ -134,7 +134,8 @@ Key requirements:
     // Updated user message with new format
     const userMessage = `Generate 8 gift suggestions based on this request: "${prompt}"
 - Consider the recipient's gender, interests, age, and occasion
-- Format response as JSON array: ["suggestion1", "suggestion2", ..., "suggestion8"]`;
+- Format response as JSON array: ["suggestion1", "suggestion2", ..., "suggestion8"]
+- No additional text, explanation or formatting needed - just the JSON array.`;
 
     console.log('Sending request to DeepSeek API with messages:', {
       systemMessage,
