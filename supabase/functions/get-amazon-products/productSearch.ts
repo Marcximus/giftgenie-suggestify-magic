@@ -3,18 +3,67 @@ import { RAPIDAPI_HOST } from './config.ts';
 import { cleanSearchTerm } from './searchUtils.ts';
 import type { AmazonProduct } from './types.ts';
 
-const simplifySearchTerm = (term: string): string => {
-  // Remove specific details and keep core product type
-  const simplified = term
-    .replace(/(?:with|featuring|including|for|by)\s+.*$/i, '') // Remove everything after with/featuring/etc
-    .replace(/[^\w\s]/g, ' ') // Remove special characters
-    .split(' ')
-    .slice(-2) // Take last two words as they often contain the core product
-    .join(' ')
-    .trim();
-  
-  console.log(`Simplified search term: "${term}" -> "${simplified}"`);
-  return simplified;
+const getProductType = (term: string): string | null => {
+  // Common product type words - add more as needed
+  const productTypes = [
+    'bookmark', 'book', 'headphones', 'earbuds', 'watch', 'camera', 'speaker',
+    'kindle', 'tablet', 'phone', 'laptop', 'monitor', 'keyboard', 'mouse',
+    'chair', 'desk', 'lamp', 'bag', 'wallet', 'pen', 'pencil', 'notebook',
+    'guitar', 'piano', 'drum', 'vinyl', 'record', 'player', 'turntable'
+  ];
+
+  const words = term.toLowerCase().split(' ');
+  for (const word of words) {
+    if (productTypes.includes(word)) {
+      return word;
+    }
+  }
+  return null;
+};
+
+const getMaterialOrAttribute = (term: string): string | null => {
+  // Common materials and attributes
+  const materials = [
+    'leather', 'wooden', 'metal', 'plastic', 'glass', 'ceramic',
+    'wireless', 'bluetooth', 'digital', 'analog', 'electric',
+    'portable', 'rechargeable', 'smart', 'premium'
+  ];
+
+  const words = term.toLowerCase().split(' ');
+  for (const word of words) {
+    if (materials.includes(word)) {
+      return word;
+    }
+  }
+  return null;
+};
+
+const generateFallbackTerms = (term: string): string[] => {
+  const productType = getProductType(term);
+  const material = getMaterialOrAttribute(term);
+  const fallbackTerms = [];
+
+  if (!productType) {
+    // If no product type found, return original cleaned term
+    return [cleanSearchTerm(term)];
+  }
+
+  // First fallback: Product type with material/attribute if available
+  if (material) {
+    fallbackTerms.push(`${material} ${productType}`);
+  }
+
+  // Second fallback: Just the product type
+  fallbackTerms.push(productType);
+
+  console.log('Generated fallback terms:', {
+    originalTerm: term,
+    productType,
+    material,
+    fallbackTerms
+  });
+
+  return fallbackTerms;
 };
 
 export const searchProducts = async (
@@ -127,12 +176,18 @@ export const searchProducts = async (
     // First attempt with original search term
     let product = await searchWithTerm(cleanedTerm);
     
-    // If no product found, try with simplified term
+    // If no product found, try fallback terms
     if (!product) {
-      console.log('No products found with original term, trying simplified search');
-      const simplifiedTerm = simplifySearchTerm(cleanedTerm);
-      if (simplifiedTerm !== cleanedTerm) {
-        product = await searchWithTerm(simplifiedTerm);
+      console.log('No products found with original term, trying fallback search');
+      const fallbackTerms = generateFallbackTerms(cleanedTerm);
+      
+      for (const fallbackTerm of fallbackTerms) {
+        console.log('Trying fallback term:', fallbackTerm);
+        product = await searchWithTerm(fallbackTerm);
+        if (product) {
+          console.log('Found product with fallback term:', fallbackTerm);
+          break;
+        }
       }
     }
 
