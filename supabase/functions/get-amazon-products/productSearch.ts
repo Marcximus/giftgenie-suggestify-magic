@@ -54,33 +54,47 @@ const getMaterialOrAttribute = (term: string): string | null => {
   return null;
 };
 
-const generateFallbackTerms = (term: string): string[] => {
+const generateFallbackTerms = (term: string, withPriceConstraints: boolean = true): { searchTerm: string; usePriceConstraints: boolean }[] => {
   const productType = getProductType(term);
   const brand = getBrandName(term);
   const attribute = getMaterialOrAttribute(term);
   const fallbackTerms = [];
 
   if (!productType) {
-    return [cleanSearchTerm(term)];
+    return [{ searchTerm: cleanSearchTerm(term), usePriceConstraints: true }];
   }
 
-  // First fallback: Brand + Product Type + Attribute
+  // First fallback: Brand + Product Type + Attribute (with price constraints)
   if (brand && attribute) {
-    fallbackTerms.push(`${brand} ${productType} ${attribute}`);
+    fallbackTerms.push({ 
+      searchTerm: `${brand} ${productType} ${attribute}`,
+      usePriceConstraints: true 
+    });
   }
 
-  // Second fallback: Brand + Product Type
+  // Second fallback: Same as first but WITHOUT price constraints
+  if (brand && attribute) {
+    fallbackTerms.push({ 
+      searchTerm: `${brand} ${productType} ${attribute}`,
+      usePriceConstraints: false 
+    });
+  }
+
+  // Third fallback: Brand + Product Type (WITHOUT price constraints)
   if (brand) {
-    fallbackTerms.push(`${brand} ${productType}`);
+    fallbackTerms.push({ 
+      searchTerm: `${brand} ${productType}`,
+      usePriceConstraints: false 
+    });
   }
 
-  // Third fallback: Product Type + Attribute
+  // Fourth fallback: Product Type + Attribute
   if (attribute) {
-    fallbackTerms.push(`${attribute} ${productType}`);
+    fallbackTerms.push({ 
+      searchTerm: `${attribute} ${productType}`,
+      usePriceConstraints: true 
+    });
   }
-
-  // Fourth fallback: Just the Product Type
-  fallbackTerms.push(productType);
 
   console.log('Generated fallback terms:', {
     originalTerm: term,
@@ -114,19 +128,22 @@ export const searchProducts = async (
   const minPrice = priceRange?.min ?? 1;
   const maxPrice = priceRange?.max ?? 1000;
 
-  const searchWithTerm = async (term: string): Promise<AmazonProduct | null> => {
+  const searchWithTerm = async (term: string, usePriceConstraints: boolean): Promise<AmazonProduct | null> => {
     const url = new URL(`https://${RAPIDAPI_HOST}/search`);
     url.searchParams.append('query', term);
     url.searchParams.append('country', 'US');
     url.searchParams.append('category_id', 'aps');
-    url.searchParams.append('min_price', minPrice.toString());
-    url.searchParams.append('max_price', maxPrice.toString());
+    if (usePriceConstraints) {
+      url.searchParams.append('min_price', minPrice.toString());
+      url.searchParams.append('max_price', maxPrice.toString());
+    }
     url.searchParams.append('sort_by', 'RELEVANCE');
 
     console.log('Making request to Amazon API:', {
       searchTerm: term,
       fullUrl: url.toString(),
-      priceRange: { minPrice, maxPrice }
+      usePriceConstraints,
+      priceRange: usePriceConstraints ? { minPrice, maxPrice } : 'No price constraints'
     });
 
     const searchResponse = await fetch(url, {
@@ -173,17 +190,22 @@ export const searchProducts = async (
   };
 
   try {
-    let product = await searchWithTerm(cleanedTerm);
+    let product = await searchWithTerm(cleanedTerm, true);
     
     if (!product) {
       console.log('No products found with original term, trying fallback search');
       const fallbackTerms = generateFallbackTerms(cleanedTerm);
       
-      for (const fallbackTerm of fallbackTerms) {
-        console.log('Trying fallback term:', fallbackTerm);
-        product = await searchWithTerm(fallbackTerm);
+      for (const { searchTerm: fallbackTerm, usePriceConstraints } of fallbackTerms) {
+        console.log('Trying fallback term:', { fallbackTerm, usePriceConstraints });
+        product = await searchWithTerm(fallbackTerm, usePriceConstraints);
         if (product) {
-          console.log('Found product with fallback term:', fallbackTerm);
+          console.log('Found product with fallback term:', { 
+            fallbackTerm, 
+            usePriceConstraints,
+            productTitle: product.title,
+            productPrice: product.price 
+          });
           break;
         }
       }
