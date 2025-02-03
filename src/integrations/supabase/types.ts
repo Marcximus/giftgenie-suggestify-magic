@@ -345,13 +345,13 @@ export type Database = {
           brand?: string | null
           category?: string | null
           created_at?: string | null
-          description?: string
+          description: string
           gtin?: string | null
           id?: string
           mpn?: string | null
           price_range?: string
           reason?: string | null
-          search_query?: string
+          search_query: string
           sku?: string | null
           status?: string | null
           title?: string
@@ -384,6 +384,35 @@ export type Database = {
           user_agent?: string | null
         }
         Relationships: []
+      }
+      blog_posts_cache: {
+        Row: {
+          id: string
+          processed_content: string
+          processed_at: string
+          cache_version: string
+        }
+        Insert: {
+          id: string
+          processed_content: string
+          processed_at?: string
+          cache_version?: string
+        }
+        Update: {
+          id?: string
+          processed_content?: string
+          processed_at?: string
+          cache_version?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "blog_posts_cache_id_fkey"
+            columns: ["id"]
+            isOneToOne: true
+            referencedRelation: "blog_posts"
+            referencedColumns: ["id"]
+          }
+        ]
       }
     }
     Views: {
@@ -440,10 +469,10 @@ export type Tables<
         PublicSchema["Views"])
     ? (PublicSchema["Tables"] &
         PublicSchema["Views"])[PublicTableNameOrOptions] extends {
-        Row: infer R
-      }
-      ? R
-      : never
+      Row: infer R
+    }
+    ? R
+    : never
     : never
 
 export type TablesInsert<
