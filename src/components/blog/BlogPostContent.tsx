@@ -1,151 +1,91 @@
-import { Tables } from "@/integrations/supabase/types";
-import { useQuery } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { Tables } from "@/integrations/supabase/types";
+import { Spinner } from "@/components/ui/spinner";
 
 interface BlogPostContentProps {
   post: Tables<"blog_posts">;
 }
 
 export const BlogPostContent = ({ post }: BlogPostContentProps) => {
-  // Remove problematic inline styles from content
-  const sanitizeContent = (content: string) => {
-    return content
-      // Remove float styles
-      .replace(/style="[^"]*float:\s*(?:left|right)[^"]*"/gi, '')
-      // Remove fixed width styles
-      .replace(/style="[^"]*width:\s*\d+[^"]*"/gi, '')
-      // Remove margin styles
-      .replace(/style="[^"]*margin[^"]*"/gi, '')
-      // Remove text-align styles
-      .replace(/style="[^"]*text-align[^"]*"/gi, '')
-      // Remove padding styles
-      .replace(/style="[^"]*padding[^"]*"/gi, '')
-      // Remove max-width styles
-      .replace(/style="[^"]*max-width[^"]*"/gi, '')
-      // Remove any remaining style attributes
-      .replace(/style="[^"]*"/gi, '')
-      // Force div containers to be full width and left-aligned, but exclude product-actions and review containers
-      .replace(/<div(?!\s+class=["'][^"']*(?:product-actions|review-container)[^"']*["'])/gi, '<div class="w-full text-left"')
-      // Center h1 tags (titles) with adjusted margins
-      .replace(/<h1/gi, '<h1 class="!text-center mt-4 sm:mt-8 mb-6 sm:mb-12 px-8"')
-      // Center product actions container - made more specific
-      .replace(/<div[^>]*class=["'][^"']*product-actions[^"']*["']/gi, '<div class="product-actions flex flex-col items-center gap-4 my-8"')
-      // Center review sections with enforced text sizes
-      .replace(
-        /<div[^>]*class=["'][^"']*flex\s+items-center[^"']*["']/gi, 
-        '<div class="!text-center !flex !justify-center !text-sm !md:text-base !lg:text-lg prose-p:!text-sm prose-p:!md:text-base prose-p:!lg:text-lg"'
-      )
-      .replace(
-        /<div[^>]*class=["'][^"']*review-text[^"']*["']/gi, 
-        '<div class="!text-center !text-sm !md:text-base !lg:text-lg prose-p:!text-sm prose-p:!md:text-base prose-p:!lg:text-lg"'
-      )
-      // Wrap Amazon button in a centered div and style it - made more specific
-      .replace(
-        /<a[^>]*href=["']([^"']+)["'][^>]*class=["'][^"']*amazon-button[^"']*["'][^>]*>/gi,
-        '<div class="text-center w-full mt-5 mb-7"><a href="$1" target="_blank" rel="noopener noreferrer" class="amazon-button !inline-block px-6 py-3 sm:px-8 sm:py-3 bg-[#F97316] hover:bg-[#F97316]/90 text-white rounded-lg transition-colors text-base sm:text-lg font-medium shadow-sm hover:shadow-md">'
-      )
-      // Close the Amazon button wrapper properly
-      .replace(/<\/a>\s*(?=<\/div>|<hr|$)/gi, '</a></div>');
-  };
+  const [processedContent, setProcessedContent] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Fetch cached content
-  const { data: cachedContent } = useQuery({
-    queryKey: ["blog-post-cache", post.id],
-    queryFn: async () => {
-      console.log("Fetching cached content for post:", post.id);
-      
-      const { data: cache, error: cacheError } = await supabase
-        .from("blog_posts_cache")
-        .select("processed_content")
-        .eq("id", post.id)
-        .maybeSingle();
+  useEffect(() => {
+    const fetchProcessedContent = async () => {
+      try {
+        setIsLoading(true);
+        console.log('Fetching processed content for post:', post.id);
 
-      if (cacheError) {
-        console.error("Error fetching cached content:", cacheError);
-        throw cacheError;
-      }
+        // Try to get cached content first
+        const { data: cachedData, error: cacheError } = await supabase
+          .from("blog_posts_cache")
+          .select("processed_content, cache_version")
+          .eq("id", post.id)
+          .single();
 
-      if (cache?.processed_content) {
-        console.log("Using cached content");
-        return cache.processed_content;
-      }
+        if (cachedData?.processed_content) {
+          console.log('Found cached content with version:', cachedData.cache_version);
+          setProcessedContent(cachedData.processed_content);
+          setIsLoading(false);
+          return;
+        }
 
-      // If no cache, process content and store in cache
-      console.log("No cache found, processing content");
-      const processedContent = sanitizeContent(post.content);
-      
-      // Store in cache
-      const { error: insertError } = await supabase
-        .from("blog_posts_cache")
-        .upsert({
-          id: post.id,
-          processed_content: processedContent,
-          processed_at: new Date().toISOString(),
-          cache_version: "v1"
+        if (cacheError) {
+          console.log('Cache miss or error:', cacheError.message);
+        }
+
+        // If no cache found, process the content
+        const response = await supabase.functions.invoke('process-blog-content', {
+          body: { content: post.content }
         });
 
-      if (insertError) {
-        console.error("Error caching content:", insertError);
-        throw insertError;
-      }
+        if (response.error) {
+          throw new Error(`Error processing content: ${response.error.message}`);
+        }
 
-      return processedContent;
-    },
-    staleTime: 1000 * 60 * 60, // Cache for 1 hour
-  });
+        const processedContent = response.data?.processedContent;
+        
+        if (processedContent) {
+          // Store in cache
+          const { error: insertError } = await supabase
+            .from("blog_posts_cache")
+            .upsert({
+              id: post.id,
+              processed_content: processedContent,
+              cache_version: 'v1'
+            });
+
+          if (insertError) {
+            console.error('Error caching content:', insertError);
+          }
+
+          setProcessedContent(processedContent);
+        }
+      } catch (error) {
+        console.error('Error fetching processed content:', error);
+        // Fallback to original content if processing fails
+        setProcessedContent(post.content);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchProcessedContent();
+  }, [post.id, post.content]);
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center min-h-[200px]">
+        <Spinner />
+      </div>
+    );
+  }
 
   return (
     <div 
-      className="prose prose-sm md:prose-base lg:prose-lg w-full !max-w-none !m-0
-                 px-6 sm:px-8 md:px-16 lg:px-32 xl:px-48 2xl:px-64
-                 prose-p:text-sm md:prose-p:text-base lg:prose-p:text-lg
-                 prose-p:leading-relaxed prose-p:mb-4 prose-p:w-full prose-p:text-left
-                 
-                 prose-h1:text-2xl sm:prose-h1:text-3xl md:prose-h1:text-4xl lg:prose-h1:text-5xl
-                 prose-h1:font-bold prose-h1:mb-4 sm:prose-h1:mb-6 prose-h1:w-full prose-h1:!text-center
-                 prose-h1:px-4 sm:prose-h1:px-8
-                 
-                 prose-h2:text-xl sm:prose-h2:text-2xl md:prose-h2:text-3xl
-                 prose-h2:font-semibold prose-h2:mt-6 prose-h2:mb-4 prose-h2:w-full prose-h2:text-left
-                 
-                 prose-h3:text-xl sm:prose-h3:text-2xl md:prose-h3:text-3xl lg:prose-h3:text-4xl
-                 prose-h3:font-semibold prose-h3:mt-8 prose-h3:mb-6 prose-h3:w-full prose-h3:text-left
-                 prose-h3:text-gray-800 prose-h3:leading-tight
-                 
-                 prose-ul:list-disc prose-ul:pl-4 sm:prose-ul:pl-6 prose-ul:mb-4 prose-ul:w-full prose-ul:text-left
-                 prose-ol:list-decimal prose-ol:pl-4 sm:prose-ol:pl-6 prose-ol:mb-4 prose-ol:w-full prose-ol:text-left
-                 
-                 prose-img:w-full prose-img:h-auto prose-img:my-5 sm:prose-img:my-7
-                 prose-img:rounded-lg prose-img:shadow-md
-                 prose-img:max-w-[270px] sm:prose-img:max-w-[360px] lg:prose-img:max-w-[450px]
-                 prose-img:max-h-[400px] sm:prose-img:max-h-[500px] lg:prose-img:max-h-[600px]
-                 prose-img:object-contain
-                 prose-img:mx-auto
-                 
-                 prose-a:text-primary prose-a:font-medium prose-a:no-underline
-                 hover:prose-a:text-primary/90
-                 
-                 [&>*]:w-full [&>*]:!max-w-none [&>*]:!mx-0 [&>*]:!px-0 [&>*]:text-left
-                 
-                 [&_div.flex]:w-full [&_div.flex]:my-2 [&_div.flex]:justify-center
-                 
-                 [&_div.product-actions]:flex [&_div.product-actions]:flex-col
-                 [&_div.product-actions]:items-center [&_div.product-actions]:gap-4
-                 [&_div.product-actions]:my-6 [&_div.product-actions]:!text-center
-                 
-                 [&_a.amazon-button]:!inline-block
-                 [&_a.amazon-button]:px-6 [&_a.amazon-button]:py-3 
-                 [&_a.amazon-button]:sm:px-8 [&_a.amazon-button]:sm:py-3
-                 [&_a.amazon-button]:bg-[#F97316] [&_a.amazon-button]:hover:bg-[#F97316]/90 
-                 [&_a.amazon-button]:text-white [&_a.amazon-button]:rounded-lg
-                 [&_a.amazon-button]:transition-colors [&_a.amazon-button]:text-base
-                 [&_a.amazon-button]:sm:text-lg [&_a.amazon-button]:font-medium
-                 [&_a.amazon-button]:shadow-sm [&_a.amazon-button]:hover:shadow-md
-                 [&_a.amazon-button]:active:scale-95
-                 
-                 [&_.review-text_p]:!text-sm [&_.review-text_p]:!md:text-base [&_.review-text_p]:!lg:text-lg
-                 [&_.review-text]:!text-sm [&_.review-text]:!md:text-base [&_.review-text]:!lg:text-lg"
-      dangerouslySetInnerHTML={{ __html: cachedContent || sanitizeContent(post.content) }}
+      className="prose prose-lg max-w-none dark:prose-invert"
+      dangerouslySetInnerHTML={{ __html: processedContent || post.content }}
     />
   );
 };
