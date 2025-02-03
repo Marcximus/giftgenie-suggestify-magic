@@ -8,7 +8,8 @@ const corsHeaders = {
   'Cache-Control': 'public, max-age=3600'
 };
 
-const staticUrls = [
+// Define canonical routes with their priorities and update frequencies
+const canonicalRoutes = [
   {
     loc: 'https://getthegift.ai',
     changefreq: 'daily',
@@ -38,11 +39,12 @@ serve(async (req) => {
     const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-    // Fetch all published blog posts
+    // Fetch only published blog posts with valid slugs
     const { data: posts, error } = await supabase
       .from('blog_posts')
       .select('slug, updated_at, published_at')
       .not('published_at', 'is', null)
+      .not('slug', 'is', null)
       .order('published_at', { ascending: false });
 
     if (error) {
@@ -52,22 +54,22 @@ serve(async (req) => {
 
     console.log(`Found ${posts?.length || 0} published blog posts`);
 
-    // Generate sitemap XML
+    // Generate sitemap XML with canonical URLs only
     const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-${staticUrls.map(url => `
+${canonicalRoutes.map(url => `
   <url>
     <loc>${url.loc}</loc>
     <changefreq>${url.changefreq}</changefreq>
     <priority>${url.priority}</priority>
   </url>`).join('')}
-${posts?.map(post => `
+${posts?.map(post => post.slug ? `
   <url>
     <loc>https://getthegift.ai/blog/post/${post.slug}</loc>
     <lastmod>${new Date(post.updated_at || post.published_at).toISOString()}</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
-  </url>`).join('')}
+  </url>` : '').join('')}
 </urlset>`;
 
     return new Response(xml, { headers: corsHeaders });
@@ -75,10 +77,10 @@ ${posts?.map(post => `
   } catch (error) {
     console.error('Error generating sitemap:', error);
     
-    // Return basic sitemap with static pages if there's an error
+    // Return basic sitemap with only canonical static routes if there's an error
     const fallbackXml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-${staticUrls.map(url => `
+${canonicalRoutes.map(url => `
   <url>
     <loc>${url.loc}</loc>
     <changefreq>${url.changefreq}</changefreq>
