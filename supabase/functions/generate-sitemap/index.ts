@@ -3,6 +3,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, HEAD, OPTIONS',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
   'Content-Type': 'application/xml',
   'Cache-Control': 'public, max-age=3600'
@@ -27,6 +28,7 @@ const staticUrls = [
 ];
 
 serve(async (req) => {
+  // Handle preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -52,7 +54,7 @@ serve(async (req) => {
 
     console.log(`Found ${posts?.length || 0} published blog posts`);
 
-    // Generate sitemap XML
+    // Generate sitemap XML with proper XML declaration and encoding
     const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${staticUrls.map(url => `
@@ -70,7 +72,12 @@ ${posts?.map(post => `
   </url>`).join('')}
 </urlset>`;
 
-    return new Response(xml, { headers: corsHeaders });
+    return new Response(xml, { 
+      headers: {
+        ...corsHeaders,
+        'Content-Type': 'application/xml; charset=utf-8'
+      }
+    });
 
   } catch (error) {
     console.error('Error generating sitemap:', error);
@@ -87,7 +94,10 @@ ${staticUrls.map(url => `
 </urlset>`;
 
     return new Response(fallbackXml, {
-      headers: corsHeaders,
+      headers: {
+        ...corsHeaders,
+        'Content-Type': 'application/xml; charset=utf-8'
+      },
       status: 500
     });
   }
