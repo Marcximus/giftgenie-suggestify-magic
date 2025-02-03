@@ -3,7 +3,7 @@ import { Helmet } from "react-helmet";
 export const IndexMeta = () => {
   const canonicalUrl = "https://getthegift.ai";
   const title = "Get The Gift - AI-Powered Gift Suggestions | Find Perfect Gifts";
-  const description = "Discover perfect gift ideas with our AI-powered gift suggestion engine. Get personalized recommendations for any occasion, budget, and recipient. Find unique and thoughtful presents easily.";
+  const description = "Discover thoughtful, personalized gift ideas with our AI-powered gift suggestion engine. From birthdays to anniversaries, find the perfect present for any occasion, budget, or recipient. Our smart technology helps you choose meaningful gifts that show you care, with detailed recommendations and real product reviews.";
 
   return (
     <Helmet>
@@ -19,14 +19,15 @@ export const IndexMeta = () => {
       <meta property="og:title" content={title} />
       <meta property="og:description" content={description} />
       <meta property="og:url" content={canonicalUrl} />
-      <meta property="og:image" content={`${canonicalUrl}/og-image.png`} />
+      <meta property="og:image" content="/lovable-uploads/89d8ebcd-a5f6-4614-a505-80ed3d467943.png" />
       <meta property="og:site_name" content="Get The Gift" />
       
       {/* Twitter Card tags */}
       <meta name="twitter:card" content="summary_large_image" />
       <meta name="twitter:title" content={title} />
       <meta name="twitter:description" content={description} />
-      <meta name="twitter:image" content={`${canonicalUrl}/og-image.png`} />
+      <meta name="twitter:image" content="/lovable-uploads/89d8ebcd-a5f6-4614-a505-80ed3d467943.png" />
+      <meta name="twitter:site" content="@getthegift" />
       
       {/* Additional meta tags */}
       <meta name="robots" content="index, follow" />
