@@ -1,10 +1,56 @@
 import { Tables } from "@/integrations/supabase/types";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 interface BlogPostContentProps {
   post: Tables<"blog_posts">;
 }
 
 export const BlogPostContent = ({ post }: BlogPostContentProps) => {
+  // Fetch cached content
+  const { data: cachedContent } = useQuery({
+    queryKey: ["blog-post-cache", post.id],
+    queryFn: async () => {
+      console.log("Fetching cached content for post:", post.id);
+      
+      // Try to get cached content first
+      const { data: cache, error: cacheError } = await supabase
+        .from("blog_posts_cache")
+        .select("processed_content")
+        .eq("id", post.id)
+        .single();
+
+      if (cacheError) {
+        console.error("Error fetching cached content:", cacheError);
+      }
+
+      if (cache?.processed_content) {
+        console.log("Using cached content");
+        return cache.processed_content;
+      }
+
+      // If no cache, process content and store in cache
+      console.log("No cache found, processing content");
+      const processedContent = sanitizeContent(post.content);
+      
+      // Store in cache
+      const { error: insertError } = await supabase
+        .from("blog_posts_cache")
+        .upsert({
+          id: post.id,
+          processed_content: processedContent,
+          processed_at: new Date().toISOString(),
+        });
+
+      if (insertError) {
+        console.error("Error caching content:", insertError);
+      }
+
+      return processedContent;
+    },
+    staleTime: 1000 * 60 * 60, // Cache for 1 hour
+  });
+
   // Remove problematic inline styles from content
   const sanitizeContent = (content: string) => {
     return content
@@ -97,7 +143,7 @@ export const BlogPostContent = ({ post }: BlogPostContentProps) => {
                  
                  [&_.review-text_p]:!text-sm [&_.review-text_p]:!md:text-base [&_.review-text_p]:!lg:text-lg
                  [&_.review-text]:!text-sm [&_.review-text]:!md:text-base [&_.review-text]:!lg:text-lg"
-      dangerouslySetInnerHTML={{ __html: sanitizeContent(post.content) }}
+      dangerouslySetInnerHTML={{ __html: cachedContent || sanitizeContent(post.content) }}
     />
   );
 };
