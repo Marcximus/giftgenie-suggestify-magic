@@ -18,7 +18,7 @@ export const BlogPostContent = ({ post }: BlogPostContentProps) => {
         .from("blog_posts_cache")
         .select("processed_content")
         .eq("id", post.id)
-        .single();
+        .maybeSingle();
 
       if (cacheError) {
         console.error("Error fetching cached content:", cacheError);
@@ -40,6 +40,7 @@ export const BlogPostContent = ({ post }: BlogPostContentProps) => {
           id: post.id,
           processed_content: processedContent,
           processed_at: new Date().toISOString(),
+          cache_version: 1
         });
 
       if (insertError) {
