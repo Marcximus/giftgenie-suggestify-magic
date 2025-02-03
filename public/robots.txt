@@ -1,13 +1,13 @@
 User-agent: *
 Allow: /
 
-# Sitemap
+# Sitemap location
 Sitemap: https://getthegift.ai/sitemap.xml
 
 # Crawl-delay
-Crawl-delay: 5
+Crawl-delay: 1
 
-# Disallow paths
+# Allow all paths except admin and edit
 Disallow: /admin/
 Disallow: /blog/edit/
-Disallow: /blog/new
+Disallow: /blog/new/
