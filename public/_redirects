@@ -1,4 +1,4 @@
-# Redirect HTTP to HTTPS
+# Force HTTPS and remove www
 http://getthegift.ai/* https://getthegift.ai/:splat 301!
 http://www.getthegift.ai/* https://getthegift.ai/:splat 301!
 https://www.getthegift.ai/* https://getthegift.ai/:splat 301!
