@@ -223,7 +223,7 @@ export type Database = {
           published_at?: string | null
           reading_time?: number | null
           related_posts?: Json | null
-          slug?: string
+          slug: string
           title?: string
           updated_at?: string | null
           word_count?: number | null
@@ -258,6 +258,35 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      blog_posts_cache: {
+        Row: {
+          id: string
+          processed_content: string
+          processed_at: string | null
+          cache_version: string | null
+        }
+        Insert: {
+          id: string
+          processed_content: string
+          processed_at?: string | null
+          cache_version?: string | null
+        }
+        Update: {
+          id?: string
+          processed_content?: string
+          processed_at?: string | null
+          cache_version?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "blog_posts_cache_id_fkey"
+            columns: ["id"]
+            isOneToOne: true
+            referencedRelation: "blog_posts"
+            referencedColumns: ["id"]
+          }
+        ]
       }
       popular_searches: {
         Row: {
@@ -345,7 +374,7 @@ export type Database = {
           brand?: string | null
           category?: string | null
           created_at?: string | null
-          description?: string
+          description: string
           gtin?: string | null
           id?: string
           mpn?: string | null
@@ -482,10 +511,10 @@ export type TablesUpdate<
     : never
   : PublicTableNameOrOptions extends keyof PublicSchema["Tables"]
     ? PublicSchema["Tables"][PublicTableNameOrOptions] extends {
-        Update: infer U
-      }
-      ? U
-      : never
+      Update: infer U
+    }
+    ? U
+    : never
     : never
 
 export type Enums<
