@@ -6,8 +6,5 @@ https://www.getthegift.ai/* https://getthegift.ai/:splat 301!
 # Handle sitemap.xml requests
 /sitemap.xml https://ckcqttsdpxfbpkzljctl.functions.supabase.co/functions/v1/generate-sitemap 200!
 
-# Serve robots.txt directly from public directory
-/robots.txt /robots.txt 200
-
 # Handle all other routes through the SPA
 /* /index.html 200

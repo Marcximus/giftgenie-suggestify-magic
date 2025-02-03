@@ -4,15 +4,18 @@
     <loc>https://getthegift.ai</loc>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
+    <link rel="canonical" href="https://getthegift.ai" />
   </url>
   <url>
     <loc>https://getthegift.ai/about</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
+    <link rel="canonical" href="https://getthegift.ai/about" />
   </url>
   <url>
     <loc>https://getthegift.ai/blog</loc>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
+    <link rel="canonical" href="https://getthegift.ai/blog" />
   </url>
 </urlset>
