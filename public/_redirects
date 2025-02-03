@@ -3,11 +3,13 @@ http://getthegift.ai/* https://getthegift.ai/:splat 301!
 http://www.getthegift.ai/* https://getthegift.ai/:splat 301!
 https://www.getthegift.ai/* https://getthegift.ai/:splat 301!
 
-# Handle robots.txt directly - this must come before the catch-all rule
+# Handle robots.txt and sitemap.xml directly
 /robots.txt /robots.txt 200
-
-# Handle sitemap.xml requests
 /sitemap.xml https://ckcqttsdpxfbpkzljctl.functions.supabase.co/functions/v1/generate-sitemap 200!
+/sitemap_index.xml /sitemap.xml 301
+
+# Return 404 for non-existent sitemaps
+/sitemap_*.xml /404.html 404
 
 # Handle all other routes through the SPA
 /* /index.html 200
