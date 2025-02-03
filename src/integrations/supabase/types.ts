@@ -259,6 +259,35 @@ export type Database = {
         }
         Relationships: []
       }
+      blog_posts_cache: {
+        Row: {
+          cache_version: string | null
+          id: string
+          processed_at: string | null
+          processed_content: string
+        }
+        Insert: {
+          cache_version?: string | null
+          id: string
+          processed_at?: string | null
+          processed_content: string
+        }
+        Update: {
+          cache_version?: string | null
+          id?: string
+          processed_at?: string | null
+          processed_content?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "blog_posts_cache_id_fkey"
+            columns: ["id"]
+            isOneToOne: true
+            referencedRelation: "blog_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       popular_searches: {
         Row: {
           created_at: string | null
