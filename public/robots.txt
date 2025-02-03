@@ -4,10 +4,10 @@ Allow: /
 # Sitemap location
 Sitemap: https://getthegift.ai/sitemap.xml
 
-# Crawl-delay
+# Crawl-delay to be nice to servers
 Crawl-delay: 1
 
-# Allow all paths except admin and edit
+# Disallow admin and edit routes
 Disallow: /admin/
 Disallow: /blog/edit/
 Disallow: /blog/new/

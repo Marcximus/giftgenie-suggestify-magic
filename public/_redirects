@@ -3,7 +3,7 @@ http://getthegift.ai/* https://getthegift.ai/:splat 301!
 http://www.getthegift.ai/* https://getthegift.ai/:splat 301!
 https://www.getthegift.ai/* https://getthegift.ai/:splat 301!
 
-# Handle robots.txt directly
+# Handle robots.txt directly - this must come before the catch-all rule
 /robots.txt /robots.txt 200
 
 # Handle sitemap.xml requests
