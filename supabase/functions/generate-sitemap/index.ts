@@ -9,6 +9,7 @@ const corsHeaders = {
   'Cache-Control': 'public, max-age=3600'
 };
 
+// These are our canonical static URLs
 const staticUrls = [
   {
     loc: 'https://getthegift.ai',
@@ -40,7 +41,7 @@ serve(async (req) => {
     const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-    // Fetch all published blog posts
+    // Only fetch published blog posts that should be indexed
     const { data: posts, error } = await supabase
       .from('blog_posts')
       .select('slug, updated_at, published_at')
@@ -56,6 +57,7 @@ serve(async (req) => {
 
     // Generate sitemap XML with proper XML declaration and encoding
     const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" href="/sitemap.xsl"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${staticUrls.map(url => `
   <url>
@@ -63,13 +65,16 @@ ${staticUrls.map(url => `
     <changefreq>${url.changefreq}</changefreq>
     <priority>${url.priority}</priority>
   </url>`).join('')}
-${posts?.map(post => `
+${posts?.map(post => {
+  const canonicalUrl = `https://getthegift.ai/blog/post/${post.slug}`;
+  return `
   <url>
-    <loc>https://getthegift.ai/blog/post/${post.slug}</loc>
+    <loc>${canonicalUrl}</loc>
     <lastmod>${new Date(post.updated_at || post.published_at).toISOString()}</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
-  </url>`).join('')}
+  </url>`;
+}).join('')}
 </urlset>`;
 
     return new Response(xml, { 
@@ -84,6 +89,7 @@ ${posts?.map(post => `
     
     // Return basic sitemap with static pages if there's an error
     const fallbackXml = `<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" href="/sitemap.xsl"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${staticUrls.map(url => `
   <url>
