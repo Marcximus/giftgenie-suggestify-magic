@@ -1,4 +1,4 @@
-import { Helmet } from "react-helmet";
+import { Helmet } from 'react-helmet-async';
 
 export const IndexMeta = () => {
   const canonicalUrl = "https://getthegift.ai";
