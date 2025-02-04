@@ -13,6 +13,16 @@ export const BlogPostMeta = ({ post }: BlogPostMetaProps) => {
   const publishDate = post.published_at ? new Date(post.published_at).toISOString() : "";
   const modifyDate = post.updated_at ? new Date(post.updated_at).toISOString() : publishDate;
 
+  // Ensure we always have a title
+  const pageTitle = post.meta_title || post.title;
+  const fullTitle = `${pageTitle} - Get The Gift Blog`;
+
+  // Ensure we always have a description
+  const description = post.meta_description || post.excerpt || `Read ${post.title} on Get The Gift Blog`;
+
+  // Construct the canonical URL
+  const canonicalUrl = `https://getthegift.ai/blog/post/${post.slug}`;
+
   // Prepare product data with ratings if available
   const productData = firstProduct ? {
     "@type": "Product",
@@ -50,35 +60,29 @@ export const BlogPostMeta = ({ post }: BlogPostMetaProps) => {
       {
         "@type": "ListItem",
         "position": 3,
-        "name": post.title,
-        "item": `https://getthegift.ai/blog/post/${post.slug}`
+        "name": pageTitle,
+        "item": canonicalUrl
       }
     ]
   };
 
-  // Construct the canonical URL
-  const canonicalUrl = `https://getthegift.ai/blog/post/${post.slug}`;
-
   return (
     <Helmet>
       {/* Clear any existing meta tags */}
-      <title>{post.meta_title || post.title} - Get The Gift Blog</title>
+      <title>{fullTitle}</title>
       <meta 
         name="description" 
-        content={post.meta_description || post.excerpt || `Read ${post.title} on Get The Gift Blog`} 
+        content={description}
       />
       <meta name="keywords" content={post.meta_keywords || ''} />
       
-      {/* Canonical URL - IMPORTANT for preventing duplicate content */}
+      {/* Canonical URL */}
       <link rel="canonical" href={canonicalUrl} />
       
       {/* Open Graph tags */}
       <meta property="og:type" content="article" />
-      <meta property="og:title" content={post.meta_title || post.title} />
-      <meta 
-        property="og:description" 
-        content={post.meta_description || post.excerpt || `Read ${post.title} on Get The Gift Blog`} 
-      />
+      <meta property="og:title" content={pageTitle} />
+      <meta property="og:description" content={description} />
       {post.image_url && (
         <meta property="og:image" content={post.image_url} />
       )}
@@ -93,11 +97,8 @@ export const BlogPostMeta = ({ post }: BlogPostMetaProps) => {
       
       {/* Twitter Card tags */}
       <meta name="twitter:card" content="summary_large_image" />
-      <meta name="twitter:title" content={post.meta_title || post.title} />
-      <meta 
-        name="twitter:description" 
-        content={post.meta_description || post.excerpt || `Read ${post.title} on Get The Gift Blog`} 
-      />
+      <meta name="twitter:title" content={pageTitle} />
+      <meta name="twitter:description" content={description} />
       {post.image_url && (
         <meta name="twitter:image" content={post.image_url} />
       )}
@@ -107,7 +108,7 @@ export const BlogPostMeta = ({ post }: BlogPostMetaProps) => {
         {JSON.stringify({
           "@context": "https://schema.org",
           "@type": "BlogPosting",
-          "headline": post.title,
+          "headline": pageTitle,
           "image": post.image_url,
           "author": {
             "@type": "Person",
@@ -123,7 +124,7 @@ export const BlogPostMeta = ({ post }: BlogPostMetaProps) => {
           },
           "datePublished": publishDate,
           "dateModified": modifyDate,
-          "description": post.meta_description || post.excerpt,
+          "description": description,
           "mainEntityOfPage": {
             "@type": "WebPage",
             "@id": canonicalUrl
