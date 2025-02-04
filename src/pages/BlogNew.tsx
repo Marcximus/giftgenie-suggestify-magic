@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import BlogPostForm from "@/components/blog/BlogPostForm";
 import { supabase } from "@/integrations/supabase/client";
+import { Helmet } from "react-helmet";
 
 const BlogNew = () => {
   const { data: nextScheduledPost, isLoading } = useQuery({
@@ -64,13 +65,19 @@ const BlogNew = () => {
   console.log("Rendering BlogNew with title:", nextScheduledPost);
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-8">Create New Blog Post</h1>
-      <BlogPostForm 
-        initialTitle={nextScheduledPost} 
-        key={nextScheduledPost} 
-      />
-    </div>
+    <>
+      <Helmet>
+        <title>Create New Blog Post - Get The Gift</title>
+        <meta name="robots" content="noindex, nofollow" />
+      </Helmet>
+      <div className="container mx-auto px-4 py-8">
+        <h1 className="text-3xl font-bold mb-8">Create New Blog Post</h1>
+        <BlogPostForm 
+          initialTitle={nextScheduledPost} 
+          key={nextScheduledPost} 
+        />
+      </div>
+    </>
   );
 };
 

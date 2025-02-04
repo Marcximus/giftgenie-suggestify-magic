@@ -10,6 +10,7 @@ import { StatsOverview } from "@/components/blog/admin/StatsOverview";
 import { PublishedPostsTab } from "@/components/blog/admin/PublishedPostsTab";
 import { ScheduledPostsTab } from "@/components/blog/admin/ScheduledPostsTab";
 import { BulkTitleUploader } from "@/components/blog/admin/BulkTitleUploader";
+import { Helmet } from "react-helmet";
 
 const BlogAdmin = () => {
   const { toast } = useToast();
@@ -133,6 +134,10 @@ const BlogAdmin = () => {
 
   return (
     <div className="container mx-auto px-4 py-8">
+      <Helmet>
+        <title>Blog Admin Dashboard - Get The Gift</title>
+        <meta name="robots" content="noindex, nofollow" />
+      </Helmet>
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold">Blog Posts</h1>
         <div className="flex gap-4">
