@@ -56,9 +56,12 @@ export const BlogPostMeta = ({ post }: BlogPostMetaProps) => {
     ]
   };
 
+  // Construct the canonical URL
+  const canonicalUrl = `https://getthegift.ai/blog/post/${post.slug}`;
+
   return (
     <Helmet>
-      {/* Override any existing meta tags */}
+      {/* Clear any existing meta tags */}
       <title>{post.meta_title || post.title} - Get The Gift Blog</title>
       <meta 
         name="description" 
@@ -66,17 +69,20 @@ export const BlogPostMeta = ({ post }: BlogPostMetaProps) => {
       />
       <meta name="keywords" content={post.meta_keywords || ''} />
       
+      {/* Canonical URL - IMPORTANT for preventing duplicate content */}
+      <link rel="canonical" href={canonicalUrl} />
+      
       {/* Open Graph tags */}
       <meta property="og:type" content="article" />
-      <meta property="og:title" content={`${post.title} - Get The Gift Blog`} />
+      <meta property="og:title" content={post.meta_title || post.title} />
       <meta 
         property="og:description" 
-        content={post.excerpt || `Read ${post.title} on Get The Gift Blog`} 
+        content={post.meta_description || post.excerpt || `Read ${post.title} on Get The Gift Blog`} 
       />
       {post.image_url && (
         <meta property="og:image" content={post.image_url} />
       )}
-      <meta property="og:url" content={`https://getthegift.ai/blog/post/${post.slug}`} />
+      <meta property="og:url" content={canonicalUrl} />
       <meta property="og:site_name" content="Get The Gift" />
       
       {/* Article specific metadata */}
@@ -88,13 +94,13 @@ export const BlogPostMeta = ({ post }: BlogPostMetaProps) => {
       {/* Twitter Card tags */}
       <meta name="twitter:card" content="summary_large_image" />
       <meta name="twitter:title" content={post.meta_title || post.title} />
-      <meta name="twitter:description" content={post.meta_description || post.excerpt || `Read ${post.title} on Get The Gift Blog`} />
+      <meta 
+        name="twitter:description" 
+        content={post.meta_description || post.excerpt || `Read ${post.title} on Get The Gift Blog`} 
+      />
       {post.image_url && (
         <meta name="twitter:image" content={post.image_url} />
       )}
-      
-      {/* Canonical URL */}
-      <link rel="canonical" href={`https://getthegift.ai/blog/post/${post.slug}`} />
       
       {/* Schema.org structured data */}
       <script type="application/ld+json">
@@ -120,7 +126,7 @@ export const BlogPostMeta = ({ post }: BlogPostMetaProps) => {
           "description": post.meta_description || post.excerpt,
           "mainEntityOfPage": {
             "@type": "WebPage",
-            "@id": `https://getthegift.ai/blog/post/${post.slug}`
+            "@id": canonicalUrl
           },
           "breadcrumb": breadcrumbList,
           ...(productData && {
