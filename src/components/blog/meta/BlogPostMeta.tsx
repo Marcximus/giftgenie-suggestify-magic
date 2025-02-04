@@ -58,6 +58,7 @@ export const BlogPostMeta = ({ post }: BlogPostMetaProps) => {
 
   return (
     <Helmet>
+      {/* Override any existing meta tags */}
       <title>{post.meta_title || post.title} - Get The Gift Blog</title>
       <meta 
         name="description" 
