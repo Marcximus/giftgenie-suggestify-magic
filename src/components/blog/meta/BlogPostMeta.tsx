@@ -27,9 +27,9 @@ export const BlogPostMeta = ({ post }: BlogPostMetaProps) => {
   // Prepare product data with required fields for Google rich results
   const productData = firstProduct ? {
     "@type": "Product",
-    "name": firstProduct.productTitle,
+    "name": firstProduct.productTitle || firstProduct.title || "Gift Item", // Ensure name is always present
     "image": firstProduct.imageUrl,
-    "description": firstProduct.description,
+    "description": firstProduct.description || "Gift item from our curated selection",
     "url": firstProduct.affiliateLink,
     // Always include offers
     "offers": {
