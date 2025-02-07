@@ -1,3 +1,4 @@
+
 import { Tables } from "@/integrations/supabase/types";
 import { Helmet } from "react-helmet";
 
@@ -23,20 +24,45 @@ export const BlogPostMeta = ({ post }: BlogPostMetaProps) => {
   // Construct the canonical URL
   const canonicalUrl = `https://getthegift.ai/blog/post/${post.slug}`;
 
-  // Prepare product data with ratings if available
+  // Prepare product data with required fields for Google rich results
   const productData = firstProduct ? {
     "@type": "Product",
     "name": firstProduct.productTitle,
     "image": firstProduct.imageUrl,
-    "url": firstProduct.affiliateLink,
     "description": firstProduct.description,
+    "url": firstProduct.affiliateLink,
+    // Always include offers
+    "offers": {
+      "@type": "Offer",
+      "priceCurrency": "USD",
+      "price": firstProduct.price ? firstProduct.price.toString() : "0",
+      "availability": "https://schema.org/InStock",
+      "url": firstProduct.affiliateLink
+    },
+    // Include rating if available
     ...(firstProduct.rating && {
       "aggregateRating": {
         "@type": "AggregateRating",
         "ratingValue": firstProduct.rating,
-        "ratingCount": firstProduct.totalRatings || 0,
+        "ratingCount": firstProduct.totalRatings || 1,
         "bestRating": "5",
         "worstRating": "1"
+      }
+    }),
+    // Add a basic review if rating exists
+    ...(firstProduct.rating && {
+      "review": {
+        "@type": "Review",
+        "reviewRating": {
+          "@type": "Rating",
+          "ratingValue": firstProduct.rating,
+          "bestRating": "5",
+          "worstRating": "1"
+        },
+        "author": {
+          "@type": "Organization",
+          "name": "Get The Gift"
+        }
       }
     })
   } : null;
