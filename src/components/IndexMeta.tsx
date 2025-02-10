@@ -1,9 +1,10 @@
+
 import { Helmet } from "react-helmet";
 
 export const IndexMeta = () => {
   const canonicalUrl = "https://getthegift.ai";
-  const title = "Get The Gift - AI-Powered Gift Suggestions | Find Perfect Gifts";
-  const description = "Discover thoughtful, personalized gift ideas with our AI-powered gift suggestion engine. From birthdays to anniversaries, find the perfect present for any occasion, budget, or recipient. Our smart technology helps you choose meaningful gifts that show you care, with detailed recommendations and real product reviews.";
+  const title = "Best Gift Ideas Powered by AI | Personalized & Unique Gifts for Every Occasion";
+  const description = "Discover personalized, unique gift ideas with our AI-powered gift finder. Find the best presents for birthdays, holidays, and special occasions from top retailers.";
 
   return (
     <Helmet>
