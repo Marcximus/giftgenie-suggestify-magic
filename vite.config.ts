@@ -1,3 +1,4 @@
+
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
@@ -17,7 +18,13 @@ export default defineConfig(({ mode }) => ({
         headers: {
           'Accept': 'application/xml'
         },
-        timeout: 30000, // Increase timeout to 30 seconds
+        timeout: 30000
+      },
+      '/functions/v1': {
+        target: 'https://ckcqttsdpxfbpkzljctl.functions.supabase.co',
+        changeOrigin: true,
+        secure: true,
+        rewrite: (path) => path.replace(/^\/functions\/v1/, '/functions/v1'),
         configure: (proxy, _options) => {
           proxy.on('error', (err, _req, _res) => {
             console.log('proxy error', err);
