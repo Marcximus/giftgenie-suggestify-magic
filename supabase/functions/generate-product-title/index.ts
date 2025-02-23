@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 
@@ -32,7 +33,7 @@ serve(async (req) => {
         messages: [
           {
             role: "system",
-            content: "You are a product title optimizer. Return only the simplified title, max 2-5 words."
+            content: "You are a product title optimizer. Return only the simplified title, max 2-5 words. Do not include any quotation marks in your response."
           },
           { 
             role: "user", 
@@ -58,7 +59,10 @@ serve(async (req) => {
       throw new Error('Invalid response format from DeepSeek API');
     }
 
-    const optimizedTitle = data.choices[0].message.content.trim();
+    // Remove any surrounding quotes and trim whitespace
+    let optimizedTitle = data.choices[0].message.content.trim();
+    optimizedTitle = optimizedTitle.replace(/^["'](.*)["']$/, '$1').trim();
+    
     console.log('Generated title:', optimizedTitle);
 
     return new Response(
