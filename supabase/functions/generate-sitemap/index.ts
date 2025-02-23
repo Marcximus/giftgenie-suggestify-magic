@@ -42,7 +42,7 @@ serve(async (req) => {
   }
 
   try {
-    console.log('Starting sitemap generation...');
+    console.log('Starting sitemap generation...', { timestamp: new Date().toISOString() });
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -51,12 +51,17 @@ serve(async (req) => {
     console.log('Fetching published blog posts...');
     const { data: posts, error: postsError } = await supabase
       .from('blog_posts')
-      .select('slug, updated_at')
+      .select('slug, updated_at, published_at, title')
       .not('published_at', 'is', null)
       .order('published_at', { ascending: false });
 
     if (postsError) {
-      console.error('Error fetching blog posts:', postsError);
+      console.error('Error fetching blog posts:', {
+        error: postsError,
+        details: postsError.details,
+        hint: postsError.hint,
+        code: postsError.code
+      });
       // Return basic sitemap without blog posts if database query fails
       const basicSitemap = generateSitemapXML([]);
       return new Response(basicSitemap, {
@@ -71,29 +76,61 @@ serve(async (req) => {
     console.log(`Found ${posts?.length || 0} published blog posts`);
     
     if (posts) {
-      // Log each post being processed
+      // Log detailed information about each post
       posts.forEach((post, index) => {
         console.log(`Processing post ${index + 1}/${posts.length}:`, {
           slug: post.slug,
-          lastUpdated: post.updated_at
+          title: post.title,
+          publishedAt: post.published_at,
+          lastUpdated: post.updated_at,
+          hasSlug: !!post.slug,
+          slugLength: post.slug?.length
         });
       });
+
+      // Log any posts that might be problematic
+      const problemPosts = posts.filter(post => !post.slug || post.slug.length === 0);
+      if (problemPosts.length > 0) {
+        console.warn('Found posts with missing or empty slugs:', problemPosts);
+      }
     }
 
     const blogUrls = (posts || [])
       .filter(post => {
         if (!post.slug) {
-          console.warn('Found post without slug:', post);
+          console.warn('Found post without slug:', {
+            title: post.title,
+            publishedAt: post.published_at,
+            updatedAt: post.updated_at
+          });
+          return false;
+        }
+        if (!/^[a-zA-Z0-9-]+$/.test(post.slug)) {
+          console.warn('Found post with invalid slug characters:', {
+            slug: post.slug,
+            title: post.title
+          });
           return false;
         }
         return true;
       })
-      .map(post => `https://getthegift.ai/blog/post/${post.slug}`);
+      .map(post => {
+        const url = `https://getthegift.ai/blog/post/${post.slug}`;
+        console.log('Generated URL:', url);
+        return url;
+      });
 
-    console.log(`Generated ${blogUrls.length} blog URLs for sitemap`);
+    console.log(`Generated ${blogUrls.length} blog URLs for sitemap`, {
+      totalPosts: posts?.length || 0,
+      urlsGenerated: blogUrls.length,
+      skippedPosts: (posts?.length || 0) - blogUrls.length
+    });
     
     const sitemap = generateSitemapXML(blogUrls);
-    console.log('Sitemap generation completed successfully');
+    console.log('Sitemap generation completed successfully', {
+      timestamp: new Date().toISOString(),
+      totalUrls: blogUrls.length + 3 // +3 for static pages
+    });
 
     return new Response(sitemap, {
       headers: {
@@ -104,7 +141,11 @@ serve(async (req) => {
     });
 
   } catch (error) {
-    console.error('Error generating sitemap:', error);
+    console.error('Error generating sitemap:', {
+      error: error.message,
+      stack: error.stack,
+      timestamp: new Date().toISOString()
+    });
     
     // Return basic sitemap without blog posts in case of error
     const basicSitemap = generateSitemapXML([]);
