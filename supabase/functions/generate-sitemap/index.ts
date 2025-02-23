@@ -1,110 +1,119 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, HEAD, OPTIONS',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Content-Type': 'application/xml',
-  'Cache-Control': 'public, max-age=3600'
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { corsHeaders } from '../_shared/cors.ts';
+
+const generateSitemapXML = (urls: string[]) => {
+  const urlElements = urls
+    .map(url => `
+    <url>
+      <loc>${url}</loc>
+      <changefreq>daily</changefreq>
+      <priority>0.7</priority>
+    </url>`)
+    .join('');
+
+  return `<?xml version="1.0" encoding="UTF-8"?>
+  <?xml-stylesheet type="text/xsl" href="/sitemap.xsl"?>
+  <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+    <url>
+      <loc>https://getthegift.ai/</loc>
+      <changefreq>daily</changefreq>
+      <priority>1.0</priority>
+    </url>
+    <url>
+      <loc>https://getthegift.ai/blog</loc>
+      <changefreq>daily</changefreq>
+      <priority>0.8</priority>
+    </url>
+    <url>
+      <loc>https://getthegift.ai/about</loc>
+      <changefreq>monthly</changefreq>
+      <priority>0.5</priority>
+    </url>
+    ${urlElements}
+  </urlset>`;
 };
 
-// These are our canonical static URLs
-const staticUrls = [
-  {
-    loc: 'https://getthegift.ai',
-    changefreq: 'daily',
-    priority: '1.0'
-  },
-  {
-    loc: 'https://getthegift.ai/about',
-    changefreq: 'weekly',
-    priority: '0.8'
-  },
-  {
-    loc: 'https://getthegift.ai/blog',
-    changefreq: 'daily',
-    priority: '0.9'
-  }
-];
-
 serve(async (req) => {
-  // Handle preflight requests
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    console.log('Generating sitemap...');
-    
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseAnonKey);
+    console.log('Starting sitemap generation...');
 
-    // Only fetch published blog posts that should be indexed
-    const { data: posts, error } = await supabase
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
+    console.log('Fetching published blog posts...');
+    const { data: posts, error: postsError } = await supabase
       .from('blog_posts')
-      .select('slug, updated_at, published_at')
+      .select('slug, updated_at')
       .not('published_at', 'is', null)
       .order('published_at', { ascending: false });
 
-    if (error) {
-      console.error('Database error:', error);
-      throw error;
+    if (postsError) {
+      console.error('Error fetching blog posts:', postsError);
+      // Return basic sitemap without blog posts if database query fails
+      const basicSitemap = generateSitemapXML([]);
+      return new Response(basicSitemap, {
+        headers: {
+          ...corsHeaders,
+          'Content-Type': 'application/xml',
+          'Cache-Control': 'public, max-age=3600'
+        }
+      });
     }
 
     console.log(`Found ${posts?.length || 0} published blog posts`);
+    
+    if (posts) {
+      // Log each post being processed
+      posts.forEach((post, index) => {
+        console.log(`Processing post ${index + 1}/${posts.length}:`, {
+          slug: post.slug,
+          lastUpdated: post.updated_at
+        });
+      });
+    }
 
-    // Generate sitemap XML with proper XML declaration and encoding
-    const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<?xml-stylesheet type="text/xsl" href="/sitemap.xsl"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-${staticUrls.map(url => `
-  <url>
-    <loc>${url.loc}</loc>
-    <changefreq>${url.changefreq}</changefreq>
-    <priority>${url.priority}</priority>
-  </url>`).join('')}
-${posts?.map(post => {
-  const canonicalUrl = `https://getthegift.ai/blog/post/${post.slug}`;
-  return `
-  <url>
-    <loc>${canonicalUrl}</loc>
-    <lastmod>${new Date(post.updated_at || post.published_at).toISOString()}</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>`;
-}).join('')}
-</urlset>`;
+    const blogUrls = (posts || [])
+      .filter(post => {
+        if (!post.slug) {
+          console.warn('Found post without slug:', post);
+          return false;
+        }
+        return true;
+      })
+      .map(post => `https://getthegift.ai/blog/post/${post.slug}`);
 
-    return new Response(xml, { 
+    console.log(`Generated ${blogUrls.length} blog URLs for sitemap`);
+    
+    const sitemap = generateSitemapXML(blogUrls);
+    console.log('Sitemap generation completed successfully');
+
+    return new Response(sitemap, {
       headers: {
         ...corsHeaders,
-        'Content-Type': 'application/xml; charset=utf-8'
+        'Content-Type': 'application/xml',
+        'Cache-Control': 'public, max-age=3600'
       }
     });
 
   } catch (error) {
     console.error('Error generating sitemap:', error);
     
-    // Return basic sitemap with static pages if there's an error
-    const fallbackXml = `<?xml version="1.0" encoding="UTF-8"?>
-<?xml-stylesheet type="text/xsl" href="/sitemap.xsl"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-${staticUrls.map(url => `
-  <url>
-    <loc>${url.loc}</loc>
-    <changefreq>${url.changefreq}</changefreq>
-    <priority>${url.priority}</priority>
-  </url>`).join('')}
-</urlset>`;
-
-    return new Response(fallbackXml, {
+    // Return basic sitemap without blog posts in case of error
+    const basicSitemap = generateSitemapXML([]);
+    return new Response(basicSitemap, {
       headers: {
         ...corsHeaders,
-        'Content-Type': 'application/xml; charset=utf-8'
-      },
-      status: 500
+        'Content-Type': 'application/xml',
+        'Cache-Control': 'public, max-age=3600'
+      }
     });
   }
 });
