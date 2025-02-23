@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { loadingMessages } from './loadingMessages';
 import { Spinner } from "@/components/ui/spinner";
@@ -64,7 +65,7 @@ export const LoadingMessage = ({ isLoading }: LoadingMessageProps) => {
       `}
       aria-live="polite"
     >
-      <div className="-ml-[4%]">
+      <div className="-ml-[3%] sm:-ml-[4%]">
         <Spinner variant="infinite" className="w-16 h-16 sm:w-20 sm:h-20" />
       </div>
       <p className="text-[#8E9196] text-center text-sm md:text-base font-medium max-w-md px-4 animate-pulse-text">
