@@ -23,6 +23,7 @@ export const ProductImage = ({ title, imageUrl }: ProductImageProps) => {
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
+  const [placeholderLoaded, setPlaceholderLoaded] = useState(false);
   const imageRef = useRef<HTMLImageElement>(null);
   
   const { isLoadingFallback, fetchGoogleImage } = useFallbackImage(
@@ -44,6 +45,10 @@ export const ProductImage = ({ title, imageUrl }: ProductImageProps) => {
     setIsLoading(false);
     setImageLoaded(true);
     setHasError(false);
+  };
+
+  const handlePlaceholderLoad = () => {
+    setPlaceholderLoaded(true);
   };
 
   useEffect(() => {
@@ -96,9 +101,12 @@ export const ProductImage = ({ title, imageUrl }: ProductImageProps) => {
         <img
           src={getTinyPlaceholder(currentImageUrl)}
           alt=""
-          className="absolute inset-0 w-full h-full object-contain blur-sm scale-105 transform"
+          className={`absolute inset-0 w-full h-full object-contain transform transition-opacity duration-300 ${
+            placeholderLoaded ? 'blur-sm scale-105 opacity-100' : 'opacity-0'
+          }`}
           aria-hidden="true"
           loading="lazy"
+          onLoad={handlePlaceholderLoad}
         />
       )}
       
