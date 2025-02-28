@@ -1,4 +1,3 @@
-
 // Blacklisted terms that indicate irrelevant products
 const BLACKLISTED_TERMS = [
   'cancel subscription',

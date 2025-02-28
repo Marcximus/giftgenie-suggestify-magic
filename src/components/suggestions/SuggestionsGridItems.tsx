@@ -29,17 +29,9 @@ export const SuggestionsGridItems = ({
     onAllSuggestionsProcessed
   });
 
-  // If we're loading and have no visible suggestions yet, show the loading skeletons
+  // Render loading skeletons or visible suggestions
   if (isLoading && visibleSuggestions.length === 0) {
-    return (
-      <>
-        <SuggestionLoadingSkeletons count={8} />
-        {/* Adding the loading indicator as a separate div outside the grid */}
-        <div className="col-span-full w-full mt-8">
-          <LoadingProgressIndicator processedCount={0} total={8} />
-        </div>
-      </>
-    );
+    return <SuggestionLoadingSkeletons count={8} />;
   }
 
   // Render a mix of loaded suggestions and skeletons during partial loading
@@ -48,23 +40,15 @@ export const SuggestionsGridItems = ({
 
   return (
     <>
-      {/* Display loaded suggestions */}
-      {displaySuggestions.map((suggestion, index) => {
-        // Only pass string descriptions, not undefined or objects
-        const customDescription = suggestion.title && typeof customDescriptions[suggestion.title] === 'string' 
-          ? customDescriptions[suggestion.title] 
-          : undefined;
-        
-        return (
-          <SuggestionItem
-            key={`item-${index}-${suggestion.amazon_asin || suggestion.title}`}
-            suggestion={suggestion}
-            index={index}
-            customDescription={customDescription}
-            onMoreLikeThis={onMoreLikeThis}
-          />
-        );
-      })}
+      {displaySuggestions.map((suggestion, index) => (
+        <SuggestionItem
+          key={`item-${index}-${suggestion.amazon_asin || suggestion.title}`}
+          suggestion={suggestion}
+          index={index}
+          customDescription={suggestion.title ? customDescriptions[suggestion.title] : undefined}
+          onMoreLikeThis={onMoreLikeThis}
+        />
+      ))}
 
       {/* Show skeletons for remaining slots during loading */}
       {skeletonsNeeded > 0 && Array.from({ length: skeletonsNeeded }).map((_, index) => (
@@ -77,14 +61,9 @@ export const SuggestionsGridItems = ({
         </div>
       ))}
       
-      {/* Always show progress indicator during loading */}
-      {isLoading && (
-        <div className="col-span-full w-full mt-6 mb-4">
-          <LoadingProgressIndicator 
-            processedCount={processedCount} 
-            total={8} 
-          />
-        </div>
+      {/* Progress indicator that shows during partial loading */}
+      {isLoading && visibleSuggestions.length > 0 && (
+        <LoadingProgressIndicator processedCount={processedCount} total={8} />
       )}
     </>
   );

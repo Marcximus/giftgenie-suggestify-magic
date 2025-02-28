@@ -29,10 +29,7 @@ export const generateCustomDescription = async (title: string, originalDescripti
       return originalDescription;
     }
 
-    // Ensure we're returning a string
-    const description = data?.description && typeof data.description === 'string' 
-      ? data.description 
-      : originalDescription;
+    const description = data?.description || originalDescription;
     
     console.log('Generated description:', {
       title,

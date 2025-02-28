@@ -15,10 +15,8 @@ export const SuggestionItem = ({
   customDescription, 
   onMoreLikeThis 
 }: SuggestionItemProps) => {
-  // Make sure customDescription is a string before using it
-  const displayDescription = typeof customDescription === 'string' && customDescription 
-    ? customDescription 
-    : suggestion.description;
+  // Use the custom description if available, otherwise use the original description
+  const displayDescription = customDescription || suggestion.description;
   
   console.log('SuggestionItem rendering:', {
     title: suggestion.title,

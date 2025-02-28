@@ -83,13 +83,13 @@ export const useSuggestionProcessing = ({
 
         try {
           // Generate custom description if needed
-          if (suggestion.title && !customDescriptions[suggestion.title]) {
+          if (!customDescriptions[suggestion.title]) {
             const customDescription = await generateCustomDescription(
               suggestion.title,
               suggestion.description
             );
 
-            if (typeof customDescription === 'string') {
+            if (customDescription) {
               setCustomDescriptions(prev => ({
                 ...prev,
                 [suggestion.title]: customDescription
