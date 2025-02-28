@@ -7,7 +7,7 @@ interface InterestSelectorProps {
   selectedPerson: string;
   selectedAge: string;
   onSelect: (value: string) => void;
-  onUpdate: (value: string) => void; // New prop for updating the search box
+  onUpdate: (value: string) => void; // Prop for updating the search box
 }
 
 export const InterestSelector = ({ selectedPerson, selectedAge, onSelect, onUpdate }: InterestSelectorProps) => {
@@ -26,12 +26,10 @@ export const InterestSelector = ({ selectedPerson, selectedAge, onSelect, onUpda
       return; // Don't allow more than 2 selections
     }
     
-    // Always update the search box with current selection(s)
-    if (newInterests.length > 0) {
-      onUpdate(newInterests.join(' and '));
-    } else {
-      onUpdate(''); // Clear the search box if no interests are selected
-    }
+    // Always update the search box with just the interests part
+    // This allows onUpdate to handle merging with existing text
+    const interestsText = newInterests.length > 0 ? newInterests.join(' and ') : '';
+    onUpdate(interestsText);
     
     // Trigger the search only when 2 interests are selected
     if (newInterests.length === 2) {
