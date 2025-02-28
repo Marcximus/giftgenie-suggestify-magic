@@ -49,15 +49,22 @@ export const SuggestionsGridItems = ({
   return (
     <>
       {/* Display loaded suggestions */}
-      {displaySuggestions.map((suggestion, index) => (
-        <SuggestionItem
-          key={`item-${index}-${suggestion.amazon_asin || suggestion.title}`}
-          suggestion={suggestion}
-          index={index}
-          customDescription={suggestion.title ? customDescriptions[suggestion.title] : undefined}
-          onMoreLikeThis={onMoreLikeThis}
-        />
-      ))}
+      {displaySuggestions.map((suggestion, index) => {
+        // Only pass string descriptions, not undefined or objects
+        const customDescription = suggestion.title && typeof customDescriptions[suggestion.title] === 'string' 
+          ? customDescriptions[suggestion.title] 
+          : undefined;
+        
+        return (
+          <SuggestionItem
+            key={`item-${index}-${suggestion.amazon_asin || suggestion.title}`}
+            suggestion={suggestion}
+            index={index}
+            customDescription={customDescription}
+            onMoreLikeThis={onMoreLikeThis}
+          />
+        );
+      })}
 
       {/* Show skeletons for remaining slots during loading */}
       {skeletonsNeeded > 0 && Array.from({ length: skeletonsNeeded }).map((_, index) => (
