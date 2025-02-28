@@ -13,7 +13,7 @@ export const LoadingProgressIndicator = ({
   return (
     <div className="col-span-full text-center py-4 text-sm">
       <TextShimmer
-        duration={1.8}
+        duration={2.5}
         className="font-medium [--base-color:theme(colors.muted.foreground)] [--base-gradient-color:theme(colors.primary.DEFAULT)]"
       >
         {`Loaded ${processedCount} of ${total} suggestions...`}
