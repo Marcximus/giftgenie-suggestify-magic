@@ -1,12 +1,12 @@
-import { lazy, Suspense } from 'react';
+
+import { useState, Suspense } from 'react';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { useSuggestions } from '@/hooks/useSuggestions';
 import { SuggestionSkeleton } from '@/components/SuggestionSkeleton';
 import { IndexMeta } from '@/components/IndexMeta';
 import { BreadcrumbNav } from '@/components/BreadcrumbNav';
-
-const SearchHeader = lazy(() => import('@/components/SearchHeader').then(module => ({ default: module.SearchHeader })));
-const SuggestionsGrid = lazy(() => import('@/components/SuggestionsGrid').then(module => ({ default: module.SuggestionsGrid })));
+import { SearchHeader } from '@/components/SearchHeader';
+import { SuggestionsGrid } from '@/components/SuggestionsGrid';
 
 const Index = () => {
   const {
