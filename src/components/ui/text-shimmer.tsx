@@ -19,19 +19,20 @@ export function TextShimmer({
   duration = 2,
   spread = 2,
 }: TextShimmerProps) {
-  const MotionComponent = motion(Component as keyof JSX.IntrinsicElements);
+  // Use motion.create() instead of motion() to address the deprecation warning
+  const MotionComponent = motion[Component as keyof JSX.IntrinsicElements] || motion.div;
 
+  // Calculate a more effective spread based on text length
   const dynamicSpread = useMemo(() => {
-    return children.length * spread;
+    // Use a minimum spread to ensure visibility on short texts
+    return Math.max(10, Math.min(children.length * spread, 100));
   }, [children, spread]);
 
   return (
     <MotionComponent
       className={cn(
-        'relative inline-block bg-[length:250%_100%,auto] bg-clip-text',
-        'text-transparent [--base-color:#a1a1aa] [--base-gradient-color:#000]',
-        '[--bg:linear-gradient(90deg,#0000_calc(50%-var(--spread)),var(--base-gradient-color),#0000_calc(50%+var(--spread)))] [background-repeat:no-repeat,padding-box]',
-        'dark:[--base-color:#71717a] dark:[--base-gradient-color:#ffffff] dark:[--bg:linear-gradient(90deg,#0000_calc(50%-var(--spread)),var(--base-gradient-color),#0000_calc(50%+var(--spread)))]',
+        'relative inline-block bg-clip-text text-transparent',
+        'bg-[length:300%_100%]',
         className
       )}
       initial={{ backgroundPosition: '100% center' }}
@@ -41,12 +42,15 @@ export function TextShimmer({
         duration,
         ease: 'linear',
       }}
-      style={
-        {
-          '--spread': `${dynamicSpread}px`,
-          backgroundImage: `var(--bg), linear-gradient(var(--base-color), var(--base-color))`,
-        } as React.CSSProperties
-      }
+      style={{
+        '--spread': `${dynamicSpread}px`,
+        backgroundImage: `linear-gradient(
+          90deg,
+          transparent 0%,
+          var(--base-gradient-color, currentColor) 50%,
+          transparent 100%
+        ), linear-gradient(var(--base-color, #a1a1aa), var(--base-color, #a1a1aa))`,
+      }}
     >
       {children}
     </MotionComponent>
