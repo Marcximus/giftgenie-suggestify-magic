@@ -1,13 +1,15 @@
+
 import { useState, useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { GiftSuggestion } from '@/types/suggestions';
 import { logApiMetrics, markOperation, trackSlowOperation } from '@/utils/metricsUtils';
-import { processInParallel } from '@/utils/parallelProcessing';
+import { processInParallel, processWithProgressiveResults } from '@/utils/parallelProcessing';
 import { toast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
 export const useAmazonProductProcessing = () => {
   const queryClient = useQueryClient();
+  const [progressResults, setProgressResults] = useState<GiftSuggestion[]>([]);
 
   const processGiftSuggestion = async (suggestion: string | GiftSuggestion, priceRange?: { min: number; max: number }): Promise<GiftSuggestion> => {
     const startTime = performance.now();
@@ -113,24 +115,67 @@ export const useAmazonProductProcessing = () => {
     const startTime = performance.now();
     const operationMark = markOperation('process-suggestions-batch');
     
-    console.log('Starting parallel processing of suggestions:', suggestions);
+    console.log('Starting progressive processing of suggestions:', suggestions);
     
     try {
-      const results = await trackSlowOperation(
-        'parallel-processing',
-        2000,
-        () => processInParallel(
-          suggestions,
-          (suggestion) => processGiftSuggestion(suggestion, priceRange),
-          {
-            batchSize: 4,
-            maxConcurrent: 2,
-            delayBetweenBatches: 1000
-          }
-        )
+      // First, create initial placeholder results for all suggestions
+      const initialResults: GiftSuggestion[] = suggestions.map(suggestion => {
+        if (typeof suggestion === 'string') {
+          return {
+            title: suggestion,
+            description: suggestion,
+            priceRange: 'Processing...',
+            reason: `This ${suggestion} matches your requirements.`,
+            search_query: suggestion
+          };
+        }
+        return suggestion;
+      });
+      
+      // Update cache with initial placeholder results
+      queryClient.setQueryData(['suggestions'], initialResults);
+      
+      // Process suggestions with progressive updates
+      const results = await processWithProgressiveResults(
+        suggestions,
+        async (suggestion) => {
+          const result = await processGiftSuggestion(suggestion, priceRange);
+          return result;
+        },
+        (result, index) => {
+          // This callback will be called each time an item is processed
+          console.log(`Progressive result received for index ${index}:`, result);
+          
+          // Update the suggestions in the cache with this new result
+          queryClient.setQueryData(['suggestions'], (old: GiftSuggestion[] | undefined) => {
+            if (!old) return [result];
+            
+            // Create a new array with the updated suggestion
+            const updated = [...old];
+            // Find the right index to update 
+            const updateIndex = updated.findIndex(s => 
+              (typeof suggestion === 'string' && s.title === suggestion) ||
+              (typeof suggestion !== 'string' && s.title === suggestion.title)
+            );
+            
+            if (updateIndex !== -1) {
+              updated[updateIndex] = result;
+            } else if (index < updated.length) {
+              updated[index] = result;
+            } else {
+              updated.push(result);
+            }
+            
+            return updated;
+          });
+        },
+        {
+          batchSize: 4,
+          delayBetweenBatches: 150 // Slightly faster than before
+        }
       );
       
-      // Update the suggestions cache with processed results
+      // Final update with all processed results
       queryClient.setQueryData(['suggestions'], results);
       
       await logApiMetrics('batch-processing', startTime, 'success');
@@ -144,5 +189,5 @@ export const useAmazonProductProcessing = () => {
     }
   };
 
-  return { processSuggestions };
+  return { processSuggestions, progressResults };
 };

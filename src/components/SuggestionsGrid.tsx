@@ -1,3 +1,4 @@
+
 import { GiftSuggestion } from '@/types/suggestions';
 import { SuggestionsGridItems } from './suggestions/SuggestionsGridItems';
 import { SuggestionsActions } from './suggestions/SuggestionsActions';
@@ -78,10 +79,11 @@ export const SuggestionsGrid = ({
         />
       </div>
       
-      {suggestions.length > 0 && !isLoading && (
+      {/* Show footer when suggestions are available, even during loading */}
+      {suggestions.length > 0 && (
         <div 
-          className="suggestions-footer flex flex-col items-center mt-8 sm:mt-12 opacity-0 transition-opacity duration-500"
-          aria-hidden="true"
+          className={`suggestions-footer flex flex-col items-center mt-8 sm:mt-12 transition-opacity duration-500 ${!isLoading && 'opacity-100'}`}
+          aria-hidden={isLoading}
         >
           <p className="text-sm text-muted-foreground mb-6 text-center px-4">
             Products shown may include affiliate links from Amazon and other vendors

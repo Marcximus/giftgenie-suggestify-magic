@@ -11,6 +11,7 @@ export const LoadingMessage = ({ isLoading }: LoadingMessageProps) => {
   const [shuffledMessages, setShuffledMessages] = useState<string[]>([]);
   const [isVisible, setIsVisible] = useState(false);
   const [loadingProgress, setLoadingProgress] = useState(0);
+  const [initialDelay, setInitialDelay] = useState(true);
 
   // Function to shuffle messages but keep "Here we go..." at the end
   const shuffleMessages = () => {
@@ -23,12 +24,19 @@ export const LoadingMessage = ({ isLoading }: LoadingMessageProps) => {
 
   useEffect(() => {
     if (isLoading) {
-      setIsVisible(true);
-      shuffleMessages();
-      setLoadingProgress(0);
+      // Small delay before showing loading message to avoid flicker on fast responses
+      const timer = setTimeout(() => {
+        setIsVisible(true);
+        shuffleMessages();
+        setLoadingProgress(0);
+        setInitialDelay(false);
+      }, 500); // Only show loading after 500ms of loading
+      
+      return () => clearTimeout(timer);
     } else {
       const timer = setTimeout(() => {
         setIsVisible(false);
+        setInitialDelay(true);
       }, 300);
       return () => clearTimeout(timer);
     }
@@ -38,7 +46,7 @@ export const LoadingMessage = ({ isLoading }: LoadingMessageProps) => {
     let interval: NodeJS.Timeout;
     let progressInterval: NodeJS.Timeout;
     
-    if (isLoading) {
+    if (isLoading && !initialDelay) {
       interval = setInterval(() => {
         setCurrentLoadingMessage((prev) => 
           prev < shuffledMessages.length - 1 ? prev + 1 : prev
@@ -47,6 +55,7 @@ export const LoadingMessage = ({ isLoading }: LoadingMessageProps) => {
 
       progressInterval = setInterval(() => {
         setLoadingProgress(prev => {
+          // Adaptive loading speed based on current progress
           const increment = prev < 30 ? 5 : prev < 60 ? 3 : prev < 85 ? 1 : 0.5;
           return Math.min(prev + increment, 95);
         });
@@ -60,7 +69,7 @@ export const LoadingMessage = ({ isLoading }: LoadingMessageProps) => {
       if (interval) clearInterval(interval);
       if (progressInterval) clearInterval(progressInterval);
     };
-  }, [isLoading, shuffledMessages.length]);
+  }, [isLoading, shuffledMessages.length, initialDelay]);
 
   if (!isVisible || shuffledMessages.length === 0) return null;
 
@@ -88,7 +97,11 @@ export const LoadingMessage = ({ isLoading }: LoadingMessageProps) => {
           ></div>
         </div>
         <p className="text-xs text-gray-500 text-center">
-          {loadingProgress < 95 ? 'Searching for the perfect gifts...' : 'Almost ready!'}
+          {loadingProgress < 20 ? 'Analyzing your request...' :
+           loadingProgress < 40 ? 'Searching for ideas...' :
+           loadingProgress < 60 ? 'Finding products on Amazon...' :
+           loadingProgress < 90 ? 'Gathering product details...' : 
+           'Almost ready!'}
         </p>
       </div>
     </div>
