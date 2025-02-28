@@ -6,7 +6,7 @@ import { useAmazonProductProcessing } from './useAmazonProductProcessing';
 import { GiftSuggestion } from '@/types/suggestions';
 import { debounce } from '@/utils/debounce';
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 
 export const useSuggestions = () => {
   const [lastQuery, setLastQuery] = useState('');
