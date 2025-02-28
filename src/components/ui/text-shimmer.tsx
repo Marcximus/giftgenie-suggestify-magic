@@ -17,26 +17,23 @@ export function TextShimmer({
   as: Component = 'p',
   className,
   duration = 2.5,
-  spread = 0.25, // Changed default to be more subtle
+  spread = 0.25,
 }: TextShimmerProps) {
   // Use motion[Component] syntax for custom elements
   const MotionComponent = motion[Component as keyof JSX.IntrinsicElements] || motion.div;
 
   // Calculate optimal animation duration based on text length
-  // Using a logarithmic scale to prevent too much variance
   const optimalDuration = useMemo(() => {
-    // Base duration with small adjustment for text length
-    // Using log scale prevents extreme durations
-    return duration * (1 + Math.log10(Math.max(children.length, 10)) * 0.2);
+    // Base duration plus a small logarithmic adjustment for text length
+    return duration * (1 + Math.log10(Math.max(children.length, 10)) * 0.1);
   }, [children.length, duration]);
 
-  // Calculate the gradient width as a percentage based on text length
-  // Shorter text needs wider gradients relative to their length
+  // Calculate the gradient width based on text length
   const gradientWidth = useMemo(() => {
-    // For very short text, use wider gradients (as % of total width)
-    // For longer text, use narrower gradients
-    return Math.max(10, Math.min(25, 100 / (children.length * spread)));
-  }, [children.length, spread]);
+    // Fixed gradient width that doesn't vary with text length
+    // This prevents the jumping effect caused by different gradient widths
+    return 15; // 15% of the width is the sweet spot for most text lengths
+  }, []);
 
   return (
     <MotionComponent
@@ -55,19 +52,19 @@ export function TextShimmer({
           ),
           linear-gradient(var(--base-color, #a1a1aa), var(--base-color, #a1a1aa))
         `,
-        backgroundSize: '200% 100%',
+        backgroundSize: '300% 100%', // Wider background size for smoother animation
         backgroundClip: 'text',
         WebkitBackgroundClip: 'text',
       }}
       animate={{
-        backgroundPosition: ['120% center', '-20% center'],
+        backgroundPosition: ['100% center', '0% center'], // More balanced animation range
       }}
       transition={{
         repeat: Infinity,
         duration: optimalDuration,
         ease: "linear",
         repeatType: "loop",
-        repeatDelay: 0.5, // Add a slight pause between animations
+        repeatDelay: 0, // Remove delay between repetitions to avoid jumping
       }}
     >
       {children}
