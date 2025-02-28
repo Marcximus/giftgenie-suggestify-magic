@@ -78,7 +78,7 @@ export const LoadingMessage = ({ isLoading }: LoadingMessageProps) => {
   return (
     <div 
       className={`
-        flex flex-col items-center justify-center space-y-8 mt-12 sm:mt-16 
+        flex flex-col items-center justify-center space-y-10 mt-12 sm:mt-16 
         transition-all duration-500 ease-in-out
         ${isLoading ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}
       `}
