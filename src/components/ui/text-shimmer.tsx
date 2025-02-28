@@ -10,6 +10,7 @@ interface TextShimmerProps {
   className?: string;
   duration?: number;
   spread?: number;
+  maxSpread?: number;
 }
 
 export function TextShimmer({
@@ -18,12 +19,21 @@ export function TextShimmer({
   className,
   duration = 2,
   spread = 2,
+  maxSpread = 80, // Add maximum spread to prevent excessive width
 }: TextShimmerProps) {
   const MotionComponent = motion(Component as keyof JSX.IntrinsicElements);
 
   const dynamicSpread = useMemo(() => {
-    return children.length * spread;
-  }, [children, spread]);
+    // Calculate spread based on text length but cap it at maxSpread
+    return Math.min(children.length * spread, maxSpread);
+  }, [children, spread, maxSpread]);
+
+  // Calculate a more appropriate animation duration based on text length
+  const adjustedDuration = useMemo(() => {
+    // For very short text, use the provided duration
+    // For longer text, scale the duration slightly to maintain consistent speed
+    return Math.min(duration * (1 + dynamicSpread / 200), duration * 1.5);
+  }, [dynamicSpread, duration]);
 
   return (
     <MotionComponent
@@ -38,8 +48,9 @@ export function TextShimmer({
       animate={{ backgroundPosition: '0% center' }}
       transition={{
         repeat: Infinity,
-        duration,
+        duration: adjustedDuration,
         ease: 'linear',
+        repeatType: 'loop',
       }}
       style={
         {
