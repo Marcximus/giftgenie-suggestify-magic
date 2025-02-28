@@ -1,6 +1,8 @@
+
 import { GiftSuggestion } from '@/types/suggestions';
 import { SuggestionsGridItems } from './suggestions/SuggestionsGridItems';
 import { SuggestionsActions } from './suggestions/SuggestionsActions';
+import { SuggestionSkeleton } from './SuggestionSkeleton';
 
 interface SuggestionsGridProps {
   suggestions: GiftSuggestion[];
@@ -58,6 +60,19 @@ export const SuggestionsGrid = ({
         role="region"
         aria-label="Gift suggestions"
       >
+        {isLoading && suggestions.length === 0 && (
+          // Show skeletons when loading and no suggestions yet
+          Array.from({ length: 8 }).map((_, index) => (
+            <div 
+              key={`skeleton-${index}`} 
+              className="animate-in fade-in duration-500"
+              style={{ animationDelay: `${index * 75}ms` }}
+            >
+              <SuggestionSkeleton />
+            </div>
+          ))
+        )}
+        
         <SuggestionsGridItems 
           suggestions={suggestions}
           onMoreLikeThis={onMoreLikeThis}
