@@ -1,5 +1,5 @@
 
-import { ProductCard } from '../ProductCard';
+import { ProductCard } from './ProductCard';
 import { GiftSuggestion } from '@/types/suggestions';
 import { getDescriptionFromCache } from '@/utils/descriptionUtils';
 
