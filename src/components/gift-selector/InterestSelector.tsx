@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { getInterests } from '@/utils/interest-utils';
@@ -18,19 +17,9 @@ export const InterestSelector = ({ selectedPerson, selectedAge, onSelect }: Inte
     if (selectedInterests.includes(interest)) {
       newInterests = selectedInterests.filter(i => i !== interest);
       setSelectedInterests(newInterests);
-      
-      // Update search box with remaining interest or empty if none left
-      if (newInterests.length > 0) {
-        onSelect(newInterests.join(' and '));
-      } else {
-        onSelect('');
-      }
     } else if (selectedInterests.length < 2) {
       newInterests = [...selectedInterests, interest];
       setSelectedInterests(newInterests);
-      
-      // Update search box with selected interest(s)
-      onSelect(newInterests.join(' and '));
       
       // If this is the second interest selected, trigger the search
       if (newInterests.length === 2) {
