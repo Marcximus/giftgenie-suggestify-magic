@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { Search } from 'lucide-react';
 import { RefreshCw } from 'lucide-react';
@@ -20,6 +21,17 @@ export const SearchInput = ({
   isLoading, 
   showSelector 
 }: SearchInputProps) => {
+  // Add a keydown handler to capture Enter key presses
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    // Check if Enter was pressed without Shift (Shift+Enter creates a new line)
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault(); // Prevent default behavior (new line in textarea)
+      // Create a synthetic form event and pass it to onSubmit
+      const formEvent = new Event('submit', { bubbles: true, cancelable: true }) as unknown as React.FormEvent;
+      onSubmit(formEvent);
+    }
+  };
+
   return (
     <form onSubmit={onSubmit} className="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full" aria-label="Gift search form">
       <div className="flex-1 min-w-0 group">
@@ -31,6 +43,7 @@ export const SearchInput = ({
             placeholder=""
             value={query}
             onChange={onQueryChange}
+            onKeyDown={handleKeyDown}
             className="w-full min-h-[40px] max-h-[120px] text-sm sm:text-base p-2 sm:p-3 rounded-md border border-input bg-background/50 backdrop-blur-sm resize-y overflow-auto focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 transition-all duration-200 group-hover:border-primary/50"
             style={{ lineHeight: '1.5' }}
           />
