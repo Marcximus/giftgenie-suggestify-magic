@@ -1,3 +1,4 @@
+
 #root {
   margin: 0 auto;
   text-align: center;
@@ -39,6 +40,18 @@
   color: #888;
 }
 
+/* Card gradient effect */
+.card-gradient {
+  background-image: linear-gradient(to bottom right, rgba(255, 255, 255, 0.95), rgba(246, 246, 250, 0.9));
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+}
+
+.card-gradient:hover {
+  background-image: linear-gradient(to bottom right, rgba(255, 255, 255, 1), rgba(246, 246, 250, 1));
+  box-shadow: 0 8px 25px rgba(155, 135, 245, 0.15);
+}
+
 /* Mobile-first responsive styles */
 @media (max-width: 640px) {
   #root {
@@ -48,4 +61,18 @@
   .card {
     padding: 0.75em;
   }
+}
+
+/* Pulse animation for loading states */
+@keyframes gentle-pulse {
+  0%, 100% {
+    opacity: 0.7;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.animate-gentle-pulse {
+  animation: gentle-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }

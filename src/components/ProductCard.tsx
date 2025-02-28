@@ -57,9 +57,13 @@ const ProductCardComponent = ({
 
   return (
     <Card 
-      className="group h-full flex flex-col overflow-hidden hover:shadow-lg transition-all duration-300 border-accent/20 backdrop-blur-sm bg-white/80 hover:bg-white/90"
+      className="group h-full flex flex-col overflow-hidden hover:shadow-lg transition-all duration-300 border-accent/20 card-gradient animate-in fade-in slide-in-from-bottom-4 backdrop-blur-sm hover:scale-[1.02]"
       role="article"
       aria-label={`Product: ${title}`}
+      style={{
+        boxShadow: "0 4px 20px rgba(0,0,0,0.05)",
+        borderRadius: "0.75rem",
+      }}
     >
       <script type="application/ld+json">
         {JSON.stringify(schemaData)}
@@ -71,7 +75,7 @@ const ProductCardComponent = ({
           imageUrl={imageUrl} 
         />
         <div className="h-[1.75rem] overflow-hidden mt-2 px-3 sm:px-4">
-          <CardTitle className="text-sm sm:text-base truncate text-center group-hover:text-primary transition-colors duration-200">
+          <CardTitle className="text-sm sm:text-base truncate text-center group-hover:text-primary transition-colors duration-200 font-semibold">
             {title}
           </CardTitle>
         </div>
