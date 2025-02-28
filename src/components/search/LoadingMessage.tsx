@@ -1,6 +1,8 @@
+
 import { useState, useEffect } from 'react';
 import { loadingMessages } from './loadingMessages';
 import { Spinner } from "@/components/ui/spinner";
+import { TextShimmer } from "@/components/ui/text-shimmer";
 
 interface LoadingMessageProps {
   isLoading: boolean;
@@ -85,9 +87,14 @@ export const LoadingMessage = ({ isLoading }: LoadingMessageProps) => {
       <div className="-ml-[12%] sm:-ml-[4%]">
         <Spinner variant="infinite" className="w-16 h-16 sm:w-20 sm:h-20" />
       </div>
-      <p className="text-[#8E9196] text-center text-sm md:text-base font-medium max-w-md px-4 animate-pulse-text">
-        {shuffledMessages[currentLoadingMessage]}
-      </p>
+      <div className="text-center max-w-md px-4">
+        <TextShimmer
+          duration={2.5}
+          className="text-sm md:text-base font-medium [--base-color:theme(colors.muted.foreground)] [--base-gradient-color:theme(colors.primary.DEFAULT)] dark:[--base-color:theme(colors.muted.foreground)] dark:[--base-gradient-color:theme(colors.primary.DEFAULT)]"
+        >
+          {shuffledMessages[currentLoadingMessage]}
+        </TextShimmer>
+      </div>
       
       <div className="w-full max-w-xs mt-4">
         <div className="w-full bg-gray-200 rounded-full h-1.5 mb-1 dark:bg-gray-700">
