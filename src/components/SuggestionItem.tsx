@@ -26,7 +26,7 @@ export const SuggestionItem = memo(({
     console.log('SuggestionItem computing description:', {
       title: suggestion.title,
       source: customDescription ? 'prop' : (cachedDescription ? 'cache' : 'original'),
-      displayDescription: finalDescription
+      finalDescription
     });
     
     return finalDescription;

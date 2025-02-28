@@ -1,6 +1,6 @@
 
 import { SuggestionLoadingSkeletons } from './SuggestionLoadingSkeletons';
-import { SuggestionItem } from './SuggestionItem';
+import { SuggestionItem } from '../SuggestionItem';
 import { LoadingProgressIndicator } from './LoadingProgressIndicator';
 import { useSuggestionProcessing } from './hooks/useSuggestionProcessing';
 import { GiftSuggestion } from '@/types/suggestions';
