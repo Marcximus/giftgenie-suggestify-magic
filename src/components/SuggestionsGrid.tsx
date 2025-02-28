@@ -82,7 +82,7 @@ export const SuggestionsGrid = ({
       {/* Show footer when suggestions are available, even during loading */}
       {suggestions.length > 0 && (
         <div 
-          className={`suggestions-footer flex flex-col items-center mt-8 sm:mt-12 transition-opacity duration-500 ${!isLoading && 'opacity-100'}`}
+          className={`suggestions-footer flex flex-col items-center mt-8 sm:mt-12 transition-opacity duration-500 ${isLoading ? 'opacity-0' : 'opacity-100'}`}
           aria-hidden={isLoading}
         >
           <p className="text-sm text-muted-foreground mb-6 text-center px-4">

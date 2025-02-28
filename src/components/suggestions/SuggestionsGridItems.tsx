@@ -29,9 +29,14 @@ export const SuggestionsGridItems = ({
     onAllSuggestionsProcessed
   });
 
-  // Render loading skeletons or visible suggestions
+  // If we're loading and have no visible suggestions yet, show the loading skeletons
   if (isLoading && visibleSuggestions.length === 0) {
-    return <SuggestionLoadingSkeletons count={8} />;
+    return (
+      <>
+        <SuggestionLoadingSkeletons count={8} />
+        <LoadingProgressIndicator processedCount={0} total={8} />
+      </>
+    );
   }
 
   // Render a mix of loaded suggestions and skeletons during partial loading
@@ -40,6 +45,7 @@ export const SuggestionsGridItems = ({
 
   return (
     <>
+      {/* Display loaded suggestions */}
       {displaySuggestions.map((suggestion, index) => (
         <SuggestionItem
           key={`item-${index}-${suggestion.amazon_asin || suggestion.title}`}
@@ -61,9 +67,12 @@ export const SuggestionsGridItems = ({
         </div>
       ))}
       
-      {/* Progress indicator that shows during partial loading */}
-      {isLoading && visibleSuggestions.length > 0 && (
-        <LoadingProgressIndicator processedCount={processedCount} total={8} />
+      {/* Always show progress indicator during loading */}
+      {isLoading && (
+        <LoadingProgressIndicator 
+          processedCount={processedCount} 
+          total={8} 
+        />
       )}
     </>
   );
