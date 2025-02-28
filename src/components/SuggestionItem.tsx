@@ -1,7 +1,7 @@
-
 import { ProductCard } from './ProductCard';
 import { GiftSuggestion } from '@/types/suggestions';
-import { memo, useMemo } from 'react';
+import { memo, useEffect, useState } from 'react';
+import { generateCustomDescription } from '@/utils/descriptionUtils';
 
 interface SuggestionItemProps {
   suggestion: GiftSuggestion;
@@ -16,10 +16,35 @@ export const SuggestionItem = memo(({
   cachedDescription, 
   onMoreLikeThis 
 }: SuggestionItemProps) => {
-  // Use the cached description or fall back to the original description
-  const displayDescription = useMemo(() => {
-    return cachedDescription || suggestion.description;
-  }, [suggestion.description, cachedDescription]);
+  const [description, setDescription] = useState<string>(
+    cachedDescription || suggestion.description
+  );
+  
+  useEffect(() => {
+    if (cachedDescription) {
+      setDescription(cachedDescription);
+      return;
+    }
+    
+    const fetchDescription = async () => {
+      try {
+        if (suggestion.title) {
+          const customDescription = await generateCustomDescription(
+            suggestion.title, 
+            suggestion.description
+          );
+          
+          if (customDescription) {
+            setDescription(customDescription);
+          }
+        }
+      } catch (error) {
+        console.error('Error generating description:', error);
+      }
+    };
+    
+    fetchDescription();
+  }, [suggestion.title, suggestion.description, cachedDescription]);
 
   return (
     <div 
@@ -31,7 +56,7 @@ export const SuggestionItem = memo(({
     >
       <ProductCard
         title={suggestion.title}
-        description={displayDescription}
+        description={description}
         price={suggestion.amazon_price 
           ? suggestion.amazon_price.toString()
           : suggestion.priceRange?.replace('USD ', '') || 'Check price on Amazon'}

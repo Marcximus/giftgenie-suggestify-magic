@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { GiftSuggestion } from '@/types/suggestions';
 import { getDescriptionFromCache } from '@/utils/descriptionUtils';
 
