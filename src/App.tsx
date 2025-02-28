@@ -10,6 +10,7 @@ import Auth from "@/pages/Auth";
 import { Toaster } from "@/components/ui/toaster";
 import { FloatingNav } from "@/components/FloatingNav";
 import "./App.css";
+import { useSuggestions } from './hooks/suggestions';
 
 function App() {
   return (
