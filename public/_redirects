@@ -1,10 +1,13 @@
+
 # Force HTTPS and remove www
 http://getthegift.ai/* https://getthegift.ai/:splat 301!
 http://www.getthegift.ai/* https://getthegift.ai/:splat 301!
 https://www.getthegift.ai/* https://getthegift.ai/:splat 301!
 
-# Handle robots.txt and sitemap.xml directly
+# Handle robots.txt directly
 /robots.txt /robots.txt 200
+
+# Handle sitemap - direct proxy to Supabase function
 /sitemap.xml https://ckcqttsdpxfbpkzljctl.functions.supabase.co/functions/v1/generate-sitemap 200!
 /sitemap_index.xml /sitemap.xml 301
 

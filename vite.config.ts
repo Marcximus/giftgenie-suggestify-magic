@@ -1,4 +1,5 @@
 
+
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
@@ -18,6 +19,7 @@ export default defineConfig(({ mode }) => ({
         headers: {
           'Accept': 'application/xml'
         },
+        rewrite: (path) => "",
         timeout: 30000
       },
       '/functions/v1': {
@@ -73,3 +75,4 @@ export default defineConfig(({ mode }) => ({
     }
   }
 }));
+
