@@ -15,6 +15,16 @@ export const SuggestionItem = ({
   customDescription, 
   onMoreLikeThis 
 }: SuggestionItemProps) => {
+  // Use the custom description if available, otherwise use the original description
+  const displayDescription = customDescription || suggestion.description;
+  
+  console.log('SuggestionItem rendering:', {
+    title: suggestion.title,
+    originalDescription: suggestion.description,
+    customDescription,
+    displayDescription
+  });
+
   return (
     <div 
       key={`suggestion-${index}-${suggestion.amazon_asin || suggestion.title}`}
@@ -25,7 +35,7 @@ export const SuggestionItem = ({
     >
       <ProductCard
         title={suggestion.title}
-        description={customDescription || suggestion.description}
+        description={displayDescription}
         price={suggestion.amazon_price 
           ? suggestion.amazon_price.toString()
           : suggestion.priceRange?.replace('USD ', '') || 'Check price on Amazon'}

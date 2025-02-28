@@ -94,6 +94,12 @@ export const useSuggestionProcessing = ({
                 ...prev,
                 [suggestion.title]: customDescription
               }));
+              
+              console.log('Generated custom description:', {
+                title: suggestion.title,
+                original: suggestion.description,
+                custom: customDescription
+              });
             }
           }
 
