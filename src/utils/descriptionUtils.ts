@@ -1,16 +1,32 @@
 
 import { supabase } from "@/integrations/supabase/client";
 
+// Add an in-memory cache to avoid localStorage checks on every render
+const memoryCache: Record<string, string> = {};
+
 export const generateCustomDescription = async (title: string, originalDescription: string): Promise<string> => {
   try {
+    if (!title) {
+      console.log('No title provided for description generation');
+      return originalDescription;
+    }
+    
     // Create a consistent cache key based on the title
     const cacheKey = `description-${title.toLowerCase().trim()}`;
     
-    // Check if we have a cached description
+    // First check memory cache
+    if (memoryCache[cacheKey]) {
+      console.log('Using memory-cached description for:', title);
+      return memoryCache[cacheKey];
+    }
+    
+    // Then check localStorage
     const cached = localStorage.getItem(cacheKey);
     
     if (cached) {
-      console.log('Using cached description for:', title);
+      console.log('Using localStorage description for:', title);
+      // Update memory cache
+      memoryCache[cacheKey] = cached;
       return cached;
     }
 
@@ -39,8 +55,10 @@ export const generateCustomDescription = async (title: string, originalDescripti
       generated: description
     });
     
-    // Cache the result
+    // Update both memory cache and localStorage
+    memoryCache[cacheKey] = description;
     localStorage.setItem(cacheKey, description);
+    
     return description;
   } catch (error) {
     console.error('Error calling generate-custom-description:', error);
@@ -51,6 +69,21 @@ export const generateCustomDescription = async (title: string, originalDescripti
 // Helper function to get a description synchronously from cache
 export const getDescriptionFromCache = (title: string): string | null => {
   if (!title) return null;
+  
   const cacheKey = `description-${title.toLowerCase().trim()}`;
-  return localStorage.getItem(cacheKey);
+  
+  // First check memory cache
+  if (memoryCache[cacheKey]) {
+    return memoryCache[cacheKey];
+  }
+  
+  // Then check localStorage
+  const cached = localStorage.getItem(cacheKey);
+  if (cached) {
+    // Update memory cache
+    memoryCache[cacheKey] = cached;
+    return cached;
+  }
+  
+  return null;
 };
