@@ -79,7 +79,7 @@ export const SuggestionsGrid = ({
         />
       </div>
       
-      {/* Show footer when suggestions are available, even during loading */}
+      {/* Show footer when suggestions are available, but hide during loading */}
       {suggestions.length > 0 && (
         <div 
           className={`suggestions-footer flex flex-col items-center mt-8 sm:mt-12 transition-opacity duration-500 ${isLoading ? 'opacity-0' : 'opacity-100'}`}

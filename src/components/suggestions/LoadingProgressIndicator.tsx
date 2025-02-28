@@ -13,7 +13,7 @@ export const LoadingProgressIndicator = ({
   const percentComplete = Math.min(Math.round((processedCount / total) * 100), 100);
   
   return (
-    <div className="col-span-full space-y-2 px-4 py-6">
+    <div className="w-full space-y-2 px-4 py-6 bg-background/80 rounded-lg shadow-sm">
       <div className="flex justify-between items-center text-sm text-muted-foreground mb-2">
         <span className="font-medium">Loading suggestions...</span>
         <span>{processedCount} of {total}</span>

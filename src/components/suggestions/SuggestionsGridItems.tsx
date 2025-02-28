@@ -34,7 +34,10 @@ export const SuggestionsGridItems = ({
     return (
       <>
         <SuggestionLoadingSkeletons count={8} />
-        <LoadingProgressIndicator processedCount={0} total={8} />
+        {/* Adding the loading indicator as a separate div outside the grid */}
+        <div className="col-span-full w-full mt-8">
+          <LoadingProgressIndicator processedCount={0} total={8} />
+        </div>
       </>
     );
   }
@@ -69,10 +72,12 @@ export const SuggestionsGridItems = ({
       
       {/* Always show progress indicator during loading */}
       {isLoading && (
-        <LoadingProgressIndicator 
-          processedCount={processedCount} 
-          total={8} 
-        />
+        <div className="col-span-full w-full mt-6 mb-4">
+          <LoadingProgressIndicator 
+            processedCount={processedCount} 
+            total={8} 
+          />
+        </div>
       )}
     </>
   );
