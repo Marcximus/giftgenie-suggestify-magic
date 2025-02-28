@@ -129,7 +129,10 @@ export async function processWithProgressiveResults<T, R>(
   onProgress: (result: R, index: number) => void,
   options = {
     batchSize: BATCH_SIZE,
-    delayBetweenBatches: DELAY_BETWEEN_BATCHES
+    maxConcurrent: MAX_CONCURRENT,
+    delayBetweenBatches: DELAY_BETWEEN_BATCHES,
+    delayWithinBatch: DELAY_WITHIN_BATCH,
+    priority: [] as T[]
   }
 ): Promise<R[]> {
   const results: R[] = [];

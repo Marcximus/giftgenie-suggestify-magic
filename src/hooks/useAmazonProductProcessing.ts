@@ -152,10 +152,12 @@ export const useAmazonProductProcessing = () => {
             
             // Create a new array with the updated suggestion
             const updated = [...old];
+            const currentItem = suggestions[index];
+            
             // Find the right index to update 
             const updateIndex = updated.findIndex(s => 
-              (typeof suggestion === 'string' && s.title === suggestion) ||
-              (typeof suggestion !== 'string' && s.title === suggestion.title)
+              (typeof currentItem === 'string' && s.title === currentItem) ||
+              (typeof currentItem !== 'string' && s.title === currentItem.title)
             );
             
             if (updateIndex !== -1) {
@@ -171,7 +173,10 @@ export const useAmazonProductProcessing = () => {
         },
         {
           batchSize: 4,
-          delayBetweenBatches: 150 // Slightly faster than before
+          maxConcurrent: 4,
+          delayBetweenBatches: 150,
+          delayWithinBatch: 30,
+          priority: []
         }
       );
       
