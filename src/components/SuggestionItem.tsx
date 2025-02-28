@@ -1,36 +1,25 @@
 
 import { ProductCard } from './ProductCard';
 import { GiftSuggestion } from '@/types/suggestions';
-import { getDescriptionFromCache } from '@/utils/descriptionUtils';
-import { useMemo, memo } from 'react';
+import { memo, useMemo } from 'react';
 
 interface SuggestionItemProps {
   suggestion: GiftSuggestion;
   index: number;
-  customDescription?: string;
+  cachedDescription?: string;
   onMoreLikeThis: (title: string) => void;
 }
 
 export const SuggestionItem = memo(({ 
   suggestion, 
   index, 
-  customDescription, 
+  cachedDescription, 
   onMoreLikeThis 
 }: SuggestionItemProps) => {
-  // Use useMemo to stabilize the description between renders
+  // Use the cached description or fall back to the original description
   const displayDescription = useMemo(() => {
-    // First try the passed customDescription, then check cache, finally fallback to original
-    const cachedDescription = suggestion.title ? getDescriptionFromCache(suggestion.title) : null;
-    const finalDescription = customDescription || cachedDescription || suggestion.description;
-    
-    console.log('SuggestionItem computing description:', {
-      title: suggestion.title,
-      source: customDescription ? 'prop' : (cachedDescription ? 'cache' : 'original'),
-      finalDescription
-    });
-    
-    return finalDescription;
-  }, [suggestion.title, suggestion.description, customDescription]);
+    return cachedDescription || suggestion.description;
+  }, [suggestion.description, cachedDescription]);
 
   return (
     <div 

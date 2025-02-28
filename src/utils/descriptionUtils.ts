@@ -66,7 +66,8 @@ export const generateCustomDescription = async (title: string, originalDescripti
   }
 };
 
-// Helper function to get a description synchronously from cache
+// Helper function to get a description synchronously from cache ONLY
+// This function does NOT trigger any API calls or state updates
 export const getDescriptionFromCache = (title: string): string | null => {
   if (!title) return null;
   

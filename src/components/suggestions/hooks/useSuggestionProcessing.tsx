@@ -1,7 +1,7 @@
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { GiftSuggestion } from '@/types/suggestions';
-import { generateCustomDescription } from '@/utils/descriptionUtils';
+import { getDescriptionFromCache } from '@/utils/descriptionUtils';
 
 interface UseSuggestionProcessingProps {
   suggestions: GiftSuggestion[];
@@ -15,58 +15,30 @@ export const useSuggestionProcessing = ({
   onAllSuggestionsProcessed
 }: UseSuggestionProcessingProps) => {
   const [visibleSuggestions, setVisibleSuggestions] = useState<GiftSuggestion[]>([]);
-  const [customDescriptions, setCustomDescriptions] = useState<Record<string, string>>({});
   const [processedCount, setProcessedCount] = useState(0);
 
-  // Process descriptions in batches
-  const processDescriptions = useCallback(async () => {
-    const newDescriptions: Record<string, string> = { ...customDescriptions };
-    let processedItems = 0;
-
-    for (const suggestion of suggestions) {
-      if (!suggestion.title) continue;
-      
-      // Skip if we already have a custom description for this title
-      if (newDescriptions[suggestion.title]) {
-        processedItems++;
-        continue;
+  // Get cached descriptions without updating state during render
+  const cachedDescriptions = useMemo(() => {
+    const descriptionsMap: Record<string, string> = {};
+    
+    suggestions.forEach(suggestion => {
+      if (suggestion.title) {
+        // Get description from cache (only reads, no writes)
+        const cachedDescription = getDescriptionFromCache(suggestion.title);
+        if (cachedDescription) {
+          descriptionsMap[suggestion.title] = cachedDescription;
+        }
       }
-
-      try {
-        // Generate custom description
-        const description = await generateCustomDescription(
-          suggestion.title,
-          suggestion.description
-        );
-
-        newDescriptions[suggestion.title] = description;
-        processedItems++;
-
-        // Update state incrementally
-        setCustomDescriptions({ ...newDescriptions });
-        setProcessedCount(processedItems);
-
-        console.log('Generated custom description:', {
-          title: suggestion.title,
-          original: suggestion.description,
-          custom: description
-        });
-      } catch (error) {
-        console.error('Error processing suggestion description:', error);
-        processedItems++;
-      }
-    }
-
-    // Final update
-    setCustomDescriptions(newDescriptions);
-    setProcessedCount(processedItems);
-    onAllSuggestionsProcessed(processedItems >= suggestions.length);
-  }, [suggestions, customDescriptions, onAllSuggestionsProcessed]);
+    });
+    
+    return descriptionsMap;
+  }, [suggestions]);
 
   // Update visible suggestions when loading state or suggestions change
   useEffect(() => {
     if (isLoading && suggestions.length === 0) {
       setVisibleSuggestions([]);
+      setProcessedCount(0);
       return;
     }
 
@@ -74,17 +46,15 @@ export const useSuggestionProcessing = ({
     const readySuggestions = suggestions.filter(s => s.title);
     console.log(`Adding ${readySuggestions.length} ready suggestions immediately`);
     setVisibleSuggestions(readySuggestions);
-
-    // Start processing descriptions
-    if (readySuggestions.length > 0) {
-      console.log(`Processing ${readySuggestions.length} new suggestions`);
-      processDescriptions();
-    }
-  }, [suggestions, isLoading, processDescriptions]);
+    setProcessedCount(readySuggestions.length);
+    
+    // Signal that all suggestions are ready
+    onAllSuggestionsProcessed(readySuggestions.length >= suggestions.length);
+  }, [suggestions, isLoading, onAllSuggestionsProcessed]);
 
   return {
     visibleSuggestions,
-    customDescriptions,
+    cachedDescriptions,
     processedCount
   };
 };

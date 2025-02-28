@@ -21,7 +21,7 @@ export const SuggestionsGridItems = ({
 }: SuggestionsGridItemsProps) => {
   const {
     visibleSuggestions,
-    customDescriptions,
+    cachedDescriptions,
     processedCount
   } = useSuggestionProcessing({
     suggestions,
@@ -45,7 +45,7 @@ export const SuggestionsGridItems = ({
           key={`item-${index}-${suggestion.amazon_asin || suggestion.title}`}
           suggestion={suggestion}
           index={index}
-          customDescription={suggestion.title ? customDescriptions[suggestion.title] : undefined}
+          cachedDescription={suggestion.title ? cachedDescriptions[suggestion.title] : undefined}
           onMoreLikeThis={onMoreLikeThis}
         />
       ))}
