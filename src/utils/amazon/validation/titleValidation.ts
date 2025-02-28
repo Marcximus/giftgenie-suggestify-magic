@@ -1,4 +1,3 @@
-
 // Blacklisted terms that indicate irrelevant products
 const BLACKLISTED_TERMS = [
   'cancel subscription',
@@ -17,16 +16,7 @@ const BLACKLISTED_TERMS = [
   'repair',
   'service plan',
   'protection plan',
-  'extended warranty',
-  'accessory only',
-  'case only',
-  'spare part',
-  'add-on',
-  'subscription',
-  'membership',
-  'digital code',
-  'gift card',
-  'renewal'
+  'extended warranty'
 ];
 
 export const validateProductTitle = (title: string): boolean => {

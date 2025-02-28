@@ -3,11 +3,6 @@ import { supabase } from "@/integrations/supabase/client";
 
 export const generateCustomDescription = async (title: string, originalDescription: string): Promise<string> => {
   try {
-    if (!title) {
-      console.warn('Cannot generate custom description: Missing title');
-      return originalDescription;
-    }
-
     // Create a consistent cache key based on the title
     const cacheKey = `description-${title.toLowerCase().trim()}`;
     const cached = localStorage.getItem(cacheKey);
@@ -34,13 +29,7 @@ export const generateCustomDescription = async (title: string, originalDescripti
       return originalDescription;
     }
 
-    // Check if the response has the description field
-    if (!data || typeof data.description !== 'string') {
-      console.error('Invalid response format from generate-custom-description:', data);
-      return originalDescription;
-    }
-
-    const description = data.description;
+    const description = data?.description || originalDescription;
     
     console.log('Generated description:', {
       title,
