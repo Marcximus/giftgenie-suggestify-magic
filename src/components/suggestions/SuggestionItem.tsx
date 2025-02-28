@@ -22,7 +22,8 @@ export const SuggestionItem = ({
     title: suggestion.title,
     originalDescription: suggestion.description,
     customDescription,
-    displayDescription
+    displayDescription,
+    customDescriptionType: typeof customDescription
   });
 
   return (

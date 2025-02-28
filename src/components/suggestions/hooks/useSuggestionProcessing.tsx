@@ -24,13 +24,13 @@ export const useSuggestionProcessing = ({
     if (isLoading) {
       setVisibleSuggestions([]);
       setProcessedCount(0);
+      // Don't reset customDescriptions as they are cached and can be reused
     }
   }, [isLoading]);
 
   // Process suggestions progressively as they arrive
   useEffect(() => {
     if (!Array.isArray(suggestions) || suggestions.length === 0) {
-      setCustomDescriptions({});
       setVisibleSuggestions([]);
       onAllSuggestionsProcessed(false);
       return;
@@ -59,6 +59,7 @@ export const useSuggestionProcessing = ({
     }
 
     console.log(`Processing ${newSuggestions.length} new suggestions`);
+    console.log('Current custom descriptions state:', customDescriptions);
 
     const processSuggestions = async () => {
       // Immediately show suggestions with existing data
@@ -78,12 +79,15 @@ export const useSuggestionProcessing = ({
         s => !s.amazon_image_url || !s.amazon_price
       );
 
+      console.log('Pending suggestions count:', pendingSuggestions.length);
+
       for (const suggestion of pendingSuggestions) {
         if (abortController.current?.signal.aborted) break;
 
         try {
           // Generate custom description if needed
-          if (!customDescriptions[suggestion.title]) {
+          if (suggestion.title) {
+            console.log('Generating custom description for:', suggestion.title);
             const customDescription = await generateCustomDescription(
               suggestion.title,
               suggestion.description
@@ -95,7 +99,7 @@ export const useSuggestionProcessing = ({
                 [suggestion.title]: customDescription
               }));
               
-              console.log('Generated custom description:', {
+              console.log('Successfully generated custom description:', {
                 title: suggestion.title,
                 original: suggestion.description,
                 custom: customDescription
