@@ -1,6 +1,7 @@
 
 import { ProductCard } from '../ProductCard';
 import { GiftSuggestion } from '@/types/suggestions';
+import { getDescriptionFromCache } from '@/utils/descriptionUtils';
 
 interface SuggestionItemProps {
   suggestion: GiftSuggestion;
@@ -15,13 +16,15 @@ export const SuggestionItem = ({
   customDescription, 
   onMoreLikeThis 
 }: SuggestionItemProps) => {
-  // Use the custom description if available, otherwise use the original description
-  const displayDescription = customDescription || suggestion.description;
+  // First try the passed customDescription, then check cache, finally fallback to original
+  const cachedDescription = suggestion.title ? getDescriptionFromCache(suggestion.title) : null;
+  const displayDescription = customDescription || cachedDescription || suggestion.description;
   
   console.log('SuggestionItem rendering:', {
     title: suggestion.title,
     originalDescription: suggestion.description,
     customDescription,
+    cachedDescription,
     displayDescription
   });
 

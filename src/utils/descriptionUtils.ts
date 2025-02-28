@@ -5,6 +5,8 @@ export const generateCustomDescription = async (title: string, originalDescripti
   try {
     // Create a consistent cache key based on the title
     const cacheKey = `description-${title.toLowerCase().trim()}`;
+    
+    // Check if we have a cached description
     const cached = localStorage.getItem(cacheKey);
     
     if (cached) {
@@ -44,4 +46,11 @@ export const generateCustomDescription = async (title: string, originalDescripti
     console.error('Error calling generate-custom-description:', error);
     return originalDescription;
   }
+};
+
+// Helper function to get a description synchronously from cache
+export const getDescriptionFromCache = (title: string): string | null => {
+  if (!title) return null;
+  const cacheKey = `description-${title.toLowerCase().trim()}`;
+  return localStorage.getItem(cacheKey);
 };
