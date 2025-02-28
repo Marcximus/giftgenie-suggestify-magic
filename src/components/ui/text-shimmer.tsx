@@ -19,7 +19,7 @@ export function TextShimmer({
   className,
   duration = 2,
   spread = 2,
-  maxSpread = 80, // Add maximum spread to prevent excessive width
+  maxSpread = 80,
 }: TextShimmerProps) {
   const MotionComponent = motion(Component as keyof JSX.IntrinsicElements);
 
@@ -28,36 +28,28 @@ export function TextShimmer({
     return Math.min(children.length * spread, maxSpread);
   }, [children, spread, maxSpread]);
 
-  // Calculate a more appropriate animation duration based on text length
+  // Calculate animation duration based on text length
   const adjustedDuration = useMemo(() => {
-    // For very short text, use the provided duration
-    // For longer text, scale the duration slightly to maintain consistent speed
-    return Math.min(duration * (1 + dynamicSpread / 200), duration * 1.5);
-  }, [dynamicSpread, duration]);
+    return Math.min(duration * (1 + children.length / 100), duration * 1.5);
+  }, [children.length, duration]);
 
   return (
     <MotionComponent
       className={cn(
-        'relative inline-block bg-[length:250%_100%,auto] bg-clip-text',
-        'text-transparent [--base-color:#a1a1aa] [--base-gradient-color:#000]',
-        '[--bg:linear-gradient(90deg,#0000_calc(50%-var(--spread)),var(--base-gradient-color),#0000_calc(50%+var(--spread)))] [background-repeat:no-repeat,padding-box]',
-        'dark:[--base-color:#71717a] dark:[--base-gradient-color:#ffffff] dark:[--bg:linear-gradient(90deg,#0000_calc(50%-var(--spread)),var(--base-gradient-color),#0000_calc(50%+var(--spread)))]',
+        'relative inline-block bg-gradient-to-r bg-[length:300%_100%]',
+        'text-transparent bg-clip-text',
+        'from-muted-foreground via-foreground to-muted-foreground',
+        'dark:from-muted-foreground dark:via-foreground dark:to-muted-foreground',
         className
       )}
-      initial={{ backgroundPosition: '100% center' }}
-      animate={{ backgroundPosition: '0% center' }}
+      initial={{ backgroundPosition: '0% center' }}
+      animate={{ backgroundPosition: '100% center' }}
       transition={{
         repeat: Infinity,
         duration: adjustedDuration,
         ease: 'linear',
-        repeatType: 'loop',
+        repeatType: 'mirror',
       }}
-      style={
-        {
-          '--spread': `${dynamicSpread}px`,
-          backgroundImage: `var(--bg), linear-gradient(var(--base-color), var(--base-color))`,
-        } as React.CSSProperties
-      }
     >
       {children}
     </MotionComponent>
