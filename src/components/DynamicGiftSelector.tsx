@@ -1,4 +1,3 @@
-
 import { useEffect } from 'react';
 import { PersonSelector } from './gift-selector/PersonSelector';
 import { AgeSelector } from './gift-selector/AgeSelector';
@@ -63,7 +62,6 @@ export const DynamicGiftSelector = ({
             selectedPerson={selectedPerson}
             selectedAge={selectedAge}
             onSelect={(value) => handleSelection('interest', value, onSelectionComplete)}
-            onUpdate={(value) => onUpdate(value)} // Pass the onUpdate function to update search box
           />
         )}
       </div>

@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { getInterests } from '@/utils/interest-utils';
@@ -7,10 +6,9 @@ interface InterestSelectorProps {
   selectedPerson: string;
   selectedAge: string;
   onSelect: (value: string) => void;
-  onUpdate: (value: string) => void; // Prop for updating the search box
 }
 
-export const InterestSelector = ({ selectedPerson, selectedAge, onSelect, onUpdate }: InterestSelectorProps) => {
+export const InterestSelector = ({ selectedPerson, selectedAge, onSelect }: InterestSelectorProps) => {
   const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
 
   const handleInterestClick = (interest: string) => {
@@ -22,18 +20,11 @@ export const InterestSelector = ({ selectedPerson, selectedAge, onSelect, onUpda
     } else if (selectedInterests.length < 2) {
       newInterests = [...selectedInterests, interest];
       setSelectedInterests(newInterests);
-    } else {
-      return; // Don't allow more than 2 selections
-    }
-    
-    // Always update the search box with just the interests part
-    // This allows onUpdate to handle merging with existing text
-    const interestsText = newInterests.length > 0 ? newInterests.join(' and ') : '';
-    onUpdate(interestsText);
-    
-    // Trigger the search only when 2 interests are selected
-    if (newInterests.length === 2) {
-      onSelect(newInterests.join(' and '));
+      
+      // If this is the second interest selected, trigger the search
+      if (newInterests.length === 2) {
+        onSelect(newInterests.join(' and '));
+      }
     }
   };
 

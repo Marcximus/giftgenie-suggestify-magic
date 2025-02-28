@@ -34,19 +34,8 @@ export const SearchBox = ({ onSearch, isLoading }: SearchBoxProps) => {
     setShowSelector(false);
   };
 
-  const handleSelectorUpdate = (interestQuery: string) => {
-    if (interestQuery) {
-      const baseQueryMatch = query.match(/Gift for .+? with a budget of .+?(?= who likes|\s*$)/i);
-      const baseQuery = baseQueryMatch ? baseQueryMatch[0] : query;
-      
-      if (interestQuery) {
-        setQuery(`${baseQuery} who likes ${interestQuery}`);
-      } else {
-        setQuery(baseQuery);
-      }
-    } else {
-      setQuery(query.replace(/ who likes .+$/, ''));
-    }
+  const handleSelectorUpdate = (currentQuery: string) => {
+    setQuery(currentQuery);
   };
 
   const handleReset = () => {
