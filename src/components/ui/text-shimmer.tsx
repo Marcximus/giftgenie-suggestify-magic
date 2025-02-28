@@ -16,22 +16,32 @@ export function TextShimmer({
   children,
   as: Component = 'p',
   className,
-  duration = 2,
-  spread = 2,
+  duration = 2.5,
+  spread = 0.25, // Changed default to be more subtle
 }: TextShimmerProps) {
   // Use motion[Component] syntax for custom elements
   const MotionComponent = motion[Component as keyof JSX.IntrinsicElements] || motion.div;
 
-  // Calculate an appropriate spread based on text length
-  const dynamicSpread = useMemo(() => {
-    // Create a proportional spread that scales with text length but stays within reasonable bounds
-    return Math.max(8, Math.min(children.length * spread, 50));
-  }, [children, spread]);
+  // Calculate optimal animation duration based on text length
+  // Using a logarithmic scale to prevent too much variance
+  const optimalDuration = useMemo(() => {
+    // Base duration with small adjustment for text length
+    // Using log scale prevents extreme durations
+    return duration * (1 + Math.log10(Math.max(children.length, 10)) * 0.2);
+  }, [children.length, duration]);
+
+  // Calculate the gradient width as a percentage based on text length
+  // Shorter text needs wider gradients relative to their length
+  const gradientWidth = useMemo(() => {
+    // For very short text, use wider gradients (as % of total width)
+    // For longer text, use narrower gradients
+    return Math.max(10, Math.min(25, 100 / (children.length * spread)));
+  }, [children.length, spread]);
 
   return (
     <MotionComponent
       className={cn(
-        'relative inline-block bg-clip-text text-transparent overflow-hidden',
+        'relative inline-block bg-clip-text text-transparent',
         className
       )}
       style={{
@@ -39,23 +49,25 @@ export function TextShimmer({
           linear-gradient(
             90deg, 
             transparent 0%, 
-            var(--base-gradient-color, currentColor) 45%, 
-            var(--base-gradient-color, currentColor) 55%, 
+            var(--base-gradient-color, currentColor) ${50 - gradientWidth/2}%, 
+            var(--base-gradient-color, currentColor) ${50 + gradientWidth/2}%, 
             transparent 100%
           ),
           linear-gradient(var(--base-color, #a1a1aa), var(--base-color, #a1a1aa))
         `,
         backgroundSize: '200% 100%',
         backgroundClip: 'text',
+        WebkitBackgroundClip: 'text',
       }}
       animate={{
-        backgroundPosition: ['200% center', '-100% center'],
+        backgroundPosition: ['120% center', '-20% center'],
       }}
       transition={{
         repeat: Infinity,
-        duration: duration * (0.5 + (children.length / 20)),
-        ease: 'linear',
-        repeatType: 'loop',
+        duration: optimalDuration,
+        ease: "linear",
+        repeatType: "loop",
+        repeatDelay: 0.5, // Add a slight pause between animations
       }}
     >
       {children}
