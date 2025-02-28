@@ -16,7 +16,7 @@ export const LoadingProgressIndicator = ({
         duration={1.8}
         className="font-medium [--base-color:theme(colors.muted.foreground)] [--base-gradient-color:theme(colors.primary.DEFAULT)]"
       >
-        Loaded {processedCount} of {total} suggestions...
+        {`Loaded ${processedCount} of ${total} suggestions...`}
       </TextShimmer>
     </div>
   );
