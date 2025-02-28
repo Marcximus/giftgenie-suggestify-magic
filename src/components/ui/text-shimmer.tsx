@@ -19,37 +19,43 @@ export function TextShimmer({
   duration = 2,
   spread = 2,
 }: TextShimmerProps) {
-  // Use motion.create() instead of motion() to address the deprecation warning
+  // Use motion[Component] syntax for custom elements
   const MotionComponent = motion[Component as keyof JSX.IntrinsicElements] || motion.div;
 
-  // Calculate a more effective spread based on text length
+  // Calculate an appropriate spread based on text length
   const dynamicSpread = useMemo(() => {
-    // Use a minimum spread to ensure visibility on short texts
-    return Math.max(10, Math.min(children.length * spread, 100));
+    // Create a proportional spread that scales with text length but stays within reasonable bounds
+    return Math.max(8, Math.min(children.length * spread, 50));
   }, [children, spread]);
 
   return (
     <MotionComponent
       className={cn(
-        'relative inline-block bg-clip-text text-transparent',
-        'bg-[length:300%_100%]',
+        'relative inline-block bg-clip-text text-transparent overflow-hidden',
         className
       )}
-      initial={{ backgroundPosition: '100% center' }}
-      animate={{ backgroundPosition: '0% center' }}
+      style={{
+        backgroundImage: `
+          linear-gradient(
+            90deg, 
+            transparent 0%, 
+            var(--base-gradient-color, currentColor) 45%, 
+            var(--base-gradient-color, currentColor) 55%, 
+            transparent 100%
+          ),
+          linear-gradient(var(--base-color, #a1a1aa), var(--base-color, #a1a1aa))
+        `,
+        backgroundSize: '200% 100%',
+        backgroundClip: 'text',
+      }}
+      animate={{
+        backgroundPosition: ['200% center', '-100% center'],
+      }}
       transition={{
         repeat: Infinity,
-        duration,
+        duration: duration * (0.5 + (children.length / 20)),
         ease: 'linear',
-      }}
-      style={{
-        '--spread': `${dynamicSpread}px`,
-        backgroundImage: `linear-gradient(
-          90deg,
-          transparent 0%,
-          var(--base-gradient-color, currentColor) 50%,
-          transparent 100%
-        ), linear-gradient(var(--base-color, #a1a1aa), var(--base-color, #a1a1aa))`,
+        repeatType: 'loop',
       }}
     >
       {children}
