@@ -10,6 +10,12 @@ interface ProductCardContentProps {
 }
 
 const formatPrice = (price: string | number | undefined): string => {
+  console.log('Formatting price:', {
+    price,
+    type: typeof price,
+    rawValue: price
+  });
+
   // If price is undefined or null, return default message
   if (price === undefined || price === null) {
     return 'Check price on Amazon';
@@ -56,24 +62,24 @@ export const ProductCardContent = ({
 
   return (
     <div className="p-3 sm:p-4 pt-2 flex-grow flex flex-col">
-      <p className="text-xs sm:text-sm leading-relaxed line-clamp-3 text-muted-foreground mb-auto font-medium tracking-wide">
+      <p className="text-xs sm:text-sm leading-relaxed line-clamp-3 text-muted-foreground mb-auto">
         {description}
       </p>
       <div className="mt-3 flex items-center justify-between">
         <p 
-          className="text-sm sm:text-base font-bold bg-gradient-to-r from-purple-600 to-blue-500 bg-clip-text text-transparent transition-all duration-300 hover:from-blue-500 hover:to-purple-600" 
+          className="text-sm sm:text-base font-bold bg-gradient-to-r from-[#9b87f5] to-[#847bd1] bg-clip-text text-transparent" 
           aria-label={`Price: ${formattedPrice}`}
         >
           {formattedPrice}
         </p>
         {rating && (
           <div 
-            className="flex items-center gap-1.5 bg-amber-50 px-2 py-1 rounded-md shadow-sm" 
+            className="flex items-center gap-1.5" 
             aria-label={`Rating: ${rating.toFixed(1)} out of 5 stars from ${totalRatings?.toLocaleString()} reviews`}
           >
             <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" aria-hidden="true" />
-            <span className="text-xs sm:text-sm font-medium text-gray-700">
-              {rating.toFixed(1)} <span className="text-gray-500">({totalRatings?.toLocaleString()})</span>
+            <span className="text-xs sm:text-sm text-muted-foreground">
+              {rating.toFixed(1)} ({totalRatings?.toLocaleString()})
             </span>
           </div>
         )}

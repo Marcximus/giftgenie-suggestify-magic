@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { loadingMessages } from './loadingMessages';
 import { Spinner } from "@/components/ui/spinner";
@@ -83,17 +82,17 @@ export const LoadingMessage = ({ isLoading }: LoadingMessageProps) => {
       `}
       aria-live="polite"
     >
-      <div className="relative">
+      <div className="-ml-[12%] sm:-ml-[4%]">
         <Spinner variant="infinite" className="w-16 h-16 sm:w-20 sm:h-20" />
       </div>
-      <p className="text-[#8E9196] text-center text-sm md:text-base font-medium max-w-md px-4 animate-pulse">
+      <p className="text-[#8E9196] text-center text-sm md:text-base font-medium max-w-md px-4 animate-pulse-text">
         {shuffledMessages[currentLoadingMessage]}
       </p>
       
       <div className="w-full max-w-xs mt-4">
         <div className="w-full bg-gray-200 rounded-full h-1.5 mb-1 dark:bg-gray-700">
           <div 
-            className="bg-gradient-to-r from-purple-500 to-blue-500 h-1.5 rounded-full transition-all duration-300 ease-out"
+            className="bg-primary h-1.5 rounded-full transition-all duration-300 ease-out"
             style={{ width: `${loadingProgress}%` }}
           ></div>
         </div>
