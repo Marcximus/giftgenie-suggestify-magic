@@ -2,7 +2,7 @@
 import { ProductCard } from './ProductCard';
 import { GiftSuggestion } from '@/types/suggestions';
 import { getDescriptionFromCache } from '@/utils/descriptionUtils';
-import { useEffect, useState, memo } from 'react';
+import { useMemo, memo } from 'react';
 
 interface SuggestionItemProps {
   suggestion: GiftSuggestion;
@@ -17,22 +17,19 @@ export const SuggestionItem = memo(({
   customDescription, 
   onMoreLikeThis 
 }: SuggestionItemProps) => {
-  // Use state to ensure description is stable between renders
-  const [displayDescription, setDisplayDescription] = useState<string>('');
-  
-  // Update description only when dependencies change, not on every render
-  useEffect(() => {
+  // Use useMemo to stabilize the description between renders
+  const displayDescription = useMemo(() => {
     // First try the passed customDescription, then check cache, finally fallback to original
     const cachedDescription = suggestion.title ? getDescriptionFromCache(suggestion.title) : null;
     const finalDescription = customDescription || cachedDescription || suggestion.description;
     
-    setDisplayDescription(finalDescription);
-    
-    console.log('SuggestionItem setting description:', {
+    console.log('SuggestionItem computing description:', {
       title: suggestion.title,
       source: customDescription ? 'prop' : (cachedDescription ? 'cache' : 'original'),
       displayDescription: finalDescription
     });
+    
+    return finalDescription;
   }, [suggestion.title, suggestion.description, customDescription]);
 
   return (
@@ -59,4 +56,3 @@ export const SuggestionItem = memo(({
     </div>
   );
 });
-
