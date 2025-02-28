@@ -87,7 +87,7 @@ export const LoadingMessage = ({ isLoading }: LoadingMessageProps) => {
       <div className="-ml-[12%] sm:-ml-[4%]">
         <Spinner variant="infinite" className="w-16 h-16 sm:w-20 sm:h-20" />
       </div>
-      <div className="text-center max-w-md px-4">
+      <div className="text-center max-w-md px-4 mt-8">
         <TextShimmer
           duration={3}
           className="text-sm md:text-base font-medium [--base-color:theme(colors.muted.foreground)] [--base-gradient-color:theme(colors.primary.DEFAULT)]"
