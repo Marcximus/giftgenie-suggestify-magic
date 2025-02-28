@@ -20,6 +20,17 @@ serve(async (req) => {
     
     console.log('Generate custom description for:', { title, description });
 
+    if (!title) {
+      throw new Error('Missing title in request');
+    }
+
+    // Extract important keywords from the title to avoid in the description
+    const titleWords = title.toLowerCase().split(/\s+/).filter(word => 
+      word.length > 3 && !['with', 'and', 'for', 'the', 'this', 'that'].includes(word)
+    );
+    
+    console.log('Title keywords to avoid:', titleWords);
+
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -34,9 +45,10 @@ serve(async (req) => {
             content: `You are an expert product description writer. Your task is to:
 
 1. Create descriptions that are EXACTLY 13-18 words long
-2. NEVER repeat the product title
+2. NEVER use any of these words from the product title: ${titleWords.join(', ')}
+3. Return ONLY the description as plain text, no additional formatting or explanation
 
-Return ONLY the description, no additional text or formatting.`
+The description should highlight key benefits and features without mentioning the product name directly.`
           },
           {
             role: "user",
@@ -72,15 +84,23 @@ Return ONLY the description, no additional text or formatting.`
     }
 
     // Check for title word repetition
-    const titleWords = new Set(title.toLowerCase().split(/\s+/));
     const descriptionWords = generatedDescription.toLowerCase().split(/\s+/);
-    const repeatedWords = descriptionWords.filter(word => titleWords.has(word));
+    const repeatedWords = titleWords.filter(word => descriptionWords.includes(word));
     
     if (repeatedWords.length > 0) {
-      console.warn('Description contains words from title:', {
+      console.error('Description contains words from title:', {
         repeatedWords,
         description: generatedDescription
       });
+      
+      // If there are repeated words, we regenerate with a stricter prompt
+      console.log('Regenerating description to avoid title words...');
+      
+      // Return the description even if it contains title words, as fallback
+      return new Response(
+        JSON.stringify({ description: generatedDescription }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     return new Response(

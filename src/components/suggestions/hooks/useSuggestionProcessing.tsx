@@ -78,29 +78,48 @@ export const useSuggestionProcessing = ({
         s => !s.amazon_image_url || !s.amazon_price
       );
 
+      console.log('Pending suggestions count:', pendingSuggestions.length);
+      console.log('Current custom descriptions state:', customDescriptions);
+
       for (const suggestion of pendingSuggestions) {
         if (abortController.current?.signal.aborted) break;
 
         try {
+          const title = suggestion.title;
+          
+          if (!title) {
+            console.error('Suggestion is missing title:', suggestion);
+            continue;
+          }
+
           // Generate custom description if needed
-          if (!customDescriptions[suggestion.title]) {
+          if (!customDescriptions[title]) {
+            console.log('Generating custom description for:', title);
+            const originalDesc = suggestion.description || title;
+            
             const customDescription = await generateCustomDescription(
-              suggestion.title,
-              suggestion.description
+              title,
+              originalDesc
             );
 
             if (customDescription) {
-              setCustomDescriptions(prev => ({
-                ...prev,
-                [suggestion.title]: customDescription
-              }));
-              
-              console.log('Generated custom description:', {
-                title: suggestion.title,
-                original: suggestion.description,
+              console.log('Successfully generated custom description:', {
+                title,
+                original: originalDesc,
                 custom: customDescription
               });
+              
+              setCustomDescriptions(prev => {
+                const updated = { ...prev };
+                updated[title] = customDescription;
+                console.log('Updated customDescriptions state:', updated);
+                return updated;
+              });
+            } else {
+              console.error('Failed to generate custom description for:', title);
             }
+          } else {
+            console.log('Using existing custom description for:', title);
           }
 
           // Add to visible suggestions as soon as processed

@@ -15,14 +15,20 @@ export const SuggestionItem = ({
   customDescription, 
   onMoreLikeThis 
 }: SuggestionItemProps) => {
-  // Use the custom description if available, otherwise use the original description
-  const displayDescription = customDescription || suggestion.description;
+  // Ensure we never pass undefined as the description
+  const fallbackDescription = suggestion.description || suggestion.title || '';
+  
+  // Use the custom description if available and valid, otherwise use the original description
+  const displayDescription = (typeof customDescription === 'string' && customDescription.length > 0) 
+    ? customDescription 
+    : fallbackDescription;
   
   console.log('SuggestionItem rendering:', {
     title: suggestion.title,
     originalDescription: suggestion.description,
     customDescription,
-    displayDescription
+    displayDescription,
+    customDescriptionType: customDescription !== undefined ? typeof customDescription : 'undefined'
   });
 
   return (
