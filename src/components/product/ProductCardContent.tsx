@@ -1,3 +1,4 @@
+
 import { Star } from "lucide-react";
 
 interface ProductCardContentProps {

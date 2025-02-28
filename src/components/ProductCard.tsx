@@ -1,3 +1,4 @@
+
 import { memo } from 'react';
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { ProductImage } from "./ProductImage";

@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 
 export const generateCustomDescription = async (title: string, originalDescription: string): Promise<string> => {
