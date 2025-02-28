@@ -11,7 +11,6 @@ export const LoadingMessage = ({ isLoading }: LoadingMessageProps) => {
   const [shuffledMessages, setShuffledMessages] = useState<string[]>([]);
   const [isVisible, setIsVisible] = useState(false);
   const [loadingProgress, setLoadingProgress] = useState(0);
-  const [loadingStage, setLoadingStage] = useState<'initial' | 'searching' | 'processing' | 'finalizing'>('initial');
 
   // Function to shuffle messages but keep "Here we go..." at the end
   const shuffleMessages = () => {
@@ -27,7 +26,6 @@ export const LoadingMessage = ({ isLoading }: LoadingMessageProps) => {
       setIsVisible(true);
       shuffleMessages();
       setLoadingProgress(0);
-      setLoadingStage('initial');
     } else {
       const timer = setTimeout(() => {
         setIsVisible(false);
@@ -49,15 +47,6 @@ export const LoadingMessage = ({ isLoading }: LoadingMessageProps) => {
 
       progressInterval = setInterval(() => {
         setLoadingProgress(prev => {
-          // Update loading stage based on progress
-          if (prev >= 10 && prev < 40 && loadingStage === 'initial') {
-            setLoadingStage('searching');
-          } else if (prev >= 40 && prev < 75 && loadingStage === 'searching') {
-            setLoadingStage('processing');
-          } else if (prev >= 75 && loadingStage === 'processing') {
-            setLoadingStage('finalizing');
-          }
-
           const increment = prev < 30 ? 5 : prev < 60 ? 3 : prev < 85 ? 1 : 0.5;
           return Math.min(prev + increment, 95);
         });
@@ -71,28 +60,14 @@ export const LoadingMessage = ({ isLoading }: LoadingMessageProps) => {
       if (interval) clearInterval(interval);
       if (progressInterval) clearInterval(progressInterval);
     };
-  }, [isLoading, shuffledMessages.length, loadingStage]);
+  }, [isLoading, shuffledMessages.length]);
 
   if (!isVisible || shuffledMessages.length === 0) return null;
-
-  // Get stage-specific label
-  const getStageLabel = () => {
-    switch (loadingStage) {
-      case 'initial':
-        return 'Starting your gift search...';
-      case 'searching':
-        return 'Searching for the perfect gifts...';
-      case 'processing':
-        return 'Analyzing product details...';
-      case 'finalizing':
-        return 'Almost ready!';
-    }
-  };
 
   return (
     <div 
       className={`
-        flex flex-col items-center justify-center space-y-6 sm:space-y-8 mt-10 sm:mt-16 
+        flex flex-col items-center justify-center space-y-8 mt-12 sm:mt-16 
         transition-all duration-500 ease-in-out
         ${isLoading ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}
       `}
@@ -105,21 +80,16 @@ export const LoadingMessage = ({ isLoading }: LoadingMessageProps) => {
         {shuffledMessages[currentLoadingMessage]}
       </p>
       
-      <div className="w-full max-w-xs mt-2 px-4">
+      <div className="w-full max-w-xs mt-4">
         <div className="w-full bg-gray-200 rounded-full h-1.5 mb-1 dark:bg-gray-700">
           <div 
             className="bg-primary h-1.5 rounded-full transition-all duration-300 ease-out"
             style={{ width: `${loadingProgress}%` }}
           ></div>
         </div>
-        <div className="flex justify-between items-center">
-          <p className="text-xs text-gray-500">
-            {getStageLabel()}
-          </p>
-          <p className="text-xs text-gray-500">
-            {Math.round(loadingProgress)}%
-          </p>
-        </div>
+        <p className="text-xs text-gray-500 text-center">
+          {loadingProgress < 95 ? 'Searching for the perfect gifts...' : 'Almost ready!'}
+        </p>
       </div>
     </div>
   );

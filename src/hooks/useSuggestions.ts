@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import useDeepSeekSuggestions from './useDeepSeekSuggestions';
@@ -6,15 +5,12 @@ import { useAmazonProductProcessing } from './useAmazonProductProcessing';
 import { GiftSuggestion } from '@/types/suggestions';
 import { debounce } from '@/utils/debounce';
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
 
 export const useSuggestions = () => {
   const [lastQuery, setLastQuery] = useState('');
   const { generateSuggestions } = useDeepSeekSuggestions();
   const { processSuggestions } = useAmazonProductProcessing();
   const queryClient = useQueryClient();
-  const { toast } = useToast();
-  const [retryCount, setRetryCount] = useState(0);
 
   const trackSearchAnalytics = async (query: string, suggestions: GiftSuggestion[]) => {
     try {
@@ -41,7 +37,7 @@ export const useSuggestions = () => {
     }
   };
 
-  const { data: suggestions = [], isPending: isLoading, mutate: fetchSuggestions, error } = useMutation({
+  const { data: suggestions = [], isPending: isLoading, mutate: fetchSuggestions } = useMutation({
     mutationFn: async (query: string) => {
       const startTime = performance.now();
       try {
@@ -70,9 +66,6 @@ export const useSuggestions = () => {
             status: 'success'
           });
           
-          // Reset retry count on success
-          setRetryCount(0);
-          
           console.log('Processed suggestions with Amazon data:', results);
           return results;
         }
@@ -90,46 +83,12 @@ export const useSuggestions = () => {
           error_message: error.message
         });
         
-        // Increment retry count
-        setRetryCount(prev => prev + 1);
-        
-        // If error occurs and we haven't retried too many times, show toast with retry option
-        if (retryCount < 2) {
-          toast({
-            title: "Trouble finding gifts",
-            description: "We're having trouble processing your request. Would you like to try again?",
-            action: (
-              <button 
-                className="rounded bg-primary px-3 py-1 text-white font-medium text-sm"
-                onClick={() => fetchSuggestions(query)}
-              >
-                Retry
-              </button>
-            ),
-          });
-        } else {
-          // After multiple retries, show different message
-          toast({
-            title: "Something went wrong",
-            description: "Please try a different search or come back later.",
-            variant: "destructive"
-          });
-        }
-        
         throw error;
       }
     },
     onSuccess: (data) => {
       console.log('Successfully updated suggestions cache:', data);
       queryClient.setQueryData(['suggestions'], data);
-      
-      if (data.length > 0) {
-        toast({
-          title: "Gift ideas found!",
-          description: `We found ${data.length} gift suggestions for you`,
-          variant: "default"
-        });
-      }
     }
   });
 
@@ -148,21 +107,12 @@ export const useSuggestions = () => {
   const handleGenerateMore = async () => {
     if (lastQuery) {
       console.log('Generating more suggestions for query:', lastQuery);
-      toast({
-        title: "Generating more ideas",
-        description: "Finding more gift suggestions for you...",
-      });
       await fetchSuggestions(lastQuery);
     }
   };
 
   const handleMoreLikeThis = async (title: string) => {
     console.log('Generating more suggestions like:', title);
-    toast({
-      title: "Finding similar gifts",
-      description: `Looking for gifts similar to "${title.length > 30 ? title.substring(0, 30) + '...' : title}"`,
-    });
-    
     const query = lastQuery.toLowerCase();
     
     // Extract key product characteristics from the title
@@ -227,7 +177,6 @@ IMPORTANT GUIDELINES:
     handleSearch: debouncedSearch,
     handleGenerateMore,
     handleMoreLikeThis,
-    handleStartOver,
-    error
+    handleStartOver
   };
 };

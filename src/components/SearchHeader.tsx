@@ -1,4 +1,3 @@
-
 import { lazy, Suspense } from 'react';
 import { SearchBox } from './SearchBox';
 import { LoadingMessage } from './search/LoadingMessage';
