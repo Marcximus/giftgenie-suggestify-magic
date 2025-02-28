@@ -6,7 +6,6 @@ import { useAmazonProductProcessing } from './useAmazonProductProcessing';
 import { GiftSuggestion } from '@/types/suggestions';
 import { debounce } from '@/utils/debounce';
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from '@/components/ui/use-toast';
 
 export const useSuggestions = () => {
   const [lastQuery, setLastQuery] = useState('');
@@ -79,13 +78,6 @@ export const useSuggestions = () => {
         if (newSuggestions.length > 0) {
           console.log('Processing suggestions with Amazon data');
           
-          // Show a toast notification to let the user know we're finding products
-          toast({
-            title: "Finding products",
-            description: "We're searching for the best matches for your request.",
-            duration: 3000,
-          });
-          
           // Start progressive processing of suggestions
           const results = await processSuggestions(newSuggestions, priceRange);
           
@@ -107,13 +99,6 @@ export const useSuggestions = () => {
         return [];
       } catch (error) {
         console.error('Error in suggestion mutation:', error);
-        
-        // Show error toast
-        toast({
-          title: "Error finding gifts",
-          description: "We couldn't process your request. Please try again.",
-          variant: "destructive",
-        });
         
         // Log metrics for failed processing
         await supabase.from('api_metrics').insert({
@@ -202,13 +187,6 @@ IMPORTANT GUIDELINES:
 - Maintain similar quality level and target audience`;
     
     console.log('Generated "More like this" prompt:', contextualPrompt);
-    
-    // Show a toast notification to indicate we're looking for similar items
-    toast({
-      title: "Finding similar items",
-      description: `Looking for gifts similar to "${title.substring(0, 30)}${title.length > 30 ? '...' : ''}"`,
-      duration: 3000,
-    });
     
     setLastQuery(contextualPrompt);
     await fetchSuggestions(contextualPrompt);

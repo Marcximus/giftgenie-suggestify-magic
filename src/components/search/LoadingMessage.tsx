@@ -96,13 +96,6 @@ export const LoadingMessage = ({ isLoading }: LoadingMessageProps) => {
             style={{ width: `${loadingProgress}%` }}
           ></div>
         </div>
-        <p className="text-xs text-gray-500 text-center">
-          {loadingProgress < 20 ? 'Analyzing your request...' :
-           loadingProgress < 40 ? 'Searching for ideas...' :
-           loadingProgress < 60 ? 'Finding products on Amazon...' :
-           loadingProgress < 90 ? 'Gathering product details...' : 
-           'Almost ready!'}
-        </p>
       </div>
     </div>
   );
