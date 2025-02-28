@@ -1,3 +1,4 @@
+
 import { useEffect } from 'react';
 import { PersonSelector } from './gift-selector/PersonSelector';
 import { AgeSelector } from './gift-selector/AgeSelector';
@@ -23,6 +24,7 @@ export const DynamicGiftSelector = ({
     selectedPerson,
     selectedAge,
     handleSelection,
+    handleInterestUpdate,
     reset
   } = useGiftSelector(onUpdate);
 
@@ -62,6 +64,7 @@ export const DynamicGiftSelector = ({
             selectedPerson={selectedPerson}
             selectedAge={selectedAge}
             onSelect={(value) => handleSelection('interest', value, onSelectionComplete)}
+            onInterestUpdate={handleInterestUpdate}
           />
         )}
       </div>

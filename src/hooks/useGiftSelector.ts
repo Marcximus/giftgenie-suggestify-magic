@@ -1,3 +1,4 @@
+
 import { useState, useCallback } from 'react';
 
 export const useGiftSelector = (onUpdate: (query: string) => void) => {
@@ -78,6 +79,25 @@ export const useGiftSelector = (onUpdate: (query: string) => void) => {
     }
   }, [updateSearchText, onUpdate]);
 
+  // New function to handle interest updates without triggering full search
+  const handleInterestUpdate = useCallback((interests: string[]) => {
+    console.log('Interest update:', interests);
+    
+    if (interests.length > 0) {
+      // Only update the search box with interests, without moving to the next phase
+      const interestsText = interests.join(' and ');
+      const query = `Gift ideas for a ${selectedAge} year old ${selectedPerson.toLowerCase()} who likes ${interestsText.toLowerCase()} with a budget of ${selectedPrice}`;
+      
+      console.log('Updating query with interests:', query);
+      onUpdate(query);
+    } else {
+      // If all interests are deselected, revert to the price phase query
+      const query = `Gift for ${selectedPerson.toLowerCase()} (${selectedAge} years old) - Budget: ${selectedPrice}`;
+      console.log('Reverting to price phase query:', query);
+      onUpdate(query);
+    }
+  }, [selectedPerson, selectedAge, selectedPrice, onUpdate]);
+
   const reset = useCallback(() => {
     console.log('Resetting selector state');
     setCurrentPhase('person');
@@ -92,6 +112,7 @@ export const useGiftSelector = (onUpdate: (query: string) => void) => {
     selectedAge,
     selectedPrice,
     handleSelection,
+    handleInterestUpdate,
     reset
   };
 };

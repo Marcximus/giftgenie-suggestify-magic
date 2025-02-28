@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { getInterests } from '@/utils/interest-utils';
@@ -6,9 +7,15 @@ interface InterestSelectorProps {
   selectedPerson: string;
   selectedAge: string;
   onSelect: (value: string) => void;
+  onInterestUpdate: (interests: string[]) => void; // New prop for interest updates
 }
 
-export const InterestSelector = ({ selectedPerson, selectedAge, onSelect }: InterestSelectorProps) => {
+export const InterestSelector = ({ 
+  selectedPerson, 
+  selectedAge, 
+  onSelect, 
+  onInterestUpdate 
+}: InterestSelectorProps) => {
   const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
 
   const handleInterestClick = (interest: string) => {
@@ -26,6 +33,9 @@ export const InterestSelector = ({ selectedPerson, selectedAge, onSelect }: Inte
         onSelect(newInterests.join(' and '));
       }
     }
+    
+    // Always update parent with current interests
+    onInterestUpdate(newInterests);
   };
 
   return (
