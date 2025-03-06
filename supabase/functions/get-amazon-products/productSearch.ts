@@ -1,3 +1,4 @@
+
 import { AmazonProduct, SearchConfig } from './types.ts';
 import { generateFallbackTerms } from './fallbackGenerator.ts';
 import { cleanSearchTerm } from './searchUtils.ts';
@@ -89,6 +90,24 @@ const searchWithTerm = async (
   }
 
   const product = searchData.data.products[0];
+  
+  // Ensure we get a valid title from the response
+  const productTitle = product.title || product.product_title;
+  
+  if (!productTitle) {
+    console.warn('⚠️ Product found but missing title:', {
+      attempt,
+      strategy,
+      searchTerm: term,
+      productData: {
+        asin: product.asin,
+        hasTitle: !!product.title,
+        hasProductTitle: !!product.product_title,
+        allKeys: Object.keys(product)
+      }
+    });
+  }
+  
   const priceValue = product.product_price ? 
     parseFloat(product.product_price.replace(/[^0-9.]/g, '')) : 
     undefined;
@@ -97,7 +116,7 @@ const searchWithTerm = async (
     attempt,
     strategy,
     searchTerm: term,
-    title: product.title,
+    title: productTitle,
     price: priceValue,
     hasImage: !!product.product_photo,
     rating: product.product_star_rating,
@@ -105,8 +124,8 @@ const searchWithTerm = async (
   });
 
   return {
-    title: product.title,
-    description: product.product_description || product.title,
+    title: productTitle || term, // Fallback to search term if no title found
+    description: product.product_description || productTitle || term,
     price: priceValue,
     currency: 'USD',
     imageUrl: product.product_photo || product.thumbnail,
@@ -219,6 +238,12 @@ export const searchProducts = async (
           asin: product.asin
         }
       });
+      
+      // Final validation of product title
+      if (!product.title) {
+        console.warn('⚠️ Final product missing title, using search term as fallback');
+        product.title = searchTerm;
+      }
     }
 
     return product;
