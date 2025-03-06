@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { corsHeaders } from '../_shared/cors.ts';
 
@@ -126,12 +127,13 @@ serve(async (req) => {
     const priceRange = extractPriceRange(prompt);
     console.log('Price range with margins:', priceRange);
 
-    // Updated system message with new format
+    // Updated system message with new format and instruction about combined interests
     const systemMessage = `You are a talented gift suggestion expert. Your task is to generate EXACTLY 8 specific, searchable gift suggestions.
 Key requirements:
 - Return suggestions as a JSON array of strings
 - Focus on currently available, popular products
 - Consider the recipient's gender, interests, age, and occasion
+- IMPORTANT: When multiple interests are mentioned (e.g., "football and dogs"), create AT MOST ONE suggestion that combines these interests (e.g., "NFL Dog Collar"). The remaining 7 suggestions should focus on individual interests separately.
 - Do not go out of line to combine a recipient's interests meaning if someone is interested in knitting and cats, don't make bad suggestions that combines knitting and cats if it dosnt make a great gift
 - Highly consider the specified budget`;
 
@@ -140,6 +142,7 @@ Key requirements:
 
 Guidelines:
 1. Make each suggestion specific and searchable (e.g., "Apple Airpods 2" not just "earpods")
+2. IMPORTANT: Include AT MOST ONE suggestion that combines multiple interests (if multiple interests are mentioned)
 3. Important: Consider the budget of ${priceRange.min}-${priceRange.max}
 4. Format response as JSON array: ["suggestion1", "suggestion2", ..., "suggestion8"]
 
