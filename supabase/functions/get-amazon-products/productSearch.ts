@@ -5,6 +5,49 @@ import { cleanSearchTerm } from './searchUtils.ts';
 
 const RAPIDAPI_HOST = 'real-time-amazon-data.p.rapidapi.com';
 
+// Check if a product title is relevant to the search term
+const isRelevantProduct = (productTitle: string, searchTerm: string): boolean => {
+  if (!productTitle) return false;
+  
+  // Convert both to lowercase for case-insensitive comparison
+  const normalizedTitle = productTitle.toLowerCase();
+  const normalizedSearch = searchTerm.toLowerCase();
+  
+  // Extract key terms from search
+  const searchKeywords = normalizedSearch.split(' ')
+    .filter(word => word.length > 3) // Only consider substantial words
+    .filter(word => !['with', 'and', 'for', 'the', 'team', 'logo'].includes(word)); // Filter common words
+  
+  // If searching for dog products, make sure "dog" is in the title if it was in the search
+  const isDogProduct = normalizedSearch.includes('dog');
+  if (isDogProduct && !normalizedTitle.includes('dog')) {
+    console.log('⚠️ Product rejected: Dog product requested but not found in title');
+    return false;
+  }
+  
+  // If NFL is mentioned, make sure it's in the title
+  const isNFLProduct = normalizedSearch.includes('nfl');
+  if (isNFLProduct && !normalizedTitle.includes('nfl')) {
+    console.log('⚠️ Product rejected: NFL product requested but not found in title');
+    return false;
+  }
+  
+  // Check if at least 50% of keywords are in the title
+  const matchingKeywords = searchKeywords.filter(keyword => normalizedTitle.includes(keyword));
+  const keywordMatchRatio = searchKeywords.length > 0 ? matchingKeywords.length / searchKeywords.length : 0;
+  
+  console.log('🔍 Title relevance check:', {
+    title: productTitle,
+    searchTerm,
+    searchKeywords,
+    matchingKeywords,
+    matchRatio: keywordMatchRatio,
+    passes: keywordMatchRatio >= 0.5
+  });
+  
+  return keywordMatchRatio >= 0.5; // At least half of the keywords should match
+};
+
 const searchWithTerm = async (
   term: string, 
   apiKey: string,
@@ -89,7 +132,33 @@ const searchWithTerm = async (
     return null;
   }
 
-  const product = searchData.data.products[0];
+  // Find the first relevant product instead of just taking the first one
+  let relevantProduct = null;
+  for (let i = 0; i < Math.min(searchData.data.products.length, 5); i++) {
+    const product = searchData.data.products[i];
+    const productTitle = product.title || product.product_title;
+    
+    if (productTitle && isRelevantProduct(productTitle, term)) {
+      relevantProduct = product;
+      console.log(`✅ Found relevant product at position ${i+1}:`, {
+        title: productTitle,
+        searchTerm: term
+      });
+      break;
+    }
+  }
+  
+  // If no relevant product was found, return null to try fallbacks
+  if (!relevantProduct) {
+    console.log('⚠️ No relevant products found in the first 5 results:', {
+      attempt,
+      strategy,
+      searchTerm: term
+    });
+    return null;
+  }
+  
+  const product = relevantProduct;
   
   // Ensure we get a valid title from the response
   const productTitle = product.title || product.product_title;
@@ -207,15 +276,26 @@ export const searchProducts = async (
         );
         
         if (product) {
-          console.log('✅ Found product with fallback term:', { 
-            fallbackTerm, 
-            usePriceConstraints,
-            priority,
-            attempt: attemptNumber,
-            productTitle: product.title,
-            productPrice: product.price 
-          });
-          break;
+          // Validate that the fallback product is actually relevant to the original search term
+          if (isRelevantProduct(product.title, cleanedTerm)) {
+            console.log('✅ Found relevant product with fallback term:', { 
+              fallbackTerm, 
+              originalTerm: cleanedTerm,
+              usePriceConstraints,
+              priority,
+              attempt: attemptNumber,
+              productTitle: product.title,
+              productPrice: product.price 
+            });
+            break;
+          } else {
+            console.log('❌ Fallback product not relevant to original search:', {
+              fallbackTerm,
+              originalTerm: cleanedTerm,
+              productTitle: product.title
+            });
+            product = null; // Reset product to try next fallback
+          }
         } else {
           console.log('❌ No product found with fallback term:', {
             fallbackTerm,
@@ -243,6 +323,12 @@ export const searchProducts = async (
       if (!product.title) {
         console.warn('⚠️ Final product missing title, using search term as fallback');
         product.title = searchTerm;
+      }
+      
+      // Final relevance check for the original search term
+      if (!isRelevantProduct(product.title, searchTerm)) {
+        console.warn('⚠️ Final product not relevant to original search term, returning null');
+        return null;
       }
     }
 
