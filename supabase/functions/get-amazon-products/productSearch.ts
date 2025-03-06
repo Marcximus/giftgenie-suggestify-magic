@@ -1,4 +1,3 @@
-
 import { AmazonProduct, SearchConfig } from './types.ts';
 import { generateFallbackTerms } from './fallbackGenerator.ts';
 import { cleanSearchTerm } from './searchUtils.ts';
@@ -18,21 +17,47 @@ const isRelevantProduct = (productTitle: string, searchTerm: string): boolean =>
     .filter(word => word.length > 3) // Only consider substantial words
     .filter(word => !['with', 'and', 'for', 'the', 'team', 'logo'].includes(word)); // Filter common words
   
-  // If searching for dog products, make sure "dog" is in the title if it was in the search
+  // Check if product contains key terms from the search
+  // For dog products, if "dog" is in the search term, at least one dog reference should be in the title
   const isDogProduct = normalizedSearch.includes('dog');
-  if (isDogProduct && !normalizedTitle.includes('dog')) {
+  const hasDogReference = normalizedTitle.includes('dog') || 
+                          normalizedTitle.includes('canine') || 
+                          normalizedTitle.includes('puppy') || 
+                          normalizedTitle.includes('pet');
+  
+  if (isDogProduct && !hasDogReference) {
     console.log('⚠️ Product rejected: Dog product requested but not found in title');
     return false;
   }
   
-  // If NFL is mentioned, make sure it's in the title
+  // For NFL products, check for team references
   const isNFLProduct = normalizedSearch.includes('nfl');
-  if (isNFLProduct && !normalizedTitle.includes('nfl')) {
+  const hasNFLReference = normalizedTitle.includes('nfl') || 
+                          normalizedTitle.includes('football') || 
+                          normalizedTitle.includes('team') || 
+                          /patriots|cowboys|eagles|chiefs|49ers|steelers|packers|bears|ravens|giants/i.test(normalizedTitle);
+  
+  if (isNFLProduct && !hasNFLReference) {
     console.log('⚠️ Product rejected: NFL product requested but not found in title');
     return false;
   }
   
-  // Check if at least 50% of keywords are in the title
+  // If the search is very specific about the product type (bowl, collar, etc)
+  const specificProductTypes = ['bowl', 'collar', 'leash', 'bed', 'mug', 'jersey', 'blanket', 'hoodie'];
+  const requestedProductType = specificProductTypes.find(type => normalizedSearch.includes(type));
+  
+  if (requestedProductType && !normalizedTitle.includes(requestedProductType)) {
+    console.log(`⚠️ Product rejected: ${requestedProductType} requested but not found in title`);
+    // For these specific product types, we'll be more lenient if it's a pet product
+    if (isDogProduct && hasDogReference) {
+      console.log('🐶 But it is a dog product, so giving it partial relevance');
+      // Still allow it if it's at least a dog product when we're looking for dog accessories
+    } else {
+      return false;
+    }
+  }
+  
+  // Check if at least 40% of keywords are in the title (less strict than before)
   const matchingKeywords = searchKeywords.filter(keyword => normalizedTitle.includes(keyword));
   const keywordMatchRatio = searchKeywords.length > 0 ? matchingKeywords.length / searchKeywords.length : 0;
   
@@ -42,10 +67,10 @@ const isRelevantProduct = (productTitle: string, searchTerm: string): boolean =>
     searchKeywords,
     matchingKeywords,
     matchRatio: keywordMatchRatio,
-    passes: keywordMatchRatio >= 0.5
+    passes: keywordMatchRatio >= 0.4
   });
   
-  return keywordMatchRatio >= 0.5; // At least half of the keywords should match
+  return keywordMatchRatio >= 0.4; // Now requiring 40% match instead of 50%
 };
 
 const searchWithTerm = async (
@@ -245,65 +270,87 @@ export const searchProducts = async (
     let product = await searchWithTerm(cleanedTerm, apiKey, searchConfig, true, 1, 'exact');
     
     if (!product) {
-      console.log('⚠️ No products found with original term, generating fallback terms');
-      const fallbackTerms = generateFallbackTerms(cleanedTerm);
-      console.log('🔄 Generated fallback terms:', {
-        originalTerm: cleanedTerm,
-        fallbackOptions: fallbackTerms.map(t => ({
-          searchTerm: t.searchTerm,
-          usePriceConstraints: t.usePriceConstraints,
-          priority: t.priority
-        }))
-      });
+      console.log('⚠️ No products found with original term, trying without price constraints');
+      // Try again without price constraints
+      product = await searchWithTerm(cleanedTerm, apiKey, searchConfig, false, 1, 'exact-no-price');
       
-      for (const { searchTerm: fallbackTerm, usePriceConstraints, priority } of fallbackTerms) {
-        const attemptNumber = fallbackTerms.findIndex(t => t.searchTerm === fallbackTerm) + 2;
-        console.log('🔄 Trying fallback search:', { 
-          fallbackTerm, 
-          usePriceConstraints,
-          priority,
-          attempt: attemptNumber,
-          totalFallbacks: fallbackTerms.length
+      if (!product) {
+        console.log('⚠️ Still no products, generating fallback terms');
+        const fallbackTerms = generateFallbackTerms(cleanedTerm);
+        console.log('🔄 Generated fallback terms:', {
+          originalTerm: cleanedTerm,
+          fallbackOptions: fallbackTerms.map(t => ({
+            searchTerm: t.searchTerm,
+            usePriceConstraints: t.usePriceConstraints,
+            priority: t.priority
+          }))
         });
         
-        product = await searchWithTerm(
-          fallbackTerm, 
-          apiKey, 
-          searchConfig, 
-          usePriceConstraints, 
-          attemptNumber,
-          `fallback-priority-${priority}`
-        );
-        
-        if (product) {
-          // Validate that the fallback product is actually relevant to the original search term
-          if (isRelevantProduct(product.title, cleanedTerm)) {
-            console.log('✅ Found relevant product with fallback term:', { 
-              fallbackTerm, 
-              originalTerm: cleanedTerm,
-              usePriceConstraints,
-              priority,
-              attempt: attemptNumber,
-              productTitle: product.title,
-              productPrice: product.price 
-            });
-            break;
-          } else {
-            console.log('❌ Fallback product not relevant to original search:', {
-              fallbackTerm,
-              originalTerm: cleanedTerm,
-              productTitle: product.title
-            });
-            product = null; // Reset product to try next fallback
-          }
-        } else {
-          console.log('❌ No product found with fallback term:', {
-            fallbackTerm,
+        for (const { searchTerm: fallbackTerm, usePriceConstraints, priority } of fallbackTerms) {
+          const attemptNumber = fallbackTerms.findIndex(t => t.searchTerm === fallbackTerm) + 2;
+          console.log('🔄 Trying fallback search:', { 
+            fallbackTerm, 
             usePriceConstraints,
             priority,
-            attempt: attemptNumber
+            attempt: attemptNumber,
+            totalFallbacks: fallbackTerms.length
           });
+          
+          product = await searchWithTerm(
+            fallbackTerm, 
+            apiKey, 
+            searchConfig, 
+            usePriceConstraints, 
+            attemptNumber,
+            `fallback-priority-${priority}`
+          );
+          
+          if (product) {
+            // Validate that the fallback product is actually relevant to the original search term
+            if (isRelevantProduct(product.title, cleanedTerm)) {
+              console.log('✅ Found relevant product with fallback term:', { 
+                fallbackTerm, 
+                originalTerm: cleanedTerm,
+                usePriceConstraints,
+                priority,
+                attempt: attemptNumber,
+                productTitle: product.title,
+                productPrice: product.price 
+              });
+              break;
+            } else {
+              console.log('❌ Fallback product not relevant to original search:', {
+                fallbackTerm,
+                originalTerm: cleanedTerm,
+                productTitle: product.title
+              });
+              product = null; // Reset product to try next fallback
+            }
+          } else {
+            console.log('❌ No product found with fallback term:', {
+              fallbackTerm,
+              usePriceConstraints,
+              priority,
+              attempt: attemptNumber
+            });
+          }
         }
+      }
+    }
+
+    // If we still don't have a product, try a more generic approach as a last resort
+    if (!product) {
+      console.log('⚙️ Using last resort generic search');
+      // Extract the most important part of the search term
+      const genericTerm = cleanedTerm.split(' ')
+        .filter(word => word.length > 3)
+        .filter(word => !['with', 'and', 'for', 'the', 'team', 'logo'].includes(word.toLowerCase()))
+        .slice(0, 2)
+        .join(' ');
+      
+      if (genericTerm && genericTerm !== cleanedTerm) {
+        console.log('🔍 Last resort search with:', { genericTerm, withPriceConstraints: false });
+        product = await searchWithTerm(genericTerm, apiKey, searchConfig, false, 99, 'last-resort');
       }
     }
 
