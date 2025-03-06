@@ -1,3 +1,4 @@
+
 import { useState, useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { GiftSuggestion } from '@/types/suggestions';
@@ -84,29 +85,6 @@ export const useAmazonProductProcessing = () => {
       const product = response.product;
       console.log('Processing Amazon product:', product);
       
-      // Ensure we use the correct title - if the API returned a product but the title doesn't match
-      // our search term, we should use the original search term instead
-      const searchTitleWords = initialSuggestion.title.toLowerCase().split(' ');
-      const returnedTitleWords = product.title ? product.title.toLowerCase().split(' ') : [];
-      
-      // Check if at least half of the search title words appear in the returned title
-      const matchWordCount = searchTitleWords.filter(word => 
-        returnedTitleWords.some(titleWord => titleWord.includes(word))
-      ).length;
-      
-      // If less than half of the words match, use the original search term
-      const useOriginalTitle = matchWordCount < (searchTitleWords.length / 3);
-      
-      if (useOriginalTitle) {
-        console.log('Title mismatch detected:', {
-          originalTitle: initialSuggestion.title,
-          returnedTitle: product.title,
-          matchingWords: matchWordCount,
-          totalWords: searchTitleWords.length,
-          decision: 'Using original search title'
-        });
-      }
-      
       const processedSuggestion = {
         ...initialSuggestion,
         amazon_asin: product.asin,
@@ -114,9 +92,7 @@ export const useAmazonProductProcessing = () => {
         amazon_price: product.price,
         amazon_image_url: product.imageUrl,
         amazon_rating: product.rating,
-        amazon_total_ratings: product.totalRatings,
-        // Important: Only overwrite the title if it's significantly similar to the search term
-        title: useOriginalTitle ? initialSuggestion.title : (product.title || initialSuggestion.title)
+        amazon_total_ratings: product.totalRatings
       };
 
       console.log('Processed suggestion:', processedSuggestion);
@@ -218,8 +194,5 @@ export const useAmazonProductProcessing = () => {
     }
   };
 
-  return {
-    processSuggestions,
-    progressResults
-  };
+  return { processSuggestions, progressResults };
 };
