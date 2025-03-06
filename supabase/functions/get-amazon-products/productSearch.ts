@@ -1,3 +1,4 @@
+
 import { AmazonProduct, SearchConfig } from './types.ts';
 import { generateFallbackTerms } from './fallbackGenerator.ts';
 import { cleanSearchTerm } from './searchUtils.ts';
@@ -93,20 +94,27 @@ const searchWithTerm = async (
     parseFloat(product.product_price.replace(/[^0-9.]/g, '')) : 
     undefined;
 
-  console.log('✅ Found product:', {
+  // Log full product detail to debug title issues
+  console.log('✅ Found product details:', {
     attempt,
     strategy,
     searchTerm: term,
     title: product.title,
+    productTitle: product.product_title,
     price: priceValue,
     hasImage: !!product.product_photo,
     rating: product.product_star_rating,
-    asin: product.asin
+    asin: product.asin,
+    allKeys: Object.keys(product)
   });
 
+  // Try to get the most accurate title, using multiple potential field names
+  // The API may return the title in different fields depending on the response
+  const productTitle = product.product_title || product.title || term;
+
   return {
-    title: product.title,
-    description: product.product_description || product.title,
+    title: productTitle, // Use the more reliable product_title field if available
+    description: product.product_description || productTitle,
     price: priceValue,
     currency: 'USD',
     imageUrl: product.product_photo || product.thumbnail,
@@ -196,6 +204,18 @@ export const searchProducts = async (
             productTitle: product.title,
             productPrice: product.price 
           });
+          
+          // If we found a product with a fallback search, but the title doesn't match the original search term,
+          // overwrite it with the original search term to maintain consistency with what was requested
+          if (fallbackTerm !== cleanedTerm && !product.title.toLowerCase().includes(cleanedTerm.toLowerCase())) {
+            console.log('📝 Updating product title to maintain consistency with search term:', {
+              originalTitle: product.title,
+              newTitle: searchTerm,
+              reason: 'Fallback search product title does not match original search term'
+            });
+            product.title = searchTerm;
+          }
+          
           break;
         } else {
           console.log('❌ No product found with fallback term:', {
@@ -219,6 +239,12 @@ export const searchProducts = async (
           asin: product.asin
         }
       });
+      
+      // Final check: ensure the product title is not empty
+      if (!product.title || product.title.trim() === '') {
+        console.log('⚠️ Empty product title detected, using search term instead');
+        product.title = searchTerm;
+      }
     }
 
     return product;

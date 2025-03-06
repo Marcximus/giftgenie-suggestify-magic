@@ -1,3 +1,4 @@
+
 export const getProductDetails = async (
   asin: string,
   apiKey: string,
@@ -24,7 +25,8 @@ export const getProductDetails = async (
   console.log('Product details response:', {
     title: detailsData.data?.product_title,
     price: detailsData.data?.product_price,
-    originalPrice: detailsData.data?.product_original_price
+    originalPrice: detailsData.data?.product_original_price,
+    allFields: detailsData.data ? Object.keys(detailsData.data) : []
   });
   return detailsData;
 };
