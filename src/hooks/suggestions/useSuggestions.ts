@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import useDeepSeekSuggestions from '../useDeepSeekSuggestions';
@@ -9,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useSearchAnalytics } from './useSearchAnalytics';
 import { useSuggestionContext } from './useSuggestionContext';
 import { useEdgePrewarming } from './useEdgePrewarming';
+import { logger } from '@/utils/logger';
 
 export const useSuggestions = () => {
   const [lastQuery, setLastQuery] = useState('');
@@ -25,7 +25,7 @@ export const useSuggestions = () => {
     mutationFn: async (query: string) => {
       const startTime = performance.now();
       try {
-        console.log('Starting suggestion generation for query:', query);
+        logger.log('Starting suggestion generation for query:', query);
         const response = await generateSuggestions(query);
         
         if (!response || !response.suggestions) {
@@ -34,10 +34,10 @@ export const useSuggestions = () => {
         }
 
         const { suggestions: newSuggestions, priceRange } = response;
-        console.log('Generated suggestions:', newSuggestions, 'Price range:', priceRange);
+        logger.log('Generated suggestions:', newSuggestions, 'Price range:', priceRange);
         
         if (newSuggestions.length > 0) {
-          console.log('Processing suggestions with Amazon data');
+          logger.log('Processing suggestions with Amazon data');
           
           // Start progressive processing of suggestions
           const results = await processSuggestions(newSuggestions, priceRange);
@@ -52,11 +52,11 @@ export const useSuggestions = () => {
             status: 'success'
           });
           
-          console.log('Processed suggestions with Amazon data:', results);
+          logger.log('Processed suggestions with Amazon data:', results);
           return results;
         }
 
-        console.warn('No suggestions generated');
+        logger.warn('No suggestions generated');
         return [];
       } catch (error) {
         console.error('Error in suggestion mutation:', error);
@@ -73,32 +73,32 @@ export const useSuggestions = () => {
       }
     },
     onSuccess: (data) => {
-      console.log('Successfully updated suggestions cache:', data);
+      logger.log('Successfully updated suggestions cache:', data);
       queryClient.setQueryData(['suggestions'], data);
     }
   });
 
   const debouncedSearch = debounce(async (query: string) => {
-    console.log('Debounced search triggered with query:', query);
+    logger.log('Debounced search triggered with query:', query);
     setLastQuery(query);
     await fetchSuggestions(query);
   }, 300, { leading: true, trailing: true });
 
   const handleSearch = async (query: string) => {
-    console.log('Search initiated with query:', query);
+    logger.log('Search initiated with query:', query);
     setLastQuery(query);
     await debouncedSearch(query);
   };
 
   const handleGenerateMore = async () => {
     if (lastQuery) {
-      console.log('Generating more suggestions for query:', lastQuery);
+      logger.log('Generating more suggestions for query:', lastQuery);
       await fetchSuggestions(lastQuery);
     }
   };
 
   const handleMoreLikeThis = async (title: string) => {
-    console.log('Generating more suggestions like:', title);
+    logger.log('Generating more suggestions like:', title);
     const contextualPrompt = generateMoreLikeThisPrompt(title, lastQuery);
     
     setLastQuery(contextualPrompt);

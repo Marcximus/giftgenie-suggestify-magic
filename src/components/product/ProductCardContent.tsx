@@ -1,5 +1,5 @@
-
 import { Star } from "lucide-react";
+import { logger } from "@/utils/logger";
 
 interface ProductCardContentProps {
   description: string;
@@ -10,7 +10,7 @@ interface ProductCardContentProps {
 }
 
 const formatPrice = (price: string | number | undefined): string => {
-  console.log('Formatting price:', {
+  logger.log('Formatting price:', {
     price,
     type: typeof price,
     rawValue: price

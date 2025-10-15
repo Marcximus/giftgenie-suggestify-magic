@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/use-toast";
+import { logger } from "@/utils/logger";
 
 interface AmazonButtonProps {
   title: string;
@@ -26,12 +27,12 @@ export const AmazonButton = ({ title, asin }: AmazonButtonProps) => {
       const isValidAsin = productAsin && /^[A-Z0-9]{10}$/.test(productAsin);
       
       if (isValidAsin) {
-        console.log('Creating direct product link for ASIN:', productAsin);
+        logger.log('Creating direct product link for ASIN:', productAsin);
         return `https://www.amazon.com/dp/${productAsin}/ref=nosim?tag=${cachedAssociateId}`;
       }
       
       // If no valid ASIN, show a toast and return null
-      console.warn('No valid ASIN available for product:', searchTerm);
+      logger.warn('No valid ASIN available for product:', searchTerm);
       toast({
         title: "Product not found",
         description: "This product is currently unavailable on Amazon.",

@@ -1,5 +1,5 @@
-
 import { useState, useCallback } from 'react';
+import { logger } from '@/utils/logger';
 
 export const useGiftSelector = (onUpdate: (query: string) => void) => {
   const [currentPhase, setCurrentPhase] = useState<'person' | 'age' | 'price' | 'interest' | 'complete'>('person');
@@ -8,7 +8,7 @@ export const useGiftSelector = (onUpdate: (query: string) => void) => {
   const [selectedPrice, setSelectedPrice] = useState<string>('');
 
   const updateSearchText = useCallback((phase: string, value: string) => {
-    console.log('Updating search text:', { phase, value, selectedPerson, selectedAge, selectedPrice });
+    logger.log('Updating search text:', { phase, value, selectedPerson, selectedAge, selectedPrice });
     
     let query = '';
     
@@ -29,12 +29,12 @@ export const useGiftSelector = (onUpdate: (query: string) => void) => {
         query = '';
     }
     
-    console.log('Generated query:', query);
+    logger.log('Generated query:', query);
     return query;
   }, [selectedPerson, selectedAge, selectedPrice]);
 
   const handleSelection = useCallback((phase: string, value: string, onComplete?: (query: string) => void) => {
-    console.log('Handling selection:', { phase, value });
+    logger.log('Handling selection:', { phase, value });
 
     // First update the state based on the current phase
     switch (phase) {
@@ -54,12 +54,12 @@ export const useGiftSelector = (onUpdate: (query: string) => void) => {
     
     // Handle phase transition and query updates
     if (phase === 'interest' && onComplete) {
-      console.log('Completing with query:', query);
+      logger.log('Completing with query:', query);
       onComplete(query);
       setCurrentPhase('complete');
     } else {
       // Update the query and advance to next phase
-      console.log('Updating with query:', query);
+      logger.log('Updating with query:', query);
       if (query) {
         onUpdate(query);
       }
@@ -81,25 +81,25 @@ export const useGiftSelector = (onUpdate: (query: string) => void) => {
 
   // New function to handle interest updates without triggering full search
   const handleInterestUpdate = useCallback((interests: string[]) => {
-    console.log('Interest update:', interests);
+    logger.log('Interest update:', interests);
     
     if (interests.length > 0) {
       // Only update the search box with interests, without moving to the next phase
       const interestsText = interests.join(' and ');
       const query = `Gift ideas for a ${selectedAge} year old ${selectedPerson.toLowerCase()} who likes ${interestsText.toLowerCase()} with a budget of ${selectedPrice}`;
       
-      console.log('Updating query with interests:', query);
+      logger.log('Updating query with interests:', query);
       onUpdate(query);
     } else {
       // If all interests are deselected, revert to the price phase query
       const query = `Gift for ${selectedPerson.toLowerCase()} (${selectedAge} years old) - Budget: ${selectedPrice}`;
-      console.log('Reverting to price phase query:', query);
+      logger.log('Reverting to price phase query:', query);
       onUpdate(query);
     }
   }, [selectedPerson, selectedAge, selectedPrice, onUpdate]);
 
   const reset = useCallback(() => {
-    console.log('Resetting selector state');
+    logger.log('Resetting selector state');
     setCurrentPhase('person');
     setSelectedPerson('');
     setSelectedAge('');

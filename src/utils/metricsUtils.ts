@@ -1,5 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/use-toast";
+import { logger } from "./logger";
 
 interface PerformanceMetric {
   endpoint: string;
@@ -19,7 +20,7 @@ export const logApiMetrics = async (
   errorMessage?: string
 ) => {
   const duration = Math.round(performance.now() - startTime);
-  console.log(`Performance metric - ${endpoint}: ${duration}ms (${status})`);
+  logger.info(`Performance metric - ${endpoint}: ${duration}ms (${status})`);
   
   const metric = {
     endpoint,
@@ -76,7 +77,7 @@ export const markOperation = (name: string) => {
       performance.measure(name, `${name}-start`, `${name}-end`);
       const measure = performance.getEntriesByName(name).pop();
       if (measure) {
-        console.log(`Operation ${name} took ${measure.duration.toFixed(2)}ms`);
+        logger.info(`Operation ${name} took ${measure.duration.toFixed(2)}ms`);
       }
       // Cleanup
       performance.clearMarks(`${name}-start`);
@@ -98,7 +99,7 @@ export const trackSlowOperation = async (
     const duration = performance.now() - startTime;
     
     if (duration > threshold) {
-      console.warn(`Slow operation detected - ${operationName}: ${duration.toFixed(2)}ms`);
+      logger.warn(`Slow operation detected - ${operationName}: ${duration.toFixed(2)}ms`);
       await logApiMetrics(
         `slow-operation-${operationName}`,
         startTime,

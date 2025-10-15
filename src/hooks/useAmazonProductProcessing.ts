@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { GiftSuggestion } from '@/types/suggestions';
@@ -6,6 +5,7 @@ import { logApiMetrics, markOperation, trackSlowOperation } from '@/utils/metric
 import { processInParallel, processWithProgressiveResults } from '@/utils/parallelProcessing';
 import { toast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { logger } from '@/utils/logger';
 
 export const useAmazonProductProcessing = () => {
   const queryClient = useQueryClient();
@@ -30,7 +30,7 @@ export const useAmazonProductProcessing = () => {
         throw new Error('Invalid suggestion: missing title');
       }
 
-      console.log('Processing suggestion:', {
+      logger.log('Processing suggestion:', {
         title: initialSuggestion.title,
         priceRange: initialSuggestion.priceRange,
         description: initialSuggestion.description
@@ -41,7 +41,7 @@ export const useAmazonProductProcessing = () => {
       const cachedData = queryClient.getQueryData(cacheKey);
       
       if (cachedData) {
-        console.log('Cache hit for:', initialSuggestion.title);
+        logger.log('Cache hit for:', initialSuggestion.title);
         await logApiMetrics('amazon-product-processing', startTime, 'success');
         operationMark.end();
         return cachedData as GiftSuggestion;
@@ -53,7 +53,7 @@ export const useAmazonProductProcessing = () => {
         priceRange: priceRange // Pass the price range from generate-gift-suggestions
       };
 
-      console.log('Invoking get-amazon-products Edge Function with payload:', JSON.stringify(requestPayload));
+      logger.log('Invoking get-amazon-products Edge Function with payload:', JSON.stringify(requestPayload));
 
       // Make sure the request body is properly formatted and not empty
       if (!requestPayload.searchTerm) {
@@ -75,15 +75,15 @@ export const useAmazonProductProcessing = () => {
         throw error;
       }
 
-      console.log('Edge Function response:', response);
+      logger.log('Edge Function response:', response);
 
       if (!response?.product) {
-        console.log('No Amazon product found for:', initialSuggestion.title);
+        logger.log('No Amazon product found for:', initialSuggestion.title);
         return initialSuggestion;
       }
 
       const product = response.product;
-      console.log('Processing Amazon product:', product);
+      logger.log('Processing Amazon product:', product);
       
       const processedSuggestion = {
         ...initialSuggestion,
@@ -95,7 +95,7 @@ export const useAmazonProductProcessing = () => {
         amazon_total_ratings: product.totalRatings
       };
 
-      console.log('Processed suggestion:', processedSuggestion);
+      logger.log('Processed suggestion:', processedSuggestion);
 
       // Update cache with enriched data
       queryClient.setQueryData(cacheKey, processedSuggestion);
@@ -115,7 +115,7 @@ export const useAmazonProductProcessing = () => {
     const startTime = performance.now();
     const operationMark = markOperation('process-suggestions-batch');
     
-    console.log('Starting progressive processing of suggestions:', suggestions);
+    logger.log('Starting progressive processing of suggestions:', suggestions);
     
     try {
       // First, create initial placeholder results for all suggestions
@@ -144,7 +144,7 @@ export const useAmazonProductProcessing = () => {
         },
         (result, index) => {
           // This callback will be called each time an item is processed
-          console.log(`Progressive result received for index ${index}:`, result);
+          logger.log(`Progressive result received for index ${index}:`, result);
           
           // Update the suggestions in the cache with this new result
           queryClient.setQueryData(['suggestions'], (old: GiftSuggestion[] | undefined) => {
