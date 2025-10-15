@@ -1,7 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
-import { buildBlogPrompt } from '../generate-blog-post/promptBuilder.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -27,9 +26,38 @@ serve(async (req) => {
       throw new Error('DeepSeek API key not configured');
     }
 
-    // Get the prompt from promptBuilder
-    const prompt = buildBlogPrompt();
-    console.log('Using prompt system content:', prompt.content.substring(0, 200) + '...');
+    // Build the prompt inline
+    const systemPrompt = `You are a creative content writer specialized in creating engaging, fun blog posts about gift ideas. Your task is to generate a complete blog post with EXACTLY 10 product recommendations.
+
+CRITICAL REQUIREMENTS:
+1. Generate EXACTLY 10 products - no more, no less
+2. Each product MUST be a real, specific product that can be found on Amazon
+3. Use clear section dividers between products
+4. Include detailed, engaging descriptions for each product
+5. Make the content fun, personal, and relatable
+
+FORMAT REQUIREMENTS:
+- Start with an engaging introduction (2-3 paragraphs)
+- Follow with EXACTLY 10 product sections
+- Each product section MUST follow this structure:
+  <h3>Product Name</h3>
+  <p>Detailed description (3-4 sentences explaining why this gift is perfect)</p>
+  <hr class="product-divider" />
+- End with a brief conclusion paragraph
+
+PRODUCT SELECTION:
+- Choose products that are widely available on Amazon
+- Include price range diversity (budget to premium options)
+- Ensure products are relevant to the blog post topic
+- Make each product unique and distinct
+
+WRITING STYLE:
+- Be enthusiastic and engaging
+- Use conversational tone
+- Include personal touches and relatable scenarios
+- Keep descriptions informative yet entertaining`;
+
+    console.log('Using inline system prompt');
 
     const controller = new AbortController();
     const timeoutId = setTimeout(() => {
@@ -46,7 +74,10 @@ serve(async (req) => {
         body: JSON.stringify({
           model: "deepseek-reasoner",
           messages: [
-            prompt,
+            {
+              role: "system",
+              content: systemPrompt
+            },
             {
               role: "user",
               content: `Create a fun, engaging blog post about: ${title}\n\nIMPORTANT: You MUST generate EXACTLY 10 product recommendations, no more, no less.`
