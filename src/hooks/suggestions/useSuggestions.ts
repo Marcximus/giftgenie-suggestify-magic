@@ -7,7 +7,6 @@ import { debounce } from '@/utils/debounce';
 import { supabase } from "@/integrations/supabase/client";
 import { useSearchAnalytics } from './useSearchAnalytics';
 import { useSuggestionContext } from './useSuggestionContext';
-import { useEdgePrewarming } from './useEdgePrewarming';
 import { logger } from '@/utils/logger';
 
 export const useSuggestions = () => {
@@ -17,9 +16,6 @@ export const useSuggestions = () => {
   const queryClient = useQueryClient();
   const { trackSearchAnalytics } = useSearchAnalytics();
   const { generateMoreLikeThisPrompt } = useSuggestionContext();
-  
-  // Initialize Edge Function pre-warming
-  useEdgePrewarming();
 
   const { data: suggestions = [], isPending: isLoading, mutate: fetchSuggestions } = useMutation({
     mutationFn: async (query: string) => {
