@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 
@@ -26,20 +27,45 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error("Email service configuration error");
     }
 
-    const { name, email, message }: ContactRequest = await req.json();
+    // Input validation with Zod
+    const ContactSchema = z.object({
+      name: z.string()
+        .trim()
+        .min(1, 'Name required')
+        .max(100, 'Name too long')
+        .regex(/^[a-zA-Z\s'-]+$/, 'Invalid characters in name'),
+      email: z.string()
+        .trim()
+        .email('Invalid email')
+        .max(255, 'Email too long'),
+      message: z.string()
+        .trim()
+        .min(10, 'Message too short')
+        .max(5000, 'Message too long')
+    });
 
-    if (!name || !email || !message) {
-      throw new Error("Name, email, and message are required");
-    }
+    const body = await req.json();
+    const validated = ContactSchema.parse(body);
+    const { name, email, message } = validated;
 
-    console.log("Attempting to send email with data:", { name, email });
+    console.log("Processing contact form submission");
+
+    // HTML escape function to prevent XSS
+    const escapeHtml = (str: string): string => {
+      return str
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    };
 
     const emailContent = `
       <h2>New Contact Form Message</h2>
-      <p><strong>From:</strong> ${name}</p>
-      <p><strong>Email:</strong> ${email}</p>
+      <p><strong>From:</strong> ${escapeHtml(name)}</p>
+      <p><strong>Email:</strong> ${escapeHtml(email)}</p>
       <p><strong>Message:</strong></p>
-      <p>${message}</p>
+      <p>${escapeHtml(message)}</p>
     `;
 
     const res = await fetch("https://api.resend.com/emails", {
@@ -74,6 +100,21 @@ const handler = async (req: Request): Promise<Response> => {
     });
   } catch (error: any) {
     console.error("Error in send-contact-email function:", error);
+    
+    // Handle Zod validation errors
+    if (error.name === 'ZodError') {
+      return new Response(
+        JSON.stringify({ 
+          error: 'Validation error',
+          details: error.errors[0]?.message || 'Invalid input'
+        }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
+    
     return new Response(
       JSON.stringify({ 
         error: error.message,

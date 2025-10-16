@@ -1,6 +1,8 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { corsHeaders } from '../_shared/cors.ts';
+import { isRateLimited, logRequest } from '../_shared/rate-limiter.ts';
+import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
 
 const DEEPSEEK_API_KEY = Deno.env.get('DEEPSEEK_API_KEY');
 
@@ -110,18 +112,29 @@ serve(async (req) => {
   try {
     console.log('Starting gift suggestion generation...');
 
+    // Rate limiting
+    if (isRateLimited()) {
+      return new Response(
+        JSON.stringify({ error: 'Rate limit exceeded. Please try again later.' }),
+        { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    logRequest();
+
     if (!DEEPSEEK_API_KEY) {
       console.error('DEEPSEEK_API_KEY is not configured');
       throw new Error('DEEPSEEK_API_KEY is not configured');
     }
 
-    const { prompt } = await req.json();
-    console.log('Received prompt:', prompt);
+    // Input validation
+    const RequestSchema = z.object({
+      prompt: z.string().trim().min(3, 'Prompt too short').max(500, 'Prompt too long')
+    });
 
-    if (!prompt || typeof prompt !== 'string' || prompt.trim().length < 3) {
-      console.error('Invalid prompt received:', prompt);
-      throw new Error('Invalid prompt');
-    }
+    const body = await req.json();
+    const validated = RequestSchema.parse(body);
+    const { prompt } = validated;
+    console.log('Validated prompt received');
 
     // Extract and adjust price range from prompt
     const priceRange = extractPriceRange(prompt);

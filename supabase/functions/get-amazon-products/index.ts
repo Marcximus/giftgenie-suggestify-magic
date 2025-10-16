@@ -1,6 +1,8 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { searchProducts } from "./productSearch.ts";
 import { corsHeaders } from '../_shared/cors.ts';
+import { isRateLimited, logRequest } from '../_shared/rate-limiter.ts';
+import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
 
 const RAPIDAPI_KEY = Deno.env.get('RAPIDAPI_KEY');
 
@@ -11,27 +13,31 @@ serve(async (req) => {
   }
 
   try {
+    // Rate limiting
+    if (isRateLimited()) {
+      return new Response(
+        JSON.stringify({ error: 'Rate limit exceeded. Please try again later.' }),
+        { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    logRequest();
+
     if (!RAPIDAPI_KEY) {
       console.error('RAPIDAPI_KEY is not configured');
       throw new Error('RAPIDAPI_KEY is not configured');
     }
 
-    // Log the raw request for debugging
-    console.log('Raw request:', {
-      method: req.method,
-      headers: Object.fromEntries(req.headers.entries()),
-      url: req.url
+    // Input validation
+    const RequestSchema = z.object({
+      searchTerm: z.string().trim().min(1, 'Search term required').max(200, 'Search term too long'),
+      priceRange: z.string().optional()
     });
 
-    // Parse and validate request body
     const body = await req.json();
-    console.log('Parsed request body:', body);
+    const validated = RequestSchema.parse(body);
+    console.log('Validated request:', validated);
 
-    if (!body || !body.searchTerm) {
-      throw new Error('searchTerm is required in request body');
-    }
-
-    const { searchTerm, priceRange } = body;
+    const { searchTerm, priceRange } = validated;
     
     console.log('Processing request:', { searchTerm, priceRange });
 
