@@ -18,6 +18,7 @@ interface Product {
 
 interface ProductCardProps extends Product {
   onMoreLikeThis?: (title: string) => void;
+  suggestion?: any;
 }
 
 const ProductCardComponent = ({ 
@@ -28,7 +29,8 @@ const ProductCardComponent = ({
   totalRatings,
   asin,
   imageUrl,
-  onMoreLikeThis 
+  onMoreLikeThis,
+  suggestion
 }: ProductCardProps) => {
   // Memoize schema data
   const schemaData = {
@@ -68,7 +70,16 @@ const ProductCardComponent = ({
         <ProductImage 
           title={title} 
           description={description} 
-          imageUrl={imageUrl} 
+          imageUrl={imageUrl}
+          product={suggestion || {
+            title,
+            description,
+            priceRange: price,
+            reason: description,
+            amazon_rating: rating,
+            amazon_total_ratings: totalRatings,
+            amazon_asin: asin
+          }}
         />
         <div className="h-[1.75rem] overflow-hidden mt-2 px-3 sm:px-4">
           <CardTitle className="text-sm sm:text-base truncate text-center group-hover:text-primary transition-colors duration-200">

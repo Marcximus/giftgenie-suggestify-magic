@@ -17,8 +17,9 @@ import {
   useFallbackImage, 
   FallbackImageSpinner 
 } from './product-image/FallbackImage';
+import { generateProductAltText } from '@/utils/altTextGenerator';
 
-export const ProductImage = ({ title, imageUrl }: ProductImageProps) => {
+export const ProductImage = ({ title, imageUrl, product }: ProductImageProps) => {
   const [currentImageUrl, setCurrentImageUrl] = useState(imageUrl);
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
@@ -115,7 +116,7 @@ export const ProductImage = ({ title, imageUrl }: ProductImageProps) => {
         srcSet={currentImageUrl ? generateSrcSet(currentImageUrl) : undefined}
         sizes="(max-width: 640px) 400px, (max-width: 1024px) 800px, 1200px"
         src={currentImageUrl ? getOptimizedImageUrl(currentImageUrl, 800) : genericFallback}
-        alt={`Product image of ${title}`}
+        alt={product ? generateProductAltText(product) : `${title} gift idea`}
         className={`w-full h-full object-contain transition-all duration-500 ${
           !imageLoaded ? 'opacity-0' : 'opacity-100'
         } ${hasError ? 'opacity-0' : ''} group-hover:scale-105`}

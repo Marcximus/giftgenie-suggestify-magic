@@ -1,5 +1,6 @@
 
 import { useState, useCallback, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import useDeepSeekSuggestions from './useDeepSeekSuggestions';
 import { useAmazonProductProcessing } from './useAmazonProductProcessing';
@@ -8,6 +9,7 @@ import { debounce } from '@/utils/debounce';
 import { supabase } from "@/integrations/supabase/client";
 
 export const useSuggestions = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [lastQuery, setLastQuery] = useState('');
   const { generateSuggestions } = useDeepSeekSuggestions();
   const { processSuggestions } = useAmazonProductProcessing();
@@ -126,6 +128,12 @@ export const useSuggestions = () => {
   const handleSearch = async (query: string) => {
     console.log('Search initiated with query:', query);
     setLastQuery(query);
+    
+    // Update URL with search query to make it shareable
+    if (query) {
+      setSearchParams({ q: query });
+    }
+    
     await debouncedSearch(query);
   };
 

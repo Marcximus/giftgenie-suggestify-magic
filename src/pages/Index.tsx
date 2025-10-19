@@ -1,5 +1,6 @@
 
-import { useState, Suspense } from 'react';
+import { useState, Suspense, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { useSuggestions } from '@/hooks/useSuggestions';
 import { SuggestionSkeleton } from '@/components/SuggestionSkeleton';
@@ -9,6 +10,7 @@ import { SearchHeader } from '@/components/SearchHeader';
 import { SuggestionsGrid } from '@/components/SuggestionsGrid';
 
 const Index = () => {
+  const [searchParams] = useSearchParams();
   const {
     isLoading,
     suggestions,
@@ -17,6 +19,15 @@ const Index = () => {
     handleMoreLikeThis,
     handleStartOver
   } = useSuggestions();
+
+  // Handle URL query parameter on mount
+  useEffect(() => {
+    const queryParam = searchParams.get('q') || searchParams.get('query');
+    if (queryParam && !suggestions.length && !isLoading) {
+      console.log('Auto-executing search from URL:', queryParam);
+      handleSearch(queryParam);
+    }
+  }, []); // Only run on mount
 
   return (
     <>
