@@ -42,10 +42,14 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
     // Only fetch published blog posts that should be indexed
+    // Filter for complete, healthy posts only to avoid 5xx errors in sitemap
     const { data: posts, error } = await supabase
       .from('blog_posts')
-      .select('slug, updated_at, published_at')
+      .select('slug, updated_at, published_at, word_count, content, generation_attempts')
       .not('published_at', 'is', null)
+      .not('content', 'is', null)
+      .gte('word_count', 500)  // Only posts with substantial content
+      .lt('generation_attempts', 3)  // Exclude repeatedly failed posts
       .order('published_at', { ascending: false });
 
     if (error) {
@@ -53,7 +57,8 @@ serve(async (req) => {
       throw error;
     }
 
-    console.log(`Found ${posts?.length || 0} published blog posts`);
+    console.log(`Found ${posts?.length || 0} healthy blog posts for sitemap`);
+    console.log(`Filter criteria: word_count >= 500, content not null, generation_attempts < 3`);
 
     // Generate sitemap XML with proper XML declaration and encoding
     const xml = `<?xml version="1.0" encoding="UTF-8"?>
