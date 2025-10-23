@@ -19,53 +19,84 @@ const BlogPost = () => {
       console.log("Fetching blog post with slug:", slug);
       
       if (!slug) {
-        console.error("No slug provided");
-        throw new Error("No slug provided");
-      }
-
-      const { data: currentPost, error: currentError } = await supabase
-        .from("blog_posts")
-        .select("*")
-        .eq("slug", slug)
-        .maybeSingle();
-      
-      if (currentError) {
-        console.error("Error fetching blog post:", currentError);
-        toast({
-          title: "Error loading blog post",
-          description: "Please try again later",
-          variant: "destructive",
-        });
-        throw currentError;
-      }
-
-      if (!currentPost) {
-        console.log("No blog post found with slug:", slug);
-        const error = new Error("Blog post not found");
+        const error = new Error("No slug provided");
         error.name = "NotFoundError";
         throw error;
       }
 
-      console.log("Found blog post:", currentPost.title);
+      // Retry logic for database connection issues
+      let retries = 2;
+      let lastError = null;
+      
+      while (retries >= 0) {
+        try {
+          const { data: currentPost, error: currentError } = await supabase
+            .from("blog_posts")
+            .select("*")
+            .eq("slug", slug)
+            .maybeSingle();
+          
+          if (currentError) {
+            // Check if it's a connection/timeout error
+            if (currentError.message?.includes('timeout') || 
+                currentError.message?.includes('connection') ||
+                currentError.code === 'PGRST301') {
+              lastError = currentError;
+              retries--;
+              if (retries >= 0) {
+                console.log(`Database timeout, retrying... (${retries} attempts left)`);
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                continue;
+              }
+            }
+            
+            console.error("Error fetching blog post:", currentError);
+            const error = new Error("Failed to fetch blog post");
+            error.name = "ServerError";
+            throw error;
+          }
 
-      const { data: relatedPosts, error: relatedError } = await supabase
-        .from("blog_posts")
-        .select("title, slug, image_url, excerpt")
-        .neq("slug", slug)
-        .not("published_at", "is", null)
-        .order("published_at", { ascending: false })
-        .limit(3);
+          if (!currentPost) {
+            console.log("No blog post found with slug:", slug);
+            const error = new Error("Blog post not found");
+            error.name = "NotFoundError";
+            throw error;
+          }
 
-      if (relatedError) {
-        console.error("Error fetching related posts:", relatedError);
+          console.log("Found blog post:", currentPost.title);
+
+          // Fetch related posts with separate error handling
+          const { data: relatedPosts } = await supabase
+            .from("blog_posts")
+            .select("title, slug, image_url, excerpt")
+            .neq("slug", slug)
+            .not("published_at", "is", null)
+            .order("published_at", { ascending: false })
+            .limit(3);
+
+          return {
+            ...currentPost,
+            relatedPosts: relatedPosts || []
+          };
+        } catch (err) {
+          if (retries > 0 && (err as Error).name === "ServerError") {
+            lastError = err;
+            retries--;
+            console.log(`Query failed, retrying... (${retries} attempts left)`);
+            await new Promise(resolve => setTimeout(resolve, 1000));
+          } else {
+            throw err;
+          }
+        }
       }
-
-      return {
-        ...currentPost,
-        relatedPosts: relatedPosts || []
-      };
+      
+      throw lastError || new Error("Failed to fetch blog post after retries");
     },
-    retry: 1,
+    retry: false, // We handle retries internally
+    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+    gcTime: 30 * 60 * 1000, // Keep in cache for 30 minutes
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
   });
 
   if (isLoading) {
@@ -74,8 +105,10 @@ const BlogPost = () => {
 
   if (error) {
     console.error("Error in BlogPost component:", error);
+    const errorType = error.name === "NotFoundError" ? "not-found" : 
+                      error.name === "ServerError" ? "server-error" : "error";
     return <BlogPostError 
-      type={error.name === "NotFoundError" ? "not-found" : "error"} 
+      type={errorType as 'error' | 'not-found' | 'server-error'} 
       error={error as Error} 
     />;
   }

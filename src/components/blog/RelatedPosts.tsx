@@ -16,7 +16,8 @@ export const RelatedPosts = ({ currentPostId, currentPostSlug }: RelatedPostsPro
         .select("title, slug, image_url, excerpt, meta_description")
         .neq("id", currentPostId)
         .neq("slug", currentPostSlug)
-        .lt("published_at", new Date().toISOString())
+        .not("published_at", "is", null)
+        .gte("word_count", 500)
         .order("created_at", { ascending: false })
         .limit(12);
 
@@ -33,6 +34,8 @@ export const RelatedPosts = ({ currentPostId, currentPostSlug }: RelatedPostsPro
 
       return relevantPosts || [];
     },
+    staleTime: 10 * 60 * 1000, // Cache for 10 minutes
+    gcTime: 30 * 60 * 1000,
   });
 
   if (!relatedPosts?.length) return null;

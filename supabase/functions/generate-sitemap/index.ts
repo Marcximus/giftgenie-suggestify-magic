@@ -41,16 +41,25 @@ serve(async (req) => {
     const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-    // Only fetch published blog posts that should be indexed
-    // Filter for complete, healthy posts only to avoid 5xx errors in sitemap
-    const { data: posts, error } = await supabase
+    // Add connection timeout to prevent overwhelming the database
+    const connectionTimeout = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('Database connection timeout')), 8000)
+    );
+
+    const queryPromise = supabase
       .from('blog_posts')
       .select('slug, updated_at, published_at, word_count, content, generation_attempts')
       .not('published_at', 'is', null)
       .not('content', 'is', null)
-      .gte('word_count', 500)  // Only posts with substantial content
-      .lt('generation_attempts', 3)  // Exclude repeatedly failed posts
+      .gte('word_count', 500)
+      .lt('generation_attempts', 3)
       .order('published_at', { ascending: false });
+
+    // Race between query and timeout
+    const result = await Promise.race([queryPromise, connectionTimeout]) as any;
+
+
+    const { data: posts, error } = result;
 
     if (error) {
       console.error('Database error:', error);
