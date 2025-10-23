@@ -51,8 +51,6 @@ serve(async (req) => {
       .select('slug, updated_at, published_at, word_count, content, generation_attempts')
       .not('published_at', 'is', null)
       .not('content', 'is', null)
-      .gte('word_count', 500)
-      .lt('generation_attempts', 3)
       .order('published_at', { ascending: false });
 
     // Race between query and timeout
@@ -66,8 +64,15 @@ serve(async (req) => {
       throw error;
     }
 
-    console.log(`Found ${posts?.length || 0} healthy blog posts for sitemap`);
-    console.log(`Filter criteria: word_count >= 500, content not null, generation_attempts < 3`);
+    // Filter posts with substantial content (at least 2000 characters)
+    const healthyPosts = posts?.filter(post => 
+      post.content && 
+      post.content.length >= 2000 &&
+      (post.generation_attempts || 0) < 5
+    ) || [];
+
+    console.log(`Found ${healthyPosts.length} healthy blog posts out of ${posts?.length || 0} total published`);
+    console.log(`Filter criteria: content.length >= 2000 chars, generation_attempts < 5`);
 
     // Generate sitemap XML with proper XML declaration and encoding
     const xml = `<?xml version="1.0" encoding="UTF-8"?>
@@ -79,7 +84,7 @@ ${staticUrls.map(url => `
     <changefreq>${url.changefreq}</changefreq>
     <priority>${url.priority}</priority>
   </url>`).join('')}
-${posts?.map(post => {
+${healthyPosts.map(post => {
   const canonicalUrl = `https://getthegift.ai/blog/post/${post.slug}`;
   return `
   <url>
