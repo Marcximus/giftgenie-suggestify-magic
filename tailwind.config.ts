@@ -81,8 +81,8 @@ export default {
           '100%': { backgroundPosition: '0% 50%' }
         },
         'rainbow': {
-          '0%': { backgroundPosition: '0%' },
-          '100%': { backgroundPosition: '200%' }
+          '0%, 100%': { backgroundPosition: '0% 50%' },
+          '50%': { backgroundPosition: '100% 50%' }
         }
       },
       animation: {
@@ -90,7 +90,7 @@ export default {
         'accordion-up': 'accordion-up 0.2s ease-out',
         'pulse-text': 'pulse-text 8s cubic-bezier(0.4, 0, 0.6, 1) infinite',
         'gradient': 'gradient 8s ease infinite',
-        'rainbow': 'rainbow 8s linear infinite'
+        'rainbow': 'rainbow 3s ease-in-out infinite'
       }
     }
   },
