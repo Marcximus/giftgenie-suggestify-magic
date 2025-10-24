@@ -22,11 +22,6 @@ export class ErrorBoundary extends Component<Props, State> {
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error('Uncaught error:', error, errorInfo);
-    
-    // Log database connection issues
-    if (error.message?.includes('timeout') || error.message?.includes('connection')) {
-      console.error('Database connection issue detected - high traffic or connection pool exhaustion');
-    }
   }
 
   public render() {

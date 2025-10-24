@@ -41,38 +41,19 @@ serve(async (req) => {
     const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-    // Add connection timeout to prevent overwhelming the database
-    const connectionTimeout = new Promise((_, reject) => 
-      setTimeout(() => reject(new Error('Database connection timeout')), 8000)
-    );
-
-    const queryPromise = supabase
+    // Only fetch published blog posts that should be indexed
+    const { data: posts, error } = await supabase
       .from('blog_posts')
-      .select('slug, updated_at, published_at, word_count, content, generation_attempts')
+      .select('slug, updated_at, published_at')
       .not('published_at', 'is', null)
-      .not('content', 'is', null)
       .order('published_at', { ascending: false });
-
-    // Race between query and timeout
-    const result = await Promise.race([queryPromise, connectionTimeout]) as any;
-
-
-    const { data: posts, error } = result;
 
     if (error) {
       console.error('Database error:', error);
       throw error;
     }
 
-    // Filter posts with substantial content (at least 2000 characters)
-    const healthyPosts = posts?.filter(post => 
-      post.content && 
-      post.content.length >= 2000 &&
-      (post.generation_attempts || 0) < 5
-    ) || [];
-
-    console.log(`Found ${healthyPosts.length} healthy blog posts out of ${posts?.length || 0} total published`);
-    console.log(`Filter criteria: content.length >= 2000 chars, generation_attempts < 5`);
+    console.log(`Found ${posts?.length || 0} published blog posts`);
 
     // Generate sitemap XML with proper XML declaration and encoding
     const xml = `<?xml version="1.0" encoding="UTF-8"?>
@@ -84,7 +65,7 @@ ${staticUrls.map(url => `
     <changefreq>${url.changefreq}</changefreq>
     <priority>${url.priority}</priority>
   </url>`).join('')}
-${healthyPosts.map(post => {
+${posts?.map(post => {
   const canonicalUrl = `https://getthegift.ai/blog/post/${post.slug}`;
   return `
   <url>

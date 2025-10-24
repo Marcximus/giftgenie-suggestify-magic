@@ -22,20 +22,20 @@ export const IndexMeta = () => {
       <meta property="og:title" content={title} />
       <meta property="og:description" content={description} />
       <meta property="og:url" content={canonicalUrl} />
-      <meta property="og:image" content="https://getthegift.ai/lovable-uploads/89d8ebcd-a5f6-4614-a505-80ed3d467943.png" />
+      <meta property="og:image" content="/lovable-uploads/89d8ebcd-a5f6-4614-a505-80ed3d467943.png" />
       <meta property="og:site_name" content="Get The Gift" />
       
       {/* Twitter Card tags */}
       <meta name="twitter:card" content="summary_large_image" />
       <meta name="twitter:title" content={title} />
       <meta name="twitter:description" content={description} />
-      <meta name="twitter:image" content="https://getthegift.ai/lovable-uploads/89d8ebcd-a5f6-4614-a505-80ed3d467943.png" />
+      <meta name="twitter:image" content="/lovable-uploads/89d8ebcd-a5f6-4614-a505-80ed3d467943.png" />
       <meta name="twitter:site" content="@getthegift" />
       
       {/* Additional SEO meta tags */}
       <meta name="robots" content="index, follow" />
       
-      {/* Structured Data - WebApplication */}
+      {/* Structured Data */}
       <script type="application/ld+json">
         {JSON.stringify({
           "@context": "https://schema.org",
@@ -56,25 +56,6 @@ export const IndexMeta = () => {
             "Real product reviews",
             "Smart filtering"
           ]
-        })}
-      </script>
-      
-      {/* Structured Data - Organization */}
-      <script type="application/ld+json">
-        {JSON.stringify({
-          "@context": "https://schema.org",
-          "@type": "Organization",
-          "name": "Get The Gift",
-          "url": canonicalUrl,
-          "logo": "https://getthegift.ai/lovable-uploads/89d8ebcd-a5f6-4614-a505-80ed3d467943.png",
-          "description": description,
-          "foundingDate": "2024",
-          "applicationCategory": "AI-Powered Gift Finder",
-          "aggregateRating": {
-            "@type": "AggregateRating",
-            "ratingValue": "4.8",
-            "reviewCount": "1250"
-          }
         })}
       </script>
     </Helmet>

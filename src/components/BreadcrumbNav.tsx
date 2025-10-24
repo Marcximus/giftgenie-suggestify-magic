@@ -8,7 +8,6 @@ import {
 } from "@/components/ui/breadcrumb";
 import { useLocation } from "react-router-dom";
 import { Link } from "react-router-dom";
-import { Helmet } from "react-helmet";
 
 export const BreadcrumbNav = () => {
   const location = useLocation();
@@ -43,52 +42,17 @@ export const BreadcrumbNav = () => {
     );
   });
 
-  // Generate schema.org BreadcrumbList structured data
-  const breadcrumbSchema = {
-    "@context": "https://schema.org",
-    "@type": "BreadcrumbList",
-    "itemListElement": [
-      {
-        "@type": "ListItem",
-        "position": 1,
-        "name": "Home",
-        "item": "https://getthegift.ai"
-      },
-      ...pathSegments.map((segment, index) => {
-        const path = `/${pathSegments.slice(0, index + 1).join("/")}`;
-        const formattedSegment = segment
-          .split("-")
-          .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-          .join(" ");
-        
-        return {
-          "@type": "ListItem",
-          "position": index + 2,
-          "name": formattedSegment,
-          "item": `https://getthegift.ai${path}`
-        };
-      })
-    ]
-  };
-
   return (
-    <>
-      <Helmet>
-        <script type="application/ld+json">
-          {JSON.stringify(breadcrumbSchema)}
-        </script>
-      </Helmet>
-      <Breadcrumb className="mb-4 px-4">
-        <BreadcrumbList>
-          <BreadcrumbItem>
-            <BreadcrumbLink asChild>
-              <Link to="/">Home</Link>
-            </BreadcrumbLink>
-            {pathSegments.length > 0 && <BreadcrumbSeparator />}
-          </BreadcrumbItem>
-          {breadcrumbItems}
-        </BreadcrumbList>
-      </Breadcrumb>
-    </>
+    <Breadcrumb className="mb-4 px-4">
+      <BreadcrumbList>
+        <BreadcrumbItem>
+          <BreadcrumbLink asChild>
+            <Link to="/">Home</Link>
+          </BreadcrumbLink>
+          {pathSegments.length > 0 && <BreadcrumbSeparator />}
+        </BreadcrumbItem>
+        {breadcrumbItems}
+      </BreadcrumbList>
+    </Breadcrumb>
   );
 };
