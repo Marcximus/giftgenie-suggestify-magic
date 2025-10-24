@@ -66,6 +66,7 @@ export const SuggestionItem = memo(({
         totalRatings={suggestion.amazon_total_ratings}
         asin={suggestion.amazon_asin}
         onMoreLikeThis={onMoreLikeThis}
+        suggestion={suggestion}
       />
     </div>
   );

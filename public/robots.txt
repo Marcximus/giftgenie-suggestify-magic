@@ -1,8 +1,8 @@
 User-agent: *
 Allow: /
 
-# Sitemap location - using canonical HTTPS non-www URL
-Sitemap: https://getthegift.ai/sitemap.xml
+# Sitemap location - using edge function for dynamic generation
+Sitemap: https://ckcqttsdpxfbpkzljctl.supabase.co/functions/v1/generate-sitemap
 
 # Crawl-delay to be nice to servers
 Crawl-delay: 1
