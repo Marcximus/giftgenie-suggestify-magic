@@ -30,7 +30,13 @@ serve(async (req) => {
     // Input validation
     const RequestSchema = z.object({
       searchTerm: z.string().trim().min(1, 'Search term required').max(200, 'Search term too long'),
-      priceRange: z.string().optional()
+      priceRange: z.union([
+        z.string(),
+        z.object({
+          min: z.number(),
+          max: z.number()
+        })
+      ]).optional()
     });
 
     const body = await req.json();
