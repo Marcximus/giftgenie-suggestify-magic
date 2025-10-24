@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
+import { RainbowButton } from "@/components/ui/rainbow-button";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/use-toast";
 import { logger } from "@/utils/logger";
@@ -62,13 +62,13 @@ export const AmazonButton = ({ title, asin }: AmazonButtonProps) => {
   };
 
   return (
-    <Button 
-      className="bg-[#F97316] hover:bg-[#F97316]/90 shadow-sm text-sm py-1 transition-all duration-200" 
+    <RainbowButton 
+      className="shadow-sm text-sm py-1 h-auto" 
       onClick={handleClick}
       disabled={isLoading || !asin}
       aria-label={asin ? "Check It Out" : "Product not available"}
     >
       {isLoading ? "Loading..." : "Check It Out"}
-    </Button>
+    </RainbowButton>
   );
 };
