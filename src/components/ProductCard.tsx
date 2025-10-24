@@ -57,11 +57,30 @@ const ProductCardComponent = ({
     })
   };
 
+  const handleCardClick = async () => {
+    if (!asin) return;
+    
+    try {
+      const { data: { AMAZON_ASSOCIATE_ID } } = await import('@/integrations/supabase/client').then(m => 
+        m.supabase.functions.invoke('get-amazon-associate-id')
+      );
+      
+      const isValidAsin = asin && /^[A-Z0-9]{10}$/.test(asin);
+      if (isValidAsin && AMAZON_ASSOCIATE_ID) {
+        const url = `https://www.amazon.com/dp/${asin}/ref=nosim?tag=${AMAZON_ASSOCIATE_ID}`;
+        window.open(url, '_blank', 'noopener,noreferrer');
+      }
+    } catch (error) {
+      console.error('Error opening product link:', error);
+    }
+  };
+
   return (
     <Card 
-      className="group h-full flex flex-col overflow-hidden hover:shadow-lg transition-all duration-300 border-accent/20 backdrop-blur-sm bg-white/80 hover:bg-white/90"
+      className="group h-full flex flex-col overflow-hidden hover:shadow-lg transition-all duration-300 border-accent/20 backdrop-blur-sm bg-white/80 hover:bg-white/90 cursor-pointer"
       role="article"
       aria-label={`Product: ${title}`}
+      onClick={handleCardClick}
     >
       <script type="application/ld+json">
         {JSON.stringify(schemaData)}
