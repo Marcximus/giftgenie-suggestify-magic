@@ -11,22 +11,11 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders })
   }
 
-  const AMAZON_ASSOCIATE_ID_US = Deno.env.get('AMAZON_ASSOCIATE_ID')
-  const AMAZON_ASSOCIATE_ID_UK = Deno.env.get('AMAZON_ASSOCIATE_ID_UK')
-
-  // Build affiliate IDs map
-  const affiliateIds: Record<string, string> = {
-    US: AMAZON_ASSOCIATE_ID_US || '',
-    GB: AMAZON_ASSOCIATE_ID_UK || AMAZON_ASSOCIATE_ID_US || '', // Fallback to US if UK not set
-  }
-
-  // Get country from Cloudflare header if available
-  const country = req.headers.get('CF-IPCountry') || 'US'
+  const AMAZON_ASSOCIATE_ID = Deno.env.get('AMAZON_ASSOCIATE_ID')
 
   return new Response(
     JSON.stringify({ 
-      affiliateIds,
-      detectedCountry: country 
+      associateId: AMAZON_ASSOCIATE_ID || ''
     }),
     { 
       status: 200,
