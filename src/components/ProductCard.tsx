@@ -1,10 +1,10 @@
 
-import { memo, useState, useEffect } from 'react';
+import { memo } from 'react';
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { ProductImage } from "./ProductImage";
 import { ProductCardContent } from "./product/ProductCardContent";
 import { ProductCardActions } from "./product/ProductCardActions";
-import { getAmazonAssociateId, buildAmazonUrl } from "@/utils/amazonLink";
+import { buildAmazonUrl } from "@/utils/amazonLink";
 
 interface Product {
   title: string;
@@ -33,18 +33,7 @@ const ProductCardComponent = ({
   onMoreLikeThis,
   suggestion
 }: ProductCardProps) => {
-  const [amazonUrl, setAmazonUrl] = useState('');
-
-  useEffect(() => {
-    const fetchUrl = async () => {
-      if (!asin) return;
-      const associateId = await getAmazonAssociateId();
-      if (associateId) {
-        setAmazonUrl(buildAmazonUrl(asin, associateId));
-      }
-    };
-    fetchUrl();
-  }, [asin]);
+  const amazonUrl = asin ? buildAmazonUrl(asin) : '';
 
   // Memoize schema data
   const schemaData = {

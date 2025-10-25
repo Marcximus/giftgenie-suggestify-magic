@@ -1,6 +1,5 @@
-import { useEffect, useState } from "react";
 import { RainbowButton } from "@/components/ui/rainbow-button";
-import { getAmazonAssociateId, buildAmazonUrl } from "@/utils/amazonLink";
+import { buildAmazonUrl } from "@/utils/amazonLink";
 
 interface AmazonButtonProps {
   title: string;
@@ -8,33 +7,9 @@ interface AmazonButtonProps {
 }
 
 export const AmazonButton = ({ title, asin }: AmazonButtonProps) => {
-  const [amazonUrl, setAmazonUrl] = useState<string>('');
-  const [isLoading, setIsLoading] = useState(true);
+  const amazonUrl = asin ? buildAmazonUrl(asin) : '';
 
-  useEffect(() => {
-    const fetchUrl = async () => {
-      if (!asin) {
-        setIsLoading(false);
-        return;
-      }
-
-      try {
-        const associateId = await getAmazonAssociateId();
-        if (associateId) {
-          const url = buildAmazonUrl(asin, associateId);
-          setAmazonUrl(url);
-        }
-      } catch (error) {
-        console.error('Error building Amazon URL:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchUrl();
-  }, [asin]);
-
-  if (!asin || !amazonUrl) {
+  if (!amazonUrl) {
     return (
       <RainbowButton 
         className="shadow-sm text-sm py-1 h-auto" 
@@ -56,10 +31,9 @@ export const AmazonButton = ({ title, asin }: AmazonButtonProps) => {
     >
       <RainbowButton 
         className="shadow-sm text-sm py-1 h-auto w-full" 
-        disabled={isLoading}
         aria-label="Check It Out"
       >
-        {isLoading ? "Loading..." : "Check It Out"}
+        Check It Out
       </RainbowButton>
     </a>
   );

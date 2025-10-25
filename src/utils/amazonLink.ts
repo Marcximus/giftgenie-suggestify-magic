@@ -1,23 +1,9 @@
-import { supabase } from '@/integrations/supabase/client';
+// Hardcoded Amazon Associate ID for instant link generation
+const AMAZON_ASSOCIATE_ID = 'marcximus-20';
 
-let cachedAssociateId: string | null = null;
-
-export const getAmazonAssociateId = async (): Promise<string | null> => {
-  if (!cachedAssociateId) {
-    try {
-      const { data } = await supabase.functions.invoke('get-amazon-associate-id');
-      cachedAssociateId = data?.associateId || null;
-    } catch (error) {
-      console.error('Error fetching affiliate ID:', error);
-    }
-  }
-  
-  return cachedAssociateId;
-};
-
-export const buildAmazonUrl = (asin: string, associateId: string): string => {
+export const buildAmazonUrl = (asin: string): string => {
   const isValidAsin = asin && /^[A-Z0-9]{10}$/.test(asin);
-  if (!isValidAsin || !associateId) return '';
+  if (!isValidAsin) return '';
 
-  return `https://www.amazon.com/dp/${asin}/ref=nosim?tag=${associateId}`;
+  return `https://www.amazon.com/dp/${asin}/ref=nosim?tag=${AMAZON_ASSOCIATE_ID}`;
 };
