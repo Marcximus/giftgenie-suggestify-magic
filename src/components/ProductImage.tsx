@@ -18,8 +18,9 @@ import {
   FallbackImageSpinner 
 } from './product-image/FallbackImage';
 import { generateProductAltText } from '@/utils/altTextGenerator';
+import { openAmazonLink } from '@/utils/amazonLink';
 
-export const ProductImage = ({ title, imageUrl, product }: ProductImageProps) => {
+export const ProductImage = ({ title, imageUrl, product, asin }: ProductImageProps) => {
   const [currentImageUrl, setCurrentImageUrl] = useState(imageUrl);
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
@@ -97,7 +98,13 @@ export const ProductImage = ({ title, imageUrl, product }: ProductImageProps) =>
   }, [currentImageUrl]);
 
   return (
-    <div className="aspect-[4/3] relative overflow-hidden bg-gray-100">
+    <div 
+      className="aspect-[4/3] relative overflow-hidden bg-gray-100 cursor-pointer"
+      onClick={() => openAmazonLink(asin, title)}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => e.key === 'Enter' && openAmazonLink(asin, title)}
+    >
       {!imageLoaded && currentImageUrl && (
         <img
           src={getTinyPlaceholder(currentImageUrl)}

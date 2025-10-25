@@ -1,5 +1,6 @@
 import { Star } from "lucide-react";
 import { logger } from "@/utils/logger";
+import { openAmazonLink } from "@/utils/amazonLink";
 
 interface ProductCardContentProps {
   description: string;
@@ -7,6 +8,7 @@ interface ProductCardContentProps {
   rating?: number;
   totalRatings?: number;
   title: string;
+  asin?: string;
 }
 
 const formatPrice = (price: string | number | undefined): string => {
@@ -56,7 +58,8 @@ export const ProductCardContent = ({
   price, 
   rating, 
   totalRatings,
-  title 
+  title,
+  asin
 }: ProductCardContentProps) => {
   const formattedPrice = formatPrice(price);
 
@@ -74,8 +77,12 @@ export const ProductCardContent = ({
         </p>
         {rating && (
           <div 
-            className="flex items-center gap-1.5" 
+            className="flex items-center gap-1.5 cursor-pointer hover:opacity-80 transition-opacity" 
             aria-label={`Rating: ${rating.toFixed(1)} out of 5 stars from ${totalRatings?.toLocaleString()} reviews`}
+            onClick={() => openAmazonLink(asin, title)}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => e.key === 'Enter' && openAmazonLink(asin, title)}
           >
             <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" aria-hidden="true" />
             <span className="text-xs sm:text-sm text-muted-foreground">
