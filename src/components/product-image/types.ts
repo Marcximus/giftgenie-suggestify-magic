@@ -5,5 +5,5 @@ export interface ProductImageProps {
   description: string;
   imageUrl?: string;
   product?: GiftSuggestion;
-  asin?: string;
+  amazonUrl?: string;
 }

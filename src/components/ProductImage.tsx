@@ -18,9 +18,8 @@ import {
   FallbackImageSpinner 
 } from './product-image/FallbackImage';
 import { generateProductAltText } from '@/utils/altTextGenerator';
-import { openAmazonLink } from '@/utils/amazonLink';
 
-export const ProductImage = ({ title, imageUrl, product, asin }: ProductImageProps) => {
+export const ProductImage = ({ title, imageUrl, product, amazonUrl }: ProductImageProps) => {
   const [currentImageUrl, setCurrentImageUrl] = useState(imageUrl);
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
@@ -98,12 +97,12 @@ export const ProductImage = ({ title, imageUrl, product, asin }: ProductImagePro
   }, [currentImageUrl]);
 
   return (
-    <div 
-      className="aspect-[4/3] relative overflow-hidden bg-gray-100 cursor-pointer"
-      onClick={() => openAmazonLink(asin, title)}
-      role="button"
-      tabIndex={0}
-      onKeyDown={(e) => e.key === 'Enter' && openAmazonLink(asin, title)}
+    <a 
+      href={amazonUrl}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="aspect-[4/3] relative overflow-hidden bg-gray-100 block"
+      onClick={(e) => !amazonUrl && e.preventDefault()}
     >
       {!imageLoaded && currentImageUrl && (
         <img
@@ -139,6 +138,6 @@ export const ProductImage = ({ title, imageUrl, product, asin }: ProductImagePro
         className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" 
         aria-hidden="true"
       />
-    </div>
+    </a>
   );
 };

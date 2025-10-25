@@ -1,10 +1,10 @@
 
-import { memo } from 'react';
+import { memo, useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { ProductImage } from "./ProductImage";
 import { ProductCardContent } from "./product/ProductCardContent";
 import { ProductCardActions } from "./product/ProductCardActions";
-import { openAmazonLink } from "@/utils/amazonLink";
+import { getAmazonAssociateId, buildAmazonUrl } from "@/utils/amazonLink";
 
 interface Product {
   title: string;
@@ -33,6 +33,19 @@ const ProductCardComponent = ({
   onMoreLikeThis,
   suggestion
 }: ProductCardProps) => {
+  const [amazonUrl, setAmazonUrl] = useState('');
+
+  useEffect(() => {
+    const fetchUrl = async () => {
+      if (!asin) return;
+      const associateId = await getAmazonAssociateId();
+      if (associateId) {
+        setAmazonUrl(buildAmazonUrl(asin, associateId));
+      }
+    };
+    fetchUrl();
+  }, [asin]);
+
   // Memoize schema data
   const schemaData = {
     "@context": "https://schema.org",
@@ -72,7 +85,7 @@ const ProductCardComponent = ({
           title={title} 
           description={description} 
           imageUrl={imageUrl}
-          asin={asin}
+          amazonUrl={amazonUrl}
           product={suggestion || {
             title,
             description,
@@ -83,17 +96,17 @@ const ProductCardComponent = ({
             amazon_asin: asin
           }}
         />
-        <div 
-          className="h-[1.75rem] overflow-hidden mt-2 px-3 sm:px-4 cursor-pointer"
-          onClick={() => openAmazonLink(asin, title)}
-          role="button"
-          tabIndex={0}
-          onKeyDown={(e) => e.key === 'Enter' && openAmazonLink(asin, title)}
+        <a 
+          href={amazonUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="h-[1.75rem] overflow-hidden mt-2 px-3 sm:px-4 block no-underline"
+          onClick={(e) => !amazonUrl && e.preventDefault()}
         >
           <CardTitle className="text-sm sm:text-base truncate text-center group-hover:text-primary transition-colors duration-200">
             {title}
           </CardTitle>
-        </div>
+        </a>
       </CardHeader>
       
       <ProductCardContent 
@@ -102,7 +115,7 @@ const ProductCardComponent = ({
         price={price}
         rating={rating}
         totalRatings={totalRatings}
-        asin={asin}
+        amazonUrl={amazonUrl}
       />
       
       <ProductCardActions 

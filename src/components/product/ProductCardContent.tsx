@@ -1,6 +1,5 @@
 import { Star } from "lucide-react";
 import { logger } from "@/utils/logger";
-import { openAmazonLink } from "@/utils/amazonLink";
 
 interface ProductCardContentProps {
   description: string;
@@ -8,7 +7,7 @@ interface ProductCardContentProps {
   rating?: number;
   totalRatings?: number;
   title: string;
-  asin?: string;
+  amazonUrl?: string;
 }
 
 const formatPrice = (price: string | number | undefined): string => {
@@ -59,7 +58,7 @@ export const ProductCardContent = ({
   rating, 
   totalRatings,
   title,
-  asin
+  amazonUrl
 }: ProductCardContentProps) => {
   const formattedPrice = formatPrice(price);
 
@@ -76,19 +75,19 @@ export const ProductCardContent = ({
           {formattedPrice}
         </p>
         {rating && (
-          <div 
-            className="flex items-center gap-1.5 cursor-pointer hover:opacity-80 transition-opacity" 
+          <a
+            href={amazonUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1.5 hover:opacity-80 transition-opacity no-underline" 
             aria-label={`Rating: ${rating.toFixed(1)} out of 5 stars from ${totalRatings?.toLocaleString()} reviews`}
-            onClick={() => openAmazonLink(asin, title)}
-            role="button"
-            tabIndex={0}
-            onKeyDown={(e) => e.key === 'Enter' && openAmazonLink(asin, title)}
+            onClick={(e) => !amazonUrl && e.preventDefault()}
           >
             <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" aria-hidden="true" />
             <span className="text-xs sm:text-sm text-muted-foreground">
               {rating.toFixed(1)} ({totalRatings?.toLocaleString()})
             </span>
-          </div>
+          </a>
         )}
       </div>
     </div>
