@@ -68,12 +68,25 @@ export const ProductCardContent = ({
         {description}
       </p>
       <div className="mt-3 flex items-center justify-between">
-        <p 
-          className="text-sm sm:text-base font-bold bg-gradient-to-r from-[#9b87f5] to-[#847bd1] bg-clip-text text-transparent" 
-          aria-label={`Price: ${formattedPrice}`}
-        >
-          {formattedPrice}
-        </p>
+        {amazonUrl ? (
+          <a
+            href={amazonUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={(e) => e.stopPropagation()}
+            className="text-sm sm:text-base font-bold bg-gradient-to-r from-[#9b87f5] to-[#847bd1] bg-clip-text text-transparent hover:opacity-80 transition-opacity no-underline"
+            aria-label={`Price: ${formattedPrice}`}
+          >
+            {formattedPrice}
+          </a>
+        ) : (
+          <p 
+            className="text-sm sm:text-base font-bold bg-gradient-to-r from-[#9b87f5] to-[#847bd1] bg-clip-text text-transparent" 
+            aria-label={`Price: ${formattedPrice}`}
+          >
+            {formattedPrice}
+          </p>
+        )}
         {rating && (
           <a
             href={amazonUrl}

@@ -1,74 +1,66 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { RainbowButton } from "@/components/ui/rainbow-button";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "@/components/ui/use-toast";
-import { logger } from "@/utils/logger";
+import { getAmazonAssociateId, buildAmazonUrl } from "@/utils/amazonLink";
 
 interface AmazonButtonProps {
   title: string;
   asin?: string;
 }
 
-let cachedAssociateId: string | null = null;
-
 export const AmazonButton = ({ title, asin }: AmazonButtonProps) => {
-  const [isLoading, setIsLoading] = useState(false);
+  const [amazonUrl, setAmazonUrl] = useState<string>('');
+  const [isLoading, setIsLoading] = useState(true);
 
-  const getAmazonUrl = async (searchTerm: string, productAsin?: string) => {
-    try {
-      if (!cachedAssociateId) {
-        setIsLoading(true);
-        const { data: { AMAZON_ASSOCIATE_ID } } = await supabase.functions.invoke('get-amazon-associate-id');
-        cachedAssociateId = AMAZON_ASSOCIATE_ID;
+  useEffect(() => {
+    const fetchUrl = async () => {
+      if (!asin) {
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        const associateId = await getAmazonAssociateId();
+        if (associateId) {
+          const url = buildAmazonUrl(asin, associateId);
+          setAmazonUrl(url);
+        }
+      } catch (error) {
+        console.error('Error building Amazon URL:', error);
+      } finally {
         setIsLoading(false);
       }
-      
-      // Validate ASIN format (10 characters alphanumeric)
-      const isValidAsin = productAsin && /^[A-Z0-9]{10}$/.test(productAsin);
-      
-      if (isValidAsin) {
-        logger.log('Creating direct product link for ASIN:', productAsin);
-        return `https://www.amazon.com/dp/${productAsin}/ref=nosim?tag=${cachedAssociateId}`;
-      }
-      
-      // If no valid ASIN, show a toast and return null
-      logger.warn('No valid ASIN available for product:', searchTerm);
-      toast({
-        title: "Product not found",
-        description: "This product is currently unavailable on Amazon.",
-        variant: "destructive",
-      });
-      return null;
-      
-    } catch (error) {
-      console.error('Error getting Amazon Associate ID:', error);
-      setIsLoading(false);
-      toast({
-        title: "Error",
-        description: "Unable to generate Amazon link. Please try again.",
-        variant: "destructive",
-      });
-      return null;
-    }
-  };
+    };
 
-  const handleClick = async (e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent any parent click handlers
-    const url = await getAmazonUrl(title, asin);
-    if (url) {
-      // Open in new tab with noopener and noreferrer for security
-      window.open(url, '_blank', 'noopener,noreferrer');
-    }
-  };
+    fetchUrl();
+  }, [asin]);
+
+  if (!asin || !amazonUrl) {
+    return (
+      <RainbowButton 
+        className="shadow-sm text-sm py-1 h-auto" 
+        disabled
+        aria-label="Product not available"
+      >
+        Not Available
+      </RainbowButton>
+    );
+  }
 
   return (
-    <RainbowButton 
-      className="shadow-sm text-sm py-1 h-auto" 
-      onClick={handleClick}
-      disabled={isLoading || !asin}
-      aria-label={asin ? "Check It Out" : "Product not available"}
+    <a 
+      href={amazonUrl} 
+      target="_blank" 
+      rel="noopener noreferrer"
+      onClick={(e) => e.stopPropagation()}
+      className="inline-block"
     >
-      {isLoading ? "Loading..." : "Check It Out"}
-    </RainbowButton>
+      <RainbowButton 
+        className="shadow-sm text-sm py-1 h-auto w-full" 
+        disabled={isLoading}
+        aria-label="Check It Out"
+      >
+        {isLoading ? "Loading..." : "Check It Out"}
+      </RainbowButton>
+    </a>
   );
 };
