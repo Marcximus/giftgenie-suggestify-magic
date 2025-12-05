@@ -424,21 +424,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      calculate_word_count: {
-        Args: { content: string }
-        Returns: number
-      }
+      calculate_word_count: { Args: { content: string }; Returns: number }
       get_random_daily_times: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           hour: number
           minute: number
         }[]
       }
-      validate_affiliate_link: {
-        Args: { link: Json }
-        Returns: boolean
-      }
+      validate_affiliate_link: { Args: { link: Json }; Returns: boolean }
     }
     Enums: {
       [_ in never]: never
