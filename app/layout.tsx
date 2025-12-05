@@ -1,8 +1,7 @@
 import type { Metadata } from 'next'
 import './globals.css'
 import { Providers } from './providers'
-import { Toaster } from '@/components/ui/toaster'
-import { FloatingNav } from '@/components/FloatingNav'
+import { ClientLayout } from '@/components/ClientLayout'
 import Script from 'next/script'
 
 export const metadata: Metadata = {
@@ -65,9 +64,9 @@ export default function RootLayout({
       </head>
       <body>
         <Providers>
-          {children}
-          <FloatingNav />
-          <Toaster />
+          <ClientLayout>
+            {children}
+          </ClientLayout>
         </Providers>
         <Script
           src="https://cdn.gpteng.co/gptengineer.js"
