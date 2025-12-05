@@ -133,7 +133,10 @@ const Blog = () => {
                       <div className="w-[40px] relative overflow-hidden">
                         <img 
                           src={post.image_url} 
-                          alt={post.title}
+                          alt={post.image_alt_text || post.title}
+                          loading="lazy"
+                          width={40}
+                          height={40}
                           className="object-cover w-full h-full transform transition-transform duration-300 group-hover:scale-105"
                         />
                       </div>

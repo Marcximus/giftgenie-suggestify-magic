@@ -1,3 +1,7 @@
+# Prerender.io configuration for SEO (uncomment when ready)
+# User-Agent: *bot* /blog/* https://service.prerender.io/https://getthegift.ai/blog/:splat 200!
+# User-Agent: *bot* /about https://service.prerender.io/https://getthegift.ai/about 200!
+# User-Agent: *bot* / https://service.prerender.io/https://getthegift.ai/ 200!
 
 # Force HTTPS and remove www
 http://getthegift.ai/* https://getthegift.ai/:splat 301!
