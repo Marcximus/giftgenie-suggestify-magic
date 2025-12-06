@@ -2,8 +2,18 @@ import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
 import { Card } from "@/components/ui/card";
 import Link from "next/link";
-import { BlogMeta } from "@/components/blog/meta/BlogMeta";
 import { unstable_cache } from 'next/cache';
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Gift Ideas & Inspiration Blog',
+  description: 'Discover the best gift ideas, present inspiration, and shopping guides for every occasion. AI-curated gift recommendations for birthdays, holidays, and special events.',
+  openGraph: {
+    title: 'Gift Ideas & Inspiration Blog - GiftGenie',
+    description: 'Discover the best gift ideas, present inspiration, and shopping guides for every occasion.',
+    url: 'https://getthegift.ai/blog',
+  },
+};
 
 // Force dynamic rendering but with aggressive caching
 export const dynamic = 'force-dynamic';
@@ -45,9 +55,7 @@ export default async function Blog() {
   const posts = await getBlogPosts();
 
   return (
-    <>
-      <BlogMeta />
-      <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col">
         <div className="flex-grow container mx-auto px-4 py-6">
           <div className="text-center mb-8">
             <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold bg-gradient-to-r from-purple-500/80 via-blue-500/80 to-purple-500/80 inline-block text-transparent bg-clip-text mb-4">
@@ -98,7 +106,6 @@ export default async function Blog() {
             </p>
           </footer>
         </div>
-      </div>
-    </>
+    </div>
   );
 }
