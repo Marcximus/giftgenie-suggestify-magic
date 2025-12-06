@@ -112,13 +112,13 @@ export default async function BlogPost({ params }: { params: { slug: string } })
 
   return (
     <div className="min-h-screen flex flex-col">
-      <div className="flex-grow container mx-auto px-4 py-6">
-        <article className="max-w-4xl mx-auto">
+      <div className="flex-grow container mx-auto px-2 sm:px-4 py-6">
+        <article className="max-w-5xl mx-auto">
           <BlogPostHeader post={post} />
           <BlogPostContent post={post} />
         </article>
 
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-5xl mx-auto px-4">
           <RelatedPostsStatic posts={relatedPosts} />
         </div>
       </div>
