@@ -1,3 +1,5 @@
+'use client'
+
 import { Tables } from "@/integrations/supabase/types";
 import { useState } from "react";
 import Link from "next/link";

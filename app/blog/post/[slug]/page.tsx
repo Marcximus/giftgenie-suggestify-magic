@@ -1,137 +1,127 @@
-'use client'
-
-import { useQuery } from "@tanstack/react-query";
-import { useParams, useRouter } from "next/navigation";
+import { notFound } from 'next/navigation';
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "@/components/ui/use-toast";
 import { BlogPostHeader } from "@/components/blog/BlogPostHeader";
 import { BlogPostContent } from "@/components/blog/BlogPostContent";
-import { RelatedPosts } from "@/components/blog/RelatedPosts";
-import { BlogPostMeta } from "@/components/blog/meta/BlogPostMeta";
-import { BlogPostSkeleton } from "@/components/blog/loading/BlogPostSkeleton";
-import { BlogPostError } from "@/components/blog/error/BlogPostError";
+import { RelatedPostsStatic } from "@/components/blog/RelatedPostsStatic";
+import type { Metadata } from 'next';
+import { unstable_cache } from 'next/cache';
 
-export default function BlogPost() {
-  const params = useParams();
-  const router = useRouter();
-  const slug = params?.slug as string;
+// Enable ISR with 5-minute revalidation
+export const revalidate = 300;
 
-  const { data: post, isLoading, error } = useQuery({
-    queryKey: ["blog-post", slug],
-    queryFn: async () => {
-      console.log("Fetching blog post with slug:", slug);
+// Pre-build blog post pages at build time
+export async function generateStaticParams() {
+  const { data: posts } = await supabase
+    .from('blog_posts')
+    .select('slug')
+    .not('published_at', 'is', null)
+    .limit(100); // Build top 100 posts at build time
 
-      if (!slug) {
-        const error = new Error("No slug provided");
-        error.name = "NotFoundError";
-        throw error;
-      }
+  return (posts || []).map((post) => ({
+    slug: post.slug,
+  }));
+}
 
-      // Retry logic for database connection issues
-      let retries = 2;
-      let lastError = null;
+// Generate metadata for SEO
+export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
+  const post = await getBlogPost(params.slug);
 
-      while (retries >= 0) {
-        try {
-          const { data: currentPost, error: currentError } = await supabase
-            .from("blog_posts")
-            .select("*")
-            .eq("slug", slug)
-            .maybeSingle();
+  if (!post) {
+    return {
+      title: 'Post Not Found',
+    };
+  }
 
-          if (currentError) {
-            // Check if it's a connection/timeout error
-            if (currentError.message?.includes('timeout') ||
-                currentError.message?.includes('connection') ||
-                currentError.code === 'PGRST301') {
-              lastError = currentError;
-              retries--;
-              if (retries >= 0) {
-                console.log(`Database timeout, retrying... (${retries} attempts left)`);
-                await new Promise(resolve => setTimeout(resolve, 1000));
-                continue;
-              }
-            }
-
-            console.error("Error fetching blog post:", currentError);
-            const error = new Error("Failed to fetch blog post");
-            error.name = "ServerError";
-            throw error;
-          }
-
-          if (!currentPost) {
-            console.log("No blog post found with slug:", slug);
-            const error = new Error("Blog post not found");
-            error.name = "NotFoundError";
-            throw error;
-          }
-
-          console.log("Found blog post:", currentPost.title);
-
-          // Fetch related posts with separate error handling
-          const { data: relatedPosts } = await supabase
-            .from("blog_posts")
-            .select("title, slug, image_url, excerpt")
-            .neq("slug", slug)
-            .not("published_at", "is", null)
-            .order("published_at", { ascending: false })
-            .limit(3);
-
-          return {
-            ...currentPost,
-            relatedPosts: relatedPosts || []
-          };
-        } catch (err) {
-          if (retries > 0 && (err as Error).name === "ServerError") {
-            lastError = err;
-            retries--;
-            console.log(`Query failed, retrying... (${retries} attempts left)`);
-            await new Promise(resolve => setTimeout(resolve, 1000));
-          } else {
-            throw err;
-          }
-        }
-      }
-
-      throw lastError || new Error("Failed to fetch blog post after retries");
+  return {
+    title: post.title,
+    description: post.excerpt || post.meta_description || `Read ${post.title} on GiftGenie`,
+    keywords: post.seo_keywords || undefined,
+    openGraph: {
+      title: post.title,
+      description: post.excerpt || post.meta_description || `Read ${post.title} on GiftGenie`,
+      url: `https://getthegift.ai/blog/post/${post.slug}`,
+      type: 'article',
+      publishedTime: post.published_at || undefined,
+      modifiedTime: post.updated_at || undefined,
+      images: post.image_url ? [{
+        url: post.image_url,
+        width: 1200,
+        height: 630,
+        alt: post.image_alt_text || post.title,
+      }] : undefined,
     },
-    retry: false, // We handle retries internally
-    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
-    gcTime: 30 * 60 * 1000, // Keep in cache for 30 minutes
-    refetchOnWindowFocus: false,
-    refetchOnMount: false,
-  });
+    twitter: {
+      card: 'summary_large_image',
+      title: post.title,
+      description: post.excerpt || post.meta_description || `Read ${post.title} on GiftGenie`,
+      images: post.image_url ? [post.image_url] : undefined,
+    },
+  };
+}
 
-  if (isLoading) {
-    return <BlogPostSkeleton />;
+// Cache blog post fetching
+const getBlogPost = unstable_cache(
+  async (slug: string) => {
+    const { data: post, error } = await supabase
+      .from("blog_posts")
+      .select("*")
+      .eq("slug", slug)
+      .maybeSingle();
+
+    if (error || !post) {
+      return null;
+    }
+
+    return post;
+  },
+  ['blog-post'],
+  {
+    revalidate: 300,
+    tags: ['blog-post'],
+  }
+);
+
+// Cache related posts fetching
+const getRelatedPosts = unstable_cache(
+  async (slug: string) => {
+    const { data } = await supabase
+      .from("blog_posts")
+      .select("title, slug, image_url, excerpt")
+      .neq("slug", slug)
+      .not("published_at", "is", null)
+      .order("published_at", { ascending: false })
+      .limit(3);
+
+    return data || [];
+  },
+  ['related-posts'],
+  {
+    revalidate: 600, // Cache related posts for 10 minutes
+    tags: ['related-posts'],
+  }
+);
+
+export default async function BlogPost({ params }: { params: { slug: string } }) {
+  const post = await getBlogPost(params.slug);
+
+  if (!post) {
+    notFound();
   }
 
-  if (error || !post) {
-    return (
-      <BlogPostError
-        error={error as Error}
-        onRetry={() => router.refresh()}
-      />
-    );
-  }
+  const relatedPosts = await getRelatedPosts(params.slug);
 
   return (
-    <>
-      <BlogPostMeta post={post} />
-      <article className="min-h-screen">
-        <div className="container mx-auto px-4 py-8 max-w-4xl">
-          <BlogPostHeader
-            title={post.title}
-            imageUrl={post.image_url}
-            imageAltText={post.image_alt_text}
-            publishedAt={post.published_at}
-          />
-          <BlogPostContent content={post.content} />
-          {post.relatedPosts && post.relatedPosts.length > 0 && (
-            <RelatedPosts posts={post.relatedPosts} />
-          )}
+    <div className="min-h-screen flex flex-col">
+      <div className="flex-grow container mx-auto px-4 py-6">
+        <article className="max-w-4xl mx-auto">
+          <BlogPostHeader post={post} />
+          <BlogPostContent post={post} />
+        </article>
+
+        <div className="max-w-4xl mx-auto">
+          <RelatedPostsStatic posts={relatedPosts} />
         </div>
-      </article>
-    </>
+      </div>
+    </div>
   );
 }

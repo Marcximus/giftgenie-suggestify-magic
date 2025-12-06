@@ -1,122 +1,61 @@
-'use client'
-
-import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
 import { Card } from "@/components/ui/card";
 import Link from "next/link";
-import { toast } from "@/components/ui/use-toast";
-import { BlogMeta } from "@/components/blog/meta/BlogMeta";
+import { unstable_cache } from 'next/cache';
+import type { Metadata } from 'next';
 
-export default function Blog() {
-  console.log("Blog component initialized");
+export const metadata: Metadata = {
+  title: 'Gift Ideas & Inspiration Blog',
+  description: 'Discover the best gift ideas, present inspiration, and shopping guides for every occasion. AI-curated gift recommendations for birthdays, holidays, and special events.',
+  openGraph: {
+    title: 'Gift Ideas & Inspiration Blog - GiftGenie',
+    description: 'Discover the best gift ideas, present inspiration, and shopping guides for every occasion.',
+    url: 'https://getthegift.ai/blog',
+  },
+};
 
-  const { data: posts, isLoading, error } = useQuery({
-    queryKey: ["blog-posts"],
-    queryFn: async () => {
-      console.log("Starting blog posts fetch...");
+// Force dynamic rendering but with aggressive caching
+export const dynamic = 'force-dynamic';
+export const fetchCache = 'force-cache';
 
-      try {
-        console.log("Initiating Supabase query...");
-        const { data, error, status, statusText } = await supabase
-          .from("blog_posts")
-          .select("*")
-          .order("published_at", { ascending: false });
+// Cache blog posts for 5 minutes
+const getCachedBlogPosts = unstable_cache(
+  async () => {
+    try {
+      const { data, error } = await supabase
+        .from("blog_posts")
+        .select("id, title, slug, image_url, image_alt_text, published_at")
+        .order("published_at", { ascending: false })
+        .limit(100); // Limit to 100 posts for performance
 
-        console.log("Supabase response status:", status, statusText);
-
-        if (error) {
-          console.error("Supabase error details:", {
-            message: error.message,
-            details: error.details,
-            hint: error.hint,
-            code: error.code
-          });
-          toast({
-            title: "Error loading blog posts",
-            description: error.message,
-            variant: "destructive",
-          });
-          throw error;
-        }
-
-        console.log("Successfully fetched blog posts:", {
-          count: data?.length || 0,
-          firstPost: data?.[0]?.title || 'No posts'
-        });
-        return data as Tables<"blog_posts">[];
-      } catch (error: any) {
-        console.error("Detailed fetch error:", {
-          message: error.message,
-          stack: error.stack,
-          name: error.name,
-          cause: error.cause
-        });
-        throw error;
+      if (error) {
+        console.error("Error fetching blog posts:", error);
+        return [];
       }
-    },
-    retry: 3,
-    retryDelay: (attemptIndex) => {
-      const delay = Math.min(1000 * 2 ** attemptIndex, 30000);
-      console.log(`Retry attempt ${attemptIndex + 1}, waiting ${delay}ms`);
-      return delay;
+
+      return data as Tables<"blog_posts">[];
+    } catch (error) {
+      console.error("Failed to fetch blog posts:", error);
+      return [];
     }
-  });
-
-  if (error) {
-    console.error("Rendering error state:", error);
-    return (
-      <div className="min-h-screen flex flex-col">
-        <div className="flex-grow container mx-auto px-4 py-8">
-          <div className="text-center">
-            <h1 className="text-2xl font-bold text-red-600 mb-4">Error Loading Blog Posts</h1>
-            <p className="text-gray-600">Please try refreshing the page</p>
-            <p className="text-sm text-gray-500 mt-2">{(error as Error).message}</p>
-          </div>
-        </div>
-      </div>
-    );
+  },
+  ['blog-posts'],
+  {
+    revalidate: 300, // Cache for 5 minutes
+    tags: ['blog-posts']
   }
+);
 
-  if (isLoading) {
-    return (
-      <>
-        <BlogMeta />
-        <div className="min-h-screen flex flex-col">
-          <div className="flex-grow container mx-auto px-4 py-6">
-            <div className="text-center mb-8">
-              <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold bg-gradient-to-r from-purple-500/80 via-blue-500/80 to-purple-500/80 inline-block text-transparent bg-clip-text mb-4">
-                Perfect Gift Ideas
-              </h1>
-              <p className="text-[0.7rem] sm:text-xs md:text-sm text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-                Our suggestions feel tailor-made because they practically are. We use <span className="animate-pulse-text text-primary">AI</span> and <span className="animate-pulse-text text-primary">internet magic</span> to find the absolute best gift ideas and popular presents. Thanks to us, you can spend less time gift hunting and more time celebrating (or binge-watching your favorite show—we won't judge).
-              </p>
-            </div>
-            <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3 mb-8">
-              {[...Array(6)].map((_, i) => (
-                <Card key={i} className="animate-pulse h-[40px] flex overflow-hidden">
-                  <div className="w-[40px] bg-gray-200"></div>
-                  <div className="flex-1 p-2">
-                    <div className="h-3 bg-gray-200 rounded w-3/4"></div>
-                  </div>
-                </Card>
-              ))}
-            </div>
-            <footer className="text-center pb-8">
-              <p className="text-xs text-muted-foreground">
-                Some links may contain affiliate links from Amazon and other vendors
-              </p>
-            </footer>
-          </div>
-        </div>
-      </>
-    );
-  }
+async function getBlogPosts() {
+  return getCachedBlogPosts();
+}
+
+export default async function Blog() {
+  const posts = await getBlogPosts();
 
   return (
-    <>
-      <BlogMeta />
-      <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col">
         <div className="flex-grow container mx-auto px-4 py-6">
           <div className="text-center mb-8">
             <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold bg-gradient-to-r from-purple-500/80 via-blue-500/80 to-purple-500/80 inline-block text-transparent bg-clip-text mb-4">
@@ -126,40 +65,47 @@ export default function Blog() {
               Our suggestions feel tailor-made because they practically are. We use <span className="animate-pulse-text text-primary">AI</span> and <span className="animate-pulse-text text-primary">internet magic</span> to find the absolute best gift ideas and popular presents. Thanks to us, you can spend less time gift hunting and more time celebrating (or binge-watching your favorite show—we won't judge).
             </p>
           </div>
-          <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3 mb-8">
-            {posts?.map((post) => (
-              <Link href={`/blog/post/${post.slug}`} key={post.id}>
-                <article className="group">
-                  <Card className="flex h-[40px] overflow-hidden transform transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
-                    {post.image_url && (
-                      <div className="w-[40px] relative overflow-hidden">
-                        <img
-                          src={post.image_url}
-                          alt={post.image_alt_text || post.title}
-                          loading="lazy"
-                          width={40}
-                          height={40}
-                          className="object-cover w-full h-full transform transition-transform duration-300 group-hover:scale-105"
-                        />
+
+          {posts.length === 0 ? (
+            <div className="text-center py-12">
+              <p className="text-muted-foreground">No blog posts available yet.</p>
+            </div>
+          ) : (
+            <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3 mb-8">
+              {posts.map((post) => (
+                <Link href={`/blog/post/${post.slug}`} key={post.id} prefetch={false}>
+                  <article className="group">
+                    <Card className="flex h-[40px] overflow-hidden transform transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
+                      {post.image_url && (
+                        <div className="w-[40px] relative overflow-hidden">
+                          <img
+                            src={post.image_url}
+                            alt={post.image_alt_text || post.title}
+                            loading="lazy"
+                            width={40}
+                            height={40}
+                            className="object-cover w-full h-full transform transition-transform duration-300 group-hover:scale-105"
+                          />
+                        </div>
+                      )}
+                      <div className="flex-1 p-2 flex items-center">
+                        <h3 className="text-xs font-medium truncate group-hover:text-primary transition-colors">
+                          {post.title}
+                        </h3>
                       </div>
-                    )}
-                    <div className="flex-1 p-2 flex items-center">
-                      <h3 className="text-xs font-medium truncate group-hover:text-primary transition-colors">
-                        {post.title}
-                      </h3>
-                    </div>
-                  </Card>
-                </article>
-              </Link>
-            ))}
-          </div>
+                    </Card>
+                  </article>
+                </Link>
+              ))}
+            </div>
+          )}
+
           <footer className="text-center pb-8">
             <p className="text-xs text-muted-foreground">
               Some links may contain affiliate links from Amazon and other vendors
             </p>
           </footer>
         </div>
-      </div>
-    </>
+    </div>
   );
 }
