@@ -5,6 +5,7 @@ import { BlogPostContent } from "@/components/blog/BlogPostContent";
 import { RelatedPostsStatic } from "@/components/blog/RelatedPostsStatic";
 import type { Metadata } from 'next';
 import { unstable_cache } from 'next/cache';
+import Script from 'next/script';
 
 // Enable ISR with 5-minute revalidation
 export const revalidate = 300;
@@ -36,6 +37,9 @@ export async function generateMetadata({ params }: { params: { slug: string } })
     title: post.title,
     description: post.excerpt || post.meta_description || `Read ${post.title} on Get The Gift`,
     keywords: post.seo_keywords || undefined,
+    alternates: {
+      canonical: `https://getthegift.ai/blog/post/${post.slug}`,
+    },
     openGraph: {
       title: post.title,
       description: post.excerpt || post.meta_description || `Read ${post.title} on Get The Gift`,
@@ -110,18 +114,56 @@ export default async function BlogPost({ params }: { params: { slug: string } })
 
   const relatedPosts = await getRelatedPosts(params.slug);
 
-  return (
-    <div className="min-h-screen flex flex-col">
-      <div className="flex-grow container mx-auto px-2 sm:px-4 py-6">
-        <article className="max-w-5xl mx-auto">
-          <BlogPostHeader post={post} />
-          <BlogPostContent post={post} />
-        </article>
+  // Article Schema for SEO
+  const articleSchema = {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    "headline": post.title,
+    "description": post.excerpt || post.meta_description || post.title,
+    "image": post.image_url || undefined,
+    "datePublished": post.published_at || post.created_at,
+    "dateModified": post.updated_at || post.published_at || post.created_at,
+    "author": {
+      "@type": "Organization",
+      "name": "Get The Gift",
+      "url": "https://getthegift.ai"
+    },
+    "publisher": {
+      "@type": "Organization",
+      "name": "Get The Gift",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://getthegift.ai/lovable-uploads/89d8ebcd-a5f6-4614-a505-80ed3d467943.png"
+      }
+    },
+    "mainEntityOfPage": {
+      "@type": "WebPage",
+      "@id": `https://getthegift.ai/blog/post/${post.slug}`
+    }
+  };
 
-        <div className="max-w-5xl mx-auto px-4">
-          <RelatedPostsStatic posts={relatedPosts} />
+  return (
+    <>
+      {/* Article Schema */}
+      <Script
+        id="article-schema"
+        type="application/ld+json"
+        strategy="beforeInteractive"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(articleSchema) }}
+      />
+
+      <div className="min-h-screen flex flex-col">
+        <div className="flex-grow container mx-auto px-2 sm:px-4 py-6">
+          <article className="max-w-5xl mx-auto">
+            <BlogPostHeader post={post} />
+            <BlogPostContent post={post} />
+          </article>
+
+          <div className="max-w-5xl mx-auto px-4">
+            <RelatedPostsStatic posts={relatedPosts} />
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }

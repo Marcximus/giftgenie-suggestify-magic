@@ -13,7 +13,6 @@ export const BlogPostHeader = ({ post }: BlogPostHeaderProps) => {
   const [imageError, setImageError] = useState(false);
 
   const handleImageError = () => {
-    console.error(`Failed to load image: ${post.image_url}`);
     setImageError(true);
   };
 
@@ -24,7 +23,7 @@ export const BlogPostHeader = ({ post }: BlogPostHeaderProps) => {
           {post.title}
         </h1>
 
-        {post.image_url && !imageError && (
+        {post.image_url && !imageError ? (
           <Link href="/" className="block w-full">
             <div className="w-full aspect-[16/9] relative overflow-hidden sm:rounded-lg mb-2 sm:mb-4 shadow-xl animate-fade-in sm:scale-90 md:scale-90 lg:scale-90">
               <Image
@@ -38,7 +37,16 @@ export const BlogPostHeader = ({ post }: BlogPostHeaderProps) => {
               />
             </div>
           </Link>
-        )}
+        ) : post.image_url && imageError ? (
+          <div className="w-full aspect-[16/9] relative overflow-hidden sm:rounded-lg mb-2 sm:mb-4 bg-gray-200 flex items-center justify-center">
+            <div className="text-center p-6">
+              <svg className="mx-auto h-12 w-12 text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+              <p className="text-sm text-gray-500">Image unavailable</p>
+            </div>
+          </div>
+        ) : null}
       </div>
     </header>
   );
