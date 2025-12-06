@@ -27,15 +27,15 @@ export const SuggestionsGrid = ({
     if (suggestions.length > 0 && !hasShownConfetti.current && !isLoading) {
       hasShownConfetti.current = true;
 
-      // Reduced duration for better performance
-      const duration = 1500; // Was 3000ms, now 1500ms (50% faster)
+      // Optimized confetti with better performance
+      const duration = 2000; // 2 seconds - balanced
       const animationEnd = Date.now() + duration;
       const defaults = {
-        startVelocity: 25, // Reduced from 30
+        startVelocity: 30,
         spread: 360,
-        ticks: 40, // Reduced from 60 for faster animation
+        ticks: 50,
         zIndex: 0,
-        decay: 0.94 // Faster particle decay
+        decay: 0.95
       };
 
       const randomInRange = (min: number, max: number) => {
@@ -53,12 +53,13 @@ export const SuggestionsGrid = ({
           return;
         }
 
-        // Only fire confetti every 300ms for better performance
-        if (now - lastTime >= 300) {
+        // Fire confetti every 250ms for good visual effect
+        if (now - lastTime >= 250) {
           lastTime = now;
 
-          // Reduced particle count for smoother performance
-          const particleCount = Math.floor(20 * (timeLeft / duration)); // Was 50, now 20 (60% fewer particles)
+          // MORE particles at the start, fewer at the end (reversed calculation)
+          const progress = timeLeft / duration;
+          const particleCount = Math.floor(30 * progress); // Starts at 30, reduces to 0
 
           confetti({
             ...defaults,
@@ -75,7 +76,7 @@ export const SuggestionsGrid = ({
         frameId = requestAnimationFrame(animate);
       };
 
-      // Start animation using requestAnimationFrame (more efficient than setInterval)
+      // Start animation using requestAnimationFrame
       frameId = requestAnimationFrame(animate);
 
       // Cleanup function

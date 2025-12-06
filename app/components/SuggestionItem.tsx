@@ -25,15 +25,15 @@ export const SuggestionItem = memo(({
       setDescription(cachedDescription);
       return;
     }
-    
+
     const fetchDescription = async () => {
       try {
         if (suggestion.title) {
           const customDescription = await generateCustomDescription(
-            suggestion.title, 
+            suggestion.title,
             suggestion.description
           );
-          
+
           if (customDescription) {
             setDescription(customDescription);
           }
@@ -42,9 +42,14 @@ export const SuggestionItem = memo(({
         console.error('Error generating description:', error);
       }
     };
-    
-    fetchDescription();
-  }, [suggestion.title, suggestion.description, cachedDescription]);
+
+    // Stagger API calls to prevent all 8 firing at once
+    // This dramatically improves performance during reveal
+    const delay = index * 150; // 150ms delay between each card
+    const timeoutId = setTimeout(fetchDescription, delay);
+
+    return () => clearTimeout(timeoutId);
+  }, [suggestion.title, suggestion.description, cachedDescription, index]);
 
   return (
     <div 
