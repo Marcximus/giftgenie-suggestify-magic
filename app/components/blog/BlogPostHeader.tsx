@@ -3,6 +3,7 @@
 import { Tables } from "@/integrations/supabase/types";
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 
 interface BlogPostHeaderProps {
   post: Tables<"blog_posts">;
@@ -26,10 +27,13 @@ export const BlogPostHeader = ({ post }: BlogPostHeaderProps) => {
         {post.image_url && !imageError && (
           <Link href="/" className="block w-full">
             <div className="w-full aspect-[16/9] relative overflow-hidden sm:rounded-lg mb-2 sm:mb-4 shadow-xl animate-fade-in sm:scale-90 md:scale-90 lg:scale-90">
-              <img 
-                src={post.image_url} 
+              <Image
+                src={post.image_url}
                 alt={post.image_alt_text || post.title}
-                className="absolute inset-0 w-full h-full object-cover sm:transform sm:hover:scale-105 transition-transform duration-300 ease-in-out"
+                fill
+                className="object-cover sm:transform sm:hover:scale-105 transition-transform duration-300 ease-in-out"
+                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 1080px, 1080px"
+                priority={true}
                 onError={handleImageError}
               />
             </div>

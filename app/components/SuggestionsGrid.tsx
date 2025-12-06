@@ -1,6 +1,5 @@
 
 import { useEffect, useRef, useMemo } from 'react';
-import confetti from 'canvas-confetti';
 import { GiftSuggestion } from '@/types/suggestions';
 import { SuggestionsGridItems } from './suggestions/SuggestionsGridItems';
 import { SuggestionsActions } from './suggestions/SuggestionsActions';
@@ -27,64 +26,69 @@ export const SuggestionsGrid = ({
     if (suggestions.length > 0 && !hasShownConfetti.current && !isLoading) {
       hasShownConfetti.current = true;
 
-      // Optimized confetti with better performance
-      const duration = 2000; // 2 seconds - balanced
-      const animationEnd = Date.now() + duration;
-      const defaults = {
-        startVelocity: 30,
-        spread: 360,
-        ticks: 50,
-        zIndex: 0,
-        decay: 0.95
-      };
+      // Lazy load confetti library only when needed
+      import('canvas-confetti').then((confettiModule) => {
+        const confetti = confettiModule.default;
 
-      const randomInRange = (min: number, max: number) => {
-        return Math.random() * (max - min) + min;
-      };
+        // Optimized confetti with better performance
+        const duration = 2000; // 2 seconds - balanced
+        const animationEnd = Date.now() + duration;
+        const defaults = {
+          startVelocity: 30,
+          spread: 360,
+          ticks: 50,
+          zIndex: 0,
+          decay: 0.95
+        };
 
-      let frameId: number;
-      let lastTime = Date.now();
+        const randomInRange = (min: number, max: number) => {
+          return Math.random() * (max - min) + min;
+        };
 
-      const animate = () => {
-        const now = Date.now();
-        const timeLeft = animationEnd - now;
+        let frameId: number;
+        let lastTime = Date.now();
 
-        if (timeLeft <= 0) {
-          return;
-        }
+        const animate = () => {
+          const now = Date.now();
+          const timeLeft = animationEnd - now;
 
-        // Fire confetti every 250ms for good visual effect
-        if (now - lastTime >= 250) {
-          lastTime = now;
+          if (timeLeft <= 0) {
+            return;
+          }
 
-          // MORE particles at the start, fewer at the end (reversed calculation)
-          const progress = timeLeft / duration;
-          const particleCount = Math.floor(30 * progress); // Starts at 30, reduces to 0
+          // Fire confetti every 250ms for good visual effect
+          if (now - lastTime >= 250) {
+            lastTime = now;
 
-          confetti({
-            ...defaults,
-            particleCount,
-            origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 }
-          });
-          confetti({
-            ...defaults,
-            particleCount,
-            origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 }
-          });
-        }
+            // MORE particles at the start, fewer at the end (reversed calculation)
+            const progress = timeLeft / duration;
+            const particleCount = Math.floor(30 * progress); // Starts at 30, reduces to 0
 
+            confetti({
+              ...defaults,
+              particleCount,
+              origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 }
+            });
+            confetti({
+              ...defaults,
+              particleCount,
+              origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 }
+            });
+          }
+
+          frameId = requestAnimationFrame(animate);
+        };
+
+        // Start animation using requestAnimationFrame
         frameId = requestAnimationFrame(animate);
-      };
 
-      // Start animation using requestAnimationFrame
-      frameId = requestAnimationFrame(animate);
-
-      // Cleanup function
-      return () => {
-        if (frameId) {
-          cancelAnimationFrame(frameId);
-        }
-      };
+        // Cleanup function
+        return () => {
+          if (frameId) {
+            cancelAnimationFrame(frameId);
+          }
+        };
+      });
     }
 
     // Reset confetti flag when suggestions are cleared
