@@ -7,3 +7,17 @@
 # Next.js plugin for Netlify
 [[plugins]]
   package = "@netlify/plugin-nextjs"
+
+# Cache static blog posts aggressively
+[[headers]]
+  for = "/blog/post/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+    X-Content-Type-Options = "nosniff"
+
+# Cache blog listing
+[[headers]]
+  for = "/blog"
+  [headers.values]
+    Cache-Control = "public, max-age=300, s-maxage=3600"
+

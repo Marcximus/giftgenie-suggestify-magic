@@ -9,7 +9,7 @@ import Link from 'next/link';
 
 // Force static generation for all blog posts - no serverless functions
 export const dynamic = 'force-static';
-export const dynamicParams = true; // Allow on-demand generation for new posts
+export const dynamicParams = false; // Disable on-demand generation - 404 for non-pre-built pages
 
 // Pre-build ALL blog post pages at build time
 export async function generateStaticParams() {
