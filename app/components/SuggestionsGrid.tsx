@@ -1,5 +1,5 @@
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useMemo } from 'react';
 import confetti from 'canvas-confetti';
 import { GiftSuggestion } from '@/types/suggestions';
 import { SuggestionsGridItems } from './suggestions/SuggestionsGridItems';
@@ -26,36 +26,64 @@ export const SuggestionsGrid = ({
     // Trigger confetti when suggestions first appear
     if (suggestions.length > 0 && !hasShownConfetti.current && !isLoading) {
       hasShownConfetti.current = true;
-      
-      const duration = 3000;
+
+      // Reduced duration for better performance
+      const duration = 1500; // Was 3000ms, now 1500ms (50% faster)
       const animationEnd = Date.now() + duration;
-      const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
+      const defaults = {
+        startVelocity: 25, // Reduced from 30
+        spread: 360,
+        ticks: 40, // Reduced from 60 for faster animation
+        zIndex: 0,
+        decay: 0.94 // Faster particle decay
+      };
 
       const randomInRange = (min: number, max: number) => {
         return Math.random() * (max - min) + min;
       };
 
-      const interval = setInterval(() => {
-        const timeLeft = animationEnd - Date.now();
+      let frameId: number;
+      let lastTime = Date.now();
+
+      const animate = () => {
+        const now = Date.now();
+        const timeLeft = animationEnd - now;
 
         if (timeLeft <= 0) {
-          clearInterval(interval);
           return;
         }
 
-        const particleCount = 50 * (timeLeft / duration);
+        // Only fire confetti every 300ms for better performance
+        if (now - lastTime >= 300) {
+          lastTime = now;
 
-        confetti({
-          ...defaults,
-          particleCount,
-          origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 }
-        });
-        confetti({
-          ...defaults,
-          particleCount,
-          origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 }
-        });
-      }, 250);
+          // Reduced particle count for smoother performance
+          const particleCount = Math.floor(20 * (timeLeft / duration)); // Was 50, now 20 (60% fewer particles)
+
+          confetti({
+            ...defaults,
+            particleCount,
+            origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 }
+          });
+          confetti({
+            ...defaults,
+            particleCount,
+            origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 }
+          });
+        }
+
+        frameId = requestAnimationFrame(animate);
+      };
+
+      // Start animation using requestAnimationFrame (more efficient than setInterval)
+      frameId = requestAnimationFrame(animate);
+
+      // Cleanup function
+      return () => {
+        if (frameId) {
+          cancelAnimationFrame(frameId);
+        }
+      };
     }
 
     // Reset confetti flag when suggestions are cleared
@@ -64,7 +92,8 @@ export const SuggestionsGrid = ({
     }
   }, [suggestions.length, isLoading]);
 
-  const schemaData = {
+  // Memoize schema data to prevent recalculation on every render
+  const schemaData = useMemo(() => ({
     "@context": "https://schema.org",
     "@type": "ItemList",
     "itemListElement": suggestions.map((suggestion, index) => ({
@@ -93,7 +122,7 @@ export const SuggestionsGrid = ({
         })
       }
     }))
-  };
+  }), [suggestions]);
 
   return (
     <>
