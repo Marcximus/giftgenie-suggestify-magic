@@ -34,11 +34,11 @@ export async function generateMetadata({ params }: { params: { slug: string } })
 
   return {
     title: post.title,
-    description: post.excerpt || post.meta_description || `Read ${post.title} on GiftGenie`,
+    description: post.excerpt || post.meta_description || `Read ${post.title} on Get The Gift`,
     keywords: post.seo_keywords || undefined,
     openGraph: {
       title: post.title,
-      description: post.excerpt || post.meta_description || `Read ${post.title} on GiftGenie`,
+      description: post.excerpt || post.meta_description || `Read ${post.title} on Get The Gift`,
       url: `https://getthegift.ai/blog/post/${post.slug}`,
       type: 'article',
       publishedTime: post.published_at || undefined,
@@ -53,7 +53,7 @@ export async function generateMetadata({ params }: { params: { slug: string } })
     twitter: {
       card: 'summary_large_image',
       title: post.title,
-      description: post.excerpt || post.meta_description || `Read ${post.title} on GiftGenie`,
+      description: post.excerpt || post.meta_description || `Read ${post.title} on Get The Gift`,
       images: post.image_url ? [post.image_url] : undefined,
     },
   };

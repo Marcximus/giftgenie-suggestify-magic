@@ -31,7 +31,7 @@ export function HomeClient() {
   return (
     <ErrorBoundary>
       <header>
-        <h1 className="sr-only">GiftGenie - AI-Powered Gift Suggestions</h1>
+        <h1 className="sr-only">Get The Gift - AI-Powered Gift Suggestions</h1>
         <SearchHeader onSearch={handleSearch} isLoading={isLoading} />
       </header>
 

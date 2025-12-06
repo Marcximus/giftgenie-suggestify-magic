@@ -7,14 +7,14 @@ import Script from 'next/script'
 export const metadata: Metadata = {
   metadataBase: new URL('https://getthegift.ai'),
   title: {
-    default: 'GiftGenie - AI-Powered Gift Recommendations',
-    template: '%s | GiftGenie'
+    default: 'Get The Gift - AI-Powered Gift Recommendations',
+    template: '%s | Get The Gift'
   },
   description: 'Discover personalized, unique gift ideas with our AI-powered gift finder. Find the best presents for birthdays, holidays, and special occasions from top retailers.',
   keywords: ['gift ideas', 'gift finder', 'AI gifts', 'present suggestions', 'personalized gifts', 'birthday gifts', 'holiday gifts', 'gift recommendations'],
-  authors: [{ name: 'GiftGenie' }],
-  creator: 'GiftGenie',
-  publisher: 'GiftGenie',
+  authors: [{ name: 'Get The Gift' }],
+  creator: 'Get The Gift',
+  publisher: 'Get The Gift',
   formatDetection: {
     email: false,
     address: false,
@@ -27,19 +27,19 @@ export const metadata: Metadata = {
     type: 'website',
     locale: 'en_US',
     url: 'https://getthegift.ai',
-    title: 'GiftGenie - AI-Powered Gift Recommendations',
+    title: 'Get The Gift - AI-Powered Gift Recommendations',
     description: 'Discover personalized, unique gift ideas with our AI-powered gift finder. Find the best presents for birthdays, holidays, and special occasions.',
-    siteName: 'GiftGenie',
+    siteName: 'Get The Gift',
     images: [{
       url: '/lovable-uploads/89d8ebcd-a5f6-4614-a505-80ed3d467943.png',
       width: 1200,
       height: 630,
-      alt: 'GiftGenie - AI-Powered Gift Finder',
+      alt: 'Get The Gift - AI-Powered Gift Finder',
     }],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'GiftGenie - AI-Powered Gift Recommendations',
+    title: 'Get The Gift - AI-Powered Gift Recommendations',
     description: 'Discover personalized, unique gift ideas with our AI-powered gift finder.',
     images: ['/lovable-uploads/89d8ebcd-a5f6-4614-a505-80ed3d467943.png'],
   },

@@ -9,7 +9,7 @@ export const metadata: Metadata = {
   title: 'Gift Ideas & Inspiration Blog',
   description: 'Discover the best gift ideas, present inspiration, and shopping guides for every occasion. AI-curated gift recommendations for birthdays, holidays, and special events.',
   openGraph: {
-    title: 'Gift Ideas & Inspiration Blog - GiftGenie',
+    title: 'Gift Ideas & Inspiration Blog - Get The Gift',
     description: 'Discover the best gift ideas, present inspiration, and shopping guides for every occasion.',
     url: 'https://getthegift.ai/blog',
   },

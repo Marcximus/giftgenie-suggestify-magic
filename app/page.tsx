@@ -9,7 +9,7 @@ import Script from 'next/script';
 export const revalidate = 60;
 
 export const metadata: Metadata = {
-  title: 'GiftGenie - AI-Powered Gift Finder | Personalized Gift Ideas',
+  title: 'Get The Gift - AI-Powered Gift Finder | Personalized Gift Ideas',
   description: 'Discover the perfect gift with AI-powered recommendations. Get personalized gift ideas for birthdays, holidays, and special occasions. Find unique presents from top retailers instantly.',
   keywords: [
     'gift finder',
@@ -24,7 +24,7 @@ export const metadata: Metadata = {
     'best gifts',
   ],
   openGraph: {
-    title: 'GiftGenie - AI-Powered Gift Finder | Find Perfect Presents',
+    title: 'Get The Gift - AI-Powered Gift Finder | Find Perfect Presents',
     description: 'Discover the perfect gift with AI-powered recommendations. Get personalized gift ideas for birthdays, holidays, and special occasions.',
     url: 'https://getthegift.ai',
     type: 'website',
@@ -32,12 +32,12 @@ export const metadata: Metadata = {
       url: '/lovable-uploads/89d8ebcd-a5f6-4614-a505-80ed3d467943.png',
       width: 1200,
       height: 630,
-      alt: 'GiftGenie - AI-Powered Gift Finder',
+      alt: 'Get The Gift - AI-Powered Gift Finder',
     }],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'GiftGenie - AI-Powered Gift Finder',
+    title: 'Get The Gift - AI-Powered Gift Finder',
     description: 'Discover the perfect gift with AI-powered recommendations for any occasion.',
     images: ['/lovable-uploads/89d8ebcd-a5f6-4614-a505-80ed3d467943.png'],
   },
@@ -61,7 +61,7 @@ export default function Home() {
           __html: JSON.stringify({
             "@context": "https://schema.org",
             "@type": "WebApplication",
-            "name": "GiftGenie",
+            "name": "Get The Gift",
             "description": description,
             "url": canonicalUrl,
             "applicationCategory": "Shopping",
@@ -96,7 +96,7 @@ export default function Home() {
           __html: JSON.stringify({
             "@context": "https://schema.org",
             "@type": "Organization",
-            "name": "GiftGenie",
+            "name": "Get The Gift",
             "url": canonicalUrl,
             "logo": "https://getthegift.ai/lovable-uploads/89d8ebcd-a5f6-4614-a505-80ed3d467943.png",
             "description": description,
