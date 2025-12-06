@@ -1,79 +1,150 @@
-'use client'
-
-import { useState, Suspense, useEffect } from 'react';
-import { useSearchParams } from 'next/navigation';
-import { ErrorBoundary } from '@/components/ErrorBoundary';
-import { useSuggestions } from '@/hooks/useSuggestions';
-import { SuggestionSkeleton } from '@/components/SuggestionSkeleton';
-import { IndexMeta } from '@/components/IndexMeta';
+import { Suspense } from 'react';
+import { HomeClient } from '@/components/HomeClient';
 import { BreadcrumbNav } from '@/components/BreadcrumbNav';
-import { SearchHeader } from '@/components/SearchHeader';
-import { SuggestionsGrid } from '@/components/SuggestionsGrid';
+import { SuggestionSkeleton } from '@/components/SuggestionSkeleton';
+import type { Metadata } from 'next';
+import Script from 'next/script';
 
-function HomeContent() {
-  const searchParams = useSearchParams();
-  const {
-    isLoading,
-    suggestions,
-    handleSearch,
-    handleGenerateMore,
-    handleMoreLikeThis,
-    handleStartOver
-  } = useSuggestions();
+// ISR with 60-second revalidation for fresh content
+export const revalidate = 60;
 
-  // Handle URL query parameter on mount
-  useEffect(() => {
-    const queryParam = searchParams?.get('q') || searchParams?.get('query');
-    if (queryParam && !suggestions.length && !isLoading) {
-      console.log('Auto-executing search from URL:', queryParam);
-      handleSearch(queryParam);
-    }
-  }, []); // Only run on mount
+export const metadata: Metadata = {
+  title: 'GiftGenie - AI-Powered Gift Finder | Personalized Gift Ideas',
+  description: 'Discover the perfect gift with AI-powered recommendations. Get personalized gift ideas for birthdays, holidays, and special occasions. Find unique presents from top retailers instantly.',
+  keywords: [
+    'gift finder',
+    'gift ideas',
+    'AI gift recommendations',
+    'personalized gifts',
+    'birthday gift ideas',
+    'holiday gifts',
+    'present finder',
+    'unique gifts',
+    'gift suggestions',
+    'best gifts',
+  ],
+  openGraph: {
+    title: 'GiftGenie - AI-Powered Gift Finder | Find Perfect Presents',
+    description: 'Discover the perfect gift with AI-powered recommendations. Get personalized gift ideas for birthdays, holidays, and special occasions.',
+    url: 'https://getthegift.ai',
+    type: 'website',
+    images: [{
+      url: '/lovable-uploads/89d8ebcd-a5f6-4614-a505-80ed3d467943.png',
+      width: 1200,
+      height: 630,
+      alt: 'GiftGenie - AI-Powered Gift Finder',
+    }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'GiftGenie - AI-Powered Gift Finder',
+    description: 'Discover the perfect gift with AI-powered recommendations for any occasion.',
+    images: ['/lovable-uploads/89d8ebcd-a5f6-4614-a505-80ed3d467943.png'],
+  },
+  alternates: {
+    canonical: 'https://getthegift.ai',
+  },
+};
+
+export default function Home() {
+  const canonicalUrl = "https://getthegift.ai";
+  const description = "Discover personalized, unique gift ideas with our AI-powered gift finder. Find the best presents for birthdays, holidays, and special occasions from top retailers.";
 
   return (
     <>
-      <IndexMeta />
-      <ErrorBoundary>
-        <main className="min-h-screen bg-gradient-to-br from-background via-secondary/30 to-primary/5">
-          <div className="container mx-auto px-2 pt-2 sm:pt-6 pb-4 sm:pb-8 max-w-7xl">
-            <BreadcrumbNav />
-            <header>
-              <h1 className="sr-only">GiftGenie - AI-Powered Gift Suggestions</h1>
-              <Suspense fallback={<div className="h-[200px] animate-pulse bg-gray-100 rounded-lg" />}>
-                <SearchHeader onSearch={handleSearch} isLoading={isLoading} />
-              </Suspense>
-            </header>
+      {/* Structured Data - WebApplication */}
+      <Script
+        id="webapp-schema"
+        type="application/ld+json"
+        strategy="beforeInteractive"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "WebApplication",
+            "name": "GiftGenie",
+            "description": description,
+            "url": canonicalUrl,
+            "applicationCategory": "Shopping",
+            "offers": {
+              "@type": "Offer",
+              "price": "0",
+              "priceCurrency": "USD"
+            },
+            "featureList": [
+              "AI-powered gift suggestions",
+              "Personalized recommendations",
+              "Budget-friendly options",
+              "Real product reviews",
+              "Smart filtering",
+              "Instant gift ideas"
+            ],
+            "aggregateRating": {
+              "@type": "AggregateRating",
+              "ratingValue": "4.8",
+              "reviewCount": "1250"
+            }
+          })
+        }}
+      />
 
-            <section aria-label="Gift Suggestions" className="mb-4 sm:mb-8">
-              {suggestions.length > 0 && (
-                <Suspense fallback={
-                  <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                    {[...Array(8)].map((_, i) => (
-                      <SuggestionSkeleton key={i} />
-                    ))}
-                  </div>
-                }>
-                  <SuggestionsGrid
-                    suggestions={suggestions}
-                    onMoreLikeThis={handleMoreLikeThis}
-                    onGenerateMore={handleGenerateMore}
-                    onStartOver={handleStartOver}
-                    isLoading={isLoading}
-                  />
-                </Suspense>
-              )}
-            </section>
-          </div>
-        </main>
-      </ErrorBoundary>
+      {/* Structured Data - Organization */}
+      <Script
+        id="org-schema"
+        type="application/ld+json"
+        strategy="beforeInteractive"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "Organization",
+            "name": "GiftGenie",
+            "url": canonicalUrl,
+            "logo": "https://getthegift.ai/lovable-uploads/89d8ebcd-a5f6-4614-a505-80ed3d467943.png",
+            "description": description,
+            "foundingDate": "2024",
+            "applicationCategory": "AI-Powered Gift Finder"
+          })
+        }}
+      />
+
+      {/* Structured Data - BreadcrumbList */}
+      <Script
+        id="breadcrumb-schema"
+        type="application/ld+json"
+        strategy="beforeInteractive"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            "itemListElement": [{
+              "@type": "ListItem",
+              "position": 1,
+              "name": "Home",
+              "item": canonicalUrl
+            }]
+          })
+        }}
+      />
+
+      <main className="min-h-screen bg-gradient-to-br from-background via-secondary/30 to-primary/5">
+        <div className="container mx-auto px-2 pt-2 sm:pt-6 pb-4 sm:pb-8 max-w-7xl">
+          <BreadcrumbNav />
+
+          <Suspense
+            fallback={
+              <div className="space-y-6">
+                <div className="h-[400px] animate-pulse bg-gray-100 rounded-lg" />
+                <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                  {[...Array(8)].map((_, i) => (
+                    <SuggestionSkeleton key={i} />
+                  ))}
+                </div>
+              </div>
+            }
+          >
+            <HomeClient />
+          </Suspense>
+        </div>
+      </main>
     </>
-  );
-}
-
-export default function Home() {
-  return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
-      <HomeContent />
-    </Suspense>
   );
 }
