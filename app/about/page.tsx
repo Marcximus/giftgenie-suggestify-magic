@@ -11,6 +11,9 @@ import type { Metadata } from 'next';
 export const metadata: Metadata = {
   title: 'About Us - Get The Gift',
   description: 'Learn about Get The Gift, the AI-powered gift recommendation platform that helps you find the perfect presents for any occasion.',
+  alternates: {
+    canonical: 'https://getthegift.ai/about',
+  },
   openGraph: {
     title: 'About Get The Gift - AI-Powered Gift Finder',
     description: 'Learn about Get The Gift, the AI-powered gift recommendation platform that helps you find the perfect presents for any occasion.',

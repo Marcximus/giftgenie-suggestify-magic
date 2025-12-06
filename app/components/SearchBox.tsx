@@ -9,6 +9,9 @@ interface SearchBoxProps {
   isLoading: boolean;
 }
 
+const MIN_QUERY_LENGTH = 3;
+const MAX_QUERY_LENGTH = 200;
+
 export const SearchBox = ({ onSearch, isLoading }: SearchBoxProps) => {
   const [query, setQuery] = useState('');
   const [showSelector, setShowSelector] = useState(true);
@@ -16,16 +19,36 @@ export const SearchBox = ({ onSearch, isLoading }: SearchBoxProps) => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (query.trim()) {
-      onSearch(query);
-      setShowSelector(false);
-    } else {
+
+    if (!query.trim()) {
       toast({
         title: "Empty search",
         description: "Please enter a search term or use the gift selector below.",
         variant: "destructive",
       });
+      return;
     }
+
+    if (query.trim().length < MIN_QUERY_LENGTH) {
+      toast({
+        title: "Search too short",
+        description: `Please enter at least ${MIN_QUERY_LENGTH} characters.`,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (query.length > MAX_QUERY_LENGTH) {
+      toast({
+        title: "Search too long",
+        description: `Search must be under ${MAX_QUERY_LENGTH} characters.`,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    onSearch(query);
+    setShowSelector(false);
   };
 
   const handleSelectorComplete = (generatedQuery: string) => {

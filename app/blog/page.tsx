@@ -2,12 +2,16 @@ import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
 import { Card } from "@/components/ui/card";
 import Link from "next/link";
+import Image from "next/image";
 import { unstable_cache } from 'next/cache';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
   title: 'Gift Ideas & Inspiration Blog',
   description: 'Discover the best gift ideas, present inspiration, and shopping guides for every occasion. AI-curated gift recommendations for birthdays, holidays, and special events.',
+  alternates: {
+    canonical: 'https://getthegift.ai/blog',
+  },
   openGraph: {
     title: 'Gift Ideas & Inspiration Blog - Get The Gift',
     description: 'Discover the best gift ideas, present inspiration, and shopping guides for every occasion.',
@@ -30,13 +34,11 @@ const getCachedBlogPosts = unstable_cache(
         .limit(100); // Limit to 100 posts for performance
 
       if (error) {
-        console.error("Error fetching blog posts:", error);
         return [];
       }
 
       return data as Tables<"blog_posts">[];
     } catch (error) {
-      console.error("Failed to fetch blog posts:", error);
       return [];
     }
   },
@@ -78,10 +80,9 @@ export default async function Blog() {
                     <Card className="flex h-[40px] overflow-hidden transform transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
                       {post.image_url && (
                         <div className="w-[40px] relative overflow-hidden">
-                          <img
+                          <Image
                             src={post.image_url}
                             alt={post.image_alt_text || post.title}
-                            loading="lazy"
                             width={40}
                             height={40}
                             className="object-cover w-full h-full transform transition-transform duration-300 group-hover:scale-105"

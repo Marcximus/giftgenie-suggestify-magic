@@ -4,6 +4,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import Script from "next/script";
 
 
 export const FAQSection = () => {
@@ -97,12 +98,14 @@ export const FAQSection = () => {
 
   return (
     <>
-      
-        <script type="application/ld+json">
-          {JSON.stringify(faqSchema)}
-        </script>
-      
-      
+      {/* FAQ Schema for SEO */}
+      <Script
+        id="faq-schema"
+        type="application/ld+json"
+        strategy="beforeInteractive"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+      />
+
       <div className="bg-white rounded-lg p-6 shadow-sm mb-12">
         <h2 className="text-xl font-bold mb-4 text-[#9b87f5]">❓ FAQ</h2>
         <p className="text-xs text-[#403E43] mb-6 leading-relaxed">
