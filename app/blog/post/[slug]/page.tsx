@@ -4,34 +4,26 @@ import { BlogPostHeader } from "@/components/blog/BlogPostHeader";
 import { BlogPostContent } from "@/components/blog/BlogPostContent";
 import { RelatedPostsStatic } from "@/components/blog/RelatedPostsStatic";
 import type { Metadata } from 'next';
-import { unstable_cache } from 'next/cache';
 import Script from 'next/script';
 import Link from 'next/link';
 
-// Enable ISR with 1-hour revalidation to reduce load
-export const revalidate = 3600;
+// Force static generation for all blog posts - no serverless functions
+export const dynamic = 'force-static';
+export const dynamicParams = true; // Allow on-demand generation for new posts
 
-// Pre-build blog post pages at build time
+// Pre-build ALL blog post pages at build time
 export async function generateStaticParams() {
   try {
-    // Add timeout to prevent build failures
-    const timeoutPromise = new Promise((_, reject) =>
-      setTimeout(() => reject(new Error('Query timeout')), 10000)
-    );
-
-    const queryPromise = supabase
+    const { data: posts } = await supabase
       .from('blog_posts')
       .select('slug')
-      .not('published_at', 'is', null)
-      .limit(100); // Build top 100 posts at build time
-
-    const { data: posts } = await Promise.race([queryPromise, timeoutPromise]) as any;
+      .not('published_at', 'is', null);
 
     return (posts || []).map((post: any) => ({
       slug: post.slug,
     }));
   } catch (error) {
-    // Return empty array on error - pages will be generated on-demand
+    console.error('Error fetching blog post slugs:', error);
     return [];
   }
 }
@@ -82,70 +74,33 @@ export async function generateMetadata({ params }: { params: { slug: string } })
   };
 }
 
-// Cache blog post fetching with timeout
-const getBlogPost = unstable_cache(
-  async (slug: string) => {
-    try {
-      // Add timeout to prevent long-running queries
-      const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('Query timeout')), 5000)
-      );
+// Fetch blog post data at build time only
+async function getBlogPost(slug: string) {
+  const { data: post, error } = await supabase
+    .from("blog_posts")
+    .select("*")
+    .eq("slug", slug)
+    .maybeSingle();
 
-      const queryPromise = supabase
-        .from("blog_posts")
-        .select("*")
-        .eq("slug", slug)
-        .maybeSingle();
-
-      const { data: post, error } = await Promise.race([queryPromise, timeoutPromise]) as any;
-
-      if (error || !post) {
-        return null;
-      }
-
-      return post;
-    } catch (error) {
-      // Return null on timeout or error
-      return null;
-    }
-  },
-  ['blog-post'],
-  {
-    revalidate: 3600, // Increase to 1 hour to reduce load
-    tags: ['blog-post'],
+  if (error || !post) {
+    return null;
   }
-);
 
-// Cache related posts fetching with timeout
-const getRelatedPosts = unstable_cache(
-  async (slug: string) => {
-    try {
-      // Add timeout to prevent long-running queries
-      const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('Query timeout')), 3000)
-      );
+  return post;
+}
 
-      const queryPromise = supabase
-        .from("blog_posts")
-        .select("title, slug, image_url, excerpt")
-        .neq("slug", slug)
-        .not("published_at", "is", null)
-        .order("published_at", { ascending: false })
-        .limit(3);
+// Fetch related posts at build time only
+async function getRelatedPosts(slug: string) {
+  const { data } = await supabase
+    .from("blog_posts")
+    .select("title, slug, image_url, excerpt")
+    .neq("slug", slug)
+    .not("published_at", "is", null)
+    .order("published_at", { ascending: false })
+    .limit(3);
 
-      const { data } = await Promise.race([queryPromise, timeoutPromise]) as any;
-      return data || [];
-    } catch (error) {
-      // Return empty array on timeout or error
-      return [];
-    }
-  },
-  ['related-posts'],
-  {
-    revalidate: 3600, // Cache for 1 hour to reduce load
-    tags: ['related-posts'],
-  }
-);
+  return data || [];
+}
 
 export default async function BlogPost({ params }: { params: { slug: string } }) {
   const post = await getBlogPost(params.slug);
