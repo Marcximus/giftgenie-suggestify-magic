@@ -6,7 +6,7 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: '*',
         allow: '/',
-        disallow: ['/auth', '/blog/admin', '/blog/new', '/blog/edit'],
+        disallow: ['/auth', '/blog/admin', '/blog/new', '/blog/edit', '/_next/image'],
       },
     ],
     sitemap: 'https://getthegift.ai/sitemap.xml',
