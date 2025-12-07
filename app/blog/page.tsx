@@ -3,7 +3,6 @@ import { Tables } from "@/integrations/supabase/types";
 import { Card } from "@/components/ui/card";
 import Link from "next/link";
 import Image from "next/image";
-import { unstable_cache } from 'next/cache';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
@@ -19,38 +18,23 @@ export const metadata: Metadata = {
   },
 };
 
-// Force dynamic rendering but with aggressive caching
-export const dynamic = 'force-dynamic';
-export const fetchCache = 'force-cache';
+// Force static generation for blog listing - no serverless functions
+export const dynamic = 'force-static';
 
-// Cache blog posts for 5 minutes
-const getCachedBlogPosts = unstable_cache(
-  async () => {
-    try {
-      const { data, error } = await supabase
-        .from("blog_posts")
-        .select("id, title, slug, image_url, image_alt_text, published_at")
-        .order("published_at", { ascending: false })
-        .limit(100); // Limit to 100 posts for performance
-
-      if (error) {
-        return [];
-      }
-
-      return data as Tables<"blog_posts">[];
-    } catch (error) {
-      return [];
-    }
-  },
-  ['blog-posts'],
-  {
-    revalidate: 300, // Cache for 5 minutes
-    tags: ['blog-posts']
-  }
-);
-
+// Fetch blog posts at build time only
 async function getBlogPosts() {
-  return getCachedBlogPosts();
+  const { data, error } = await supabase
+    .from("blog_posts")
+    .select("id, title, slug, image_url, image_alt_text, published_at")
+    .not("published_at", "is", null)
+    .order("published_at", { ascending: false });
+
+  if (error) {
+    console.error("Error fetching blog posts:", error);
+    return [];
+  }
+
+  return data as Tables<"blog_posts">[];
 }
 
 export default async function Blog() {

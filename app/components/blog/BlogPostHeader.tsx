@@ -19,7 +19,7 @@ export const BlogPostHeader = ({ post }: BlogPostHeaderProps) => {
   return (
     <header className="w-full flex flex-col items-center">
       <div className="w-full max-w-[1080px] sm:max-w-[1080px] mx-auto px-0 sm:px-6 lg:px-8">
-        <h1 className="sr-only">
+        <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-center mt-4 sm:mt-8 mb-6 sm:mb-12 px-4 sm:px-8">
           {post.title}
         </h1>
 
