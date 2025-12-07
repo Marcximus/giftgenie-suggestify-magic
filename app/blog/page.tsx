@@ -2,7 +2,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
 import { Card } from "@/components/ui/card";
 import Link from "next/link";
-import Image from "next/image";
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
@@ -77,12 +76,13 @@ export default async function Blog() {
                     <Card className="flex h-[40px] overflow-hidden transform transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
                       {post.image_url && (
                         <div className="w-[40px] relative overflow-hidden">
-                          <Image
+                          <img
                             src={post.image_url}
                             alt={post.image_alt_text || post.title}
-                            width={40}
-                            height={40}
+                            width="40"
+                            height="40"
                             className="object-cover w-full h-full transform transition-transform duration-300 group-hover:scale-105"
+                            loading="lazy"
                           />
                         </div>
                       )}
