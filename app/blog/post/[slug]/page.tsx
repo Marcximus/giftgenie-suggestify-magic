@@ -13,17 +13,41 @@ export const dynamicParams = false; // Disable on-demand generation - 404 for no
 
 // Pre-build ALL blog post pages at build time
 export async function generateStaticParams() {
+  console.log('[generateStaticParams] Starting to fetch blog post slugs...');
+
+  // Try to read from the pre-generated slugs file first (created by prebuild script)
   try {
-    const { data: posts } = await supabase
+    const fs = await import('fs');
+    const path = await import('path');
+    const slugsPath = path.join(process.cwd(), 'app', 'blog', 'post', 'slugs.json');
+
+    if (fs.existsSync(slugsPath)) {
+      const slugsData = fs.readFileSync(slugsPath, 'utf-8');
+      const slugs = JSON.parse(slugsData);
+      console.log(`[generateStaticParams] Loaded ${slugs.length} slugs from slugs.json file`);
+      return slugs.map((slug: string) => ({ slug }));
+    }
+  } catch (fileError) {
+    console.log('[generateStaticParams] No slugs.json file found, fetching from Supabase...');
+  }
+
+  // Fallback to fetching from Supabase if file doesn't exist
+  try {
+    const { data: posts, error } = await supabase
       .from('blog_posts')
       .select('slug')
       .not('published_at', 'is', null);
 
-    return (posts || []).map((post: any) => ({
-      slug: post.slug,
-    }));
+    if (error) {
+      console.error('[generateStaticParams] Supabase error:', error);
+      return [];
+    }
+
+    const slugs = (posts || []).map((post: any) => ({ slug: post.slug }));
+    console.log(`[generateStaticParams] Fetched ${slugs.length} slugs from Supabase`);
+    return slugs;
   } catch (error) {
-    console.error('Error fetching blog post slugs:', error);
+    console.error('[generateStaticParams] Fatal error fetching blog post slugs:', error);
     return [];
   }
 }
@@ -117,7 +141,14 @@ export default async function BlogPost({ params }: { params: { slug: string } })
     "@type": "Article",
     "headline": post.title,
     "description": post.excerpt || post.meta_description || post.title,
-    "image": post.image_url || undefined,
+    ...(post.image_url && {
+      "image": {
+        "@type": "ImageObject",
+        "url": post.image_url,
+        "width": 1200,
+        "height": 675
+      }
+    }),
     "datePublished": post.published_at || post.created_at,
     "dateModified": post.updated_at || post.published_at || post.created_at,
     "author": {
@@ -130,7 +161,9 @@ export default async function BlogPost({ params }: { params: { slug: string } })
       "name": "Get The Gift",
       "logo": {
         "@type": "ImageObject",
-        "url": "https://getthegift.ai/lovable-uploads/89d8ebcd-a5f6-4614-a505-80ed3d467943.png"
+        "url": "https://getthegift.ai/lovable-uploads/89d8ebcd-a5f6-4614-a505-80ed3d467943.png",
+        "width": 512,
+        "height": 512
       }
     },
     "mainEntityOfPage": {
