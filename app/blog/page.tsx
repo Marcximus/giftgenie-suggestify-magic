@@ -15,6 +15,19 @@ export const metadata: Metadata = {
     title: 'Gift Ideas & Inspiration Blog - Get The Gift',
     description: 'Discover the best gift ideas, present inspiration, and shopping guides for every occasion.',
     url: 'https://getthegift.ai/blog',
+    type: 'website',
+    images: [{
+      url: 'https://getthegift.ai/lovable-uploads/89d8ebcd-a5f6-4614-a505-80ed3d467943.png',
+      width: 1200,
+      height: 630,
+      alt: 'Get The Gift Blog',
+    }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Gift Ideas & Inspiration Blog - Get The Gift',
+    description: 'Discover the best gift ideas, present inspiration, and shopping guides for every occasion.',
+    images: ['https://getthegift.ai/lovable-uploads/89d8ebcd-a5f6-4614-a505-80ed3d467943.png'],
   },
 };
 

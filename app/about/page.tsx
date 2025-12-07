@@ -18,6 +18,19 @@ export const metadata: Metadata = {
     title: 'About Get The Gift - AI-Powered Gift Finder',
     description: 'Learn about Get The Gift, the AI-powered gift recommendation platform that helps you find the perfect presents for any occasion.',
     url: 'https://getthegift.ai/about',
+    type: 'website',
+    images: [{
+      url: 'https://getthegift.ai/lovable-uploads/89d8ebcd-a5f6-4614-a505-80ed3d467943.png',
+      width: 1200,
+      height: 630,
+      alt: 'About Get The Gift',
+    }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'About Get The Gift - AI-Powered Gift Finder',
+    description: 'Learn about Get The Gift, the AI-powered gift recommendation platform that helps you find the perfect presents for any occasion.',
+    images: ['https://getthegift.ai/lovable-uploads/89d8ebcd-a5f6-4614-a505-80ed3d467943.png'],
   },
 };
 

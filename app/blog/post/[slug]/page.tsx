@@ -141,7 +141,14 @@ export default async function BlogPost({ params }: { params: { slug: string } })
     "@type": "Article",
     "headline": post.title,
     "description": post.excerpt || post.meta_description || post.title,
-    "image": post.image_url || undefined,
+    ...(post.image_url && {
+      "image": {
+        "@type": "ImageObject",
+        "url": post.image_url,
+        "width": 1200,
+        "height": 675
+      }
+    }),
     "datePublished": post.published_at || post.created_at,
     "dateModified": post.updated_at || post.published_at || post.created_at,
     "author": {
@@ -154,7 +161,9 @@ export default async function BlogPost({ params }: { params: { slug: string } })
       "name": "Get The Gift",
       "logo": {
         "@type": "ImageObject",
-        "url": "https://getthegift.ai/lovable-uploads/89d8ebcd-a5f6-4614-a505-80ed3d467943.png"
+        "url": "https://getthegift.ai/lovable-uploads/89d8ebcd-a5f6-4614-a505-80ed3d467943.png",
+        "width": 512,
+        "height": 512
       }
     },
     "mainEntityOfPage": {
