@@ -1,5 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Force cache bust for ISR pages - each build gets unique ID
+  generateBuildId: async () => {
+    return `build-${Date.now()}`;
+  },
   typescript: {
     ignoreBuildErrors: true,
   },

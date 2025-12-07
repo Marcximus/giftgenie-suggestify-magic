@@ -53,8 +53,9 @@ export async function generateStaticParams() {
 }
 
 // Generate metadata for SEO
-export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
-  const post = await getBlogPost(params.slug);
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const { slug } = await params;
+  const post = await getBlogPost(slug);
 
   if (!post) {
     return {
@@ -126,14 +127,15 @@ async function getRelatedPosts(slug: string) {
   return data || [];
 }
 
-export default async function BlogPost({ params }: { params: { slug: string } }) {
-  const post = await getBlogPost(params.slug);
+export default async function BlogPost({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
+  const post = await getBlogPost(slug);
 
   if (!post) {
     notFound();
   }
 
-  const relatedPosts = await getRelatedPosts(params.slug);
+  const relatedPosts = await getRelatedPosts(slug);
 
   // Article Schema for SEO
   const articleSchema = {
