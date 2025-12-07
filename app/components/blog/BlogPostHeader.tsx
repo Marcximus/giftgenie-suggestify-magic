@@ -2,7 +2,6 @@
 
 import { Tables } from "@/integrations/supabase/types";
 import { useState } from "react";
-import Image from "next/image";
 
 interface BlogPostHeaderProps {
   post: Tables<"blog_posts">;
@@ -24,14 +23,12 @@ export const BlogPostHeader = ({ post }: BlogPostHeaderProps) => {
 
         {post.image_url && !imageError ? (
           <div className="w-full aspect-[16/9] relative overflow-hidden sm:rounded-lg mb-2 sm:mb-4 shadow-xl animate-fade-in sm:scale-90 md:scale-90 lg:scale-90">
-            <Image
+            <img
               src={post.image_url}
               alt={post.image_alt_text || post.title}
-              fill
-              className="object-cover"
-              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 1080px, 1080px"
-              priority={true}
+              className="object-cover w-full h-full"
               onError={handleImageError}
+              loading="eager"
             />
           </div>
         ) : post.image_url && imageError ? (
