@@ -13,17 +13,41 @@ export const dynamicParams = false; // Disable on-demand generation - 404 for no
 
 // Pre-build ALL blog post pages at build time
 export async function generateStaticParams() {
+  console.log('[generateStaticParams] Starting to fetch blog post slugs...');
+
+  // Try to read from the pre-generated slugs file first (created by prebuild script)
   try {
-    const { data: posts } = await supabase
+    const fs = await import('fs');
+    const path = await import('path');
+    const slugsPath = path.join(process.cwd(), 'app', 'blog', 'post', 'slugs.json');
+
+    if (fs.existsSync(slugsPath)) {
+      const slugsData = fs.readFileSync(slugsPath, 'utf-8');
+      const slugs = JSON.parse(slugsData);
+      console.log(`[generateStaticParams] Loaded ${slugs.length} slugs from slugs.json file`);
+      return slugs.map((slug: string) => ({ slug }));
+    }
+  } catch (fileError) {
+    console.log('[generateStaticParams] No slugs.json file found, fetching from Supabase...');
+  }
+
+  // Fallback to fetching from Supabase if file doesn't exist
+  try {
+    const { data: posts, error } = await supabase
       .from('blog_posts')
       .select('slug')
       .not('published_at', 'is', null);
 
-    return (posts || []).map((post: any) => ({
-      slug: post.slug,
-    }));
+    if (error) {
+      console.error('[generateStaticParams] Supabase error:', error);
+      return [];
+    }
+
+    const slugs = (posts || []).map((post: any) => ({ slug: post.slug }));
+    console.log(`[generateStaticParams] Fetched ${slugs.length} slugs from Supabase`);
+    return slugs;
   } catch (error) {
-    console.error('Error fetching blog post slugs:', error);
+    console.error('[generateStaticParams] Fatal error fetching blog post slugs:', error);
     return [];
   }
 }

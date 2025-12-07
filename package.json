@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "prebuild": "node scripts/fetch-blog-slugs.mjs || echo 'Warning: Failed to fetch slugs, will fallback to runtime fetch'",
     "start": "next start",
     "lint": "next lint"
   },
