@@ -7,6 +7,7 @@ const nextConfig = {
     ignoreDuringBuilds: true,
   },
   images: {
+    unoptimized: true, // Disable image optimization to prevent serverless function timeouts
     remotePatterns: [
       {
         protocol: 'https',

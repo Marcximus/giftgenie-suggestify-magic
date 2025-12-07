@@ -21,3 +21,9 @@
   [headers.values]
     Cache-Control = "public, max-age=300, s-maxage=3600"
 
+# Block crawlers from indexing image optimization URLs
+[[headers]]
+  for = "/_next/image/*"
+  [headers.values]
+    X-Robots-Tag = "noindex, nofollow"
+

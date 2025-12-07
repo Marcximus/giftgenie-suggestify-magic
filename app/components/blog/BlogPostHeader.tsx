@@ -2,7 +2,6 @@
 
 import { Tables } from "@/integrations/supabase/types";
 import { useState } from "react";
-import Link from "next/link";
 import Image from "next/image";
 
 interface BlogPostHeaderProps {
@@ -24,19 +23,17 @@ export const BlogPostHeader = ({ post }: BlogPostHeaderProps) => {
         </h1>
 
         {post.image_url && !imageError ? (
-          <Link href="/" className="block w-full">
-            <div className="w-full aspect-[16/9] relative overflow-hidden sm:rounded-lg mb-2 sm:mb-4 shadow-xl animate-fade-in sm:scale-90 md:scale-90 lg:scale-90">
-              <Image
-                src={post.image_url}
-                alt={post.image_alt_text || post.title}
-                fill
-                className="object-cover sm:transform sm:hover:scale-105 transition-transform duration-300 ease-in-out"
-                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 1080px, 1080px"
-                priority={true}
-                onError={handleImageError}
-              />
-            </div>
-          </Link>
+          <div className="w-full aspect-[16/9] relative overflow-hidden sm:rounded-lg mb-2 sm:mb-4 shadow-xl animate-fade-in sm:scale-90 md:scale-90 lg:scale-90">
+            <Image
+              src={post.image_url}
+              alt={post.image_alt_text || post.title}
+              fill
+              className="object-cover"
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 1080px, 1080px"
+              priority={true}
+              onError={handleImageError}
+            />
+          </div>
         ) : post.image_url && imageError ? (
           <div className="w-full aspect-[16/9] relative overflow-hidden sm:rounded-lg mb-2 sm:mb-4 bg-gray-200 flex items-center justify-center">
             <div className="text-center p-6">
