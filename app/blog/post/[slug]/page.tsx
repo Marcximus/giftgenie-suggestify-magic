@@ -15,6 +15,7 @@ export const dynamicParams = false; // Disable on-demand generation to prevent 5
 export const maxDuration = 10; // Netlify free tier limit
 
 // Pre-build ALL blog post pages at build time
+// This function MUST return all slugs to ensure pages are pre-rendered as static HTML
 export async function generateStaticParams() {
   console.log('[generateStaticParams] Starting to fetch blog post slugs...');
 
@@ -27,32 +28,23 @@ export async function generateStaticParams() {
     if (fs.existsSync(slugsPath)) {
       const slugsData = fs.readFileSync(slugsPath, 'utf-8');
       const slugs = JSON.parse(slugsData);
-      console.log(`[generateStaticParams] Loaded ${slugs.length} slugs from slugs.json file`);
+      console.log(`✅ [generateStaticParams] Loaded ${slugs.length} slugs from slugs.json file`);
+      console.log(`✅ [generateStaticParams] These ${slugs.length} pages will be pre-rendered as static HTML`);
       return slugs.map((slug: string) => ({ slug }));
+    } else {
+      console.error('❌ [generateStaticParams] slugs.json file NOT FOUND!');
+      console.error('❌ [generateStaticParams] Prebuild script must have failed!');
+      console.error('❌ [generateStaticParams] NO BLOG POSTS WILL BE PRE-RENDERED!');
     }
   } catch (fileError) {
-    console.log('[generateStaticParams] No slugs.json file found, fetching from Supabase...');
+    console.error('[generateStaticParams] Error reading slugs.json:', fileError);
   }
 
-  // Fallback to fetching from Supabase if file doesn't exist
-  try {
-    const { data: posts, error } = await supabase
-      .from('blog_posts')
-      .select('slug')
-      .not('published_at', 'is', null);
-
-    if (error) {
-      console.error('[generateStaticParams] Supabase error:', error);
-      return [];
-    }
-
-    const slugs = (posts || []).map((post: any) => ({ slug: post.slug }));
-    console.log(`[generateStaticParams] Fetched ${slugs.length} slugs from Supabase`);
-    return slugs;
-  } catch (error) {
-    console.error('[generateStaticParams] Fatal error fetching blog post slugs:', error);
-    return [];
-  }
+  // CRITICAL: If we reach here, prebuild script failed
+  // Return empty array so build doesn't crash, but log clear error
+  console.error('❌ [generateStaticParams] Returning empty array - NO PAGES WILL BE PRE-RENDERED');
+  console.error('❌ [generateStaticParams] This will cause 502/504 errors when crawlers visit blog posts!');
+  return [];
 }
 
 // Generate metadata for SEO
