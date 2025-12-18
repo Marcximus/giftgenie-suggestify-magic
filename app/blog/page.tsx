@@ -30,10 +30,11 @@ export const metadata: Metadata = {
   },
 };
 
-// Force static generation for blog listing - no serverless functions
-export const dynamic = 'force-static';
+// ISR with 1-hour cache to reduce serverless function load
+// Allows runtime data fetching so posts appear in the listing
+export const revalidate = 3600; // 1 hour
 
-// Fetch blog posts at build time only
+// Fetch blog posts from Supabase
 async function getBlogPosts() {
   const { data, error } = await supabase
     .from("blog_posts")

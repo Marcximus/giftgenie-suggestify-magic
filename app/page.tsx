@@ -5,8 +5,9 @@ import { SuggestionSkeleton } from '@/components/SuggestionSkeleton';
 import type { Metadata } from 'next';
 import Script from 'next/script';
 
-// ISR with 60-second revalidation for fresh content
-export const revalidate = 60;
+// ISR with 1-hour revalidation to reduce serverless function load during crawls
+// Reduces 502/503 errors from concurrent requests and cold starts
+export const revalidate = 3600; // 1 hour
 
 export const metadata: Metadata = {
   title: 'Get The Gift - AI-Powered Gift Finder | Personalized Gift Ideas',
