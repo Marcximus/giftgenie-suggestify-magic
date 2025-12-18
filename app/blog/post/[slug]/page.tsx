@@ -9,7 +9,10 @@ import Link from 'next/link';
 
 // Use ISR with very long cache time - pages generated on-demand, cached forever
 export const revalidate = 31536000; // 1 year cache - essentially permanent
-export const dynamicParams = true; // Allow on-demand generation for any slug
+export const dynamicParams = false; // Disable on-demand generation to prevent 502 errors
+
+// Set a maximum runtime for serverless function (in seconds)
+export const maxDuration = 10; // Netlify free tier limit
 
 // Pre-build ALL blog post pages at build time
 export async function generateStaticParams() {
@@ -99,32 +102,56 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   };
 }
 
-// Fetch blog post data at build time only
+// Fetch blog post data with timeout handling
 async function getBlogPost(slug: string) {
-  const { data: post, error } = await supabase
-    .from("blog_posts")
-    .select("*")
-    .eq("slug", slug)
-    .maybeSingle();
+  try {
+    // Add 8-second timeout to prevent serverless function timeouts
+    const timeoutPromise = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('Query timeout')), 8000)
+    );
 
-  if (error || !post) {
+    const queryPromise = supabase
+      .from("blog_posts")
+      .select("*")
+      .eq("slug", slug)
+      .maybeSingle();
+
+    const { data: post, error } = await Promise.race([queryPromise, timeoutPromise]) as any;
+
+    if (error || !post) {
+      console.error(`[getBlogPost] Error fetching post ${slug}:`, error);
+      return null;
+    }
+
+    return post;
+  } catch (error) {
+    console.error(`[getBlogPost] Timeout or error fetching post ${slug}:`, error);
     return null;
   }
-
-  return post;
 }
 
-// Fetch related posts at build time only
+// Fetch related posts with timeout handling
 async function getRelatedPosts(slug: string) {
-  const { data } = await supabase
-    .from("blog_posts")
-    .select("title, slug, image_url, excerpt")
-    .neq("slug", slug)
-    .not("published_at", "is", null)
-    .order("published_at", { ascending: false })
-    .limit(3);
+  try {
+    // Add 5-second timeout for related posts query
+    const timeoutPromise = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('Query timeout')), 5000)
+    );
 
-  return data || [];
+    const queryPromise = supabase
+      .from("blog_posts")
+      .select("title, slug, image_url, excerpt")
+      .neq("slug", slug)
+      .not("published_at", "is", null)
+      .order("published_at", { ascending: false })
+      .limit(3);
+
+    const { data } = await Promise.race([queryPromise, timeoutPromise]) as any;
+    return data || [];
+  } catch (error) {
+    console.error(`[getRelatedPosts] Timeout or error fetching related posts for ${slug}:`, error);
+    return []; // Return empty array on timeout
+  }
 }
 
 export default async function BlogPost({ params }: { params: Promise<{ slug: string }> }) {

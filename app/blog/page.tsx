@@ -34,20 +34,35 @@ export const metadata: Metadata = {
 // Allows runtime data fetching so posts appear in the listing
 export const revalidate = 3600; // 1 hour
 
-// Fetch blog posts from Supabase
+// Set a maximum runtime for serverless function
+export const maxDuration = 10; // Netlify free tier limit
+
+// Fetch blog posts from Supabase with timeout handling
 async function getBlogPosts() {
-  const { data, error } = await supabase
-    .from("blog_posts")
-    .select("id, title, slug, image_url, image_alt_text, published_at")
-    .not("published_at", "is", null)
-    .order("published_at", { ascending: false });
+  try {
+    // Add 8-second timeout to prevent serverless function timeouts
+    const timeoutPromise = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('Query timeout')), 8000)
+    );
 
-  if (error) {
-    console.error("Error fetching blog posts:", error);
-    return [];
+    const queryPromise = supabase
+      .from("blog_posts")
+      .select("id, title, slug, image_url, image_alt_text, published_at")
+      .not("published_at", "is", null)
+      .order("published_at", { ascending: false });
+
+    const { data, error } = await Promise.race([queryPromise, timeoutPromise]) as any;
+
+    if (error) {
+      console.error("Error fetching blog posts:", error);
+      return [];
+    }
+
+    return data as Tables<"blog_posts">[];
+  } catch (error) {
+    console.error("Timeout or error fetching blog posts:", error);
+    return []; // Return empty array on timeout - page will show "no posts" message
   }
-
-  return data as Tables<"blog_posts">[];
 }
 
 export default async function Blog() {
