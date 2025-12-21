@@ -3,6 +3,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { BlogPostHeader } from "@/components/blog/BlogPostHeader";
 import { BlogPostContent } from "@/components/blog/BlogPostContent";
 import { RelatedPostsStatic } from "@/components/blog/RelatedPostsStatic";
+import { FAQSchema } from "@/components/seo/FAQSchema";
+import { ProductSchema } from "@/components/seo/ProductSchema";
+import { blogSchemas } from "../schemas";
 import type { Metadata } from 'next';
 import Script from 'next/script';
 import Link from 'next/link';
@@ -156,6 +159,9 @@ export default async function BlogPost({ params }: { params: Promise<{ slug: str
 
   const relatedPosts = await getRelatedPosts(slug);
 
+  // Get FAQ and Product schemas for this post (if available)
+  const schemas = blogSchemas[slug] || {};
+
   // Article Schema for SEO
   const articleSchema = {
     "@context": "https://schema.org",
@@ -236,6 +242,12 @@ export default async function BlogPost({ params }: { params: Promise<{ slug: str
         strategy="beforeInteractive"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
       />
+
+      {/* FAQ Schema for Rich Snippets */}
+      {schemas.faqs && <FAQSchema faqs={schemas.faqs} />}
+
+      {/* Product Schema for Rich Snippets */}
+      {schemas.products && <ProductSchema products={schemas.products} />}
 
       <div className="min-h-screen flex flex-col">
         <div className="flex-grow container mx-auto px-2 sm:px-4 py-6">
