@@ -26,9 +26,12 @@ export const BlogPostHeader = ({ post }: BlogPostHeaderProps) => {
             <img
               src={post.image_url}
               alt={post.image_alt_text || post.title}
+              width="1200"
+              height="675"
               className="object-cover w-full h-full"
               onError={handleImageError}
               loading="eager"
+              fetchPriority="high"
             />
           </div>
         ) : post.image_url && imageError ? (

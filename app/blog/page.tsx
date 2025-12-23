@@ -91,7 +91,7 @@ export default async function Blog() {
                   <article className="group">
                     <Card className="flex h-[40px] overflow-hidden transform transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
                       {post.image_url && (
-                        <div className="w-[40px] relative overflow-hidden">
+                        <div className="w-[40px] h-[40px] relative overflow-hidden flex-shrink-0">
                           <img
                             src={post.image_url}
                             alt={post.image_alt_text || post.title}
@@ -99,6 +99,7 @@ export default async function Blog() {
                             height="40"
                             className="object-cover w-full h-full transform transition-transform duration-300 group-hover:scale-105"
                             loading="lazy"
+                            decoding="async"
                           />
                         </div>
                       )}
