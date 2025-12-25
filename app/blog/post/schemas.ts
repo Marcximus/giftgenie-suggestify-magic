@@ -197,7 +197,6 @@ export const blogSchemas: Record<string, { faqs?: FAQItem[]; products?: ProductI
   'the-top-10-best-secret-santa-gifts': { faqs: faqsSecretSantaGifts },
   'top-10-awesome-secret-santa-gifts': { faqs: faqsSecretSantaGifts },
   'top-10-cute-secret-santa-gifts': { faqs: faqsSecretSantaGifts },
-  'top-10-coolest-secret-santa-gifts': { faqs: faqsSecretSantaGifts },
   'top-10-funny-secret-santa-gifts': { faqs: faqsSecretSantaGifts },
 
   // Halloween
