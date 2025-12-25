@@ -30,9 +30,10 @@ export const metadata: Metadata = {
   },
 };
 
-// ISR with 1-hour cache to reduce serverless function load
+// ISR with 1-day cache to reduce serverless function load
 // Allows runtime data fetching so posts appear in the listing
-export const revalidate = 3600; // 1 hour
+// Revalidates daily to show new posts without requiring a deploy
+export const revalidate = 86400; // 1 day
 
 // Set a maximum runtime for serverless function
 export const maxDuration = 10; // Netlify free tier limit

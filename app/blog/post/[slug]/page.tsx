@@ -10,11 +10,13 @@ import type { Metadata } from 'next';
 import Script from 'next/script';
 import Link from 'next/link';
 
-// Use ISR with very long cache time - pages generated on-demand, cached forever
-export const revalidate = 31536000; // 1 year cache - essentially permanent
+// Force static generation - pages built at deploy time, never revalidate
+// This eliminates ISR regeneration timeouts entirely
+export const revalidate = false; // Pure static - no ISR revalidation
 export const dynamicParams = false; // Disable on-demand generation to prevent 502 errors
 
 // Set a maximum runtime for serverless function (in seconds)
+// Only used during build time with revalidate: false
 export const maxDuration = 10; // Netlify free tier limit
 
 // Pre-build ALL blog post pages at build time
